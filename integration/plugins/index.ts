@@ -5,6 +5,7 @@ import { existsSync, rmdirSync } from 'fs';
 import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
 import { configureEnv } from 'cy-local/plugins';
+import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -39,6 +40,9 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
 
   console.log('CYPRESS ENV:');
   console.log(config.env);
+
+  // register grep plugin
+  pluginGrep(on, config);
 
   // It's IMPORTANT to return the config object
   // with any changed environment variables

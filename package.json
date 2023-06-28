@@ -1,10 +1,10 @@
 {
-  "name": "cypress-template",
+  "name": "@mmisty/cypress-allure-adapter",
   "version": "1.0.0",
-  "description": "cypress template to create cypress libraries with typescript / jest / code coverage",
+  "description": "cypress allure adapter to generate allure results during tests execution",
   "main": "index.js",
-  "repository": "git@github.com:mmisty/cypress-template.git",
-  "homepage": "https://github.com/mmisty/cypress-template#readme",
+  "repository": "git@github.com:mmisty/cypress-allure-adapter.git",
+  "homepage": "https://github.com/mmisty/cypress-allure-adapter#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },
@@ -48,11 +48,12 @@
     "@cypress/code-coverage": "^3.10.0",
     "@ephesoft/webpack.istanbul.loader": "^2.2.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
+    "@mmisty/cypress-grep": "^1.4.3",
     "@types/jest": "^29.2.3",
     "@types/node": "^18.11.9",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
-    "cypress": "^11.2.0",
+    "cypress": "^12.16.0",
     "eslint": "^8.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-cypress": "^2.12.1",

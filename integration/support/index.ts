@@ -1,5 +1,6 @@
 import { myPluginSetup } from 'cy-local';
 import { COVERAGE } from '../common/constants';
+import { registerCypressGrep } from '@mmisty/cypress-grep';
 
 const setupCoverage = () => {
   if (Cypress.env(COVERAGE) === 'true' || Cypress.env(COVERAGE) === true) {
@@ -9,5 +10,10 @@ const setupCoverage = () => {
     console.log('COVERAGE NOT ENABLED IN BROWSER');
   }
 };
+
+registerCypressGrep({
+  addControlToUI: true,
+});
+
 setupCoverage();
 myPluginSetup();

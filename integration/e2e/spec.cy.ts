@@ -1,8 +1,8 @@
 import { checkCov } from 'cy-local/utils';
 import { something } from 'cy-local';
 
-describe('empty spec', () => {
-  it('passes', () => {
+describe('empty spec', { tags: '@empty' }, () => {
+  it('passes @P1', () => {
     expect(checkCov('cypress')).eq('cypress');
   });
 
