@@ -1,0 +1,23 @@
+# misc
+/.idea
+.DS_Store
+
+# modules
+/node_modules
+
+# built package after `npm pack`
+/package
+
+# cypress
+/integration/videos
+/integration/downloads
+/integration/screenshots
+
+# coverage and test reports
+/reports
+/.nyc_output
+/coverage-nyc
+
+# emitted
+/js-files-cypress
+/lib

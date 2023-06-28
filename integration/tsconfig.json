@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2016",
+    "module": "commonjs",
+    "outDir": "../js-files-cypress",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["node", "cypress"],
+    "baseUrl": "./",
+    "paths": {
+      "cy-local": ["../src"],
+      "cy-local/*": ["../src/*"]
+    }
+  },
+
+  "include": ["./"]
+}
