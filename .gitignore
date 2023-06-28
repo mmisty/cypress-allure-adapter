@@ -21,3 +21,6 @@
 # emitted
 /js-files-cypress
 /lib
+
+/allure-results
+/allure-report

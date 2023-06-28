@@ -11,7 +11,13 @@ export default defineConfig({
     videosFolder: `${cypressFolder}/videos`,
     fixturesFolder: `${cypressFolder}/fixtures`,
     screenshotsFolder: `${cypressFolder}/screenshots`,
-    video: false,
+    trashAssetsBeforeRuns: true,
+    video: true,
+
+    reporter: 'lib/setup/allure-mocha-reporter.js',
+    reporterOptions: {
+      allureResults: 'allure-results',
+    },
 
     setupNodeEvents(on, config) {
       setupPlugins(on, config);

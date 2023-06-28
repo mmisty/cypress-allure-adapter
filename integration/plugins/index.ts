@@ -1,10 +1,10 @@
 import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { preprocessor } from './ts-preprocessor';
-import { existsSync, rmdirSync } from 'fs';
+import { existsSync, mkdirSync, rmdirSync, rmSync } from 'fs';
 import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
-import { configureEnv } from 'cy-local/plugins';
+import { configureEnv } from '../../src/plugins';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 
 /**
@@ -34,6 +34,12 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   }
 
   on('file:preprocessor', preprocessor(isCov));
+
+  if (existsSync('allure-results')) {
+    console.log('Deleting results');
+    rmSync('allure-results', { recursive: true });
+    mkdirSync('allure-results');
+  }
 
   // HERE you put your plugin functions
   configureEnv(on, config);

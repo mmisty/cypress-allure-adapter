@@ -9,11 +9,6 @@
     "strict": true,
     "skipLibCheck": true,
     "types": ["node", "jest", "cypress"],
-    "baseUrl": "./",
-    "paths": {
-      "cy-local": ["./src"],
-      "cy-local/*": ["./src/*"]
-    }
   },
 
   "include": ["src", "node_modules/jest-test-each/dist/index.d.ts"]

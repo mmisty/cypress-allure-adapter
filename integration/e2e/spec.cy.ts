@@ -1,5 +1,5 @@
-import { checkCov } from 'cy-local/utils';
-import { something } from 'cy-local';
+import { checkCov } from '../../src/utils';
+import { something } from '../../src';
 
 describe('empty spec', { tags: '@empty' }, () => {
   it('passes @P1', () => {

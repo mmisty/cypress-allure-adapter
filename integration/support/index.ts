@@ -1,4 +1,4 @@
-import { myPluginSetup } from 'cy-local';
+import { allureAdapterSetup } from '../../src/setup';
 import { COVERAGE } from '../common/constants';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
 
@@ -16,4 +16,4 @@ registerCypressGrep({
 });
 
 setupCoverage();
-myPluginSetup();
+allureAdapterSetup();

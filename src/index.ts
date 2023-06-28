@@ -4,4 +4,4 @@
 // here export only functions to run in browser
 
 export { something } from './setup/something';
-export { myPluginSetup } from './setup';
+export { allureAdapterSetup } from './setup';
