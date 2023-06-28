@@ -15,7 +15,7 @@ declare namespace Cypress {
     message: { name: string };
     screenshot: { path: string };
     video: { path: string };
-    allLogs: { allLogs: any[] };
+    allLogs: { allLogs: any[]; spec: Cypress.Spec };
   };
 
   export type RequestTask = keyof TestEnd;

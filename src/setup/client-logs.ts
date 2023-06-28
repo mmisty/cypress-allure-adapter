@@ -23,7 +23,7 @@ export const registerLogs = () => {
       //allLogs.push({ task: 'testEnded', arg: { date: Date.now(), result: 'passed' } });
     }
     logs = {};
-    await cy.now('allure', { task: 'allLogs', arg: { allLogs } });
+    await cy.now('allure', { task: 'allLogs', arg: { allLogs, spec: Cypress.spec } });
   };
   runner.on('fail', async (test: any, err) => {
     console.log('Fail\n\n');

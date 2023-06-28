@@ -105,7 +105,7 @@ export class AllureReporter {
     const executable = this.currentStep ?? this.currentTest;
 
     const step = executable.startStep(name, date);
-    step.description = 'sddsds ';
+    // step.description = 'sddsds ';
     // step.detailsMessage = 'sas asdetails ';
     this.steps.push(step);
   }

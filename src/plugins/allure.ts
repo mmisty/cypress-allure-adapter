@@ -1,6 +1,6 @@
 import RequestTask = Cypress.RequestTask;
 import AllureTaskArgs = Cypress.AllureTaskArgs;
-import { readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename } from 'path';
 import { AllureReporter } from './allure-reporter-plugin';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
@@ -107,9 +107,16 @@ export const allureTasks = (opts?: { allureResults?: string }): AllureTasks => {
     },
     screenshot: (arg: AllureTaskArgs<'screenshot'>) => {
       log(`SCREENSHOT: ${JSON.stringify(arg)}`);
-
+      const cwd = process.cwd();
       // const path = `integration/screenshots/${args.path}`;
-      const p = '/Users/tpitko/dev/cypress-allure2-adapter/integration/screenshots/one.cy.ts/';
+      // todo
+      const p = `${cwd}/integration/screenshots/${arg.path}/`;
+
+      if (!existsSync(p)) {
+        log(`NO SCREENSHOTS: ${p}`);
+
+        return null;
+      }
       const files = readdirSync(p);
       files.forEach(f => {
         const file = p + f;
@@ -130,23 +137,29 @@ export const allureTasks = (opts?: { allureResults?: string }): AllureTasks => {
     },
     video: (arg: AllureTaskArgs<'video'>) => {
       log(`VIDEO: ${JSON.stringify(arg)}`);
-      // const path = `integration/videos/${args.path}`;
-      const p = '/Users/tpitko/dev/cypress-allure2-adapter/integration/videos/';
-      const files = readdirSync(p);
-      files.forEach(f => {
-        const file = p + f;
-        console.log(file);
-        const exec = allureReporter.currentStep ?? allureReporter.currentTest;
+      const cwd = process.cwd();
+      // const path = `integration/screenshots/${args.path}`;
+      // todo
+      const video = `${cwd}/integration/videos/${arg.path}.mp4`;
 
-        const fileCot = readFileSync(file);
+      if (!existsSync(video)) {
+        log(`NO VIDEO: ${video}`);
 
-        // to have it in allure-results directory
-        const pathDir = allureReporter.allureRuntime.writeAttachment(fileCot, {
-          fileExtension: 'mp4',
-          contentType: 'video/mp4',
-        });
-        exec?.addAttachment(basename(file), { contentType: 'video/mp4', fileExtension: 'mp4' }, pathDir);
+        return null;
+      }
+
+      const file = video;
+      console.log(file);
+      const exec = allureReporter.currentStep ?? allureReporter.currentTest;
+
+      const fileCot = readFileSync(file);
+
+      // to have it in allure-results directory
+      const pathDir = allureReporter.allureRuntime.writeAttachment(fileCot, {
+        fileExtension: 'mp4',
+        contentType: 'video/mp4',
       });
+      exec?.addAttachment(basename(file), { contentType: 'video/mp4', fileExtension: 'mp4' }, pathDir);
 
       return null;
     },
@@ -166,8 +179,8 @@ export const allureTasks = (opts?: { allureResults?: string }): AllureTasks => {
         // wait cy.now('allure', { task: 'allLogs', arg: { allLogs } });
       }
 
-      await this.screenshot({ path: '' });
-      await this.video({ path: '' });
+      await this.screenshot({ path: arg.spec.name });
+      await this.video({ path: arg.spec.name });
       logs = [];
 
       return null;
