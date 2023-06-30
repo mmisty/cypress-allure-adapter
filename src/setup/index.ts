@@ -1,5 +1,4 @@
 import { registerCommands } from '../commands';
-import { registerReporter } from './wrap-logs';
 import { registerMochaReporter } from './reporter2';
 import { startWsClient } from './websocket';
 

@@ -3,7 +3,6 @@ import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { tasks } from './tasks';
 import { allureTasks } from './allure';
 import { startReporterServer } from './server';
-import process from 'process';
 import AutoScreen = Cypress.AutoScreen;
 
 // this runs in node
@@ -20,14 +19,9 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   });
   const serv = startReporterServer({} as any, 3000, reporter);
 
-  /*serv.on('close', async () => {
+  serv.on('close', async () => {
     console.log('Server closings');
-    reporter.suiteStarted({ fullTitle: 'd', title: 'video' });
-    reporter.testStarted({ fullTitle: 'd1', title: 'video2', id: 'sd' });
-    reporter.video({ path: 'd' });
-    reporter.testEnded({ result: 'passed' });
-    reporter.suiteEnded({});
-  });*/
+  });
 
   config.reporterOptions = {
     ...config.reporterOptions,

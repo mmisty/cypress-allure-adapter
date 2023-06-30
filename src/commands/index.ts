@@ -1,7 +1,7 @@
 import RequestTask = Cypress.RequestTask;
 import AllureTaskArgs = Cypress.AllureTaskArgs;
-import axios from 'axios';
 
+/*
 const backendRequest = async <T extends RequestTask>(task: T, arg: AllureTaskArgs<T>) => {
   const body = { task, arg };
 
@@ -19,7 +19,7 @@ const backendRequest = async <T extends RequestTask>(task: T, arg: AllureTaskArg
       console.log(error);
     });
 };
-
+*/
 export const registerCommands = () => {
   /**
    * Log node

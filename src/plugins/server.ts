@@ -12,7 +12,6 @@ const log = (...args: unknown[]) => {
 
 export function startReporterServer(configOptions: PluginConfigOptions, port: number, tasks: AllureTasks) {
   const app = express();
-  const attached: string[] = [];
 
   const server = app.listen(port, () => {
     log(`Listening on port ${port}`);

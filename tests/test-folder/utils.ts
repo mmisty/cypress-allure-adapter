@@ -1,10 +1,10 @@
 import { execSync } from 'child_process';
 import { basename } from 'path';
-import cy from 'cypress';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 
 jest.setTimeout(70000);
 
+// eslint-disable-next-line jest/no-export
 export const createResTest = (fileName: string): string => {
   const cwd = process.cwd();
   beforeAll(async () => {
@@ -22,10 +22,9 @@ export const createResTest = (fileName: string): string => {
     const spec = [`${cwd}/integration/e2e/${testname}`, `${cwd}/integration/e2e/simple-pass.cy.ts`];
     const port = 56522;
     let err: Error | undefined;
-    let res;
 
     try {
-      res = await cy.run({
+      await cy.run({
         spec,
         port,
         // env: { allureResults: storeResDir, DEBUG: 'cypress:server:project' },

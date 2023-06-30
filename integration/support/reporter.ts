@@ -30,7 +30,6 @@ const {
   EVENT_SUITE_BEGIN,
   EVENT_SUITE_END,
   EVENT_TEST_BEGIN,
-  EVENT_TEST_END,
 } = MOCHA_EVENT;
 
 export class MyReporterClient {

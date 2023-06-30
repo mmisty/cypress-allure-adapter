@@ -1,7 +1,3 @@
-import RequestTask = Cypress.RequestTask;
-import getUuid from 'uuid-by-string';
-import getUuidByString from 'uuid-by-string';
-
 export const registerReporter = () => {
   let id: string | undefined;
   const ignoreCommands = ['allure', 'then', 'wrap'];
@@ -211,7 +207,7 @@ export const registerReporter = () => {
   Cypress.on('command:start', async command => {
     console.log(Object.keys(command.attributes));
     const name = command.attributes.name;
-    const id = command.attributes.chainerId;
+    // const id = command.attributes.chainerId;
 
     const msg = `${name}: ${
       Array.isArray(command.attributes.args)
@@ -250,9 +246,9 @@ export const registerReporter = () => {
     console.log(Object.keys(command.attributes));
     const name = command.attributes.name;
     const msg = name + JSON.stringify(command.attributes.args);
-    const logId = command.attributes.logs?.[0]?.attributes.id;
+    // const logId = command.attributes.logs?.[0]?.attributes.id;
 
-    const id = command.attributes.chainerId;
+    // const id = command.attributes.chainerId;
 
     if (!ignoreCommands.includes(name)) {
       console.log(`COMMAND END ${msg}`);
