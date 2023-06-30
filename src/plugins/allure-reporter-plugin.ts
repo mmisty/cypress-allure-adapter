@@ -67,6 +67,10 @@ export class AllureReporter {
 
   get currentTest() {
     if (this.tests.length === 0) {
+      // const item = this.currentGroup?.addBefore();
+      //this.tests.push(item);
+
+      // return item;
       throw new Error('No current test - start test');
     }
 
