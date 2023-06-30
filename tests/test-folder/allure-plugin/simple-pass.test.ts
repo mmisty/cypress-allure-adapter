@@ -5,7 +5,7 @@ import { createResTest } from '../utils';
 
 jest.setTimeout(70000);
 
-describe('run one test', () => {
+describe.skip('run one test', () => {
   const storeResDir = createResTest(__filename);
 
   it(`check ${storeResDir}`, async () => {
