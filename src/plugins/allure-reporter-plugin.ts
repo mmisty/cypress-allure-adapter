@@ -2,8 +2,10 @@ import { AllureGroup, AllureRuntime, AllureStep, AllureTest, LabelName } from 'a
 import AllureTaskArgs = Cypress.AllureTaskArgs;
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import path, { basename } from 'path';
+import glob from 'fast-glob';
+import getUuidByString from 'uuid-by-string';
 
 const log = (...args: unknown[]) => {
   console.log(`[allure-reporter] ${args}`);
@@ -43,13 +45,14 @@ export class AllureReporter {
   // todo config
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
-  allTests: string[] = [];
+  allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
   steps: AllureStep[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
+  attached: string[] = [];
 
-  constructor(private allureResults: string = 'allure-results') {
+  constructor(private allureResults: string = 'allure-results', private videos: string, private screenshots: string) {
     log('Created reporter');
     this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
   }
@@ -87,6 +90,98 @@ export class AllureReporter {
     console.log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
     return group;
+  }
+
+  attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+    const { screenshots } = arg;
+    log('attachScreenshots:');
+
+    screenshots?.forEach(x => {
+      const screenshotContent = readFileSync(x.path);
+      const guidScreenshot = getUuidByString(screenshotContent.toString());
+
+      if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
+        log(`Already attached: ${x.path}`);
+
+        return;
+      }
+
+      log(`attachScreenshots:${x.path}`);
+      const uuids = this.allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
+
+      uuids.forEach(uuid => {
+        const testFile = `${this.allureResults}/${uuid}-result.json`;
+        const contents = readFileSync(testFile);
+        const ext = path.extname(x.path);
+        const name = path.basename(x.path);
+        const testCon = JSON.parse(contents.toString());
+        const nameAttAhc = `${getUuid(x.path)}-attachment${ext}`; // todo not copy same video
+        const newPath = path.join(this.allureResults, nameAttAhc);
+
+        if (!existsSync(newPath)) {
+          copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
+        }
+
+        if (testCon.attachments) {
+          testCon.attachments.push({
+            name: name,
+            type: ContentType.PNG,
+            source: nameAttAhc, // todo
+          });
+        } else {
+          testCon.attachments = [
+            {
+              name: name,
+              type: ContentType.PNG,
+              source: nameAttAhc, // todo
+            },
+          ];
+        }
+        writeFileSync(testFile, JSON.stringify(testCon));
+      });
+    });
+  }
+
+  screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
+    const { name, forStep } = arg;
+
+    const pattern = `${this.screenshots}/**/${name}*.png`;
+    const files = glob.sync(pattern);
+
+    if (files.length === 0) {
+      log(`NO SCREENSHOTS: ${pattern}`);
+
+      return null;
+    }
+
+    files.forEach(file => {
+      console.log(file);
+      const executable = this.currentStep ?? this.currentTest;
+      const attachTo = forStep ? executable : this.currentTest;
+
+      const fileCot = readFileSync(file);
+
+      // to have it in allure-results directory
+      const fileNew = `${getUuidByString(fileCot.toString())}-attachment.png`;
+
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults);
+      }
+
+      if (!existsSync(file)) {
+        console.log(`file ${file} doesnt exist`);
+
+        return null;
+      }
+      copyFileSync(file, `${this.allureResults}/${fileNew}`);
+
+      /*const pathDir = allureReporter.allureRuntime.writeAttachment(fileCot, {
+      fileExtension: 'png',
+      contentType: 'image/png',
+    });*/
+      attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
+      this.attached.push(fileNew);
+    });
   }
 
   attachVideoToTests(videoPath: string) {
@@ -142,6 +237,7 @@ export class AllureReporter {
     this.groups.forEach(g => {
       g.endGroup();
     });
+    this.attached = [];
   }
 
   setLabel(arg: AllureTaskArgs<'setLabel'>) {
@@ -168,7 +264,7 @@ export class AllureReporter {
   startTest(arg: AllureTaskArgs<'testStarted'>) {
     const { title, fullTitle, id } = arg;
     let autoTitle = title;
-    const duplicates = this.allTests.filter(t => t === fullTitle);
+    const duplicates = this.allTests.filter(t => t.fullTitle === fullTitle);
 
     const warn =
       'STARTING TEST WITH THE SAME fullName as already, will be shown as' +
@@ -182,7 +278,7 @@ export class AllureReporter {
     const group = this.currentGroup ?? this.startGroup('Root suite');
     const test = group!.startTest(title);
 
-    this.allTests.push(fullTitle); // to show warning
+    this.allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
     this.tests.push(test);
     this.currentTest.fullName = fullTitle;
 

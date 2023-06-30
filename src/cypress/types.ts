@@ -2,6 +2,15 @@
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type StatusDetails = import('allure-js-commons').StatusDetails;
+  export type AutoScreen = {
+    screenshotId: string;
+    testId: string;
+    testAttemptIndex: number;
+    takenAt: string; // date
+    path: string; // abs path
+    height: number;
+    width: number;
+  };
 
   type TestEnd = {
     specStarted: { spec: Cypress.Spec };
@@ -16,10 +25,10 @@ declare namespace Cypress {
     step: { name: string; status?: string; date?: number };
     setLabel: { name: string; value: string };
     message: { name: string };
-    screenshot: { path: string; forStep?: boolean };
+    attachScreenshots: { screenshots: AutoScreen[] };
     screenshotOne: { name: string; forStep?: boolean };
     video: { path: string };
-    allLogs: { allLogs: any[]; spec: Cypress.Spec };
+    // allLogs: { allLogs: any[]; spec: Cypress.Spec };
     attachVideoToTests: { path: string };
     eventEnd: undefined;
     testResult: { result: string };

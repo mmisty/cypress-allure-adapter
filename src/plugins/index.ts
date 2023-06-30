@@ -4,6 +4,7 @@ import { tasks } from './tasks';
 import { allureTasks } from './allure';
 import { startReporterServer } from './server';
 import process from 'process';
+import AutoScreen = Cypress.AutoScreen;
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -54,7 +55,14 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   // });
   on('after:spec', (spec, results) => {
     console.log('AFTER SPEC');
+    const scr = (results as any).screenshots as AutoScreen[];
+    console.log(scr);
+    reporter.attachScreenshots({ screenshots: scr });
+
     reporter.attachVideoToTests({ path: results.video ?? '' });
+
+    //results.screenshots
+
     /*reporter.suiteStarted({ fullTitle: 'd', title: 'video' });
     reporter.testStarted({ fullTitle: spec.name, title: spec.name, id: spec.name });
     reporter.video({ path: 'd' });

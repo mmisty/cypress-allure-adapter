@@ -1,10 +1,7 @@
 import RequestTask = Cypress.RequestTask;
 import AllureTaskArgs = Cypress.AllureTaskArgs;
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
-import { basename } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { AllureReporter } from './allure-reporter-plugin';
-import glob from 'fast-glob';
-import getUuid from 'uuid-by-string';
 
 const log = (...args: unknown[]) => {
   console.log(`[allure] ${args}`);
@@ -26,7 +23,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
 
   log(`ALLURE RESULTS: ${allureResults}`);
 
-  const allureReporter = new AllureReporter(allureResults);
+  const allureReporter = new AllureReporter(allureResults, videos, screenshots);
   let logsMy: any[] = [];
   const steps: string[] = [];
 
@@ -146,65 +143,31 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
       return null;
     },
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {
-      const { name, forStep } = arg;
-
-      const pattern = `${screenshots}/**/${name}.png`;
-      const files = glob.sync(pattern);
-
-      if (files.length === 0) {
-        log(`NO SCREENSHOTS: ${pattern}`);
-
-        return null;
-      }
-
-      files.forEach(file => {
-        console.log(file);
-        const executable = allureReporter.currentStep ?? allureReporter.currentTest;
-        const attachTo = forStep ? executable : allureReporter.currentTest;
-
-        const fileCot = readFileSync(file);
-
-        // to have it in allure-results directory
-        const fileNew = `${getUuid(fileCot.toString())}-attachment.png`;
-
-        if (!existsSync(allureResults)) {
-          mkdirSync(allureResults);
-        }
-
-        if (!existsSync(file)) {
-          console.log(`file ${file} doesnt exist`);
-
-          return null;
-        }
-        copyFileSync(file, `${allureResults}/${fileNew}`);
-
-        /*const pathDir = allureReporter.allureRuntime.writeAttachment(fileCot, {
-          fileExtension: 'png',
-          contentType: 'image/png',
-        });*/
-        attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      });
+      allureReporter.screenshotOne(arg);
 
       return null;
     },
     // add all screenshots
-    screenshot: (arg: AllureTaskArgs<'screenshot'>) => {
-      const { path: specName, forStep } = arg;
-      log(`SCREENSHOT: ${JSON.stringify(arg)}`);
+    attachScreenshots: (arg: AllureTaskArgs<'attachScreenshots'>) => {
+      // this after spec
+
+      allureReporter.attachScreenshots(arg);
+      //const { screenshots } = arg;
+      //log(`SCREENSHOT: ${JSON.stringify(arg)}`);
       // const cwd = process.cwd();
       // const path = `integration/screenshots/${args.path}`;
       // todo
       // todo Cypress/screenshots
-      const pattern = `${screenshots}/**/*.png`;
-      const files = glob.sync(pattern);
+      ///const pattern = `${screenshots}/**/*.png`;
+      //const files = glob.sync(pattern);
 
-      if (files.length === 0) {
-        log(`NO SCREENSHOTS: ${pattern}`);
+      //if (files.length === 0) {
+      //  log(`NO SCREENSHOTS: ${pattern}`);
 
-        return null;
-      }
+      //  return null;
+      //}*/
 
-      files.forEach(file => {
+      /*files.forEach(file => {
         console.log(file);
         const executable = allureReporter.currentStep ?? allureReporter.currentTest;
         const attachTo = forStep ? executable : allureReporter.currentTest;
@@ -223,8 +186,8 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
           fileExtension: 'png',
           contentType: 'image/png',
         });*/
-        attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      });
+      //attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
+      //  });
 
       return null;
     },
@@ -263,7 +226,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
 
       return null;
     },
-    async allLogs(arg: AllureTaskArgs<'allLogs'>) {
+    /*async allLogs(arg: AllureTaskArgs<'allLogs'>) {
       log(`allLogs: ${JSON.stringify(arg)}`);
       // spec name
 
@@ -282,7 +245,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
       logsMy = arg.allLogs;
 
       return null;
-    },
+    },*/
     attachVideoToTests: (arg: AllureTaskArgs<'attachVideoToTests'>) => {
       allureReporter.attachVideoToTests(arg.path);
 
