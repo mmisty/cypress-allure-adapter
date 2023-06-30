@@ -30,6 +30,7 @@ enum Status {
   BROKEN = 'broken',
   SKIPPED = 'skipped',
 }
+const UNKNOWN = 'unknown' as Status;
 
 enum Stage {
   SCHEDULED = 'scheduled',
@@ -42,9 +43,11 @@ export class AllureReporter {
   // todo config
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
+  allTests: string[] = [];
   steps: AllureStep[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
+  descriptionHtml: string[] = [];
 
   constructor(private allureResults: string = 'allure-results') {
     log('Created reporter');
@@ -126,10 +129,6 @@ export class AllureReporter {
       // "attachments":[{"name":"suite with one test -- #1 test fail (failed).png","type":"image/png","source":"b593b23f-0fe2-4782-acca-ddb5d812e4dd-attachment.png"}]
       //
     });
-    // //
-    //           // "attachments":[{"name":"suite with one test -- #1 test fail (failed).png","type":"image/png","source":"b593b23f-0fe2-4782-acca-ddb5d812e4dd-attachment.png"}]
-    //
-    //
   }
 
   endGroup() {
@@ -168,22 +167,72 @@ export class AllureReporter {
 
   startTest(arg: AllureTaskArgs<'testStarted'>) {
     const { title, fullTitle, id } = arg;
+    let autoTitle = title;
+    const duplicates = this.allTests.filter(t => t === fullTitle);
+
+    const warn =
+      'STARTING TEST WITH THE SAME fullName as already, will be shown as' +
+      `retried: ${fullTitle}\nTo solve this rename the test. Spec ${this.currentSpec?.relative}`;
+
+    if (duplicates.length > 0) {
+      console.warn(warn);
+      autoTitle += ` ${Date.now()}`;
+    }
+
     const group = this.currentGroup ?? this.startGroup('Root suite');
     const test = group!.startTest(title);
+
+    this.allTests.push(fullTitle); // to show warning
     this.tests.push(test);
     this.currentTest.fullName = fullTitle;
+
+    if (title !== autoTitle) {
+      this.addDescriptionHtml(
+        '<div style="color: #a4951f;">Warn: Test with the same full name already exist (suites + title). Test is shown as retried</br>To solve rename the test</div>',
+      );
+    }
     this.currentTest.historyId = getUuid(fullTitle);
     this.applyGroupLabels();
 
     if (this.currentSpec?.relative) {
-      this.currentTest.addLabel('path', this.currentSpec?.relative);
+      this.currentTest.addLabel('path', this.currentSpec.relative);
+      this.addDescriptionHtml(this.currentSpec.relative);
     }
-    this.currentTest.descriptionHtml = this.currentSpec?.relative ?? '';
+  }
+
+  endTests() {
+    this.tests.forEach(() => {
+      this.endTest({ result: 'unknown', details: undefined });
+    });
+  }
+
+  endGroups() {
+    this.endTests();
+    this.groups.forEach(() => {
+      this.endGroup();
+    });
+  }
+
+  endAll() {
+    this.endAllSteps({ status: 'unknown', details: undefined });
+
+    this.endGroups();
+  }
+
+  addDescriptionHtml(descriptionHtml: string) {
+    this.descriptionHtml.push(descriptionHtml);
+    this.applyDescriptionHtml();
+    // this.currentTest.descriptionHtml = (this.currentTest.descriptionHtml ?? '') + descriptionHtml;
+    //this.currentTest.des
+  }
+
+  applyDescriptionHtml() {
+    this.currentTest.descriptionHtml = this.descriptionHtml.join('</br>');
   }
 
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
-    this.endAllSteps({ result, details });
+    this.endAllSteps({ status: result, details });
     // this.currentTest.status = result as Status; //todo
 
     // this.endSteps();
@@ -214,10 +263,10 @@ export class AllureReporter {
     }
 
     if (result !== Status.FAILED && result !== Status.BROKEN && result !== Status.PASSED && result !== Status.SKIPPED) {
-      this.currentTest.status = Status.SKIPPED;
+      this.currentTest.status = UNKNOWN;
       this.currentTest.stage = Stage.PENDING;
 
-      this.currentTest.detailsMessage = details?.message || `Unknown status ${result}`;
+      this.currentTest.detailsMessage = details?.message || `Unknown result: ${result ?? '<no>'}`;
     }
 
     if (details) {
@@ -238,6 +287,8 @@ export class AllureReporter {
     this.currentTest.endTest(stop || dateNow());*/
 
     this.currentTest.endTest();
+    this.tests.pop();
+    this.descriptionHtml = [];
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {

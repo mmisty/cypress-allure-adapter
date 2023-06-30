@@ -135,6 +135,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
 
       return null;
     },
+    endAll: () => {
+      allureReporter.endAll();
+
+      return null;
+    },
     message: (arg: AllureTaskArgs<'message'>) => {
       log(`MESSAGE: ${JSON.stringify(arg)}`);
 

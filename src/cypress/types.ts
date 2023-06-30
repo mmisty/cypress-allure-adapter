@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-namespace
 declare namespace Cypress {
-  export type Status = 'passed' | 'failed' | 'skipped' | 'broken';
+  export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type StatusDetails = import('allure-js-commons').StatusDetails;
 
   type TestEnd = {
@@ -23,6 +23,7 @@ declare namespace Cypress {
     attachVideoToTests: { path: string };
     eventEnd: undefined;
     testResult: { result: string };
+    endAll: undefined;
   };
 
   export type RequestTask = keyof TestEnd;

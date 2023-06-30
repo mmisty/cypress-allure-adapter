@@ -21,35 +21,36 @@ export function startReporterServer(configOptions: PluginConfigOptions, port: nu
   const sockserver = new WebSocketServer({ port: 443 });
 
   sockserver.on('connection', ws => {
-    console.log('New client connected!');
+    log('New client connected!');
     ws.send('connection established');
-    ws.on('close', () => console.log('Client has disconnected!'));
+    ws.on('close', () => log('Client has disconnected!'));
 
     ws.on('message', data => {
       const parseData = (data: RawData) => {
         try {
           return JSON.parse(data.toString()) as any;
         } catch (e) {
-          console.log((e as Error).message);
+          // console.log((e as Error).message);
 
           return {};
         }
       };
       const requestData = parseData(data);
-      log(requestData);
+      log(JSON.stringify(requestData));
 
       if (Object.keys(tasks).indexOf(requestData.task) !== -1) {
         const task = requestData.task as RequestTask; // todo check
         log(task);
         tasks[task](requestData.arg);
       } else {
-        log(`No such task: ${requestData.task}`);
+        const msg = requestData.task ? `No such task: ${requestData.task}` : 'No task property in message';
+        log(msg);
       }
 
       // res.send('Data Received');
 
       sockserver.clients.forEach(client => {
-        console.log(`distributing message: ${data}`);
+        log(`sending back: ${data}`);
         client.send(JSON.stringify({ task: requestData?.task, status: 'done' }));
       });
     });

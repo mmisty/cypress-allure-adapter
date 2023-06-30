@@ -27,18 +27,25 @@ const convertState = (state: string): Status => {
   return state as Status;
 };
 
+const isRootSuite = (suite: Mocha.Suite) => {
+  return suite.fullTitle() === '';
+};
+
 export const registerMochaReporter = (ws: WebSocket) => {
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
-  const stats: Mocha.Stats | undefined = runner.stats;
   const message = createMessage(ws);
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
       log('event start');
       await message('event start');
+      runner.emit('task', { task: 'endAll', arg: {} });
       await message({ task: 'specStarted', arg: { spec: Cypress.spec } });
     })
     .on(MOCHA_EVENTS.SUITE_BEGIN, async suite => {
+      if (isRootSuite(suite)) {
+        return;
+      }
       await message({
         task: 'suiteStarted',
         arg: { title: suite.title, fullTitle: suite.fullTitle(), file: suite.file },
@@ -49,6 +56,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
     .on(MOCHA_EVENTS.TEST_BEGIN, async test => {
       await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
+    })
+    .on(MOCHA_EVENTS.TEST_END, test => {
+      // after each is not called for pending tests
+      if (test.state === 'pending') {
+        runner.emit(CUSTOM_EVENTS.TEST_END, test);
+      }
     })
     .on(CUSTOM_EVENTS.TEST_END, async test => {
       const detailsErr = test.err as Error;
@@ -64,16 +77,23 @@ export const registerMochaReporter = (ws: WebSocket) => {
         },
       });
     })
-    .on(MOCHA_EVENTS.SUITE_END, async () => {
+    .on(MOCHA_EVENTS.SUITE_END, async suite => {
+      console.log('suite.file');
+      console.log(suite.file);
+
+      if (isRootSuite(suite)) {
+        return;
+      }
       await message({ task: 'suiteEnded', arg: {} });
     })
     .on(MOCHA_EVENTS.RUN_END, async () => {
       await message('RUN_END');
     });
 
+  // after each is not called when pending test
   afterEach(function (this: Mocha.Context) {
     console.log('AFTER');
-    const test = this.currentTest;
+    const test = this.currentTest ?? this.test;
 
     if (test) {
       cy.wrap(null, { log: false }).then(() => {
@@ -133,7 +153,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
     };
   };
 
-  Cypress.on('log:added', async (log, args) => {
+  Cypress.on('log:added', async log => {
     const cmdMessage = stepMessage(log.name, log.message);
     // const logId = log.id
     // const isEnded = log.end;

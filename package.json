@@ -24,6 +24,8 @@
     "cy": "cypress",
     "cy:open": "npm run cy -- open",
     "cy:run": "npm run cy -- run --browser chrome --headless",
+    "cy:filter": "npm run cy:run -- --env GREP_PRE_FILTER=true --reporter spec",
+    "cy:run:grep": "export CYPRESS_GREP_RESULTS_FILE='./filtered_tests.json' && npm run cy:filter && npm run cy:run -- --config specPattern='*.*'",
     "cy:run:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- run",
     "cy:open:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- open",
     "build": "tsc --project tsconfig.build.json",
