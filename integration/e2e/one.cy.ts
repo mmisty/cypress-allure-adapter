@@ -16,7 +16,7 @@ describe('suite with one test', () => {
     cy.screenshot('sdsd').then(sc => {
       console.log('SCREENSHOT');
       console.log(sc);
-      cy.allure({ task: 'screenshot', arg: { path: 'sdsd' } });
+      cy.allure({ task: 'screenshotOne', arg: { name: 'sdsd' } });
     });
 
     /*cy.allure({ task: 'stepStarted', arg: { name: 'my step' } });
