@@ -1,5 +1,7 @@
 import { registerCommands } from '../commands';
-import { registerLogs } from './client-logs';
+import { registerReporter } from './wrap-logs';
+import { registerMochaReporter } from './reporter2';
+import { startWsClient } from './websocket';
 
 export const allureAdapterSetup = () => {
   // here you can do setup for each test file in browser
@@ -7,6 +9,13 @@ export const allureAdapterSetup = () => {
     cy.task('log', 'Registered allureAdapterSetup');
   });
 
+  const ws = startWsClient();
+  registerMochaReporter(ws);
+
+  before(() => {
+    console.log('before all STARTED: ', ws.readyState);
+  });
+
   registerCommands();
-  registerLogs();
+  //registerReporter();
 };

@@ -1,6 +1,9 @@
 import { allureAdapterSetup } from '../../src/setup';
 import { COVERAGE } from '../common/constants';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
+import { redirectTestLogs } from 'cypress-redirect-browser-log';
+
+console.log('====SUPPORT INDEX STARTED');
 
 const setupCoverage = () => {
   if (Cypress.env(COVERAGE) === 'true' || Cypress.env(COVERAGE) === true) {
@@ -10,6 +13,11 @@ const setupCoverage = () => {
     console.log('COVERAGE NOT ENABLED IN BROWSER');
   }
 };
+//const reporter = new MyReporterClient({ reporterOptions: Cypress.config('reporterOptions') });
+
+redirectTestLogs({
+  isLogCommandDetails: false,
+});
 
 registerCypressGrep({
   addControlToUI: true,

@@ -1,20 +1,74 @@
-export const registerLogs = () => {
-  let id: string | undefined;
+import RequestTask = Cypress.RequestTask;
+import getUuid from 'uuid-by-string';
+import getUuidByString from 'uuid-by-string';
 
+export const registerReporter = () => {
+  let id: string | undefined;
+  const ignoreCommands = ['allure', 'then', 'wrap'];
   let logs: {
     [key: string]: [
-      { task: string; arg: { date: number; details?: string; status?: string; name?: string; id?: string } },
+      {
+        task: string;
+        arg: { date: number; forStep?: boolean; details?: string; status?: string; name?: string; id?: string };
+      },
     ];
   } = {};
 
-  const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
+  beforeEach(() => {
+    logs = {};
+  });
 
-  const addSteps = async (isFail: boolean, message: string) => {
+  const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
+  let isAdd = true;
+
+  const stopAdding = () => {
+    isAdd = false;
+  };
+  console.log(runner.eventNames());
+
+  afterEach(function (this: any) {
+    console.log('AFTER');
+    const test = this.currentTest;
+    console.log(test);
+    stopAdding();
+
+    if (test) {
+      cy.wrap(null, { log: false }).then(() => {
+        addSteps(test.state, test.err?.message, this.currentTest);
+      });
+    }
+  });
+  /*Cypress.Commands.overwrite('screenshot', function (orig, subject, screenshotName, options) {
+    const name = typeof screenshotName == 'string' ? `${screenshotName}${Date.now()}` : Cypress.spec.name + Date.now();
+
+    console.log('OVERWRITE');
+    console.log(this);
+    console.log(screenshotName);
+    console.log(options);
+    orig(subject, name, options).then(() => {
+      const id = getUuidByString(Date.now().toString());
+      console.log('THEN ON SCREEN');
+      //const logId = this.attributes.chainerId;
+      //logs[logId];
+
+      if (logs[id]) {
+        logs[id].push({ task: 'screenshotOne', arg: { date: Date.now(), name } });
+      } else {
+        logs[id] = [{ task: 'screenshotOne', arg: { date: Date.now(), name } }];
+      }
+      console.log(logs);
+    });
+  });*/
+
+  const addSteps = (isFail: boolean, message: string, test: Mocha.Test) => {
+    console.log('addSteps');
+    console.log(JSON.stringify(logs));
+
     const allLogs = Object.keys(logs)
       .flatMap(t => logs[t])
       .sort((a, b) => (a.arg.date < b.arg.date ? -1 : 1));
     console.log('allLogs');
-    console.log(allLogs);
+    console.log(JSON.stringify(allLogs));
 
     if (isFail) {
       allLogs.push({ task: 'stepEnded', arg: { date: Date.now(), status: 'failed', details: message } });
@@ -22,10 +76,25 @@ export const registerLogs = () => {
     } else {
       //allLogs.push({ task: 'testEnded', arg: { date: Date.now(), result: 'passed' } });
     }
-    logs = {};
-    await cy.now('allure', { task: 'allLogs', arg: { allLogs, spec: Cypress.spec } });
+    /* allLogs.forEach(t => {
+      const task = t.task as RequestTask;
+      cy.wrap(null).then(() => {
+        console.log(`TASK: ${task}`);
+      });
+      cy.allure({ task, arg: t.arg as any }, { log: false });
+      // wait cy.now('allure', { task: 'allLogs', arg: { allLogs } });
+    });
+    // cy.allure({ task: 'screenshot', arg: { path: Cypress.spec.name } });*/
+
+    //cy.allure({ task: 'eventEnd', arg: {} });
+    cy.wrap(null).then(() => {
+      runner.emit('test end my', test);
+    });
+    //cy.allure({ task: 'allLogs', arg: { allLogs, spec: Cypress.spec } });
+    //await this.screenshot({ path: arg.spec.name });
   };
-  runner.on('fail', async (test: any, err) => {
+
+  /* runner.on('fail', async (test: any, err) => {
     console.log('Fail\n\n');
 
     if (test.hookName === 'before all') {
@@ -34,19 +103,26 @@ export const registerLogs = () => {
     await addSteps(true, err.message);
     //await cy.now('allure', { task: 'testEnded', arg: { result: 'failed' } });
   });
+
   runner.on('pass', async (_test: Mocha.Test) => {
     console.log('Pasas\n\n');
     await addSteps(false, '');
     //await cy.now('allure', { task: 'testEnded', arg: { result: 'passed' } });
   });
+
   runner.on('retry', async (_test: Mocha.Test) => {
     console.log('Failed\n\n');
     await addSteps(true, 'hjh');
     //await cy.now('allure', { task: 'testEnded', arg: { result: 'failed' } });
   });
+*/
+  Cypress.on('command:enqueued', async (...args) => {
+    console.log('command:enqueued');
+    console.log(args);
+  });
 
   Cypress.on('log:changed', async (log, args) => {
-    if (id !== log.id && log.url !== 'http://localhost:3000/__cypress/messages' && log.name !== 'allure') {
+    if (id !== log.id && log.url !== 'http://localhost:3000/__cypress/messages' && !ignoreCommands.includes(log.name)) {
       console.log('CHANGED');
       console.log(log);
       console.log(args);
@@ -73,7 +149,12 @@ export const registerLogs = () => {
 
     //if (log.id !== id && exclude.every(t => log.name !== t.name) && exclude.every(t => t.url && log.url !== t.url)) {
     // await backendRequest('message', { name: log as string });
-    if (id !== log.id && log.url !== 'http://localhost:3000/__cypress/messages' && log.name !== 'allure') {
+    if (
+      isAdd &&
+      id !== log.id &&
+      log.url !== 'http://localhost:3000/__cypress/messages' &&
+      !ignoreCommands.includes(log.name)
+    ) {
       console.log('ADDED');
       const msg = `${log.name}: ${log.message}`;
       console.log(msg);
@@ -86,23 +167,25 @@ export const registerLogs = () => {
       //logs.push(['sstep', { name: msg, date: Date.now(), id: log.id }]);
 
       if (ended) {
-        logs[log.chainerId] = [{ task: 'step', arg: { date: Date.now(), name: msg } }];
+        // runner.emit('step');
+        runner.emit('task', {
+          task: 'step',
+          arg: { name: msg },
+        });
+        //logs[log.chainerId] = [{ task: 'step', arg: { date: Date.now(), name: msg } }];
       } else {
         console.log('______');
         console.log(logs);
-
-        if (logs[log.chainerId]) {
+        runner.emit('task', {
+          task: 'step',
+          arg: { name: msg },
+        });
+        //runner.emit('step', msg);
+        /* if (logs[log.chainerId]) {
           logs[log.chainerId].push({ task: 'step', arg: { date: Date.now(), name: msg } });
         } else {
           logs[log.chainerId] = [{ task: 'step', arg: { date: Date.now(), name: msg } }];
-        }
-        /* const logss = Object.keys(logs)
-          .flatMap(x => logs[x].map(t => ({ ...t, key: x })))
-          .sort((a, b) => (a.arg.date < b.arg.date ? -1 : 1));
-        console.log(logss);
-        //logs[log.id] = [{ task: 'stepStarted', arg: { date: Date.now(), name: msg } }];
-        const last = logss[logss.length - 1];
-        logs[last.key].push({ task: 'stepStarted', arg: { date: Date.now(), name: msg } });*/
+        }*/
       }
 
       id = log.id;
@@ -137,13 +220,31 @@ export const registerLogs = () => {
     }`;
     // const logId = command.attributes.logs?.[0]?.attributes.id;
 
-    if (name !== 'allure') {
+    if (!ignoreCommands.includes(name)) {
       console.log(`COMMAND START ${msg}`);
-      logs[id] = [{ task: 'stepStarted', arg: { date: Date.now(), name: msg } }];
+
+      // runner.emit('step start', msg);
+      runner.emit('task', {
+        task: 'stepStarted',
+        arg: { name: command.attributes.args[0] ?? 'anyName' },
+      });
+      // logs[id] = [{ task: 'stepStarted', arg: { date: Date.now(), name: msg } }];
       //await backendRequest('step', { name: `START ${msg}`, date: Date.now(), status: 'passed' });
     }
-  });
 
+    if (name === 'screenshot') {
+      runner.emit('task', {
+        task: 'screenshotOne',
+        arg: { forStep: true, name: command.attributes.args[0] ?? 'anyName' },
+      });
+      /*logs[id] = [
+        {
+          task: 'screenshotOne',
+          arg: { date: Date.now(), forStep: true, name: command.attributes.args[0] ?? 'anyName' },
+        },
+      ]*/
+    }
+  });
   Cypress.on('command:end', async command => {
     console.log(command);
     console.log(Object.keys(command.attributes));
@@ -153,13 +254,18 @@ export const registerLogs = () => {
 
     const id = command.attributes.chainerId;
 
-    if (name !== 'allure') {
+    if (!ignoreCommands.includes(name)) {
       console.log(`COMMAND END ${msg}`);
 
+      runner.emit('task', {
+        task: 'stepEnded',
+        arg: { name: command.attributes.args[0] ?? 'anyName' },
+      });
+      //  runner.emit('step end', command.state);
       // logs.push(['stepEnded', { name: msg, date: Date.now(), id: logId, status: command.state }]);
-      if (logs[id]) {
+      /*if (logs[id]) {
         logs[id].push({ task: 'stepEnded', arg: { name: msg, date: Date.now(), id: logId, status: command.state } });
-      }
+      }*/
       //await backendRequest('step', { name: `END ${msg}`, date: Date.now(), status: 'passed' });
     }
 

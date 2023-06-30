@@ -6,6 +6,7 @@ import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
 import { configureEnv } from '../../src/plugins';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
+import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -32,6 +33,16 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     require('@cypress/code-coverage/task')(on, config);
     config.env[COVERAGE] = true;
   }
+
+  const browserHandler = redirectLogBrowser(config, [], handler => {
+    handler.on('test:log', t => {
+      console.log(t.message);
+    });
+  });
+
+  on('before:browser:launch', (browser, opts) => {
+    return browserHandler(browser, opts);
+  });
 
   on('file:preprocessor', preprocessor(isCov));
 

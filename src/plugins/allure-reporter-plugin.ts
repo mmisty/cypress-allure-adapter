@@ -1,9 +1,44 @@
-import { AllureGroup, AllureRuntime, AllureStep, AllureTest, LabelName, Status } from 'allure-js-commons';
+import { AllureGroup, AllureRuntime, AllureStep, AllureTest, LabelName } from 'allure-js-commons';
 import AllureTaskArgs = Cypress.AllureTaskArgs;
 import getUuid from 'uuid-by-string';
+import { parseAllure } from 'allure-js-parser';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'fs';
+import path, { basename } from 'path';
 
+const log = (...args: unknown[]) => {
+  console.log(`[allure-reporter] ${args}`);
+};
+enum ContentType {
+  TEXT = 'text/plain',
+  XML = 'application/xml',
+  HTML = 'text/html',
+  CSV = 'text/csv',
+  TSV = 'text/tab-separated-values',
+  CSS = 'text/css',
+  URI = 'text/uri-list',
+  SVG = 'image/svg+xml',
+  PNG = 'image/png',
+  JSON = 'application/json',
+  ZIP = 'application/zip',
+  WEBM = 'video/webm',
+  JPEG = 'image/jpeg',
+  MP4 = 'video/mp4',
+}
+enum Status {
+  PASSED = 'passed',
+  FAILED = 'failed',
+  BROKEN = 'broken',
+  SKIPPED = 'skipped',
+}
+
+enum Stage {
+  SCHEDULED = 'scheduled',
+  RUNNING = 'running',
+  FINISHED = 'finished',
+  PENDING = 'pending',
+  INTERRUPTED = 'interrupted',
+}
 export class AllureReporter {
-  private defaultDir = 'allure-results';
   // todo config
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
@@ -11,8 +46,9 @@ export class AllureReporter {
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
 
-  constructor(allureResults?: string) {
-    this.allureRuntime = new AllureRuntime({ resultsDir: allureResults ?? this.defaultDir });
+  constructor(private allureResults: string = 'allure-results') {
+    log('Created reporter');
+    this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
   }
 
   get currentGroup() {
@@ -48,6 +84,52 @@ export class AllureReporter {
     console.log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
     return group;
+  }
+
+  attachVideoToTests(videoPath: string) {
+    log(`attachVideoToTests: ${videoPath}`);
+    const specname = basename(videoPath, '.mp4');
+    log(specname);
+    const res = parseAllure(this.allureResults);
+    const tests = res.map(t => ({ path: t.labels.find(l => l.name === 'path')?.value, id: t.uuid }));
+    const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
+    log(JSON.stringify(testsAttach));
+    testsAttach.forEach(t => {
+      const testFile = `${this.allureResults}/${t.id}-result.json`;
+      const contents = readFileSync(testFile);
+      const testCon = JSON.parse(contents.toString());
+      const nameAttAhc = `${getUuid(videoPath)}-attachment.mp4`; // todo not copy same video
+      const newPath = path.join(this.allureResults, nameAttAhc);
+
+      if (!existsSync(newPath)) {
+        copyFileSync(videoPath, path.join(this.allureResults, nameAttAhc));
+      }
+
+      if (testCon.attachments) {
+        testCon.attachments.push({
+          name: specname,
+          type: ContentType.MP4,
+          source: nameAttAhc, // todo
+        });
+      } else {
+        testCon.attachments = [
+          {
+            name: specname,
+            type: ContentType.MP4,
+            source: nameAttAhc, // todo
+          },
+        ];
+      }
+      writeFileSync(testFile, JSON.stringify(testCon));
+      //testCon.attachments = []
+
+      // "attachments":[{"name":"suite with one test -- #1 test fail (failed).png","type":"image/png","source":"b593b23f-0fe2-4782-acca-ddb5d812e4dd-attachment.png"}]
+      //
+    });
+    // //
+    //           // "attachments":[{"name":"suite with one test -- #1 test fail (failed).png","type":"image/png","source":"b593b23f-0fe2-4782-acca-ddb5d812e4dd-attachment.png"}]
+    //
+    //
   }
 
   endGroup() {
@@ -90,13 +172,71 @@ export class AllureReporter {
     const test = group!.startTest(title);
     this.tests.push(test);
     this.currentTest.fullName = fullTitle;
-    this.currentTest.historyId = getUuid(id);
+    this.currentTest.historyId = getUuid(fullTitle);
     this.applyGroupLabels();
+
+    if (this.currentSpec?.relative) {
+      this.currentTest.addLabel('path', this.currentSpec?.relative);
+    }
+    this.currentTest.descriptionHtml = this.currentSpec?.relative ?? '';
   }
 
   endTest(arg: AllureTaskArgs<'testEnded'>) {
-    const { result } = arg;
-    this.currentTest.status = result as Status; //todo
+    const { result, details } = arg;
+    this.endAllSteps({ result, details });
+    // this.currentTest.status = result as Status; //todo
+
+    // this.endSteps();
+
+    if (result === Status.PASSED) {
+      this.currentTest.status = Status.PASSED;
+      this.currentTest.stage = Stage.FINISHED;
+    }
+
+    if (result === Status.BROKEN) {
+      this.currentTest.status = Status.BROKEN;
+      this.currentTest.stage = Stage.FINISHED;
+    }
+
+    if (result === Status.FAILED) {
+      this.currentTest.status = Status.FAILED;
+      this.currentTest.stage = Stage.FINISHED;
+
+      this.currentTest.detailsMessage = details?.message;
+      this.currentTest.detailsTrace = details?.trace;
+    }
+
+    if (result === Status.SKIPPED) {
+      this.currentTest.status = Status.SKIPPED;
+      this.currentTest.stage = Stage.PENDING;
+
+      this.currentTest.detailsMessage = details?.message || 'Suite disabled';
+    }
+
+    if (result !== Status.FAILED && result !== Status.BROKEN && result !== Status.PASSED && result !== Status.SKIPPED) {
+      this.currentTest.status = Status.SKIPPED;
+      this.currentTest.stage = Stage.PENDING;
+
+      this.currentTest.detailsMessage = details?.message || `Unknown status ${result}`;
+    }
+
+    if (details) {
+      this.currentTest.statusDetails = details;
+    }
+
+    /*this.featureProps.apply(a => super.feature(a));
+    this.storyProps.apply(a => super.story(a));
+    this.frameworkProps.apply(a => super.label(LabelName.FRAMEWORK, a));
+    this.languageProps.apply(a => super.label(LabelName.LANGUAGE, a));
+    this.hostProps.apply(a => super.label(LabelName.HOST, a));
+
+    this.applyDescription();
+
+    if (this.config?.autoHistoryId !== false) {
+      this.setHistoryId(spec.fullName);
+    }
+    this.currentTest.endTest(stop || dateNow());*/
+
     this.currentTest.endTest();
   }
 
@@ -110,6 +250,12 @@ export class AllureReporter {
     this.steps.push(step);
   }
 
+  endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
+    this.steps.forEach(() => {
+      this.endStep(arg);
+    });
+  }
+
   endStep(arg: AllureTaskArgs<'stepEnded'>) {
     const { status, date } = arg;
 
@@ -117,7 +263,7 @@ export class AllureReporter {
       this.currentStep.status = status as Status;
 
       if (arg.details) {
-        this.currentStep.statusDetails = { message: arg.details };
+        this.currentStep.statusDetails = { message: arg.details?.message };
       }
       this.currentStep.endStep(date);
 

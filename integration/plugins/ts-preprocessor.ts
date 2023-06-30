@@ -44,6 +44,7 @@ export const preprocessor = (isCoverage: boolean) => {
     module: {
       rules,
     },
+
     cache: false,
     stats: 'verbose',
     mode: 'development',

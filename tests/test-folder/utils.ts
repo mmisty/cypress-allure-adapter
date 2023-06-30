@@ -18,7 +18,8 @@ export const createResTest = (fileName: string): string => {
   it('create results', async () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
-    const spec = `${cwd}/integration/e2e/${testname}`;
+    //const spec = [`${cwd}/integration/e2e/simple-pass.cy.ts`, `${cwd}/integration/e2e/${testname}`];
+    const spec = [`${cwd}/integration/e2e/${testname}`, `${cwd}/integration/e2e/simple-pass.cy.ts`];
     const port = 56522;
     let err: Error | undefined;
     let res;
@@ -28,6 +29,7 @@ export const createResTest = (fileName: string): string => {
         spec,
         port,
         // env: { allureResults: storeResDir, DEBUG: 'cypress:server:project' },
+        browser: 'chrome',
         reporter: 'lib/setup/allure-mocha-reporter.js',
         reporterOptions: {
           allureResults: storeResDir,

@@ -13,12 +13,16 @@ export default defineConfig({
     screenshotsFolder: `${cypressFolder}/screenshots`,
     trashAssetsBeforeRuns: true,
     video: true,
+    chromeWebSecurity: false,
     videoUploadOnPasses: true,
-
-    reporter: 'lib/setup/allure-mocha-reporter.js',
+    // report: true,
+    //reporter: 'lib/setup/allure-mocha-reporter.js',
     // reporterOptions: {
     //   allureResults: 'allure-results',
     // },
+    env: {
+      REDIRECT_BROWSER_LOG: true,
+    },
 
     setupNodeEvents(on, config) {
       setupPlugins(on, config);
