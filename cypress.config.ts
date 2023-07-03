@@ -22,6 +22,8 @@ export default defineConfig({
     // },
     env: {
       REDIRECT_BROWSER_LOG: true,
+      allureResults: 'allure-results',
+      allureSkipCommands: 'wrap', // separated comma
     },
 
     setupNodeEvents(on, config) {

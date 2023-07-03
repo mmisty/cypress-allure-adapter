@@ -15,7 +15,7 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   debug('Register plugin');
 
   const options: ReporterOptions = {
-    allureResults: config?.reporterOptions?.allureResults ?? 'allure-results',
+    allureResults: config?.env['allureResults'] ?? 'allure-results',
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
   };

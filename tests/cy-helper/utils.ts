@@ -29,9 +29,9 @@ export const createResTest = (fileName: string): string => {
         port,
         // env: { allureResults: storeResDir, DEBUG: 'cypress:server:project' },
         browser: 'chrome',
-        reporter: 'lib/setup/allure-mocha-reporter.js',
-        reporterOptions: {
+        env: {
           allureResults: storeResDir,
+          allureSkipCommands: 'intercept',
         },
       });
     } catch (e) {

@@ -5,7 +5,7 @@ import { createResTest } from '../../cy-helper/utils';
 
 jest.setTimeout(70000);
 
-describe.skip('run one test', () => {
+describe('run one test', () => {
   const storeResDir = createResTest(__filename);
 
   it(`check ${storeResDir}`, async () => {
@@ -37,17 +37,13 @@ describe.skip('run one test', () => {
       {
         attachments: [
           {
-            name: 'one -- two -- test pass (failed)1687901471026.png',
-            source: 'source.png',
-            type: 'image/png',
-          },
-          {
-            name: 'one.cy.ts.mp4',
+            name: 'simple-pass.cy.ts',
             source: 'source.mp4',
             type: 'video/mp4',
           },
         ],
-        fullName: 'suite with one test test pass',
+        descriptionHtml: 'integration/e2e/simple-pass.cy.ts',
+        fullName: 'suite with one test #2 test pass',
         historyId: 'no',
         labels: [
           {
@@ -58,9 +54,13 @@ describe.skip('run one test', () => {
             name: 'parentSuite',
             value: 'suite with one test',
           },
+          {
+            name: 'path',
+            value: 'integration/e2e/simple-pass.cy.ts',
+          },
         ],
         links: [],
-        name: 'test pass',
+        name: '#2 test pass',
         parameters: [],
         parent: {
           afters: [],
@@ -68,14 +68,14 @@ describe.skip('run one test', () => {
           name: 'suite with one test',
           uuid: 'no',
         },
-        stage: 'pending',
+        stage: 'finished',
         start: 1323460800000,
         status: 'passed',
         statusDetails: {},
         steps: [
           {
             attachments: [],
-            name: 'task: log, Registered allureAdapterSetup',
+            name: '"before each" hook',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,
@@ -84,7 +84,7 @@ describe.skip('run one test', () => {
             steps: [
               {
                 attachments: [],
-                name: 'task: log, Registered allureAdapterSetup',
+                name: 'log: log, Registered allureAdapterSetup',
                 parameters: [],
                 stage: 'pending',
                 start: 1323460800000,
@@ -98,48 +98,24 @@ describe.skip('run one test', () => {
           },
           {
             attachments: [],
-            name: 'intercept: mytest.com**, [object Object]',
+            name: 'route: undefined',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,
             status: 'passed',
             statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'route: undefined',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
+            steps: [],
             stop: 1323460800011,
           },
           {
             attachments: [],
-            name: 'visit: mytest.com, [object Object]',
+            name: 'visit: mytest.com',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,
             status: 'passed',
             statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'visit: mytest.com',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
+            steps: [],
             stop: 1323460800011,
           },
           {
@@ -151,17 +127,6 @@ describe.skip('run one test', () => {
             status: 'passed',
             statusDetails: {},
             steps: [
-              {
-                attachments: [],
-                name: 'get: div',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
               {
                 attachments: [],
                 name: 'assert: expected **[ <div>, 1 more... ]** to exist in the DOM',
@@ -184,19 +149,7 @@ describe.skip('run one test', () => {
             start: 1323460800000,
             status: 'passed',
             statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'myLog: log task',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
+            steps: [],
             stop: 1323460800011,
           },
           {
@@ -207,19 +160,7 @@ describe.skip('run one test', () => {
             start: 1323460800000,
             status: 'passed',
             statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'task: log, log task',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
+            steps: [],
             stop: 1323460800011,
           },
         ],
