@@ -1,9 +1,19 @@
 import type { AllureTransfer } from '../plugins/allure';
 import { delay } from 'cypress-redirect-browser-log/utils/functions';
 import RequestTask = Cypress.RequestTask;
+import { ENV_WS, wsPath } from '../common';
 
-export const startWsClient = (): WebSocket => {
-  const ws = new WebSocket('ws://localhost:443/');
+export const startWsClient = (): WebSocket | undefined => {
+  const port = Cypress.env(ENV_WS);
+
+  if (!port) {
+    console.log('No existing ws server');
+
+    return undefined;
+  }
+
+  const wsPathFixed = `${port}/${wsPath}`.replace(/\/\//g, '/');
+  const ws = new WebSocket(`ws://localhost:${wsPathFixed}`);
   (Cypress as any).ws = ws;
 
   ws.onopen = () => {

@@ -5,16 +5,22 @@ import { startWsClient } from './websocket';
 export const allureAdapterSetup = () => {
   // here you can do setup for each test file in browser
   beforeEach(() => {
-    cy.task('log', 'Registered allureAdapterSetup');
+    cy.log('log', 'Registered allureAdapterSetup');
   });
 
+  registerCommands();
+
   const ws = startWsClient();
+
+  if (!ws) {
+    console.log('No reporting since server could not start');
+
+    return;
+  }
+
   registerMochaReporter(ws);
 
   before(() => {
     console.log('before all STARTED: ', ws.readyState);
   });
-
-  registerCommands();
-  //registerReporter();
 };

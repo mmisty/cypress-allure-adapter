@@ -17,6 +17,8 @@ declare namespace Cypress {
     testEnded: { result: Status; details?: StatusDetails };
     testStarted: { title: string; fullTitle: string; id: string };
     suiteStarted: { title: string; fullTitle: string; file?: string };
+    hookStarted: { title: string; file?: string; hookId: string };
+    hookEnded: { title: string };
     currentSpec: { spec: Cypress.Spec };
     suiteEnded: undefined;
     stepEnded: { status: string; date?: number; details?: StatusDetails };
@@ -44,12 +46,6 @@ declare namespace Cypress {
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Chainable {
-    /**
-     * Custom command for logging
-     * @param message - message
-     */
-    myLog(message: string): Chainable<void>; // todo remove
-
     allure<T extends RequestTask>(
       opts: { task: T; arg: AllureTaskArgs<T> },
       cyOpts?: { log: boolean },

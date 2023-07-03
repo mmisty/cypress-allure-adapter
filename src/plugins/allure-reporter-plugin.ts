@@ -1,11 +1,19 @@
-import { AllureGroup, AllureRuntime, AllureStep, AllureTest, LabelName } from 'allure-js-commons';
-import AllureTaskArgs = Cypress.AllureTaskArgs;
+import {
+  AllureGroup,
+  AllureRuntime,
+  AllureStep,
+  AllureTest,
+  ExecutableItem,
+  ExecutableItemWrapper,
+  LabelName,
+} from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
+import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
-import getUuidByString from 'uuid-by-string';
+import AllureTaskArgs = Cypress.AllureTaskArgs;
 
 const log = (...args: unknown[]) => {
   console.log(`[allure-reporter] ${args}`);
@@ -47,6 +55,8 @@ export class AllureReporter {
   tests: AllureTest[] = [];
   allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
   steps: AllureStep[] = [];
+  hooks: { id: string; hook: ExecutableItemWrapper }[] = [];
+  allHooks: { id: string; hook: ExecutableItemWrapper; suite: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
@@ -69,12 +79,22 @@ export class AllureReporter {
     if (this.tests.length === 0) {
       // const item = this.currentGroup?.addBefore();
       //this.tests.push(item);
+      log('No current test!');
 
       // return item;
-      throw new Error('No current test - start test');
+      //throw new Error('No current test - start test');
+      return undefined;
     }
 
     return this.tests[this.tests.length - 1];
+  }
+
+  get currentHook() {
+    if (this.hooks.length === 0) {
+      return undefined;
+    }
+
+    return this.hooks[this.hooks.length - 1].hook;
   }
 
   get currentStep() {
@@ -94,6 +114,67 @@ export class AllureReporter {
     console.log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
     return group;
+  }
+
+  get currentExecutable() {
+    return this.currentStep || this.currentHook || this.currentTest;
+  }
+
+  hookStarted(arg: AllureTaskArgs<'hookStarted'>) {
+    const { title, hookId } = arg ?? {};
+
+    if (!this.currentGroup) {
+      log('no current group - not logging hook');
+
+      return;
+    }
+
+    if (title?.indexOf('before each') !== -1 || title?.indexOf('after each') !== -1) {
+      //this.allHooks.filter(t => t.id === arg.hookId && t.suite === this.currentGroup?.uuid).length > 0
+      //}) {
+      log(`${title} will not be added to suite:${hookId} $title}`);
+      // this.currentTest?.startStep(arg.title);
+      // need to end all steps beore logging hook - should be parent
+      this.endAllSteps({ status: '' });
+
+      this.startStep({ name: title });
+
+      return;
+    }
+
+    const currentHook = title?.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+
+    if (currentHook) {
+      currentHook.name = title;
+      currentHook.wrappedItem.start = Date.now();
+      this.hooks.push({ id: hookId, hook: currentHook });
+      this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+    }
+  }
+
+  hookEnded(arg: AllureTaskArgs<'hookEnded'>) {
+    const { title } = arg ?? {};
+
+    if (title?.indexOf('before each') !== -1 || title?.indexOf('after each') !== -1) {
+      this.endStep({ status: this.currentStep?.isAnyStepFailed ? Status.FAILED : Status.PASSED });
+
+      return;
+    }
+
+    if (this.currentHook) {
+      this.currentHook.status = this.currentHook.isAnyStepFailed ? Status.FAILED : Status.PASSED;
+      this.currentHook.stage = Stage.FINISHED;
+      this.currentHook.wrappedItem.stop = Date.now();
+      this.hooks.pop();
+
+      return;
+    }
+  }
+
+  endHooks() {
+    this.hooks.forEach(h => {
+      this.hookEnded({ title: h.hook.name });
+    });
   }
 
   attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
@@ -242,32 +323,34 @@ export class AllureReporter {
       g.endGroup();
     });
     this.attached = [];
+    this.allHooks = [];
   }
 
   setLabel(arg: AllureTaskArgs<'setLabel'>) {
-    this.currentTest.addLabel(arg.name, arg.value);
+    if (this.currentTest) {
+      this.currentTest.addLabel(arg.name, arg.value);
+    }
   }
 
   applyGroupLabels() {
-    this.currentTest.addLabel(LabelName.PACKAGE, this.groups.map(t => t.name.replace(/\./g, ' ')).join('.'));
+    this.currentTest?.addLabel(LabelName.PACKAGE, this.groups.map(t => t.name.replace(/\./g, ' ')).join('.'));
     const [parentSuite, suite, subSuite] = this.groups;
 
     if (this.groups.length > 0) {
-      this.currentTest.addLabel(LabelName.PARENT_SUITE, parentSuite.name);
+      this.currentTest?.addLabel(LabelName.PARENT_SUITE, parentSuite.name);
     }
 
     if (this.groups.length > 1) {
-      this.currentTest.addLabel(LabelName.SUITE, suite.name);
+      this.currentTest?.addLabel(LabelName.SUITE, suite.name);
     }
 
     if (this.groups.length > 2) {
-      this.currentTest.addLabel(LabelName.SUB_SUITE, subSuite.name);
+      this.currentTest?.addLabel(LabelName.SUB_SUITE, subSuite.name);
     }
   }
 
   startTest(arg: AllureTaskArgs<'testStarted'>) {
     const { title, fullTitle, id } = arg;
-    let autoTitle = title;
     const duplicates = this.allTests.filter(t => t.fullTitle === fullTitle);
 
     const warn =
@@ -276,7 +359,6 @@ export class AllureReporter {
 
     if (duplicates.length > 0) {
       console.warn(warn);
-      autoTitle += ` ${Date.now()}`;
     }
 
     const group = this.currentGroup ?? this.startGroup('Root suite');
@@ -284,19 +366,22 @@ export class AllureReporter {
 
     this.allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
     this.tests.push(test);
-    this.currentTest.fullName = fullTitle;
 
-    if (title !== autoTitle) {
-      this.addDescriptionHtml(
-        '<div style="color: #a4951f;">Warn: Test with the same full name already exist (suites + title). Test is shown as retried</br>To solve rename the test</div>',
-      );
-    }
-    this.currentTest.historyId = getUuid(fullTitle);
-    this.applyGroupLabels();
+    if (this.currentTest) {
+      this.currentTest.fullName = fullTitle;
 
-    if (this.currentSpec?.relative) {
-      this.currentTest.addLabel('path', this.currentSpec.relative);
-      this.addDescriptionHtml(this.currentSpec.relative);
+      /*if (title !== autoTitle) {
+        this.addDescriptionHtml(
+          '<div style="color: #a4951f;">Warn: Test with the same full name already exist (suites + title). Test is shown as retried</br>To solve rename the test</div>',
+        );
+      }*/
+      this.currentTest.historyId = getUuid(fullTitle);
+      this.applyGroupLabels();
+
+      if (this.currentSpec?.relative) {
+        this.currentTest.addLabel('path', this.currentSpec.relative);
+        this.addDescriptionHtml(this.currentSpec.relative);
+      }
     }
   }
 
@@ -315,7 +400,7 @@ export class AllureReporter {
 
   endAll() {
     this.endAllSteps({ status: 'unknown', details: undefined });
-
+    this.endHooks();
     this.endGroups();
   }
 
@@ -327,83 +412,95 @@ export class AllureReporter {
   }
 
   applyDescriptionHtml() {
-    this.currentTest.descriptionHtml = this.descriptionHtml.join('</br>');
+    if (this.currentTest) {
+      this.currentTest.descriptionHtml = this.descriptionHtml.join('</br>');
+    }
   }
 
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
     this.endAllSteps({ status: result, details });
+
     // this.currentTest.status = result as Status; //todo
+    if (this.currentTest) {
+      if (result === Status.PASSED) {
+        this.currentTest.status = Status.PASSED;
+        this.currentTest.stage = Stage.FINISHED;
+      }
 
-    // this.endSteps();
+      if (result === Status.BROKEN) {
+        this.currentTest.status = Status.BROKEN;
+        this.currentTest.stage = Stage.FINISHED;
+      }
 
-    if (result === Status.PASSED) {
-      this.currentTest.status = Status.PASSED;
-      this.currentTest.stage = Stage.FINISHED;
+      if (result === Status.FAILED) {
+        this.currentTest.status = Status.FAILED;
+        this.currentTest.stage = Stage.FINISHED;
+
+        this.currentTest.detailsMessage = details?.message;
+        this.currentTest.detailsTrace = details?.trace;
+      }
+
+      if (result === Status.SKIPPED) {
+        this.currentTest.status = Status.SKIPPED;
+        this.currentTest.stage = Stage.PENDING;
+
+        this.currentTest.detailsMessage = details?.message || 'Suite disabled';
+      }
+
+      if (
+        result !== Status.FAILED &&
+        result !== Status.BROKEN &&
+        result !== Status.PASSED &&
+        result !== Status.SKIPPED
+      ) {
+        this.currentTest.status = UNKNOWN;
+        this.currentTest.stage = Stage.PENDING;
+
+        this.currentTest.detailsMessage = details?.message || `Unknown result: ${result ?? '<no>'}`;
+      }
+
+      if (details) {
+        this.currentTest.statusDetails = details;
+      }
+      // this.endSteps();
+
+      /*this.featureProps.apply(a => super.feature(a));
+      this.storyProps.apply(a => super.story(a));
+      this.frameworkProps.apply(a => super.label(LabelName.FRAMEWORK, a));
+      this.languageProps.apply(a => super.label(LabelName.LANGUAGE, a));
+      this.hostProps.apply(a => super.label(LabelName.HOST, a));
+  
+      this.applyDescription();
+  
+      if (this.config?.autoHistoryId !== false) {
+        this.setHistoryId(spec.fullName);
+      }
+      this.currentTest.endTest(stop || dateNow());*/
+
+      this.currentTest.endTest();
     }
 
-    if (result === Status.BROKEN) {
-      this.currentTest.status = Status.BROKEN;
-      this.currentTest.stage = Stage.FINISHED;
-    }
-
-    if (result === Status.FAILED) {
-      this.currentTest.status = Status.FAILED;
-      this.currentTest.stage = Stage.FINISHED;
-
-      this.currentTest.detailsMessage = details?.message;
-      this.currentTest.detailsTrace = details?.trace;
-    }
-
-    if (result === Status.SKIPPED) {
-      this.currentTest.status = Status.SKIPPED;
-      this.currentTest.stage = Stage.PENDING;
-
-      this.currentTest.detailsMessage = details?.message || 'Suite disabled';
-    }
-
-    if (result !== Status.FAILED && result !== Status.BROKEN && result !== Status.PASSED && result !== Status.SKIPPED) {
-      this.currentTest.status = UNKNOWN;
-      this.currentTest.stage = Stage.PENDING;
-
-      this.currentTest.detailsMessage = details?.message || `Unknown result: ${result ?? '<no>'}`;
-    }
-
-    if (details) {
-      this.currentTest.statusDetails = details;
-    }
-
-    /*this.featureProps.apply(a => super.feature(a));
-    this.storyProps.apply(a => super.story(a));
-    this.frameworkProps.apply(a => super.label(LabelName.FRAMEWORK, a));
-    this.languageProps.apply(a => super.label(LabelName.LANGUAGE, a));
-    this.hostProps.apply(a => super.label(LabelName.HOST, a));
-
-    this.applyDescription();
-
-    if (this.config?.autoHistoryId !== false) {
-      this.setHistoryId(spec.fullName);
-    }
-    this.currentTest.endTest(stop || dateNow());*/
-
-    this.currentTest.endTest();
     this.tests.pop();
     this.descriptionHtml = [];
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
     const { name, date } = arg;
-    const executable = this.currentStep ?? this.currentTest;
 
-    const step = executable.startStep(name, date);
-    // step.description = 'sddsds ';
-    // step.detailsMessage = 'sas asdetails ';
+    // const executable = this.currentStep ?? this.currentTest;
+    if (!this.currentExecutable) {
+      log('No current executable, test or hook');
+
+      return;
+    }
+    const step = this.currentExecutable.startStep(name, date);
     this.steps.push(step);
   }
 
   endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
     this.steps.forEach(() => {
-      this.endStep(arg);
+      this.endStep({ status: arg.status });
     });
   }
 
@@ -412,6 +509,17 @@ export class AllureReporter {
 
     if (this.currentStep) {
       this.currentStep.status = status as Status;
+
+      // set status to last step recursively
+      const setLast = (steps: ExecutableItem[]) => {
+        const stepsCount = steps.length;
+
+        if (steps.length > 0) {
+          setLast(steps[stepsCount - 1].steps);
+          steps[stepsCount - 1].status = status as Status;
+        }
+      };
+      setLast(this.currentStep.wrappedItem.steps);
 
       if (arg.details) {
         this.currentStep.statusDetails = { message: arg.details?.message };

@@ -1,23 +1,49 @@
-import { json, urlencoded } from 'body-parser';
-import express = require('express');
-import cors = require('cors');
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { AllureTasks } from './allure';
 import RequestTask = Cypress.RequestTask;
 import { RawData, WebSocketServer } from 'ws';
+import { ENV_WS, wsPath } from '../common';
 
 const log = (...args: unknown[]) => {
   console.log(`[allure-server] ${args}`);
 };
 
-export function startReporterServer(configOptions: PluginConfigOptions, port: number, tasks: AllureTasks) {
-  const app = express();
+function getPort(existingPort?: number): number {
+  if (existingPort) {
+    log(`existing port: ${existingPort}`);
 
-  const server = app.listen(port, () => {
-    log(`Listening on port ${port}`);
-  });
+    return existingPort;
+  }
 
-  const sockserver = new WebSocketServer({ port: 443 });
+  const port = 40000 + Math.round(Math.random() * 25000);
+  log(`new port: ${port}`);
+
+  return port;
+}
+
+const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer | undefined => {
+  for (let i = 0; i < 10; i++) {
+    try {
+      const wsPort = getPort();
+      const sockserver = new WebSocketServer({ port: wsPort, path: wsPath });
+
+      configOptions.env[ENV_WS] = wsPort;
+
+      return sockserver;
+    } catch (err) {
+      log(`Could not created ws server${(err as Error).message}`);
+    }
+  }
+};
+
+export function startReporterServer(configOptions: PluginConfigOptions, tasks: AllureTasks) {
+  const sockserver = startWsServerRetry(configOptions);
+
+  if (!sockserver) {
+    log('Could not start reporting server');
+
+    return;
+  }
 
   sockserver.on('connection', ws => {
     log('New client connected!');
@@ -46,8 +72,6 @@ export function startReporterServer(configOptions: PluginConfigOptions, port: nu
         log(msg);
       }
 
-      // res.send('Data Received');
-
       sockserver.clients.forEach(client => {
         log(`sending back: ${data}`);
         client.send(JSON.stringify({ task: requestData?.task, status: 'done' }));
@@ -75,28 +99,5 @@ export function startReporterServer(configOptions: PluginConfigOptions, port: nu
     }, 1000);*/
   });
 
-  app.use(cors({ origin: '*' }));
-  app.use(json());
-  app.use(urlencoded({ extended: false }));
-
-  app.post('/__cypress/messages', (req, res) => {
-    const requestData = req.body;
-    log(requestData);
-
-    if (Object.keys(tasks).indexOf(requestData.task) !== -1) {
-      const task = requestData.task as RequestTask; // todo check
-      log(task);
-      tasks[task](requestData.arg);
-    } else {
-      log(`No such task: ${requestData.task}`);
-    }
-
-    res.send('Data Received');
-  });
-
-  server.on('close', () => {
-    console.log('CLosing server');
-  });
-
-  return server;
+  return undefined;
 }

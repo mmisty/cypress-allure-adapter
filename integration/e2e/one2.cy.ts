@@ -3,7 +3,7 @@ import { visitHtml } from '../common/helper';
 describe('suite with one test', () => {
   it('#2', () => {
     cy.allure({ task: 'setLabel', arg: { name: 'tag', value: 'My' } });
-    cy.wrap(null).then(() => {
+    cy.wrap(null, { log: false }).then(() => {
       throw new Error('EXPECTED FAIL');
     });
   });

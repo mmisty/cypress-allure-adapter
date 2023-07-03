@@ -1,7 +1,7 @@
 import { parseAllure } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
 import path from 'path';
-import { createResTest } from '../utils';
+import { createResTest } from '../../cy-helper/utils';
 
 jest.setTimeout(70000);
 

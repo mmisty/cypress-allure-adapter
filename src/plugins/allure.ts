@@ -50,6 +50,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
 
       return null;
     },
+    hookStarted: (arg: AllureTaskArgs<'hookStarted'>) => {
+      allureReporter.hookStarted(arg);
+
+      return null;
+    },
+    hookEnded: (arg: AllureTaskArgs<'hookEnded'>) => {
+      allureReporter.hookEnded(arg);
+
+      return null;
+    },
 
     suiteStarted: (arg: AllureTaskArgs<'suiteStarted'>) => {
       const { title } = arg;
@@ -114,6 +124,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks & { logs: any[];
 
     testResult(arg: AllureTaskArgs<'testResult'>) {
       if (allureReporter.currentTest) {
+        allureReporter.endAllSteps({ status: arg.result });
         allureReporter.currentTest.status = arg.result as any;
       }
 

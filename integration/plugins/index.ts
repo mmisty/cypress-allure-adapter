@@ -61,6 +61,14 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   // register grep plugin
   pluginGrep(on, config);
 
+  on('task', {
+    log: (...args: any[]) => {
+      console.log(...args);
+
+      return null;
+    },
+  });
+
   // It's IMPORTANT to return the config object
   // with any changed environment variables
   return config;
