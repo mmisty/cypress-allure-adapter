@@ -16,10 +16,12 @@ export const createResTest = (fileName: string): string => {
   const storeResDir = `allure-results/${testname}`;
 
   it('create results', async () => {
+    const g = require('fast-glob');
+    const file = g.sync(`${cwd}/integration/e2e/**/${testname}`);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
     //const spec = [`${cwd}/integration/e2e/simple-pass.cy.ts`, `${cwd}/integration/e2e/${testname}`];
-    const spec = [`${cwd}/integration/e2e/${testname}`, `${cwd}/integration/e2e/simple-pass.cy.ts`];
+    const spec = file;
     const port = 56522;
     let err: Error | undefined;
 
