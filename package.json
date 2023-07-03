@@ -31,7 +31,7 @@
     "build": "tsc --project tsconfig.build.json",
     "build:tests": "tsc && cd tests && tsc",
     "build:cy": "cd integration && tsc",
-    "build:all": "npm run build && npm run build:cy && npm run build:tests",
+    "build:all": "npm run build && npm run build:tests",
     "test:all": "npm run test:cov && npm run cy:run:cov",
     "cov:merge": "node ./.scripts/merge.js --cypress reports/coverage-cypress --jest reports/coverage-jest --out reports/coverage-temp --report reports/coverage-full",
     "cov": "http-server reports/coverage-full/lcov-report",
