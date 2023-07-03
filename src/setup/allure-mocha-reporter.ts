@@ -50,12 +50,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
       logEvent(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
-      // runner.emit('task', { task: 'endAll', arg: {} });
+      runner.emit('task', { task: 'endAll', arg: {} });
       await message({ task: 'specStarted', arg: { spec: Cypress.spec } });
-      await message({
-        task: 'suiteStarted',
-        arg: { title: '', fullTitle: '', file: Cypress.spec.absolute },
-      });
     })
 
     .on(MOCHA_EVENTS.SUITE_BEGIN, async suite => {

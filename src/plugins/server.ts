@@ -44,6 +44,24 @@ const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer
   }
 };
 
+const executeTask = (tasks: AllureTasks, data: any) => {
+  if (!data || !data.task) {
+    log('Will not run task - not data or task field:');
+    log(JSON.stringify(data));
+
+    return;
+  }
+
+  if (Object.keys(tasks).indexOf(data.task) !== -1) {
+    const task = data.task as RequestTask; // todo check
+    log(task);
+    tasks[task](data.arg);
+  } else {
+    const msg = data.task ? `No such task: ${data.task}` : 'No task property in message';
+    log(msg);
+  }
+};
+
 export function startReporterServer(configOptions: PluginConfigOptions, tasks: AllureTasks) {
   const sockserver = startWsServerRetry(configOptions);
 
@@ -56,7 +74,9 @@ export function startReporterServer(configOptions: PluginConfigOptions, tasks: A
   sockserver.on('connection', ws => {
     log('New client connected!');
     ws.send('connection established');
-    ws.on('close', () => log('Client has disconnected!'));
+    ws.on('close', () => {
+      log('Client has disconnected!');
+    });
 
     ws.on('message', data => {
       messageGot('message received');
@@ -72,20 +92,13 @@ export function startReporterServer(configOptions: PluginConfigOptions, tasks: A
         }
       };
       const requestData = parseData(data);
-      log(JSON.stringify(requestData));
 
-      if (Object.keys(tasks).indexOf(requestData.task) !== -1) {
-        const task = requestData.task as RequestTask; // todo check
-        log(task);
-        tasks[task](requestData.arg);
-      } else {
-        const msg = requestData.task ? `No such task: ${requestData.task}` : 'No task property in message';
-        log(msg);
+      if (requestData.id) {
+        executeTask(tasks, requestData.data.data);
       }
-
       sockserver.clients.forEach(client => {
-        log(`sending back: ${data}`);
-        client.send(JSON.stringify({ task: requestData?.task, status: 'done' }));
+        log(`sending back: ${requestData?.data?.data?.task}`);
+        client.send(JSON.stringify({ task: requestData?.data?.data?.task, status: 'done' }));
       });
     });
 
