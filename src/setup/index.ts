@@ -1,5 +1,5 @@
 import { registerCommands } from '../commands';
-import { registerMochaReporter } from './reporter2';
+import { registerMochaReporter } from './allure-mocha-reporter';
 import { startWsClient } from './websocket';
 
 export const allureAdapterSetup = () => {
