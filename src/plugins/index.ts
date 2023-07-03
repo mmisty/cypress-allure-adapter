@@ -1,24 +1,31 @@
+import Debug from 'debug';
 import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
-import { allureTasks } from './allure';
+import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import AutoScreen = Cypress.AutoScreen;
+
+const debug = Debug('cypress-allure:plugins');
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   // do setup with events and env, register tasks
   // register plugin events
-  config.report = true;
+  debug('Register plugin');
 
-  const reporter = allureTasks({
+  const options: ReporterOptions = {
     allureResults: config?.reporterOptions?.allureResults ?? 'allure-results',
-    screenshots: config.screenshotsFolder || 'no',
+    screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
-  });
+  };
+  const reporter = allureTasks(options);
+  debug('Registered with options:');
+  debug(options);
 
   startReporterServer(config, reporter);
 
+  // todo cleanup
   config.reporterOptions = {
     ...config.reporterOptions,
     url: config.reporterUrl,
@@ -43,22 +50,13 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   //   reporter.testEnded({ result: 'passed' });
   //   reporter.suiteEnded({});
   // });
+
   on('after:spec', (spec, results) => {
-    console.log('AFTER SPEC');
+    debug('AFTER SPEC');
     const scr = (results as any).screenshots as AutoScreen[];
-    console.log(scr);
+    debug(scr);
     reporter.attachScreenshots({ screenshots: scr });
 
     reporter.attachVideoToTests({ path: results.video ?? '' });
-
-    //results.screenshots
-
-    /*reporter.suiteStarted({ fullTitle: 'd', title: 'video' });
-    reporter.testStarted({ fullTitle: spec.name, title: spec.name, id: spec.name });
-    reporter.video({ path: 'd' });
-    reporter.testEnded({ result: 'passed' });
-    reporter.suiteEnded({});*/
   });
-
-  // on('task', tasks);
 };

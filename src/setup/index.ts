@@ -1,26 +1,20 @@
+import Debug from 'debug';
 import { registerCommands } from '../commands';
 import { registerMochaReporter } from './allure-mocha-reporter';
 import { startWsClient } from './websocket';
 
-export const allureAdapterSetup = () => {
-  // here you can do setup for each test file in browser
-  beforeEach(() => {
-    cy.log('log', 'Registered allureAdapterSetup');
-  });
+const debug = Debug('cypress-allure:plugins');
 
+export const allureAdapterSetup = () => {
   registerCommands();
 
   const ws = startWsClient();
 
   if (!ws) {
-    console.log('No reporting since server could not start');
+    debug('No reporting since server could not start');
 
     return;
   }
 
   registerMochaReporter(ws);
-
-  before(() => {
-    console.log('before all STARTED: ', ws.readyState);
-  });
 };

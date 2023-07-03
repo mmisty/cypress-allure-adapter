@@ -34,11 +34,7 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     config.env[COVERAGE] = true;
   }
 
-  const browserHandler = redirectLogBrowser(config, [], handler => {
-    handler.on('test:log', t => {
-      console.log(t.message);
-    });
-  });
+  const browserHandler = redirectLogBrowser(config);
 
   on('before:browser:launch', (browser, opts) => {
     return browserHandler(browser, opts);
@@ -47,7 +43,7 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   on('file:preprocessor', preprocessor(isCov));
 
   if (existsSync('allure-results')) {
-    console.log('Deleting results');
+    console.log('Deleting allure-results');
     rmSync('allure-results', { recursive: true });
     mkdirSync('allure-results');
   }

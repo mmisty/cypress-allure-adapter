@@ -19,7 +19,7 @@ declare namespace Cypress {
     suiteStarted: { title: string; fullTitle: string; file?: string };
     hookStarted: { title: string; file?: string; hookId: string };
     hookEnded: { title: string };
-    currentSpec: { spec: Cypress.Spec };
+    // currentSpec: { spec: Cypress.Spec };
     suiteEnded: undefined;
     stepEnded: { status: string; date?: number; details?: StatusDetails };
     // stepEndedAll: { status: string; date?: number; details?: StatusDetails };
@@ -30,9 +30,7 @@ declare namespace Cypress {
     attachScreenshots: { screenshots: AutoScreen[] };
     screenshotOne: { name: string; forStep?: boolean };
     video: { path: string };
-    // allLogs: { allLogs: any[]; spec: Cypress.Spec };
     attachVideoToTests: { path: string };
-    eventEnd: undefined;
     testResult: { result: string };
     endAll: undefined;
   };
@@ -43,6 +41,9 @@ declare namespace Cypress {
         // ign
       }
     : TestEnd[T];
+
+  export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => null | Promise<null> };
+  export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Chainable {

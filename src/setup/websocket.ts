@@ -1,13 +1,16 @@
-import type { AllureTransfer } from '../plugins/allure';
+import Debug from 'debug';
 import { delay } from 'cypress-redirect-browser-log/utils/functions';
 import RequestTask = Cypress.RequestTask;
 import { ENV_WS, wsPath } from '../common';
+import AllureTransfer = Cypress.AllureTransfer;
+
+const debug = Debug('cypress-allure:plugins');
 
 export const startWsClient = (): WebSocket | undefined => {
   const port = Cypress.env(ENV_WS);
 
   if (!port) {
-    console.log('No existing ws server');
+    debug('No existing ws server started. Will not report to allure');
 
     return undefined;
   }
@@ -18,6 +21,7 @@ export const startWsClient = (): WebSocket | undefined => {
 
   ws.onopen = () => {
     ws.send('WS opened');
+    debug('Opened ws connection');
   };
 
   Cypress.on('window:before:load', async () => {
@@ -29,10 +33,13 @@ export const startWsClient = (): WebSocket | undefined => {
 
   return ws;
 };
+const messages: any[] = [];
 
 export const createMessage =
   (ws: WebSocket) =>
   async <T extends RequestTask>(data: AllureTransfer<T> | string) => {
+    messages.push(data);
+
     while (ws.readyState !== ws.OPEN) {
       // todo timeout
       await delay(1);

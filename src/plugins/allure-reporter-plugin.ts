@@ -14,9 +14,13 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import path, { basename } from 'path';
 import glob from 'fast-glob';
 import AllureTaskArgs = Cypress.AllureTaskArgs;
+import { ReporterOptions } from './allure';
+import Debug from 'debug';
+
+const debug = Debug('cypress-allure:reporter');
 
 const log = (...args: unknown[]) => {
-  console.log(`[allure-reporter] ${args}`);
+  debug(args);
 };
 enum ContentType {
   TEXT = 'text/plain',
@@ -51,6 +55,9 @@ enum Stage {
 }
 export class AllureReporter {
   // todo config
+  private allureResults: string;
+  private videos: string;
+  private screenshots: string;
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
   allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
@@ -62,8 +69,13 @@ export class AllureReporter {
   descriptionHtml: string[] = [];
   attached: string[] = [];
 
-  constructor(private allureResults: string = 'allure-results', private videos: string, private screenshots: string) {
+  constructor(opts: ReporterOptions) {
+    this.allureResults = opts.allureResults;
+    this.videos = opts.videos;
+    this.screenshots = opts.screenshots;
+
     log('Created reporter');
+    log(opts);
     this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
   }
 
@@ -105,19 +117,33 @@ export class AllureReporter {
     return this.steps[this.steps.length - 1];
   }
 
+  get currentExecutable() {
+    return this.currentStep || this.currentHook || this.currentTest;
+  }
+
   startGroup(title: string) {
+    log(`start group: ${title}`);
+
     if (this.groups.length === 0 && title === '') {
       return undefined;
     }
     const group = (this.currentGroup ?? this.allureRuntime).startGroup(title);
     this.groups.push(group);
-    console.log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
+    log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
     return group;
   }
 
-  get currentExecutable() {
-    return this.currentStep || this.currentHook || this.currentTest;
+  specStarted(args: AllureTaskArgs<'specStarted'>) {
+    log('SPEC started');
+    log(JSON.stringify(args));
+    this.currentSpec = args.spec;
+
+    // should be once ?
+    if (!existsSync(this.allureResults)) {
+      mkdirSync(this.allureResults);
+    }
+    this.allureRuntime.writer.writeEnvironmentInfo({ evd: 'test env' });
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {

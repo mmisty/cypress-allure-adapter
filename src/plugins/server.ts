@@ -1,11 +1,19 @@
 import PluginConfigOptions = Cypress.PluginConfigOptions;
-import { AllureTasks } from './allure';
 import RequestTask = Cypress.RequestTask;
 import { RawData, WebSocketServer } from 'ws';
 import { ENV_WS, wsPath } from '../common';
+import AllureTasks = Cypress.AllureTasks;
+import Debug from 'debug';
+
+const debug = Debug('cypress-allure:server');
+const logMessage = Debug('cypress-allure:server:message');
 
 const log = (...args: unknown[]) => {
-  console.log(`[allure-server] ${args}`);
+  debug(`${args}`);
+};
+
+const messageGot = (...args: unknown[]) => {
+  logMessage(`${args}`);
 };
 
 function getPort(existingPort?: number): number {
@@ -51,6 +59,9 @@ export function startReporterServer(configOptions: PluginConfigOptions, tasks: A
     ws.on('close', () => log('Client has disconnected!'));
 
     ws.on('message', data => {
+      messageGot('message received');
+      messageGot(data);
+
       const parseData = (data: RawData) => {
         try {
           return JSON.parse(data.toString()) as any;
