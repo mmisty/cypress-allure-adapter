@@ -42,7 +42,7 @@
     "pre": "rm -rf ./node_modules/.cache lib reports coverage-nyc .nyc_output && npm run lint && npm run build:all && npm run test:all && npm run cov:merge",
     "extract": "node .scripts/extract.js  --source lib --target . --package package.json",
     "extract:undo": "npm run extract -- --undo",
-    "prepublishOnly": "npm run pre && npm run extract",
+    "prepublishOnly": "npm run build && npm run extract",
     "postpublish": "npm run extract:undo",
     "try:pack": "npm run prepublishOnly && npm pack && npm run postpublish"
   },
