@@ -17,8 +17,8 @@ declare namespace Cypress {
     testEnded: { result: Status; details?: StatusDetails };
     testStarted: { title: string; fullTitle: string; id: string };
     suiteStarted: { title: string; fullTitle: string; file?: string };
-    hookStarted: { title: string; file?: string; hookId: string };
-    hookEnded: { title: string };
+    hookStarted: { title: string; file?: string; hookId?: string; date?: number };
+    hookEnded: { title: string; date?: number; result: Status; details?: StatusDetails };
     // currentSpec: { spec: Cypress.Spec };
     suiteEnded: undefined;
     stepEnded: { status: string; date?: number; details?: StatusDetails };
@@ -31,7 +31,14 @@ declare namespace Cypress {
     screenshotOne: { name: string; forStep?: boolean };
     video: { path: string };
     attachVideoToTests: { path: string };
-    testResult: { result: string };
+    testResult: {
+      suite: string;
+      title: string;
+      fullTitle: string;
+      id: string;
+      result: string;
+      details?: StatusDetails;
+    };
     endAll: undefined;
   };
 

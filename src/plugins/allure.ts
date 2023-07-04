@@ -110,6 +110,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       if (allureReporter.currentTest) {
         allureReporter.endAllSteps({ status: arg.result });
         allureReporter.currentTest.status = arg.result as any;
+      } else {
+        // when hook failed
+        allureReporter.startGroup(arg.suite);
+        allureReporter.startTest({ title: arg.title, fullTitle: arg.fullTitle, id: arg.id });
+        allureReporter.endHooks(arg.result as any);
+        allureReporter.endTest({ result: arg.result as any, details: arg.details });
+        allureReporter.endGroup();
       }
       log('testResult');
 

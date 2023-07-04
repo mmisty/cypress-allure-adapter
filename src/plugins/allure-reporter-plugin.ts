@@ -6,6 +6,7 @@ import {
   ExecutableItem,
   ExecutableItemWrapper,
   LabelName,
+  StatusDetails,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
@@ -53,6 +54,131 @@ enum Stage {
   PENDING = 'pending',
   INTERRUPTED = 'interrupted',
 }
+
+class GlobalHooks {
+  hooks: {
+    title: string;
+    status?: Status;
+    details?: StatusDetails;
+    hookId?: string;
+    start: number;
+    stop?: number;
+    steps?: {
+      name: string;
+      event: 'start' | 'stop';
+      date: number;
+      status?: Status;
+      details?: StatusDetails;
+    }[];
+  }[] = [];
+
+  constructor(private reporter: AllureReporter) {}
+
+  hasHooks() {
+    return this.hooks.length > 0;
+  }
+
+  get currentHook() {
+    if (this.hooks.length === 0) {
+      log('No current global hook!');
+
+      return undefined;
+    }
+
+    return this.hooks[this.hooks.length - 1];
+  }
+
+  get currentStep() {
+    if (!this.currentHook) {
+      return undefined;
+    }
+
+    if (!this.currentHook.steps || this.currentHook.steps.length === 0) {
+      return undefined;
+    }
+
+    return this.currentHook.steps[this.currentHook.steps.length - 1];
+  }
+
+  start(title: string, id?: string) {
+    this.hooks.push({ title, hookId: id, start: Date.now() });
+  }
+
+  startStep(name: string) {
+    if (!this.currentHook) {
+      return;
+    }
+
+    const step: any = { name, event: 'start', date: Date.now() };
+
+    if (this.currentHook.steps) {
+      this.currentHook.steps.push(step);
+    } else {
+      this.currentHook.steps = [step];
+    }
+  }
+
+  endStep(status?: Status, details?: StatusDetails) {
+    if (!this.currentHook) {
+      return;
+    }
+
+    if (this.currentStep) {
+      const step: any = { name: '', event: 'stop', date: Date.now() };
+
+      if (this.currentHook.steps) {
+        this.currentHook.steps.push(step);
+      } else {
+        this.currentHook.steps = [step];
+      }
+      this.currentStep.status = status;
+      this.currentStep.details = details;
+    }
+  }
+
+  end(status: Status, details?: StatusDetails) {
+    if (this.currentHook) {
+      this.currentHook.stop = Date.now();
+      this.currentHook.status = status;
+      this.currentHook.details = details;
+    }
+  }
+
+  // when suite created
+
+  process() {
+    const res = this.hooks.splice(0, this.hooks.length - 1);
+    res.forEach(hook => {
+      this.reporter.hookStarted({
+        title: hook.title,
+        hookId: hook.hookId,
+        date: hook.start,
+      });
+
+      hook.steps?.forEach(step => {
+        if (step.event === 'start') {
+          this.reporter.startStep({ name: step.name, date: step.date });
+        }
+
+        if (step.event === 'stop') {
+          this.reporter.endStep({
+            status: step.status as any,
+            date: step.date,
+            details: step.details,
+          });
+        }
+      });
+
+      this.reporter.hookEnded({
+        title: hook.title,
+        result: hook.status as any,
+        details: hook.details as any,
+        date: hook.stop,
+      });
+    });
+  }
+}
+
 export class AllureReporter {
   // todo config
   private allureResults: string;
@@ -62,6 +188,8 @@ export class AllureReporter {
   tests: AllureTest[] = [];
   allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
   steps: AllureStep[] = [];
+  globalHooks = new GlobalHooks(this);
+
   hooks: { id: string; hook: ExecutableItemWrapper }[] = [];
   allHooks: { id: string; hook: ExecutableItemWrapper; suite: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
@@ -121,15 +249,50 @@ export class AllureReporter {
     return this.currentStep || this.currentHook || this.currentTest;
   }
 
+  addGlobalHooks() {
+    if (this.groups.length > 1 || !this.globalHooks.hasHooks()) {
+      return;
+    }
+
+    log('add root hooks');
+    this.globalHooks.process();
+
+    /*while (this.hookNoGroup.length !== 0) {
+      const ev2 = this.hookNoGroup.splice(0, 1)[0];
+
+      if (ev2.event === 'start') {
+        this.hookStarted({ title: ev2.title, hookId: ev2.hookId, date: ev2.date });
+      }
+
+      if (ev2.steps) {
+        ev2.steps.forEach(s => {
+          if (s.event === 'start') {
+            this.startStep({ name: s.title, date: s.date });
+          }
+
+          if (s.event === 'end') {
+            this.endStep({ date: s.date, status: 'passed' }); //todo
+          }
+        });
+      }
+
+      if (ev2.event === 'end') {
+        this.hookEnded({ title: ev2.title, result: 'passed', date: ev2.date });
+      }
+    }*/
+  }
+
   startGroup(title: string) {
     log(`start group: ${title}`);
 
-    /*if (this.groups.length === 0 && title === '') {
+    if (this.groups.length === 0 && title === '') {
       return undefined;
-    }*/
+    }
     const group = (this.currentGroup ?? this.allureRuntime).startGroup(title);
     this.groups.push(group);
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
+
+    this.addGlobalHooks();
 
     return group;
   }
@@ -147,20 +310,22 @@ export class AllureReporter {
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {
-    const { title, hookId } = arg ?? {};
+    const { title, hookId, date } = arg ?? {};
 
     if (!this.currentGroup) {
-      log('no current group - not logging hook');
+      log(`no current group - not logging hook: ${JSON.stringify(arg)}`);
+      this.globalHooks.start(title, hookId);
+      // this.hookNoGroup.push({ title, event: 'start', date: Date.now(), hookId, steps: [] });
 
       return;
     }
 
-    if (title?.indexOf('before each') !== -1 || title?.indexOf('after each') !== -1) {
+    if (title && (title.indexOf('before each') !== -1 || title.indexOf('after each') !== -1)) {
       //this.allHooks.filter(t => t.id === arg.hookId && t.suite === this.currentGroup?.uuid).length > 0
       //}) {
-      log(`${title} will not be added to suite:${hookId} $title}`);
+      log(`${title} will not be added to suite:${hookId} ${title}`);
       // this.currentTest?.startStep(arg.title);
-      // need to end all steps beore logging hook - should be parent
+      // need to end all steps before logging hook - should be parent
       this.endAllSteps({ status: '' });
 
       this.startStep({ name: title });
@@ -172,14 +337,22 @@ export class AllureReporter {
 
     if (currentHook) {
       currentHook.name = title;
-      currentHook.wrappedItem.start = Date.now();
+      currentHook.wrappedItem.start = date ?? Date.now();
       this.hooks.push({ id: hookId, hook: currentHook });
       this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
     }
   }
 
   hookEnded(arg: AllureTaskArgs<'hookEnded'>) {
-    const { title } = arg ?? {};
+    const { title, date, result, details } = arg ?? {};
+
+    if (!this.currentGroup) {
+      log('no current group - not logging hook');
+      this.globalHooks.end(result as Status, details);
+      // this.hookNoGroup.push({ title, event: 'end', date: Date.now() });
+
+      return;
+    }
 
     if (title?.indexOf('before each') !== -1 || title?.indexOf('after each') !== -1) {
       this.endStep({ status: this.currentStep?.isAnyStepFailed ? Status.FAILED : Status.PASSED });
@@ -188,18 +361,22 @@ export class AllureReporter {
     }
 
     if (this.currentHook) {
-      this.currentHook.status = this.currentHook.isAnyStepFailed ? Status.FAILED : Status.PASSED;
+      this.currentHook.status = result as any; //this.currentHook.isAnyStepFailed ? Status.FAILED : Status.PASSED;
       this.currentHook.stage = Stage.FINISHED;
-      this.currentHook.wrappedItem.stop = Date.now();
+
+      if (details) {
+        this.currentHook.statusDetails = details;
+      }
+      this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.hooks.pop();
 
       return;
     }
   }
 
-  endHooks() {
+  endHooks(status: Status = Status.PASSED) {
     this.hooks.forEach(h => {
-      this.hookEnded({ title: h.hook.name });
+      this.hookEnded({ title: h.hook.name, result: status as any });
     });
   }
 
@@ -427,7 +604,7 @@ export class AllureReporter {
 
   endAll() {
     this.endAllSteps({ status: 'unknown', details: undefined });
-    this.endHooks();
+    this.endHooks(Status.BROKEN);
     this.endGroups();
   }
 
@@ -518,6 +695,8 @@ export class AllureReporter {
     // const executable = this.currentStep ?? this.currentTest;
     if (!this.currentExecutable) {
       log('No current executable, test or hook');
+      this.globalHooks.startStep(name);
+      //this.currentHookNoGroupCurrent?.steps?.push({ title: name, date: Date.now(), event: 'start' });
 
       return;
     }
@@ -532,7 +711,14 @@ export class AllureReporter {
   }
 
   endStep(arg: AllureTaskArgs<'stepEnded'>) {
-    const { status, date } = arg;
+    const { status, date, details } = arg;
+
+    if (!this.currentExecutable) {
+      this.globalHooks.endStep(arg.status as Status, details);
+      // this.currentHookNoGroupCurrent?.steps?.push({ title: '', date: Date.now(), event: 'end' });
+
+      return;
+    }
 
     if (this.currentStep) {
       this.currentStep.status = status as Status;
@@ -548,8 +734,8 @@ export class AllureReporter {
       };
       setLast(this.currentStep.wrappedItem.steps);
 
-      if (arg.details) {
-        this.currentStep.statusDetails = { message: arg.details?.message };
+      if (details) {
+        this.currentStep.statusDetails = { message: details?.message };
       }
       this.currentStep.endStep(date);
 

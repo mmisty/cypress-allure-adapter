@@ -1,29 +1,15 @@
 before('Global Setup', () => {
   console.log('Setup');
   cy.allure({ task: 'step', arg: { name: 'global setup' } });
+  throw new Error('Failed Before ALL');
 });
 
 after('Global teardown', () => {
+  cy.allure({ task: 'step', arg: { name: 'global teardown' } });
   console.log('Setup');
 });
 
-describe('hooks test', () => {
-  before(() => {
-    cy.log('before');
-  });
-
-  before('named hook before', () => {
-    cy.log('before');
-  });
-
-  beforeEach('Named hook', () => {
-    cy.log('before each');
-  });
-
-  beforeEach(() => {
-    cy.log('no name hook - before each');
-  });
-
+describe('hooks test - failed global hook', () => {
   it('test 1', () => {
     cy.log('test 1');
   });
@@ -32,6 +18,11 @@ describe('hooks test', () => {
     cy.log('test 2');
   });
 
+  describe('more tests', () => {
+    it('test 3', () => {
+      cy.log('test 2');
+    });
+  });
   afterEach(() => {
     cy.log('log after each');
   });

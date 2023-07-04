@@ -9,11 +9,20 @@ const debug = Debug('cypress-allure:mocha-reporter');
 // const debugEvent = Debug('cypress-allure:mocha-event');
 const ignoreCommands = ['allure', 'then'];
 
-const logEvent = (...args: unknown[]) => {
+const logEvent = (...args: any[]) => {
   if (Cypress.env('DEBUG')) {
     debug.enabled = true;
+
     // todo log namespace
-    debug(args);
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      debug(JSON.stringify(...args));
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      debug(...args);
+    }
   }
 };
 
@@ -36,6 +45,7 @@ const MOCHA_EVENTS = {
 const CUSTOM_EVENTS = {
   TEST_END: 'test end allure',
   TASK: 'task',
+  GLOBAL_HOOK_FAIL: 'global hook fail',
 };
 
 const convertState = (state: string): Status => {
@@ -89,6 +99,31 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
+    .on(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, async hook => {
+      logEvent(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}`);
+      logEvent(`name ${hook.title}`);
+
+      let i = 0;
+      hook.parent?.suites.forEach(sui => {
+        let title;
+        sui.eachTest(test => {
+          i++;
+          title = i === 1 ? test.parent?.fullTitle() : title;
+          message({
+            task: 'testResult',
+            arg: {
+              suite: title,
+              title: test.title,
+              fullTitle: test.fullTitle(),
+              id: (test as any).id,
+              result: i === 1 ? 'failed' : 'skipped',
+              details: { message: hook.err?.message, trace: hook.err?.stack },
+            },
+          });
+        });
+      });
+    })
+
     .on(MOCHA_EVENTS.HOOK_END, async hook => {
       logEvent(`event ${MOCHA_EVENTS.HOOK_END}`);
       logEvent(`name ${hook.title}`);
@@ -97,7 +132,17 @@ export const registerMochaReporter = (ws: WebSocket) => {
         // do not log technical after eaches
         return;
       }
-      await message({ task: 'hookEnded', arg: { title: hook.title } });
+      await message({
+        task: 'hookEnded',
+        arg: {
+          title: hook.title,
+          result: hook.state,
+          details: {
+            message: hook.err?.message,
+            trace: hook.err?.stack,
+          },
+        },
+      });
     })
 
     .on(CUSTOM_EVENTS.TASK, async payload => {
@@ -114,25 +159,60 @@ export const registerMochaReporter = (ws: WebSocket) => {
       await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
     })
 
-    .on(MOCHA_EVENTS.TEST_FAIL, async test => {
+    .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
       logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}`);
       logEvent(test.title);
 
-      await message({ task: 'testResult', arg: { result: convertState('failed') } });
+      if ((test as any).type === 'hook' && (test as any).hookName === 'before all') {
+        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
+      } else {
+        await message({
+          task: 'testResult',
+          arg: {
+            suite: test.parent?.fullTitle() ?? '',
+            title: test.title,
+            fullTitle: test.fullTitle(),
+            id: (test as any).id,
+            result: convertState('failed'),
+            details: { message: test.err?.message, trace: test.err?.stack },
+          },
+        });
+      }
     })
 
     .on(MOCHA_EVENTS.TEST_RETRY, async test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}`);
       logEvent(test.title);
+      logEvent('PARENT');
+      logEvent(test.parent);
 
-      await message({ task: 'testResult', arg: { result: convertState('failed') } });
+      await message({
+        task: 'testResult',
+        arg: {
+          suite: test.parent?.fullTitle() ?? '',
+          title: test.title,
+          fullTitle: test.fullTitle(),
+          id: test.id,
+          result: convertState('failed'),
+          details: { message: test.err?.message, trace: test.err?.stack },
+        },
+      });
     })
 
     .on(MOCHA_EVENTS.TEST_PASS, async test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_PASS}`);
       logEvent(test.title);
 
-      await message({ task: 'testResult', arg: { result: convertState('passed') } });
+      await message({
+        task: 'testResult',
+        arg: {
+          suite: test.parent?.fullTitle() ?? '',
+          title: test.title,
+          fullTitle: test.fullTitle(),
+          id: test.id,
+          result: convertState('passed'),
+        },
+      });
     })
 
     .on(MOCHA_EVENTS.TEST_END, test => {
