@@ -1,7 +1,7 @@
 import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { preprocessor } from './ts-preprocessor';
-import { existsSync, mkdirSync, rmdirSync, rmSync } from 'fs';
+import { existsSync, rmdirSync } from 'fs';
 import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
