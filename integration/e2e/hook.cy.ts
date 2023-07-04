@@ -4,7 +4,7 @@ before('Global Setup', () => {
 });
 
 after('Global teardown', () => {
-  console.log('Setup');
+  console.log('teardown');
 });
 
 describe('hooks test', () => {

@@ -1,35 +1,12 @@
 import { parseAllure } from 'allure-js-parser';
-import { ExecutableItem } from 'allure-js-commons';
-import path from 'path';
-import { createResTest } from '../../cy-helper/utils';
+import { createResTest, fixResult } from '../../cy-helper/utils';
 
 describe('run one test', () => {
   const storeResDir = createResTest(__filename);
 
   it(`check ${storeResDir}`, async () => {
     const results = parseAllure(storeResDir);
-    const date = Date.parse('10 Dec 2011');
-
-    const replaceSteps = (steps: ExecutableItem[]): any[] => {
-      if (steps.length === 0) {
-        return [];
-      }
-
-      return steps.map(s => ({ ...s, start: date, stop: date + 11, steps: replaceSteps(s.steps) }));
-    };
-
-    const resFixed = results.map(r => {
-      return {
-        ...r,
-        historyId: 'no',
-        uuid: 'no',
-        start: date,
-        stop: date + 10,
-        parent: { ...r.parent, uuid: 'no' },
-        steps: replaceSteps(r.steps),
-        attachments: r.attachments.map(t => ({ ...t, source: `source${path.extname(t.source)}` })),
-      };
-    });
+    const resFixed = fixResult(results);
 
     expect(resFixed).toEqual([
       {
@@ -62,7 +39,31 @@ describe('run one test', () => {
         parameters: [],
         parent: {
           afters: [],
-          befores: [],
+          befores: [
+            {
+              attachments: [],
+              name: '"before all" hook',
+              parameters: [],
+              stage: 'finished',
+              start: 1323460800000,
+              status: 'passed',
+              statusDetails: {},
+              steps: [
+                {
+                  attachments: [],
+                  name: 'Coverage: Reset [@cypress/code-coverage]',
+                  parameters: [],
+                  stage: 'pending',
+                  start: 1323460800000,
+                  status: 'passed',
+                  statusDetails: {},
+                  steps: [],
+                  stop: 1323460800011,
+                },
+              ],
+              stop: 1323460800010,
+            },
+          ],
           name: 'suite with one test',
           uuid: 'no',
         },
@@ -92,6 +93,17 @@ describe('run one test', () => {
                 stop: 1323460800011,
               },
             ],
+            stop: 1323460800011,
+          },
+          {
+            attachments: [],
+            name: '"before each" hook',
+            parameters: [],
+            stage: 'pending',
+            start: 1323460800000,
+            status: 'passed',
+            statusDetails: {},
+            steps: [],
             stop: 1323460800011,
           },
           {

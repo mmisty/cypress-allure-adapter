@@ -4,6 +4,7 @@ describe('suite with one test', () => {
   before(() => {
     cy.allure({ task: 'setLabel', arg: { name: 'tag', value: 'BEFORE' } });
   });
+
   beforeEach(() => {
     cy.allure({ task: 'setLabel', arg: { name: 'tag', value: 'BEFOREEACH' } });
     cy.log('HELLO)');

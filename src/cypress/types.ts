@@ -40,6 +40,7 @@ declare namespace Cypress {
       details?: StatusDetails;
     };
     endAll: undefined;
+    //  globHook: undefined;
   };
 
   export type RequestTask = keyof TestEnd;

@@ -94,6 +94,8 @@ class GlobalHooks {
     }
 
     if (!this.currentHook.steps || this.currentHook.steps.length === 0) {
+      log('Global hook: no current step');
+
       return undefined;
     }
 
@@ -147,7 +149,8 @@ class GlobalHooks {
   // when suite created
 
   process() {
-    const res = this.hooks.splice(0, this.hooks.length - 1);
+    log('process global hooks');
+    const res = this.hooks; //.splice(0, this.hooks.length - 1);
     res.forEach(hook => {
       this.reporter.hookStarted({
         title: hook.title,
@@ -190,8 +193,8 @@ export class AllureReporter {
   steps: AllureStep[] = [];
   globalHooks = new GlobalHooks(this);
 
-  hooks: { id: string; hook: ExecutableItemWrapper }[] = [];
-  allHooks: { id: string; hook: ExecutableItemWrapper; suite: string }[] = [];
+  hooks: { id?: string; hook: ExecutableItemWrapper }[] = [];
+  allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
@@ -217,12 +220,8 @@ export class AllureReporter {
 
   get currentTest() {
     if (this.tests.length === 0) {
-      // const item = this.currentGroup?.addBefore();
-      //this.tests.push(item);
       log('No current test!');
 
-      // return item;
-      //throw new Error('No current test - start test');
       return undefined;
     }
 
@@ -251,35 +250,13 @@ export class AllureReporter {
 
   addGlobalHooks() {
     if (this.groups.length > 1 || !this.globalHooks.hasHooks()) {
+      log('not root hooks');
+
       return;
     }
 
     log('add root hooks');
     this.globalHooks.process();
-
-    /*while (this.hookNoGroup.length !== 0) {
-      const ev2 = this.hookNoGroup.splice(0, 1)[0];
-
-      if (ev2.event === 'start') {
-        this.hookStarted({ title: ev2.title, hookId: ev2.hookId, date: ev2.date });
-      }
-
-      if (ev2.steps) {
-        ev2.steps.forEach(s => {
-          if (s.event === 'start') {
-            this.startStep({ name: s.title, date: s.date });
-          }
-
-          if (s.event === 'end') {
-            this.endStep({ date: s.date, status: 'passed' }); //todo
-          }
-        });
-      }
-
-      if (ev2.event === 'end') {
-        this.hookEnded({ title: ev2.title, result: 'passed', date: ev2.date });
-      }
-    }*/
   }
 
   startGroup(title: string) {
@@ -292,7 +269,9 @@ export class AllureReporter {
     this.groups.push(group);
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
-    this.addGlobalHooks();
+    if (this.groups.length === 1) {
+      this.addGlobalHooks();
+    }
 
     return group;
   }
@@ -313,18 +292,14 @@ export class AllureReporter {
     const { title, hookId, date } = arg ?? {};
 
     if (!this.currentGroup) {
-      log(`no current group - not logging hook: ${JSON.stringify(arg)}`);
+      log(`no current group - start added hook to storage: ${JSON.stringify(arg)}`);
       this.globalHooks.start(title, hookId);
-      // this.hookNoGroup.push({ title, event: 'start', date: Date.now(), hookId, steps: [] });
 
       return;
     }
 
     if (title && (title.indexOf('before each') !== -1 || title.indexOf('after each') !== -1)) {
-      //this.allHooks.filter(t => t.id === arg.hookId && t.suite === this.currentGroup?.uuid).length > 0
-      //}) {
       log(`${title} will not be added to suite:${hookId} ${title}`);
-      // this.currentTest?.startStep(arg.title);
       // need to end all steps before logging hook - should be parent
       this.endAllSteps({ status: '' });
 
@@ -349,7 +324,6 @@ export class AllureReporter {
     if (!this.currentGroup) {
       log('no current group - not logging hook');
       this.globalHooks.end(result as Status, details);
-      // this.hookNoGroup.push({ title, event: 'end', date: Date.now() });
 
       return;
     }
@@ -361,7 +335,7 @@ export class AllureReporter {
     }
 
     if (this.currentHook) {
-      this.currentHook.status = result as any; //this.currentHook.isAnyStepFailed ? Status.FAILED : Status.PASSED;
+      this.currentHook.status = result as any;
       this.currentHook.stage = Stage.FINISHED;
 
       if (details) {
@@ -715,7 +689,6 @@ export class AllureReporter {
 
     if (!this.currentExecutable) {
       this.globalHooks.endStep(arg.status as Status, details);
-      // this.currentHookNoGroupCurrent?.steps?.push({ title: '', date: Date.now(), event: 'end' });
 
       return;
     }

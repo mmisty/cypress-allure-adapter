@@ -43,9 +43,13 @@ const MOCHA_EVENTS = {
 };
 
 const CUSTOM_EVENTS = {
+  TEST_BEGIN: 'test begin allure',
+  TEST_FAIL: 'test fail allure',
+  TEST_PASS: 'test pass allure',
   TEST_END: 'test end allure',
   TASK: 'task',
   GLOBAL_HOOK_FAIL: 'global hook fail',
+  GLOBAL_HOOK_PASS: 'global hook pass',
 };
 
 const convertState = (state: string): Status => {
@@ -77,6 +81,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
       if (isRootSuite(suite)) {
         runner.emit('task', { task: 'endAll', arg: {} });
+
+        return;
       }
 
       await message({
@@ -99,44 +105,44 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .on(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, async hook => {
+    .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, async hook => {
       logEvent(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}`);
       logEvent(`name ${hook.title}`);
-
       let i = 0;
-      hook.parent?.suites.forEach(sui => {
-        let title;
-        sui.eachTest(test => {
+
+      for (const sui of hook.parent?.suites) {
+        runner.emit(MOCHA_EVENTS.SUITE_BEGIN, sui);
+
+        sui.eachTest((test: Mocha.Test) => {
           i++;
-          title = i === 1 ? test.parent?.fullTitle() : title;
-          message({
-            task: 'testResult',
-            arg: {
-              suite: title,
-              title: test.title,
-              fullTitle: test.fullTitle(),
-              id: (test as any).id,
-              result: i === 1 ? 'failed' : 'skipped',
-              details: { message: hook.err?.message, trace: hook.err?.stack },
-            },
-          });
+
+          if (test) {
+            runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
+            runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
+            runner.emit(CUSTOM_EVENTS.TEST_END, i === 1 ? hook : { ...test, err: hook.err });
+          }
         });
-      });
+
+        runner.emit(MOCHA_EVENTS.SUITE_END, sui);
+      }
     })
 
     .on(MOCHA_EVENTS.HOOK_END, async hook => {
       logEvent(`event ${MOCHA_EVENTS.HOOK_END}`);
       logEvent(`name ${hook.title}`);
+      logEvent(`HOOK STATE ${hook.state}`);
+      logEvent(hook);
 
       if (hook.title?.indexOf(TECH_POST_FIX) !== -1) {
         // do not log technical after eaches
         return;
       }
+
       await message({
         task: 'hookEnded',
         arg: {
           title: hook.title,
-          result: hook.state,
+          result: hook.err ? 'failed' : 'passed',
           details: {
             message: hook.err?.message,
             trace: hook.err?.stack,
@@ -153,50 +159,43 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.TEST_BEGIN, async test => {
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
+    })
+    .on(CUSTOM_EVENTS.TEST_BEGIN, async test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_BEGIN}`);
       logEvent(test.title);
 
       await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
     })
 
-    .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}`);
-      logEvent(test.title);
-
-      if ((test as any).type === 'hook' && (test as any).hookName === 'before all') {
-        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
-      } else {
-        await message({
-          task: 'testResult',
-          arg: {
-            suite: test.parent?.fullTitle() ?? '',
-            title: test.title,
-            fullTitle: test.fullTitle(),
-            id: (test as any).id,
-            result: convertState('failed'),
-            details: { message: test.err?.message, trace: test.err?.stack },
-          },
-        });
-      }
-    })
-
-    .on(MOCHA_EVENTS.TEST_RETRY, async test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}`);
-      logEvent(test.title);
-      logEvent('PARENT');
-      logEvent(test.parent);
-
+    .on(CUSTOM_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
       await message({
         task: 'testResult',
         arg: {
           suite: test.parent?.fullTitle() ?? '',
           title: test.title,
           fullTitle: test.fullTitle(),
-          id: test.id,
+          id: (test as any).id,
           result: convertState('failed'),
           details: { message: test.err?.message, trace: test.err?.stack },
         },
       });
+    })
+
+    .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}`);
+      logEvent(test?.title);
+
+      if ((test as any).type === 'hook' && (test as any).hookName === 'before all') {
+        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
+      } else {
+        runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
+      }
+    })
+
+    .on(MOCHA_EVENTS.TEST_RETRY, async test => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}`);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
     })
 
     .on(MOCHA_EVENTS.TEST_PASS, async test => {
@@ -248,9 +247,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
       logEvent(suite.title);
       logEvent(suite.file);
 
-      // if (isRootSuite(suite)) {
-      //   return;
-      // }
+      if (isRootSuite(suite)) {
+        return;
+      }
       await message({ task: 'suiteEnded', arg: {} });
     })
     .on(MOCHA_EVENTS.RUN_END, async () => {

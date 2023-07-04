@@ -1,47 +1,23 @@
 import { parseAllure } from 'allure-js-parser';
-import { ExecutableItem } from 'allure-js-commons';
-import path from 'path';
-import { createResTest } from '../../cy-helper/utils';
+import { createResTest, fixResult } from '../../cy-helper/utils';
 
 describe('run retries test', () => {
   const storeResDir = createResTest(__filename);
 
   it(`check ${storeResDir}`, async () => {
     const results = parseAllure(storeResDir);
-    const date = Date.parse('10 Dec 2011');
-
-    const replaceSteps = (steps: ExecutableItem[]): any[] => {
-      if (steps.length === 0) {
-        return [];
-      }
-
-      return steps.map(s => ({ ...s, start: date, stop: date + 11, steps: replaceSteps(s.steps) }));
-    };
-
-    const resFixed = results.map(r => {
-      return {
-        ...r,
-        historyId: 'no',
-        uuid: 'no',
-        start: date,
-        stop: date + 10,
-        parent: { ...r.parent, uuid: 'no' },
-        steps: replaceSteps(r.steps),
-        attachments: r.attachments.map(t => ({ ...t, source: `source${path.extname(t.source)}` })),
-      };
-    });
+    const resFixed = fixResult(results);
 
     expect(resFixed).toEqual([
       {
         attachments: [
           {
-            // todo: should not contain for passed test?
             name: 'retries pass on second retry -- should pass on retries (failed).png',
             source: 'source.png',
             type: 'image/png',
           },
           {
-            name: 'retries-pass.cy.ts',
+            name: 'retries-pass.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
@@ -68,7 +44,31 @@ describe('run retries test', () => {
         parameters: [],
         parent: {
           afters: [],
-          befores: [],
+          befores: [
+            {
+              attachments: [],
+              name: '"before all" hook',
+              parameters: [],
+              stage: 'finished',
+              start: 1323460800000,
+              status: 'passed',
+              statusDetails: {},
+              steps: [
+                {
+                  attachments: [],
+                  name: 'Coverage: Reset [@cypress/code-coverage]',
+                  parameters: [],
+                  stage: 'pending',
+                  start: 1323460800000,
+                  status: 'passed',
+                  statusDetails: {},
+                  steps: [],
+                  stop: 1323460800011,
+                },
+              ],
+              stop: 1323460800010,
+            },
+          ],
           name: 'retries: pass on second retry',
           uuid: 'no',
         },
@@ -78,12 +78,12 @@ describe('run retries test', () => {
         statusDetails: {
           message: 'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
           trace:
-            'AssertionError: Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/retries/retries-pass.cy.ts:10:9)',
+            'AssertionError: Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/retries/retries-pass.cy.ts:9:7)',
         },
         steps: [
           {
             attachments: [],
-            name: '"before each" hook',
+            name: '"before each" hook: Register allure test',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,
@@ -102,6 +102,17 @@ describe('run retries test', () => {
                 stop: 1323460800011,
               },
             ],
+            stop: 1323460800011,
+          },
+          {
+            attachments: [],
+            name: '"before each" hook',
+            parameters: [],
+            stage: 'pending',
+            start: 1323460800000,
+            status: 'passed',
+            statusDetails: {},
+            steps: [],
             stop: 1323460800011,
           },
           {
@@ -172,7 +183,7 @@ describe('run retries test', () => {
             type: 'image/png',
           },
           {
-            name: 'retries-pass.cy.ts',
+            name: 'retries-pass.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
@@ -199,7 +210,31 @@ describe('run retries test', () => {
         parameters: [],
         parent: {
           afters: [],
-          befores: [],
+          befores: [
+            {
+              attachments: [],
+              name: '"before all" hook',
+              parameters: [],
+              stage: 'finished',
+              start: 1323460800000,
+              status: 'passed',
+              statusDetails: {},
+              steps: [
+                {
+                  attachments: [],
+                  name: 'Coverage: Reset [@cypress/code-coverage]',
+                  parameters: [],
+                  stage: 'pending',
+                  start: 1323460800000,
+                  status: 'passed',
+                  statusDetails: {},
+                  steps: [],
+                  stop: 1323460800011,
+                },
+              ],
+              stop: 1323460800010,
+            },
+          ],
           name: 'retries: pass on second retry',
           uuid: 'no',
         },
@@ -210,7 +245,7 @@ describe('run retries test', () => {
         steps: [
           {
             attachments: [],
-            name: '"before each" hook',
+            name: '"before each" hook: Register allure test',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,
@@ -229,6 +264,17 @@ describe('run retries test', () => {
                 stop: 1323460800011,
               },
             ],
+            stop: 1323460800011,
+          },
+          {
+            attachments: [],
+            name: '"before each" hook',
+            parameters: [],
+            stage: 'pending',
+            start: 1323460800000,
+            status: 'passed',
+            statusDetails: {},
+            steps: [],
             stop: 1323460800011,
           },
           {
@@ -255,7 +301,18 @@ describe('run retries test', () => {
           },
           {
             attachments: [],
-            name: '"after each" hook',
+            name: 'get: div',
+            parameters: [],
+            stage: 'pending',
+            start: 1323460800000,
+            status: 'passed',
+            statusDetails: {},
+            steps: [],
+            stop: 1323460800011,
+          },
+          {
+            attachments: [],
+            name: 'should: exist',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,
@@ -264,7 +321,7 @@ describe('run retries test', () => {
             steps: [
               {
                 attachments: [],
-                name: 'log: 👉 Only found unit test code coverage. `[@cypress/code-coverage]`',
+                name: 'assert: expected **[ <div>, 1 more... ]** to exist in the DOM',
                 parameters: [],
                 stage: 'pending',
                 start: 1323460800000,

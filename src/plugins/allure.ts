@@ -17,11 +17,13 @@ export type ReporterOptions = {
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
-  const allureReporter = new AllureReporter(opts);
+  let allureReporter = new AllureReporter(opts);
 
   return {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
+      // reset state on spec start
+      allureReporter = new AllureReporter(opts);
       allureReporter.specStarted(arg);
       log('specStarted');
 
@@ -63,6 +65,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       return null;
     },
 
+    /*globHook(_args: AllureTaskArgs<'globHook'>) {
+      allureReporter.addGlobalHooks();
+
+      return null;
+    },*/
     step: (arg: AllureTaskArgs<'step'>) => {
       log(`step ${JSON.stringify(arg)}`);
       allureReporter.startStep(arg);
@@ -110,13 +117,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       if (allureReporter.currentTest) {
         allureReporter.endAllSteps({ status: arg.result });
         allureReporter.currentTest.status = arg.result as any;
-      } else {
-        // when hook failed
-        allureReporter.startGroup(arg.suite);
-        allureReporter.startTest({ title: arg.title, fullTitle: arg.fullTitle, id: arg.id });
-        allureReporter.endHooks(arg.result as any);
-        allureReporter.endTest({ result: arg.result as any, details: arg.details });
-        allureReporter.endGroup();
+        allureReporter.currentTest.detailsMessage = arg.details?.message as any;
       }
       log('testResult');
 
