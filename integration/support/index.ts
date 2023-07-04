@@ -1,6 +1,6 @@
 import { redirectTestLogs } from 'cypress-redirect-browser-log';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
-import { allureAdapterSetup } from '../../src/setup';
+import { allureAdapterSetup } from '@src';
 import { COVERAGE } from '../common/constants';
 
 console.log('====SUPPORT INDEX STARTED');
@@ -14,10 +14,11 @@ const setupCoverage = () => {
   }
 };
 
-beforeEach(() => {
+beforeEach('Register allure test', () => {
   cy.log('log', 'Registered allureAdapterSetup');
 });
 
+allureAdapterSetup();
 redirectTestLogs({
   isLogCommandDetails: false,
 });
@@ -27,7 +28,6 @@ registerCypressGrep({
 });
 
 setupCoverage();
-allureAdapterSetup();
 
 /**
  * Log node

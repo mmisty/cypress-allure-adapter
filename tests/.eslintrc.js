@@ -8,5 +8,11 @@ module.exports = {
     ...original.rules,
     '@typescript-eslint/no-explicit-any': 'off',
     'jest/no-standalone-expect': 'off',
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: ['**/src/**', '!**/@src', '!**/@src/*'],
+      },
+    ],
   },
 };

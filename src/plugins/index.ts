@@ -4,6 +4,7 @@ import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import AutoScreen = Cypress.AutoScreen;
+import { existsSync, mkdirSync, rmSync } from 'fs';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -12,13 +13,44 @@ const debug = Debug('cypress-allure:plugins');
 export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   // do setup with events and env, register tasks
   // register plugin events
+  if (process.env.DEBUG) {
+    config.env['DEBUG'] = process.env.DEBUG;
+  }
+
+  if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
+    debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
+
+    return;
+  }
+
   debug('Register plugin');
 
   const options: ReporterOptions = {
-    allureResults: config?.env['allureResults'] ?? 'allure-results',
+    allureResults: config.env['allureResults'] ?? 'allure-results',
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
   };
+
+  if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
+    debug('Clean results');
+
+    if (existsSync(options.allureResults)) {
+      debug(`Deleting allure-results: ${options.allureResults}`);
+
+      try {
+        rmSync(options.allureResults, { recursive: true });
+      } catch (err) {
+        debug(`Error deleting allure-results: ${(err as Error).message}`);
+      }
+
+      try {
+        mkdirSync(options.allureResults);
+      } catch (err) {
+        debug(`Error creating allure-results: ${(err as Error).message}`);
+      }
+    }
+  }
+
   const reporter = allureTasks(options);
   debug('Registered with options:');
   debug(options);

@@ -3,8 +3,6 @@ import { ExecutableItem } from 'allure-js-commons';
 import path from 'path';
 import { createResTest } from '../../cy-helper/utils';
 
-jest.setTimeout(70000);
-
 describe('run retries test', () => {
   const storeResDir = createResTest(__filename);
 
@@ -253,6 +251,29 @@ describe('run retries test', () => {
             status: 'passed',
             statusDetails: {},
             steps: [],
+            stop: 1323460800011,
+          },
+          {
+            attachments: [],
+            name: '"after each" hook',
+            parameters: [],
+            stage: 'pending',
+            start: 1323460800000,
+            status: 'passed',
+            statusDetails: {},
+            steps: [
+              {
+                attachments: [],
+                name: 'log: 👉 Only found unit test code coverage. `[@cypress/code-coverage]`',
+                parameters: [],
+                stage: 'pending',
+                start: 1323460800000,
+                status: 'passed',
+                statusDetails: {},
+                steps: [],
+                stop: 1323460800011,
+              },
+            ],
             stop: 1323460800011,
           },
         ],

@@ -2,13 +2,19 @@ import Status = Cypress.Status;
 import { createMessage } from './websocket';
 import { Hook } from 'mocha';
 import { handleCyLogEvents } from './cypress-events';
+import Debug from 'debug';
 
+const debug = Debug('cypress-allure:mocha-reporter');
 // this is running in Browser
 // const debugEvent = Debug('cypress-allure:mocha-event');
 const ignoreCommands = ['allure', 'then'];
 
 const logEvent = (...args: unknown[]) => {
-  console.log(args);
+  if (Cypress.env('DEBUG')) {
+    debug.enabled = true;
+    // todo log namespace
+    debug(args);
+  }
 };
 
 export const TECH_POST_FIX = '(skip)';
@@ -21,6 +27,7 @@ const MOCHA_EVENTS = {
   TEST_BEGIN: 'test',
   TEST_FAIL: 'fail',
   TEST_PASS: 'pass',
+  TEST_RETRY: 'retry',
   TEST_END: 'test end',
   SUITE_END: 'suite end',
   RUN_END: 'end',
@@ -60,9 +67,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
       if (isRootSuite(suite)) {
         runner.emit('task', { task: 'endAll', arg: {} });
-
-        return;
       }
+
       await message({
         task: 'suiteStarted',
         arg: { title: suite.title, fullTitle: suite.fullTitle(), file: suite.file },
@@ -115,6 +121,13 @@ export const registerMochaReporter = (ws: WebSocket) => {
       await message({ task: 'testResult', arg: { result: convertState('failed') } });
     })
 
+    .on(MOCHA_EVENTS.TEST_RETRY, async test => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}`);
+      logEvent(test.title);
+
+      await message({ task: 'testResult', arg: { result: convertState('failed') } });
+    })
+
     .on(MOCHA_EVENTS.TEST_PASS, async test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_PASS}`);
       logEvent(test.title);
@@ -155,9 +168,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
       logEvent(suite.title);
       logEvent(suite.file);
 
-      if (isRootSuite(suite)) {
-        return;
-      }
+      // if (isRootSuite(suite)) {
+      //   return;
+      // }
       await message({ task: 'suiteEnded', arg: {} });
     })
     .on(MOCHA_EVENTS.RUN_END, async () => {

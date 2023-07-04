@@ -3,8 +3,16 @@ describe('hooks test', () => {
     cy.log('before');
   });
 
-  beforeEach(() => {
+  before('named hook before', () => {
+    cy.log('before');
+  });
+
+  beforeEach('Named hook', () => {
     cy.log('before each');
+  });
+
+  beforeEach(() => {
+    cy.log('no name hook - before each');
   });
 
   it('test 1', () => {
@@ -19,7 +27,15 @@ describe('hooks test', () => {
     cy.log('log after each');
   });
 
+  afterEach('Named after', () => {
+    cy.log('log after each');
+  });
+
   after(() => {
+    cy.log('after');
+  });
+
+  after('named hook all after', () => {
     cy.log('after');
   });
 });

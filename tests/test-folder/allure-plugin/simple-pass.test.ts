@@ -3,8 +3,6 @@ import { ExecutableItem } from 'allure-js-commons';
 import path from 'path';
 import { createResTest } from '../../cy-helper/utils';
 
-jest.setTimeout(70000);
-
 describe('run one test', () => {
   const storeResDir = createResTest(__filename);
 
@@ -37,7 +35,7 @@ describe('run one test', () => {
       {
         attachments: [
           {
-            name: 'simple-pass.cy.ts',
+            name: 'simple-pass.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
@@ -75,7 +73,7 @@ describe('run one test', () => {
         steps: [
           {
             attachments: [],
-            name: '"before each" hook',
+            name: '"before each" hook: Register allure test',
             parameters: [],
             stage: 'pending',
             start: 1323460800000,

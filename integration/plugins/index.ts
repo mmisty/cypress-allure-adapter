@@ -4,9 +4,9 @@ import { preprocessor } from './ts-preprocessor';
 import { existsSync, mkdirSync, rmdirSync, rmSync } from 'fs';
 import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
-import { configureEnv } from '../../src/plugins';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
+import { configureEnv } from '@src/plugins';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -40,16 +40,10 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     return browserHandler(browser, opts);
   });
 
-  on('file:preprocessor', preprocessor(isCov));
-
-  if (existsSync('allure-results')) {
-    console.log('Deleting allure-results');
-    rmSync('allure-results', { recursive: true });
-    mkdirSync('allure-results');
-  }
-
   // HERE you put your plugin functions
   configureEnv(on, config);
+
+  on('file:preprocessor', preprocessor(isCov));
 
   console.log('CYPRESS ENV:');
   console.log(config.env);

@@ -3,8 +3,6 @@ import { ExecutableItem } from 'allure-js-commons';
 import path from 'path';
 import { createResTest } from '../../cy-helper/utils';
 
-jest.setTimeout(70000);
-
 describe('run retries test - fails', () => {
   const storeResDir = createResTest(__filename);
 

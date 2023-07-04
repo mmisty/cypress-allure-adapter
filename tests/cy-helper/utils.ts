@@ -26,14 +26,19 @@ export const createResTest = (fileName: string): string => {
     let err: Error | undefined;
 
     try {
+      process.env.DEBUG = 'cypress-allure*';
       await cy.run({
         spec,
         port,
         // env: { allureResults: storeResDir, DEBUG: 'cypress:server:project' },
         browser: 'chrome',
         env: {
+          allure: 'true',
           allureResults: storeResDir,
+          allureCleanResults: 'true',
           allureSkipCommands: 'intercept',
+          COVERAGE_REPORT_DIR: 'reports/coverage-cypress',
+          COVERAGE: 'true',
         },
       });
     } catch (e) {

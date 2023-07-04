@@ -6,6 +6,7 @@ declare namespace Cypress {
      * Custom command for logging
      * @param message - message
      */
+
     myLog(message: string): Chainable<void>; // todo remove
   }
 }

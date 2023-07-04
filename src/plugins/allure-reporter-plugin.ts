@@ -124,9 +124,9 @@ export class AllureReporter {
   startGroup(title: string) {
     log(`start group: ${title}`);
 
-    if (this.groups.length === 0 && title === '') {
+    /*if (this.groups.length === 0 && title === '') {
       return undefined;
-    }
+    }*/
     const group = (this.currentGroup ?? this.allureRuntime).startGroup(title);
     this.groups.push(group);
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
@@ -297,7 +297,8 @@ export class AllureReporter {
 
   attachVideoToTests(videoPath: string) {
     log(`attachVideoToTests: ${videoPath}`);
-    const specname = basename(videoPath, '.mp4');
+    const ext = '.mp4';
+    const specname = basename(videoPath, ext);
     log(specname);
     const res = parseAllure(this.allureResults);
     const tests = res.map(t => ({ path: t.labels.find(l => l.name === 'path')?.value, id: t.uuid }));
@@ -307,7 +308,7 @@ export class AllureReporter {
       const testFile = `${this.allureResults}/${t.id}-result.json`;
       const contents = readFileSync(testFile);
       const testCon = JSON.parse(contents.toString());
-      const nameAttAhc = `${getUuid(videoPath)}-attachment.mp4`; // todo not copy same video
+      const nameAttAhc = `${getUuid(videoPath)}-attachment${ext}`; // todo not copy same video
       const newPath = path.join(this.allureResults, nameAttAhc);
 
       if (!existsSync(newPath)) {
@@ -316,14 +317,14 @@ export class AllureReporter {
 
       if (testCon.attachments) {
         testCon.attachments.push({
-          name: specname,
+          name: `${specname}${ext}`,
           type: ContentType.MP4,
           source: nameAttAhc, // todo
         });
       } else {
         testCon.attachments = [
           {
-            name: specname,
+            name: `${specname}${ext}`,
             type: ContentType.MP4,
             source: nameAttAhc, // todo
           },

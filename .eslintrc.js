@@ -8,7 +8,7 @@ module.exports = {
     commonjs: false,
     es2021: true,
   },
-  plugins: ['prettier', '@typescript-eslint', 'promise'],
+  plugins: ['prettier', '@typescript-eslint', 'promise', 'import'],
   ignorePatterns: ['*.yaml', '*.yml', '*.csv'],
 
   rules: {
@@ -51,6 +51,12 @@ module.exports = {
         blankLine: 'always',
         prev: '*',
         next: ['multiline-block-like', 'multiline-const'],
+      },
+    ],
+    'no-restricted-imports': [
+      'error',
+      {
+        patterns: ['!**/../*', '**/@src', '**/@src/*'],
       },
     ],
   },

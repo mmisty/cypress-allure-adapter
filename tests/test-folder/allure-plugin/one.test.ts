@@ -2,8 +2,6 @@ import { parseAllure } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
 import { createResTest } from '../../cy-helper/utils';
 
-jest.setTimeout(70000);
-
 describe.skip('run one test', () => {
   const storeResDir = createResTest(__filename);
 

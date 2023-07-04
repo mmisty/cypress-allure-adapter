@@ -10,7 +10,9 @@ export const startWsClient = (): WebSocket | undefined => {
   const port = Cypress.env(ENV_WS);
 
   if (!port) {
-    console.log(`${packageLog} No existing ws server started. Will not report to allure`);
+    console.log(
+      `${packageLog} No existing ws server started. Will not report to allure. Set "allure" env variable to "true" to generate allure-results`,
+    );
 
     return undefined;
   }

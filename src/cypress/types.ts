@@ -2,7 +2,7 @@
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type StatusDetails = import('allure-js-commons').StatusDetails;
-  export type AutoScreen = {
+  export interface AutoScreen {
     screenshotId: string;
     testId: string;
     testAttemptIndex: number;
@@ -10,7 +10,7 @@ declare namespace Cypress {
     path: string; // abs path
     height: number;
     width: number;
-  };
+  }
 
   type TestEnd = {
     specStarted: { spec: Cypress.Spec };
