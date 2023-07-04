@@ -67,6 +67,7 @@ const isRootSuite = (suite: Mocha.Suite) => {
 export const registerMochaReporter = (ws: WebSocket) => {
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   const message = createMessage(ws);
+  (Cypress as any).message = message;
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
