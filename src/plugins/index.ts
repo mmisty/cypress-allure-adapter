@@ -87,7 +87,8 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
     debug('AFTER SPEC');
     const scr = (results as any).screenshots as AutoScreen[];
     debug(scr);
-    reporter.attachScreenshots({ screenshots: scr });
+    // reporter.attachScreenshots({ screenshots: scr });
     reporter.attachVideoToTests({ path: results.video ?? '' });
+    // repuload with new ids for testops
   });
 };

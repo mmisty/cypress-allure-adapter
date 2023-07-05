@@ -1,7 +1,7 @@
 import { StatusDetails } from 'allure-js-commons';
 import { AllureReporter } from './allure-reporter-plugin';
 import Debug from 'debug';
-import { Status, StatusType, UNKNOWN } from './allure-types';
+import { ContentType, Status, StatusType, UNKNOWN } from './allure-types';
 
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
@@ -15,6 +15,7 @@ export class GlobalHooks {
     start: number;
     stop?: number;
     steps?: Step[];
+    attachments?: { name: string; file: string; type: ContentType }[];
   }[] = [];
 
   constructor(private reporter: AllureReporter) {}
@@ -87,6 +88,36 @@ export class GlobalHooks {
     this.currentHook.stop = Date.now();
     this.currentHook.status = status;
     this.currentHook.details = details;
+  }
+
+  attachment(name: string, file: string, type: ContentType) {
+    log(`add attachement: ${name}`);
+
+    if (!this.currentHook) {
+      return;
+    }
+
+    if (!this.currentHook.attachments) {
+      this.currentHook.attachments = [];
+    }
+    this.currentHook.attachments.push({ name, file, type });
+
+    log(`added attachement: ${name}`);
+  }
+
+  // proces attachements
+  processForTest() {
+    log('process global hooks for test');
+    const res = this.hooks;
+    res.forEach(hook => {
+      if (!hook.attachments || hook.attachments.length == 0) {
+        log('no attachments');
+      }
+      hook.attachments?.forEach(attach => {
+        log('process attach');
+        this.reporter.testFileAttachment({ name: attach.name, file: attach?.file, type: attach.type });
+      });
+    });
   }
 
   // when suite created

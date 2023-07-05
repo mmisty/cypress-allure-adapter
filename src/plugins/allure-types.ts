@@ -39,7 +39,7 @@ type AllureTask = {
   language: { value: string };
   testParameter: { name: string; value: string };
   testAttachment: { name: string; content: string | Buffer; type: string };
-  testFileAttachment: { name: string; file: string; type: string };
+  testFileAttachment: { name: string; file: string; type: ContentType };
   attachment: { name: string; content: string | Buffer; type: string };
   addDescriptionHtml: { value: string };
   label: { name: string; value: string };

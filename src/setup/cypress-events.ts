@@ -118,7 +118,6 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   s*/
 
   Cypress.on('command:end', async command => {
-    console.log(command);
     const { name, isLog, state } = commandParams(command);
 
     if (isLogCommand(isLog, name)) {

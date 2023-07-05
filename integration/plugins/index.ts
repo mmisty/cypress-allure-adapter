@@ -59,6 +59,10 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     },
   });
 
+  on('after:screenshot', details => {
+    console.log(`SCREENSHOT: ${details.path}`);
+  });
+
   // It's IMPORTANT to return the config object
   // with any changed environment variables
   return config;

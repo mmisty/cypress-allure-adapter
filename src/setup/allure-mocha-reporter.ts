@@ -2,7 +2,8 @@ import Debug from 'debug';
 import { createMessage } from './websocket';
 import { Hook } from 'mocha';
 import { handleCyLogEvents } from './cypress-events';
-import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; //todo
+import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; // todo
+import { registerScreenshotHandler } from './screenshots';
 
 const debug = Debug('cypress-allure:mocha-reporter');
 // this is running in Browser
@@ -113,7 +114,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
   runner.setMaxListeners(20);
 
   const message = createMessage(ws);
-  Cypress.Allure = allureInterface(message);
+  const allureInterfaceInstance = allureInterface(message);
+  registerScreenshotHandler(allureInterfaceInstance);
+  Cypress.Allure = allureInterfaceInstance;
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {

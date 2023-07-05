@@ -10,7 +10,7 @@ import {
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -292,6 +292,7 @@ export class AllureReporter {
     const tests = res.map(t => ({ path: t.labels.find(l => l.name === 'path')?.value, id: t.uuid }));
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
     log(JSON.stringify(testsAttach));
+
     testsAttach.forEach(t => {
       const testFile = `${this.allureResults}/${t.id}-result.json`;
       const contents = readFileSync(testFile);
@@ -303,26 +304,21 @@ export class AllureReporter {
         copyFileSync(videoPath, path.join(this.allureResults, nameAttAhc));
       }
 
-      if (testCon.attachments) {
-        testCon.attachments.push({
-          name: `${specname}${ext}`,
-          type: ContentType.MP4,
-          source: nameAttAhc, // todo
-        });
-      } else {
-        testCon.attachments = [
-          {
-            name: `${specname}${ext}`,
-            type: ContentType.MP4,
-            source: nameAttAhc, // todo
-          },
-        ];
+      if (!testCon.attachments) {
+        testCon.attachments = [];
       }
+
+      testCon.attachments.push({
+        name: `${specname}${ext}`,
+        type: ContentType.MP4,
+        source: nameAttAhc, // todo
+      });
+
       writeFileSync(testFile, JSON.stringify(testCon));
       //testCon.attachments = []
-
-      // "attachments":[{"name":"suite with one test -- #1 test fail (failed).png","type":"image/png","source":"b593b23f-0fe2-4782-acca-ddb5d812e4dd-attachment.png"}]
-      //
+      // need to regenerate ids for testops
+      //const files = readdirSync(this.allureResults);
+      //files
     });
   }
 
@@ -439,24 +435,33 @@ export class AllureReporter {
   }
 
   testFileAttachment(arg: AllureTaskArgs<'testFileAttachment'>) {
-    if (this.currentTest) {
-      if (!existsSync(arg.file)) {
-        console.log(`file ${arg.file} doesnt exist`);
+    if (!this.currentExecutable && this.globalHooks.currentHook) {
+      log('No current executable, test or hook - add to global hook');
+      this.globalHooks.attachment(arg.name, arg.file, arg.type);
 
-        return;
-      }
-      const fileCot = readFileSync(arg.file);
-
-      // to have it in allure-results directory
-      const fileNew = `${getUuidByString(fileCot.toString())}-attachment.txt`;
-
-      if (!existsSync(this.allureResults)) {
-        mkdirSync(this.allureResults); //toto try
-      }
-
-      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-      this.currentTest.addAttachment(arg.name, arg.type, fileNew);
+      return;
     }
+
+    if (!this.currentTest) {
+      return;
+    }
+
+    if (!existsSync(arg.file)) {
+      console.log(`file ${arg.file} doesnt exist`);
+
+      return;
+    }
+    const fileCot = readFileSync(arg.file);
+
+    // to have it in allure-results directory
+    const fileNew = `${getUuidByString(fileCot.toString())}-attachment.txt`;
+
+    if (!existsSync(this.allureResults)) {
+      mkdirSync(this.allureResults); //toto try
+    }
+
+    copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+    this.currentTest.addAttachment(arg.name, arg.type, fileNew);
   }
 
   attachment(arg: AllureTaskArgs<'attachment'>) {
@@ -514,8 +519,9 @@ export class AllureReporter {
 
       if (this.currentSpec?.relative) {
         this.currentTest.addLabel('path', this.currentSpec.relative);
-        this.addDescriptionHtml({ value: this.currentSpec.relative });
+        // this.addDescriptionHtml({ value: this.currentSpec.relative });
       }
+      this.globalHooks.processForTest();
     }
   }
 
