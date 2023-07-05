@@ -3,8 +3,8 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import AutoScreen = Cypress.AutoScreen;
 import { existsSync, mkdirSync, rmSync } from 'fs';
+import type { AutoScreen } from './allure-types';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -88,7 +88,6 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
     const scr = (results as any).screenshots as AutoScreen[];
     debug(scr);
     reporter.attachScreenshots({ screenshots: scr });
-
     reporter.attachVideoToTests({ path: results.video ?? '' });
   });
 };

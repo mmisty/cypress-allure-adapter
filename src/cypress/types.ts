@@ -2,62 +2,49 @@
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type StatusDetails = import('allure-js-commons').StatusDetails;
-  export interface AutoScreen {
-    screenshotId: string;
-    testId: string;
-    testAttemptIndex: number;
-    takenAt: string; // date
-    path: string; // abs path
-    height: number;
-    width: number;
-  }
-
-  type TestEnd = {
-    specStarted: { spec: Cypress.Spec };
-    testEnded: { result: Status; details?: StatusDetails };
-    testStarted: { title: string; fullTitle: string; id: string };
-    suiteStarted: { title: string; fullTitle: string; file?: string };
-    hookStarted: { title: string; file?: string; hookId?: string; date?: number };
-    hookEnded: { title: string; date?: number; result: Status; details?: StatusDetails };
-    // currentSpec: { spec: Cypress.Spec };
-    suiteEnded: undefined;
-    stepEnded: { status: string; date?: number; details?: StatusDetails };
-    // stepEndedAll: { status: string; date?: number; details?: StatusDetails };
-    stepStarted: { name: string; date?: number };
-    step: { name: string; status?: string; date?: number };
-    setLabel: { name: string; value: string };
-    message: { name: string };
-    attachScreenshots: { screenshots: AutoScreen[] };
-    screenshotOne: { name: string; forStep?: boolean };
-    video: { path: string };
-    attachVideoToTests: { path: string };
-    testResult: {
-      suite: string;
-      title: string;
-      fullTitle: string;
-      id: string;
-      result: string;
-      details?: StatusDetails;
-    };
-    endAll: undefined;
-    //  globHook: undefined;
-  };
-
-  export type RequestTask = keyof TestEnd;
-  export type AllureTaskArgs<T extends RequestTask> = TestEnd[T] extends undefined
-    ? {
-        // ign
-      }
-    : TestEnd[T];
-
-  export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => null | Promise<null> };
-  export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
+  export type ContentType = import('allure-js-commons').ContentType;
+  type LinkType = 'issue' | 'tms';
+  type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
+  type Parameter = { name: string; value: string };
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
   interface Chainable {
-    allure<T extends RequestTask>(
-      opts: { task: T; arg: AllureTaskArgs<T> },
-      cyOpts?: { log: boolean },
-    ): Chainable<null>;
+    allure(): Allure;
+  }
+
+  interface Cypress {
+    /**
+     * Interface via Cypress global object
+     */
+    Allure: AllureReporter<void>;
+  }
+
+  type Allure = AllureReporter<Allure>;
+
+  interface AllureReporter<T> {
+    tag(...tags: string[]): T;
+    label(name: string, value: string): T;
+    startStep(name: string): T;
+    endStep(): T;
+    step(name: string): T;
+    severity(level: Severity): T;
+    thread(value: string): T;
+    fullName(value: string): T;
+    testAttachment(name: string, content: Buffer | string, type: ContentType): T;
+    testFileAttachment(name: string, file: string, type: ContentType): T;
+    attachment(name: string, content: Buffer | string, type: ContentType): T;
+    owner(value: string): T;
+    lead(value: string): T;
+    host(value: string): T;
+    epic(value: string): T;
+    link(url: string, name?: string, type?: LinkType): T;
+    feature(value: string): T;
+    story(value: string): T;
+    allureId(value: string): T;
+    language(value: string): T;
+    parameter(name: string, value: string): T;
+    parameters(...params: Parameter[]): T;
+    testParameter(name: string, value: string): T;
+    addDescriptionHtml(value: string): T;
   }
 }

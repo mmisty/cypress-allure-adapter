@@ -1,12 +1,11 @@
-import Status = Cypress.Status;
+import Debug from 'debug';
 import { createMessage } from './websocket';
 import { Hook } from 'mocha';
 import { handleCyLogEvents } from './cypress-events';
-import Debug from 'debug';
+import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; //todo
 
 const debug = Debug('cypress-allure:mocha-reporter');
 // this is running in Browser
-// const debugEvent = Debug('cypress-allure:mocha-event');
 const ignoreCommands = ['allure', 'then'];
 
 const logEvent = (...args: any[]) => {
@@ -54,20 +53,67 @@ const CUSTOM_EVENTS = {
 
 const convertState = (state: string): Status => {
   if (state === 'pending') {
-    return 'skipped';
+    return Status.SKIPPED;
   }
 
-  return state as Status;
+  return state as Status; // todo
 };
 
 const isRootSuite = (suite: Mocha.Suite) => {
   return suite.fullTitle() === '';
 };
 
+export const allureInterface = (
+  fn: <T extends RequestTask>(data: AllureTransfer<T> | string) => void,
+): Cypress.AllureReporter<void> => {
+  return {
+    tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: 'tag', value: tag } })),
+    label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
+    startStep: (name: string) => fn({ task: 'stepStarted', arg: { name } }),
+    endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED } }),
+    step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed' } }),
+    severity: (level: Cypress.Severity) => fn({ task: 'severity', arg: { level } }),
+    language: (value: string) => fn({ task: 'language', arg: { value } }),
+    link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
+    host: (value: string) => fn({ task: 'host', arg: { value } }),
+    fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
+    testAttachment: (name: string, content: string | Buffer, type) =>
+      fn({ task: 'testAttachment', arg: { name, content, type } }),
+    testFileAttachment: (name: string, file: string, type) =>
+      fn({ task: 'testFileAttachment', arg: { name, file, type } }),
+    attachment: (name: string, content: string | Buffer, type) =>
+      fn({ task: 'attachment', arg: { name, content, type } }),
+    owner: (value: string) => fn({ task: 'owner', arg: { value } }),
+    lead: (value: string) => fn({ task: 'lead', arg: { value } }),
+    feature: (value: string) => fn({ task: 'feature', arg: { value } }),
+    story: (value: string) => fn({ task: 'story', arg: { value } }),
+    epic: (value: string) => fn({ task: 'epic', arg: { value } }),
+    allureId: (value: string) => fn({ task: 'allureId', arg: { value } }),
+    thread: (value: string) => fn({ task: 'thread', arg: { value } }),
+    parameter: (name: string, value: string) => fn({ task: 'parameter', arg: { name, value } }),
+    parameters: (...params: Cypress.Parameter[]) =>
+      params.forEach(p => fn({ task: 'parameter', arg: { name: p.name, value: p.value } })),
+    testParameter(name: string, value: string): void {
+      fn({ task: 'testParameter', arg: { name, value } });
+    },
+    addDescriptionHtml(value: string): void {
+      fn({ task: 'addDescriptionHtml', arg: { value } });
+    },
+  };
+};
+
+export const registerStubReporter = () => {
+  Cypress.Allure = allureInterface(() => {
+    // ignore
+  });
+};
+
 export const registerMochaReporter = (ws: WebSocket) => {
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
+  runner.setMaxListeners(20);
+
   const message = createMessage(ws);
-  (Cypress as any).message = message;
+  Cypress.Allure = allureInterface(message);
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
@@ -143,7 +189,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
         task: 'hookEnded',
         arg: {
           title: hook.title,
-          result: hook.err ? 'failed' : 'passed',
+          result: hook.err ? Status.FAILED : Status.PASSED,
           details: {
             message: hook.err?.message,
             trace: hook.err?.stack,

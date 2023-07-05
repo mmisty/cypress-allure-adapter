@@ -1,20 +1,19 @@
 before('Global Setup Pass', () => {
   console.log('Setup');
-  cy.allure({ task: 'stepStarted', arg: { name: 'global setup' } });
-  cy.allure({ task: 'stepEnded', arg: { status: 'passed' } });
+  cy.allure().startStep('global setup').endStep();
 });
 
 before('Global Setup', () => {
   console.log('Setup');
-  cy.allure({ task: 'stepStarted', arg: { name: 'global setup' } });
+  cy.allure().startStep('global setup2');
   cy.wrap(null).then(() => {
     throw new Error('Failed Before ALL');
   });
-  cy.allure({ task: 'stepEnded', arg: { status: 'passed' } });
+  cy.allure().endStep();
 });
 
 after('Global teardown', () => {
-  cy.allure({ task: 'step', arg: { name: 'global teardown' } });
+  cy.allure().step('global teardown');
   console.log('Tear down');
 });
 

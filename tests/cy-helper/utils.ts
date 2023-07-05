@@ -65,7 +65,7 @@ export const createResTest = (fileName: string): string => {
     const cy = require('cypress');
     //const spec = [`${cwd}/integration/e2e/simple-pass.cy.ts`, `${cwd}/integration/e2e/${testname}`];
     const spec = file;
-    const port = 56522;
+    const port = 40000 + Math.round(Math.random() * 25000);
     let err: Error | undefined;
 
     try {

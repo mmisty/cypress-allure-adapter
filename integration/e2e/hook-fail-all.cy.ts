@@ -1,11 +1,11 @@
 before('Global Setup', () => {
   console.log('Setup');
-  cy.allure({ task: 'step', arg: { name: 'global setup' } });
+  cy.allure().step('global setup');
   throw new Error('Failed Before ALL');
 });
 
 after('Global teardown', () => {
-  cy.allure({ task: 'step', arg: { name: 'global teardown' } });
+  cy.allure().step('global teardown');
   console.log('Tear down');
 });
 

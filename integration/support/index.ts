@@ -14,9 +14,11 @@ const setupCoverage = () => {
   }
 };
 
-beforeEach('Register allure test', () => {
-  cy.log('log', 'Registered allureAdapterSetup');
-});
+if (Cypress.env('allure') === 'true' || Cypress.env('allure') === true) {
+  beforeEach('Register allure test', () => {
+    cy.log('log', 'Registered allureAdapterSetup');
+  });
+}
 
 allureAdapterSetup();
 redirectTestLogs({

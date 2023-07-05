@@ -6,7 +6,6 @@ import {
   ExecutableItem,
   ExecutableItemWrapper,
   LabelName,
-  StatusDetails,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
@@ -14,173 +13,16 @@ import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
-import AllureTaskArgs = Cypress.AllureTaskArgs;
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
+import { GlobalHooks } from './allure-global-hook';
+import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 
 const debug = Debug('cypress-allure:reporter');
 
 const log = (...args: unknown[]) => {
   debug(args);
 };
-enum ContentType {
-  TEXT = 'text/plain',
-  XML = 'application/xml',
-  HTML = 'text/html',
-  CSV = 'text/csv',
-  TSV = 'text/tab-separated-values',
-  CSS = 'text/css',
-  URI = 'text/uri-list',
-  SVG = 'image/svg+xml',
-  PNG = 'image/png',
-  JSON = 'application/json',
-  ZIP = 'application/zip',
-  WEBM = 'video/webm',
-  JPEG = 'image/jpeg',
-  MP4 = 'video/mp4',
-}
-enum Status {
-  PASSED = 'passed',
-  FAILED = 'failed',
-  BROKEN = 'broken',
-  SKIPPED = 'skipped',
-}
-const UNKNOWN = 'unknown' as Status;
-
-enum Stage {
-  SCHEDULED = 'scheduled',
-  RUNNING = 'running',
-  FINISHED = 'finished',
-  PENDING = 'pending',
-  INTERRUPTED = 'interrupted',
-}
-
-class GlobalHooks {
-  hooks: {
-    title: string;
-    status?: Status;
-    details?: StatusDetails;
-    hookId?: string;
-    start: number;
-    stop?: number;
-    steps?: {
-      name: string;
-      event: 'start' | 'stop';
-      date: number;
-      status?: Status;
-      details?: StatusDetails;
-    }[];
-  }[] = [];
-
-  constructor(private reporter: AllureReporter) {}
-
-  hasHooks() {
-    return this.hooks.length > 0;
-  }
-
-  get currentHook() {
-    if (this.hooks.length === 0) {
-      log('No current global hook!');
-
-      return undefined;
-    }
-
-    return this.hooks[this.hooks.length - 1];
-  }
-
-  get currentStep() {
-    if (!this.currentHook) {
-      return undefined;
-    }
-
-    if (!this.currentHook.steps || this.currentHook.steps.length === 0) {
-      log('Global hook: no current step');
-
-      return undefined;
-    }
-
-    return this.currentHook.steps[this.currentHook.steps.length - 1];
-  }
-
-  start(title: string, id?: string) {
-    this.hooks.push({ title, hookId: id, start: Date.now() });
-  }
-
-  startStep(name: string) {
-    if (!this.currentHook) {
-      return;
-    }
-
-    const step: any = { name, event: 'start', date: Date.now() };
-
-    if (this.currentHook.steps) {
-      this.currentHook.steps.push(step);
-    } else {
-      this.currentHook.steps = [step];
-    }
-  }
-
-  endStep(status?: Status, details?: StatusDetails) {
-    if (!this.currentHook) {
-      return;
-    }
-
-    if (this.currentStep) {
-      const step: any = { name: '', event: 'stop', date: Date.now() };
-
-      if (this.currentHook.steps) {
-        this.currentHook.steps.push(step);
-      } else {
-        this.currentHook.steps = [step];
-      }
-      this.currentStep.status = status;
-      this.currentStep.details = details;
-    }
-  }
-
-  end(status: Status, details?: StatusDetails) {
-    if (this.currentHook) {
-      this.currentHook.stop = Date.now();
-      this.currentHook.status = status;
-      this.currentHook.details = details;
-    }
-  }
-
-  // when suite created
-
-  process() {
-    log('process global hooks');
-    const res = this.hooks; //.splice(0, this.hooks.length - 1);
-    res.forEach(hook => {
-      this.reporter.hookStarted({
-        title: hook.title,
-        hookId: hook.hookId,
-        date: hook.start,
-      });
-
-      hook.steps?.forEach(step => {
-        if (step.event === 'start') {
-          this.reporter.startStep({ name: step.name, date: step.date });
-        }
-
-        if (step.event === 'stop') {
-          this.reporter.endStep({
-            status: step.status as any,
-            date: step.date,
-            details: step.details,
-          });
-        }
-      });
-
-      this.reporter.hookEnded({
-        title: hook.title,
-        result: hook.status as any,
-        details: hook.details as any,
-        date: hook.stop,
-      });
-    });
-  }
-}
 
 export class AllureReporter {
   // todo config
@@ -259,11 +101,12 @@ export class AllureReporter {
     this.globalHooks.process();
   }
 
-  startGroup(title: string) {
+  suiteStarted(arg: AllureTaskArgs<'suiteStarted'>) {
+    const { title } = arg;
     log(`start group: ${title}`);
 
     if (this.groups.length === 0 && title === '') {
-      return undefined;
+      return;
     }
     const group = (this.currentGroup ?? this.allureRuntime).startGroup(title);
     this.groups.push(group);
@@ -272,8 +115,6 @@ export class AllureReporter {
     if (this.groups.length === 1) {
       this.addGlobalHooks();
     }
-
-    return group;
   }
 
   specStarted(args: AllureTaskArgs<'specStarted'>) {
@@ -281,7 +122,6 @@ export class AllureReporter {
     log(JSON.stringify(args));
     this.currentSpec = args.spec;
 
-    // should be once ?
     if (!existsSync(this.allureResults)) {
       mkdirSync(this.allureResults);
     }
@@ -301,7 +141,7 @@ export class AllureReporter {
     if (title && (title.indexOf('before each') !== -1 || title.indexOf('after each') !== -1)) {
       log(`${title} will not be added to suite:${hookId} ${title}`);
       // need to end all steps before logging hook - should be parent
-      this.endAllSteps({ status: '' });
+      this.endAllSteps({ status: UNKNOWN });
 
       this.startStep({ name: title });
 
@@ -323,7 +163,7 @@ export class AllureReporter {
 
     if (!this.currentGroup) {
       log('no current group - not logging hook');
-      this.globalHooks.end(result as Status, details);
+      this.globalHooks.end(result, details);
 
       return;
     }
@@ -335,7 +175,7 @@ export class AllureReporter {
     }
 
     if (this.currentHook) {
-      this.currentHook.status = result as any;
+      this.currentHook.status = result;
       this.currentHook.stage = Stage.FINISHED;
 
       if (details) {
@@ -348,9 +188,9 @@ export class AllureReporter {
     }
   }
 
-  endHooks(status: Status = Status.PASSED) {
+  endHooks(status: StatusType = Status.PASSED) {
     this.hooks.forEach(h => {
-      this.hookEnded({ title: h.hook.name, result: status as any });
+      this.hookEnded({ title: h.hook.name, result: status });
     });
   }
 
@@ -376,7 +216,8 @@ export class AllureReporter {
         const contents = readFileSync(testFile);
         const ext = path.extname(x.path);
         const name = path.basename(x.path);
-        const testCon = JSON.parse(contents.toString());
+        type ParsedAttachment = { name: string; type: ContentType; source: string };
+        const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
         const nameAttAhc = `${getUuid(x.path)}-attachment${ext}`; // todo not copy same video
         const newPath = path.join(this.allureResults, nameAttAhc);
 
@@ -384,21 +225,16 @@ export class AllureReporter {
           copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
         }
 
-        if (testCon.attachments) {
-          testCon.attachments.push({
-            name: name,
-            type: ContentType.PNG,
-            source: nameAttAhc, // todo
-          });
-        } else {
-          testCon.attachments = [
-            {
-              name: name,
-              type: ContentType.PNG,
-              source: nameAttAhc, // todo
-            },
-          ];
+        if (!testCon.attachments) {
+          testCon.attachments = [];
         }
+
+        testCon.attachments.push({
+          name: name,
+          type: ContentType.PNG,
+          source: nameAttAhc, // todo
+        });
+
         writeFileSync(testFile, JSON.stringify(testCon));
       });
     });
@@ -413,7 +249,7 @@ export class AllureReporter {
     if (files.length === 0) {
       log(`NO SCREENSHOTS: ${pattern}`);
 
-      return null;
+      return;
     }
 
     files.forEach(file => {
@@ -433,7 +269,7 @@ export class AllureReporter {
       if (!existsSync(file)) {
         console.log(`file ${file} doesnt exist`);
 
-        return null;
+        return;
       }
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
@@ -446,7 +282,8 @@ export class AllureReporter {
     });
   }
 
-  attachVideoToTests(videoPath: string) {
+  attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
+    const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
     const ext = '.mp4';
     const specname = basename(videoPath, ext);
@@ -504,9 +341,128 @@ export class AllureReporter {
     this.allHooks = [];
   }
 
-  setLabel(arg: AllureTaskArgs<'setLabel'>) {
+  label(arg: AllureTaskArgs<'label'>) {
     if (this.currentTest) {
       this.currentTest.addLabel(arg.name, arg.value);
+    }
+  }
+
+  thread(arg: AllureTaskArgs<'thread'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.THREAD, arg.value);
+    }
+  }
+
+  host(arg: AllureTaskArgs<'host'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.HOST, arg.value);
+    }
+  }
+
+  language(arg: AllureTaskArgs<'language'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.LANGUAGE, arg.value);
+    }
+  }
+
+  epic(arg: AllureTaskArgs<'epic'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.EPIC, arg.value);
+    }
+  }
+
+  link(arg: AllureTaskArgs<'link'>) {
+    if (this.currentTest) {
+      this.currentTest.addLink(arg.url, arg.name, arg.type);
+    }
+  }
+
+  feature(arg: AllureTaskArgs<'feature'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.FEATURE, arg.value);
+    }
+  }
+
+  story(arg: AllureTaskArgs<'story'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.STORY, arg.value);
+    }
+  }
+
+  allureId(arg: AllureTaskArgs<'allureId'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.AS_ID, arg.value);
+    }
+  }
+
+  owner(arg: AllureTaskArgs<'owner'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.OWNER, arg.value);
+    }
+  }
+
+  fullName(arg: AllureTaskArgs<'fullName'>) {
+    if (this.currentTest) {
+      this.currentTest.fullName = arg.value;
+    }
+  }
+
+  lead(arg: AllureTaskArgs<'lead'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.LEAD, arg.value);
+    }
+  }
+
+  severity(arg: AllureTaskArgs<'severity'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(LabelName.SEVERITY, arg.level);
+    }
+  }
+
+  parameter(arg: AllureTaskArgs<'parameter'>) {
+    if (this.currentExecutable) {
+      this.currentExecutable.addParameter(arg.name, arg.value);
+    }
+  }
+
+  testParameter(arg: AllureTaskArgs<'parameter'>) {
+    if (this.currentTest) {
+      this.currentTest.addParameter(arg.name, arg.value);
+    }
+  }
+
+  testAttachment(arg: AllureTaskArgs<'testAttachment'>) {
+    if (this.currentTest) {
+      const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
+      this.currentTest.addAttachment(arg.name, arg.type, file);
+    }
+  }
+
+  testFileAttachment(arg: AllureTaskArgs<'testFileAttachment'>) {
+    if (this.currentTest) {
+      if (!existsSync(arg.file)) {
+        console.log(`file ${arg.file} doesnt exist`);
+
+        return;
+      }
+      const fileCot = readFileSync(arg.file);
+
+      // to have it in allure-results directory
+      const fileNew = `${getUuidByString(fileCot.toString())}-attachment.txt`;
+
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults); //toto try
+      }
+
+      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+      this.currentTest.addAttachment(arg.name, arg.type, fileNew);
+    }
+  }
+
+  attachment(arg: AllureTaskArgs<'attachment'>) {
+    if (this.currentExecutable) {
+      const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
+      this.currentExecutable.addAttachment(arg.name, arg.type, file);
     }
   }
 
@@ -539,7 +495,12 @@ export class AllureReporter {
       console.warn(warn);
     }
 
-    const group = this.currentGroup ?? this.startGroup('Root suite');
+    if (!this.currentGroup) {
+      // fallback
+      this.suiteStarted({ title: 'Root suite', fullTitle: 'Root suite' });
+    }
+
+    const group = this.currentGroup;
     const test = group!.startTest(title);
 
     this.allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
@@ -548,24 +509,19 @@ export class AllureReporter {
     if (this.currentTest) {
       this.currentTest.fullName = fullTitle;
 
-      /*if (title !== autoTitle) {
-        this.addDescriptionHtml(
-          '<div style="color: #a4951f;">Warn: Test with the same full name already exist (suites + title). Test is shown as retried</br>To solve rename the test</div>',
-        );
-      }*/
       this.currentTest.historyId = getUuid(fullTitle);
       this.applyGroupLabels();
 
       if (this.currentSpec?.relative) {
         this.currentTest.addLabel('path', this.currentSpec.relative);
-        this.addDescriptionHtml(this.currentSpec.relative);
+        this.addDescriptionHtml({ value: this.currentSpec.relative });
       }
     }
   }
 
   endTests() {
     this.tests.forEach(() => {
-      this.endTest({ result: 'unknown', details: undefined });
+      this.endTest({ result: UNKNOWN, details: undefined });
     });
   }
 
@@ -577,13 +533,13 @@ export class AllureReporter {
   }
 
   endAll() {
-    this.endAllSteps({ status: 'unknown', details: undefined });
+    this.endAllSteps({ status: UNKNOWN, details: undefined });
     this.endHooks(Status.BROKEN);
     this.endGroups();
   }
 
-  addDescriptionHtml(descriptionHtml: string) {
-    this.descriptionHtml.push(descriptionHtml);
+  addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
+    this.descriptionHtml.push(arg.value);
     this.applyDescriptionHtml();
     // this.currentTest.descriptionHtml = (this.currentTest.descriptionHtml ?? '') + descriptionHtml;
     //this.currentTest.des
@@ -599,51 +555,49 @@ export class AllureReporter {
     const { result, details } = arg;
     this.endAllSteps({ status: result, details });
 
-    // this.currentTest.status = result as Status; //todo
-    if (this.currentTest) {
-      if (result === Status.PASSED) {
-        this.currentTest.status = Status.PASSED;
-        this.currentTest.stage = Stage.FINISHED;
-      }
+    // this.currentTest.status = result; //todo
+    if (!this.currentTest) {
+      return;
+    }
 
-      if (result === Status.BROKEN) {
-        this.currentTest.status = Status.BROKEN;
-        this.currentTest.stage = Stage.FINISHED;
-      }
+    if (result === Status.PASSED) {
+      this.currentTest.status = Status.PASSED;
+      this.currentTest.stage = Stage.FINISHED;
+    }
 
-      if (result === Status.FAILED) {
-        this.currentTest.status = Status.FAILED;
-        this.currentTest.stage = Stage.FINISHED;
+    if (result === Status.BROKEN) {
+      this.currentTest.status = Status.BROKEN;
+      this.currentTest.stage = Stage.FINISHED;
+    }
 
-        this.currentTest.detailsMessage = details?.message;
-        this.currentTest.detailsTrace = details?.trace;
-      }
+    if (result === Status.FAILED) {
+      this.currentTest.status = Status.FAILED;
+      this.currentTest.stage = Stage.FINISHED;
 
-      if (result === Status.SKIPPED) {
-        this.currentTest.status = Status.SKIPPED;
-        this.currentTest.stage = Stage.PENDING;
+      this.currentTest.detailsMessage = details?.message;
+      this.currentTest.detailsTrace = details?.trace;
+    }
 
-        this.currentTest.detailsMessage = details?.message || 'Suite disabled';
-      }
+    if (result === Status.SKIPPED) {
+      this.currentTest.status = Status.SKIPPED;
+      this.currentTest.stage = Stage.PENDING;
 
-      if (
-        result !== Status.FAILED &&
-        result !== Status.BROKEN &&
-        result !== Status.PASSED &&
-        result !== Status.SKIPPED
-      ) {
-        this.currentTest.status = UNKNOWN;
-        this.currentTest.stage = Stage.PENDING;
+      this.currentTest.detailsMessage = details?.message || 'Suite disabled';
+    }
 
-        this.currentTest.detailsMessage = details?.message || `Unknown result: ${result ?? '<no>'}`;
-      }
+    if (result !== Status.FAILED && result !== Status.BROKEN && result !== Status.PASSED && result !== Status.SKIPPED) {
+      this.currentTest.status = UNKNOWN;
+      this.currentTest.stage = Stage.PENDING;
 
-      if (details) {
-        this.currentTest.statusDetails = details;
-      }
-      // this.endSteps();
+      this.currentTest.detailsMessage = details?.message || `Unknown result: ${result ?? '<no>'}`;
+    }
 
-      /*this.featureProps.apply(a => super.feature(a));
+    if (details) {
+      this.currentTest.statusDetails = details;
+    }
+    // this.endSteps();
+
+    /*this.featureProps.apply(a => super.feature(a));
       this.storyProps.apply(a => super.story(a));
       this.frameworkProps.apply(a => super.label(LabelName.FRAMEWORK, a));
       this.languageProps.apply(a => super.label(LabelName.LANGUAGE, a));
@@ -656,8 +610,7 @@ export class AllureReporter {
       }
       this.currentTest.endTest(stop || dateNow());*/
 
-      this.currentTest.endTest();
-    }
+    this.currentTest.endTest();
 
     this.tests.pop();
     this.descriptionHtml = [];
@@ -688,31 +641,33 @@ export class AllureReporter {
     const { status, date, details } = arg;
 
     if (!this.currentExecutable) {
-      this.globalHooks.endStep(arg.status as Status, details);
+      this.globalHooks.endStep(arg.status, details);
 
       return;
     }
 
-    if (this.currentStep) {
-      this.currentStep.status = status as Status;
-
-      // set status to last step recursively
-      const setLast = (steps: ExecutableItem[]) => {
-        const stepsCount = steps.length;
-
-        if (steps.length > 0) {
-          setLast(steps[stepsCount - 1].steps);
-          steps[stepsCount - 1].status = status as Status;
-        }
-      };
-      setLast(this.currentStep.wrappedItem.steps);
-
-      if (details) {
-        this.currentStep.statusDetails = { message: details?.message };
-      }
-      this.currentStep.endStep(date);
-
-      this.steps.pop();
+    if (!this.currentStep) {
+      return;
     }
+
+    this.currentStep.status = status;
+
+    // set status to last step recursively
+    const setLast = (steps: ExecutableItem[]) => {
+      const stepsCount = steps.length;
+
+      if (steps.length > 0) {
+        setLast(steps[stepsCount - 1].steps);
+        steps[stepsCount - 1].status = status;
+      }
+    };
+    setLast(this.currentStep.wrappedItem.steps);
+
+    if (details) {
+      this.currentStep.statusDetails = { message: details?.message };
+    }
+    this.currentStep.endStep(date);
+
+    this.steps.pop();
   }
 }

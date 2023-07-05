@@ -1,6 +1,6 @@
 import Debug from 'debug';
 import { registerCommands } from '../commands';
-import { registerMochaReporter } from './allure-mocha-reporter';
+import { registerMochaReporter, registerStubReporter } from './allure-mocha-reporter';
 import { startWsClient } from './websocket';
 import { packageLog } from '../common';
 
@@ -13,6 +13,8 @@ export const allureAdapterSetup = () => {
 
   if (!ws) {
     debug(`${packageLog} No reporting since server could not start`);
+
+    registerStubReporter();
 
     return;
   }

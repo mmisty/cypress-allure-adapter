@@ -1,5 +1,4 @@
-import AllureTransfer = Cypress.AllureTransfer;
-import RequestTask = Cypress.RequestTask;
+import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 
 const stepMessage = (name: string, args: string) => {
   return `${name}: ${args}`;
@@ -19,7 +18,7 @@ const commandParams = (command: any) => {
 
       return commandArgs.log !== false;
     } catch (err) {
-      return 'could not get log';
+      return false; // 'could not get log';
     }
   };
 
@@ -60,6 +59,10 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   const commands: string[] = [];
   const emit = createEmitEvent(runner);
 
+  const isLogCommand = (isLog: boolean, name: string) => {
+    return isLog && !ignoreCommands.includes(name) && !Object.keys(Cypress.Allure).includes(name);
+  };
+
   Cypress.on('log:added', async log => {
     const cmdMessage = stepMessage(log.name, log.message);
     const logName = log.name;
@@ -91,7 +94,7 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   Cypress.on('command:start', async command => {
     const { name, message: cmdMessage, isLog } = commandParams(command);
 
-    if (isLog && !ignoreCommands.includes(name)) {
+    if (isLogCommand(isLog, name)) {
       commands.push(cmdMessage);
       emit({ task: 'stepStarted', arg: { name: cmdMessage } });
     }
@@ -118,7 +121,7 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
     console.log(command);
     const { name, isLog, state } = commandParams(command);
 
-    if (isLog && !ignoreCommands.includes(name)) {
+    if (isLogCommand(isLog, name)) {
       emit({ task: 'stepEnded', arg: { status: state } });
       commands.pop();
     }

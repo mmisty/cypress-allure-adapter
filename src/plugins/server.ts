@@ -1,9 +1,8 @@
 import PluginConfigOptions = Cypress.PluginConfigOptions;
-import RequestTask = Cypress.RequestTask;
 import { RawData, WebSocketServer } from 'ws';
 import { ENV_WS, wsPath } from '../common';
-import AllureTasks = Cypress.AllureTasks;
 import Debug from 'debug';
+import { AllureTasks, RequestTask } from '../plugins/allure-types';
 
 const debug = Debug('cypress-allure:server');
 const logMessage = Debug('cypress-allure:server:message');

@@ -1,6 +1,6 @@
 before('Global Setup', () => {
   console.log('Setup');
-  cy.allure({ task: 'step', arg: { name: 'global setup' } });
+  cy.allure().step('global setup');
 });
 
 after('Global teardown', () => {
