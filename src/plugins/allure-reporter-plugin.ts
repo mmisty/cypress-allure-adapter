@@ -17,6 +17,7 @@ import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
+import StatusDetails = Cypress.StatusDetails;
 
 const debug = Debug('cypress-allure:reporter');
 
@@ -41,6 +42,7 @@ export class AllureReporter {
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
   attached: string[] = [];
+  testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
 
   constructor(opts: ReporterOptions) {
     this.allureResults = opts.allureResults;
@@ -557,8 +559,17 @@ export class AllureReporter {
     }
   }
 
+  testStatus(arg: AllureTaskArgs<'testStatus'>) {
+    if (!this.currentTest) {
+      return;
+    }
+    this.testStatusStored = arg;
+  }
+
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
+    const stored = this.testStatusStored;
+    this.testStatusStored = undefined;
     this.endAllSteps({ status: result, details });
 
     // this.currentTest.status = result; //todo
@@ -566,41 +577,54 @@ export class AllureReporter {
       return;
     }
 
-    if (result === Status.PASSED) {
-      this.currentTest.status = Status.PASSED;
-      this.currentTest.stage = Stage.FINISHED;
+    const setStatus = (res: Status, detailss?: StatusDetails) => {
+      if (!this.currentTest) {
+        return;
+      }
+
+      if (res === Status.PASSED) {
+        this.currentTest.status = Status.PASSED;
+        this.currentTest.stage = Stage.FINISHED;
+      }
+
+      if (res === Status.BROKEN) {
+        this.currentTest.status = Status.BROKEN;
+        this.currentTest.stage = Stage.FINISHED;
+      }
+
+      if (res === Status.FAILED) {
+        this.currentTest.status = Status.FAILED;
+        this.currentTest.stage = Stage.FINISHED;
+
+        this.currentTest.detailsMessage = detailss?.message;
+        this.currentTest.detailsTrace = detailss?.trace;
+      }
+
+      if (res === Status.SKIPPED) {
+        this.currentTest.status = Status.SKIPPED;
+        this.currentTest.stage = Stage.PENDING;
+
+        this.currentTest.detailsMessage = detailss?.message || 'Suite disabled';
+      }
+
+      if (res !== Status.FAILED && res !== Status.BROKEN && res !== Status.PASSED && res !== Status.SKIPPED) {
+        this.currentTest.status = UNKNOWN;
+        this.currentTest.stage = Stage.PENDING;
+
+        this.currentTest.detailsMessage = detailss?.message || `Unknown result: ${res ?? '<no>'}`;
+      }
+
+      if (detailss) {
+        this.currentTest.statusDetails = detailss;
+      }
+    };
+
+    if (!stored) {
+      setStatus(result, details);
+    } else {
+      setStatus(stored.result, stored.details);
     }
 
-    if (result === Status.BROKEN) {
-      this.currentTest.status = Status.BROKEN;
-      this.currentTest.stage = Stage.FINISHED;
-    }
-
-    if (result === Status.FAILED) {
-      this.currentTest.status = Status.FAILED;
-      this.currentTest.stage = Stage.FINISHED;
-
-      this.currentTest.detailsMessage = details?.message;
-      this.currentTest.detailsTrace = details?.trace;
-    }
-
-    if (result === Status.SKIPPED) {
-      this.currentTest.status = Status.SKIPPED;
-      this.currentTest.stage = Stage.PENDING;
-
-      this.currentTest.detailsMessage = details?.message || 'Suite disabled';
-    }
-
-    if (result !== Status.FAILED && result !== Status.BROKEN && result !== Status.PASSED && result !== Status.SKIPPED) {
-      this.currentTest.status = UNKNOWN;
-      this.currentTest.stage = Stage.PENDING;
-
-      this.currentTest.detailsMessage = details?.message || `Unknown result: ${result ?? '<no>'}`;
-    }
-
-    if (details) {
-      this.currentTest.statusDetails = details;
-    }
     // this.endSteps();
 
     /*this.featureProps.apply(a => super.feature(a));

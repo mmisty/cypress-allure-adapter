@@ -33,6 +33,7 @@ export const registerCommands = () => {
     thread: (allure, value) => allure.thread(value),
     allureId: (allure, value) => allure.allureId(value),
     //  testID: (allure, id) => allure.label('AS_ID', id),
+    testStatus: (allure, result, details) => allure.testStatus(result, details),
     testAttachment: (allure, name, content, type) => allure.testAttachment(name, content, type),
     testFileAttachment: (allure, name, file, type) => allure.testFileAttachment(name, file, type),
     attachment: (allure, name, content, type) => allure.attachment(name, content, type),
@@ -69,7 +70,11 @@ export const registerCommands = () => {
 
     Cypress.Commands.add(cmd, { prevSubject: true }, (...args: any[]) => {
       const [allure, ...params] = args;
+
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       childCommands[command as keyof AllureReporter<unknown>](allure, ...params);
+
       cy.wrap(allure, { log: false });
     });
   }

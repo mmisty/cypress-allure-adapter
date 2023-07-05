@@ -2,7 +2,7 @@
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type StatusDetails = import('allure-js-commons').StatusDetails;
-  export type ContentType = import('allure-js-commons').ContentType;
+  export type ContentType = import('../plugins/allure-types').ContentType;
   type LinkType = 'issue' | 'tms';
   type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
   type Parameter = { name: string; value: string };
@@ -30,6 +30,7 @@ declare namespace Cypress {
     severity(level: Severity): T;
     thread(value: string): T;
     fullName(value: string): T;
+    testStatus(result: Status, details?: StatusDetails): T;
     testAttachment(name: string, content: Buffer | string, type: ContentType): T;
     testFileAttachment(name: string, file: string, type: ContentType): T;
     attachment(name: string, content: Buffer | string, type: ContentType): T;

@@ -4,6 +4,7 @@ import { Hook } from 'mocha';
 import { handleCyLogEvents } from './cypress-events';
 import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
+import StatusDetails = Cypress.StatusDetails;
 
 const debug = Debug('cypress-allure:mocha-reporter');
 // this is running in Browser
@@ -80,6 +81,7 @@ export const allureInterface = (
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
     testAttachment: (name: string, content: string | Buffer, type) =>
       fn({ task: 'testAttachment', arg: { name, content, type } }),
+    testStatus: (result: Status, details?: StatusDetails) => fn({ task: 'testStatus', arg: { result, details } }),
     testFileAttachment: (name: string, file: string, type) =>
       fn({ task: 'testFileAttachment', arg: { name, file, type } }),
     attachment: (name: string, content: string | Buffer, type) =>
