@@ -81,13 +81,15 @@ export const getContentType = (file: string): ContentType => {
 export const registerScreenshotHandler = (allureReporter: Cypress.AllureReporter<void>) => {
   const originalHandler = (Cypress.Screenshot as any).onAfterScreenshot;
 
-  (Cypress.Screenshot as any).onAfterScreenshot = (_$el, ...args) => {
+  (Cypress.Screenshot as any).onAfterScreenshot = (_$el: unknown, ...args: { path: string }[]) => {
     debug('Screenshot handler');
     // testAttemptIndex, takenAt, name
     const [{ path }] = args;
 
-    // todo setting
-    allureReporter.testFileAttachment(basename(path), path, getContentType(path));
+    if (path) {
+      // todo setting
+      allureReporter.testFileAttachment(basename(path), path, getContentType(path));
+    }
 
     originalHandler(_$el, ...args);
   };
