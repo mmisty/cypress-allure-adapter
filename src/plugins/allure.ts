@@ -105,6 +105,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.testStatus(arg);
       log('testStatus');
     },
+    testDetails: (arg: AllureTaskArgs<'testDetails'>) => {
+      log(`testDetails ${JSON.stringify(arg)}`);
+      allureReporter.testDetails(arg);
+      log('testDetails');
+    },
     testAttachment: (arg: AllureTaskArgs<'testAttachment'>) => {
       log(`testAttachment ${JSON.stringify(arg)}`);
       allureReporter.testAttachment(arg);

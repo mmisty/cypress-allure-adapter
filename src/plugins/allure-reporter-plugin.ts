@@ -43,6 +43,7 @@ export class AllureReporter {
   descriptionHtml: string[] = [];
   attached: string[] = [];
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
+  testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
   constructor(opts: ReporterOptions) {
     this.allureResults = opts.allureResults;
@@ -604,9 +605,17 @@ export class AllureReporter {
     this.testStatusStored = arg;
   }
 
+  testDetails(arg: AllureTaskArgs<'testDetails'>) {
+    if (!this.currentTest) {
+      return;
+    }
+    this.testDetailsStored = arg;
+  }
+
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
-    const stored = this.testStatusStored;
+    const storedStatus = this.testStatusStored;
+    const storedDetails = this.testDetailsStored;
     this.endAllSteps({ status: result, details });
 
     // this.currentTest.status = result; //todo
@@ -614,10 +623,14 @@ export class AllureReporter {
       return;
     }
 
-    if (!stored) {
-      this.setExecutableStatus(this.currentTest, result, details);
-    } else {
-      this.setExecutableStatus(this.currentTest, stored.result, stored.details);
+    this.setExecutableStatus(this.currentTest, result, details);
+
+    if (storedDetails) {
+      this.setExecutableStatus(this.currentTest, result, storedDetails.details);
+    }
+
+    if (storedStatus) {
+      this.setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
     }
 
     // this.endSteps();
