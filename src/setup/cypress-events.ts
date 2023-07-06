@@ -57,6 +57,7 @@ const createEmitEvent =
 export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands: string[] }) => {
   const { ignoreCommands } = config;
   const commands: string[] = [];
+  const logCommands: string[] = [];
   const emit = createEmitEvent(runner);
 
   const isLogCommand = (isLog: boolean, name: string) => {
@@ -66,10 +67,13 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   Cypress.on('log:added', async log => {
     const cmdMessage = stepMessage(log.name, log.message);
     const logName = log.name;
+    const lastCommand = commands[commands.length - 1];
+    const lastLogCommand = logCommands[logCommands.length - 1];
     // const isEnded = log.end;
 
     // logs are being added for all from command log, need to exclude same items
-    if (cmdMessage !== commands[commands.length - 1] && !ignoreCommands.includes(logName)) {
+    if (cmdMessage !== lastCommand && cmdMessage !== lastLogCommand && !ignoreCommands.includes(logName)) {
+      logCommands.push(cmdMessage);
       emit({ task: 'step', arg: { name: cmdMessage } });
     }
   });
