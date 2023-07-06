@@ -111,7 +111,7 @@ export const registerStubReporter = () => {
   });
 };
 
-const allAfters = (s: Mocha.Suite | undefined, res: Hook[] = []) => {
+const allAfters = (s: Mocha.Suite | undefined, res: Hook[] = []): Hook[] => {
   if (!s) {
     return res;
   }
