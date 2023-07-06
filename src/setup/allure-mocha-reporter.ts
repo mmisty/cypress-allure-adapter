@@ -9,6 +9,7 @@ import StatusDetails = Cypress.StatusDetails;
 const debug = Debug('cypress-allure:mocha-reporter');
 // this is running in Browser
 const ignoreCommands = ['allure', 'then'];
+const TEST_PENDING_DETAILS = 'Test ignored';
 
 const logEvent = (...args: any[]) => {
   if (Cypress.env('DEBUG')) {
@@ -392,12 +393,13 @@ export const registerMochaReporter = (ws: WebSocket) => {
       tests.pop();
       const detailsErr = test.err as Error;
       const testState = convertState(test.state);
+      const detailsMessage = msg => (!msg && testState === 'skipped' ? TEST_PENDING_DETAILS : msg);
       await message({
         task: 'testEnded',
         arg: {
           result: testState,
           details: {
-            message: detailsErr?.message ?? testState === 'skipped' ? 'IGNORED' : '',
+            message: detailsMessage(detailsErr?.message),
             trace: detailsErr?.stack,
           },
         },
