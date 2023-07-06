@@ -272,7 +272,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.TEST_RETRY, async test => {
-      tests.push(test.fullTitle());
       logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
