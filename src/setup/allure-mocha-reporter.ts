@@ -1,6 +1,5 @@
 import Debug from 'debug';
 import { createMessage } from './websocket';
-import { Hook } from 'mocha';
 import { handleCyLogEvents } from './cypress-events';
 import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
@@ -109,10 +108,10 @@ export const allureInterface = (
 
 export const registerStubReporter = () => {
   Cypress.Allure = allureInterface(() => {
-    // ignore
+    // do nothing when no allure reporting enabled
   });
 };
-
+/*
 const allAfters = (s: Mocha.Suite | undefined, res: Hook[] = []): Hook[] => {
   if (!s) {
     return res;
@@ -160,12 +159,13 @@ class AfterEachHookManager {
   }
 }
 type SuiteExtended = Mocha.Suite & { parent: SuiteExtended; hooks: (Mocha.Hook & { hookName?: string })[] };
+*/
 
 export const registerMochaReporter = (ws: WebSocket) => {
   const tests: string[] = [];
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   runner.setMaxListeners(20);
-  const afterHooks = new AfterEachHookManager();
+  //const afterHooks = new AfterEachHookManager();
   const message = createMessage(ws);
   const allureInterfaceInstance = allureInterface(message);
   registerScreenshotHandler(allureInterfaceInstance);
@@ -198,7 +198,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.HOOK_START, async hook => {
       logEvent(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
-      afterHooks.addStartedAfterEach(hook);
+      //afterHooks.addStartedAfterEach(hook);
 
       // do not log technical after eaches
       //if (hook.title?.indexOf(TECH_POSTFIX) === -1) {
@@ -226,10 +226,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
         },
       });
 
-      if (afterHooks.isLastHook(hook)) {
-        logEvent('TEST END AFTER ALL AFTER EACHES');
-        runner.emit(CUSTOM_EVENTS.TEST_END, afterHooks.currentTest);
-      }
+      //if (afterHooks.isLastHook(hook)) {
+      //runner.emit(CUSTOM_EVENTS.TEST_END, afterHooks.currentTest);
+      //}
     })
 
     .on(MOCHA_EVENTS.TEST_PENDING, test => {
@@ -248,15 +247,14 @@ export const registerMochaReporter = (ws: WebSocket) => {
       if (isStartedTest()) {
         // for some reason begin event fires twice when test is skipped by this.skip();
         logEvent('test pending');
-        // runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
 
         return;
       }
 
       tests.push(test.fullTitle());
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-      afterHooks.clear();
-      afterHooks.setCurrentTestHooks(test);
+      //afterHooks.clear();
+      //afterHooks.setCurrentTestHooks(test);
       // when no hooks use original event
     })
 
@@ -275,10 +273,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
       logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
-      if (!afterHooks.hasAftersEaches()) {
-        logEvent('TEST END AFTER ALL AFTER EACHES');
-        runner.emit(CUSTOM_EVENTS.TEST_END, test);
-      }
+      //if (!afterHooks.hasAftersEaches()) {
+      //runner.emit(CUSTOM_EVENTS.TEST_END, test);
+      //}
     })
 
     .on(MOCHA_EVENTS.TEST_PASS, async test => {
@@ -298,10 +295,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(MOCHA_EVENTS.TEST_END, test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
 
-      if (!afterHooks.hasAftersEaches()) {
-        logEvent('TEST END AFTER ALL AFTER EACHES');
-        runner.emit(CUSTOM_EVENTS.TEST_END, test);
-      }
+      //if (!afterHooks.hasAftersEaches()) {
+      //runner.emit(CUSTOM_EVENTS.TEST_END, test);
+      // }
     })
 
     .on(MOCHA_EVENTS.SUITE_END, async suite => {
@@ -405,6 +401,10 @@ export const registerMochaReporter = (ws: WebSocket) => {
         },
       });
     });
+
+  Cypress.on('test:after:run', (_t, test) => {
+    runner.emit(CUSTOM_EVENTS.TEST_END, test);
+  });
 
   const ignoreMoreCommands = (Cypress.env('allureSkipCommands') ?? '').split(',');
 

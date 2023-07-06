@@ -1,8 +1,7 @@
 import { delay } from 'cypress-redirect-browser-log/utils/functions';
-import { ENV_WS, Message, MessageQueue, packageLog, wsPath } from '../common';
+import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 
-let id = 0;
 const timeout = 5000;
 
 export const startWsClient = (): WebSocket | undefined => {
@@ -39,10 +38,7 @@ const messageQueue = new MessageQueue();
 
 export const createMessage = (ws: WebSocket) => {
   return async <T extends RequestTask>(data: AllureTransfer<T> | string) => {
-    id = id + 1;
-    const msg = { data, id };
-    messageQueue.enqueue(new Message(id, msg));
-
+    messageQueue.enqueue(data);
     const started = Date.now();
 
     while (ws.readyState !== ws.OPEN && Date.now() - started < timeout) {

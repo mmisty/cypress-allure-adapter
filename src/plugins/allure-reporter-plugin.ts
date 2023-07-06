@@ -653,6 +653,7 @@ export class AllureReporter {
     this.tests.pop();
     this.descriptionHtml = [];
     this.testStatusStored = undefined;
+    this.testDetailsStored = undefined;
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {

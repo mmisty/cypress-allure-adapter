@@ -2,22 +2,24 @@ export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
 export const packageLog = '[cypress-allure-adapter]';
 
-export class Message {
-  id: number;
-  data: any;
+type Message = { data: any; id: number };
+/*export class Message {
+  data: { any };
 
-  constructor(id: number, data: any) {
-    this.id = id;
+  constructor(data: any) {
     this.data = data;
   }
-}
+}*/
 export class MessageQueue {
+  private id = 0;
   private messages: Message[] = [];
   length() {
     return this.messages.length;
   }
 
-  enqueue(message: Message) {
+  enqueue(data: any) {
+    this.id++;
+    const message: Message = { data, id: this.id };
     this.messages.push(message);
     this.messages.sort((a, b) => a.id - b.id);
   }

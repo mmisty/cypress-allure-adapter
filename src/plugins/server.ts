@@ -43,10 +43,9 @@ const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer
   }
 };
 
-const executeTask = (tasks: AllureTasks, data: any) => {
+const executeTask = (tasks: AllureTasks, data: { task: any; arg: any }) => {
   if (!data || !data.task) {
-    log('Will not run task - not data or task field:');
-    log(JSON.stringify(data));
+    log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
 
     return;
   }
@@ -91,13 +90,14 @@ export function startReporterServer(configOptions: PluginConfigOptions, tasks: A
         }
       };
       const requestData = parseData(data);
+      const payload = requestData.data;
 
       if (requestData.id) {
-        executeTask(tasks, requestData.data.data);
+        executeTask(tasks, payload);
       }
       sockserver.clients.forEach(client => {
-        log(`sending back: ${requestData?.data?.data?.task}`);
-        client.send(JSON.stringify({ task: requestData?.data?.data?.task, status: 'done' }));
+        log(`sending back: ${payload?.task}`);
+        client.send(JSON.stringify({ task: payload?.task, status: 'done' }));
       });
     });
 
