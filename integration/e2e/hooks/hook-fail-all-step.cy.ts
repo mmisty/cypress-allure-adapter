@@ -7,7 +7,7 @@ before('Global Setup', () => {
   console.log('Setup');
   cy.allure().startStep('global setup2');
   cy.wrap(null).then(() => {
-    throw new Error('Failed Before ALL');
+    throw new Error('Failed Before ALL step');
   });
   cy.allure().endStep();
 });
@@ -17,7 +17,7 @@ after('Global teardown', () => {
   console.log('Tear down');
 });
 
-describe('hooks test - failed global hook', () => {
+describe('hooks test - failed global hook step', () => {
   it('test 1', () => {
     cy.log('test 1');
   });

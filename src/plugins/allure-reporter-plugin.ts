@@ -10,7 +10,7 @@ import {
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -142,7 +142,7 @@ export class AllureReporter {
 
     if (title && (title.indexOf('before each') !== -1 || title.indexOf('after each') !== -1)) {
       log(`${title} will not be added to suite:${hookId} ${title}`);
-      // need to end all steps before logging hook - should be parent
+      // need to end all steps before logging hook - it should be logged as parent
       this.endAllSteps({ status: UNKNOWN });
 
       this.startStep({ name: title });
@@ -150,13 +150,55 @@ export class AllureReporter {
       return;
     }
 
-    const currentHook = title?.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+    if (title) {
+      const currentHook = title.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
 
-    if (currentHook) {
       currentHook.name = title;
       currentHook.wrappedItem.start = date ?? Date.now();
       this.hooks.push({ id: hookId, hook: currentHook });
       this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+    }
+  }
+
+  setExecutableStatus(executable: ExecutableItemWrapper | undefined, res: Status, dtls?: StatusDetails) {
+    if (!executable) {
+      return;
+    }
+
+    if (res === Status.PASSED) {
+      executable.status = Status.PASSED;
+      executable.stage = Stage.FINISHED;
+    }
+
+    if (res === Status.BROKEN) {
+      executable.status = Status.BROKEN;
+      executable.stage = Stage.FINISHED;
+    }
+
+    if (res === Status.FAILED) {
+      executable.status = Status.FAILED;
+      executable.stage = Stage.FINISHED;
+
+      executable.detailsMessage = dtls?.message;
+      executable.detailsTrace = dtls?.trace;
+    }
+
+    if (res === Status.SKIPPED) {
+      executable.status = Status.SKIPPED;
+      executable.stage = Stage.PENDING;
+
+      executable.detailsMessage = dtls?.message || 'Suite disabled';
+    }
+
+    if (res !== Status.FAILED && res !== Status.BROKEN && res !== Status.PASSED && res !== Status.SKIPPED) {
+      executable.status = UNKNOWN;
+      executable.stage = Stage.PENDING;
+
+      executable.detailsMessage = dtls?.message || `Unknown result: ${res ?? '<no>'}`;
+    }
+
+    if (dtls) {
+      executable.statusDetails = dtls;
     }
   }
 
@@ -177,13 +219,9 @@ export class AllureReporter {
     }
 
     if (this.currentHook) {
-      this.currentHook.status = result;
-      this.currentHook.stage = Stage.FINISHED;
-
-      if (details) {
-        this.currentHook.statusDetails = details;
-      }
       this.currentHook.wrappedItem.stop = date ?? Date.now();
+      this.setExecutableStatus(this.currentHook, result, details);
+
       this.hooks.pop();
 
       return;
@@ -569,7 +607,6 @@ export class AllureReporter {
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
     const stored = this.testStatusStored;
-    this.testStatusStored = undefined;
     this.endAllSteps({ status: result, details });
 
     // this.currentTest.status = result; //todo
@@ -577,52 +614,10 @@ export class AllureReporter {
       return;
     }
 
-    const setStatus = (res: Status, detailss?: StatusDetails) => {
-      if (!this.currentTest) {
-        return;
-      }
-
-      if (res === Status.PASSED) {
-        this.currentTest.status = Status.PASSED;
-        this.currentTest.stage = Stage.FINISHED;
-      }
-
-      if (res === Status.BROKEN) {
-        this.currentTest.status = Status.BROKEN;
-        this.currentTest.stage = Stage.FINISHED;
-      }
-
-      if (res === Status.FAILED) {
-        this.currentTest.status = Status.FAILED;
-        this.currentTest.stage = Stage.FINISHED;
-
-        this.currentTest.detailsMessage = detailss?.message;
-        this.currentTest.detailsTrace = detailss?.trace;
-      }
-
-      if (res === Status.SKIPPED) {
-        this.currentTest.status = Status.SKIPPED;
-        this.currentTest.stage = Stage.PENDING;
-
-        this.currentTest.detailsMessage = detailss?.message || 'Suite disabled';
-      }
-
-      if (res !== Status.FAILED && res !== Status.BROKEN && res !== Status.PASSED && res !== Status.SKIPPED) {
-        this.currentTest.status = UNKNOWN;
-        this.currentTest.stage = Stage.PENDING;
-
-        this.currentTest.detailsMessage = detailss?.message || `Unknown result: ${res ?? '<no>'}`;
-      }
-
-      if (detailss) {
-        this.currentTest.statusDetails = detailss;
-      }
-    };
-
     if (!stored) {
-      setStatus(result, details);
+      this.setExecutableStatus(this.currentTest, result, details);
     } else {
-      setStatus(stored.result, stored.details);
+      this.setExecutableStatus(this.currentTest, stored.result, stored.details);
     }
 
     // this.endSteps();
@@ -644,6 +639,7 @@ export class AllureReporter {
 
     this.tests.pop();
     this.descriptionHtml = [];
+    this.testStatusStored = undefined;
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {

@@ -27,8 +27,6 @@ const logEvent = (...args: any[]) => {
   }
 };
 
-export const TECH_POST_FIX = '(skip)';
-
 const MOCHA_EVENTS = {
   RUN_BEGIN: 'start',
   SUITE_BEGIN: 'suite',
@@ -39,6 +37,7 @@ const MOCHA_EVENTS = {
   TEST_PASS: 'pass',
   TEST_RETRY: 'retry',
   TEST_END: 'test end',
+  TEST_PENDING: 'pending',
   SUITE_END: 'suite end',
   RUN_END: 'end',
 };
@@ -48,6 +47,7 @@ const CUSTOM_EVENTS = {
   TEST_FAIL: 'test fail allure',
   TEST_PASS: 'test pass allure',
   TEST_END: 'test end allure',
+  HOOK_END: 'hook end allure',
   TASK: 'task',
   GLOBAL_HOOK_FAIL: 'global hook fail',
   GLOBAL_HOOK_PASS: 'global hook pass',
@@ -111,10 +111,64 @@ export const registerStubReporter = () => {
   });
 };
 
+const allAfters = (s: Mocha.Suite | undefined, res: Hook[] = []) => {
+  if (!s) {
+    return res;
+  }
+  const extSuite = s as SuiteExtended;
+  const curr = extSuite.hooks ? extSuite.hooks.filter(x => x.hookName === 'after each') : [];
+
+  return allAfters(s.parent, [...res, ...curr]);
+};
+
+class AfterEachHookManager {
+  private currentTestLocal: Mocha.Test | undefined = undefined;
+  private afterHooks = 0;
+  private currentTestHooksLocal: Hook[] = [];
+
+  get currentTest() {
+    return this.currentTestLocal;
+  }
+
+  clear() {
+    this.afterHooks = 0;
+    this.currentTestHooksLocal = [];
+    this.currentTestLocal = undefined;
+  }
+
+  addStartedAfterEach(hook: Hook) {
+    logEvent(`hook${hook.title}`);
+    logEvent(`hooks ${this.afterHooks}`);
+
+    if ((hook as any).hookName === 'after each') {
+      this.afterHooks++;
+    }
+  }
+
+  hasAftersEaches() {
+    logEvent(this.currentTestHooksLocal);
+
+    return this.currentTestHooksLocal.length !== 0;
+  }
+
+  isLastHook(hook: Hook) {
+    logEvent('CHECK');
+    logEvent(`${this.currentTestHooksLocal.length} == ${this.afterHooks}`);
+
+    return (hook as any).hookName === 'after each' && this.currentTestHooksLocal.length === this.afterHooks;
+  }
+
+  setCurrentTestHooks(test: Mocha.Test) {
+    this.currentTestLocal = test;
+    this.currentTestHooksLocal = allAfters(test.parent);
+  }
+}
+type SuiteExtended = Mocha.Suite & { parent: SuiteExtended; hooks: (Mocha.Hook & { hookName?: string })[] };
+
 export const registerMochaReporter = (ws: WebSocket) => {
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   runner.setMaxListeners(20);
-
+  const afterHooks = new AfterEachHookManager();
   const message = createMessage(ws);
   const allureInterfaceInstance = allureInterface(message);
   registerScreenshotHandler(allureInterfaceInstance);
@@ -146,14 +200,136 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(MOCHA_EVENTS.HOOK_START, async hook => {
       logEvent(`event ${MOCHA_EVENTS.HOOK_START}`);
       logEvent(`name ${hook.title}`);
+      afterHooks.addStartedAfterEach(hook);
 
-      if (hook.title?.indexOf(TECH_POST_FIX) !== -1) {
-        // do not log technical after eaches
-        return;
-      }
+      // do not log technical after eaches
+      //if (hook.title?.indexOf(TECH_POSTFIX) === -1) {
       await message({
         task: 'hookStarted',
         arg: { title: hook.title, file: hook.file, hookId: hook.hookId },
+      });
+      //}
+    })
+
+    .on(MOCHA_EVENTS.HOOK_END, async hook => {
+      logEvent(`event ${MOCHA_EVENTS.HOOK_END}`);
+      logEvent(`name ${hook.title}`);
+      logEvent(`HOOK STATE ${hook.state}`);
+      logEvent(hook);
+
+      // do not log technical after eaches
+      //if (hook.title?.indexOf(TECH_POSTFIX) === -1) {
+      await message({
+        task: 'hookEnded',
+        arg: {
+          title: hook.title,
+          result: hook.err ? Status.FAILED : Status.PASSED,
+          details: {
+            message: hook.err?.message,
+            trace: hook.err?.stack,
+          },
+        },
+      });
+
+      if (afterHooks.isLastHook(hook)) {
+        logEvent('TEST END AFTER ALL AFTER EACHES');
+        runner.emit(CUSTOM_EVENTS.TEST_END, afterHooks.currentTest);
+      }
+    })
+
+    .on(MOCHA_EVENTS.TEST_BEGIN, async (test: Mocha.Test) => {
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
+      afterHooks.clear();
+      afterHooks.setCurrentTestHooks(test);
+      // when no hooks use original event
+    })
+
+    .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}`);
+      logEvent(test?.title);
+
+      if ((test as any).type === 'hook' && (test as any).hookName === 'before all') {
+        runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
+      } else {
+        runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
+      }
+    })
+
+    .on(MOCHA_EVENTS.TEST_RETRY, async test => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}`);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
+
+      if (!afterHooks.hasAftersEaches()) {
+        logEvent('TEST END AFTER ALL AFTER EACHES');
+        runner.emit(CUSTOM_EVENTS.TEST_END, test);
+      }
+    })
+
+    .on(MOCHA_EVENTS.TEST_PASS, async test => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_PASS}`);
+      logEvent(test.title);
+
+      await message({
+        task: 'testResult',
+        arg: {
+          suite: test.parent?.fullTitle() ?? '',
+          title: test.title,
+          fullTitle: test.fullTitle(),
+          id: test.id,
+          result: convertState('passed'),
+        },
+      });
+    })
+    .on(MOCHA_EVENTS.TEST_PENDING, () => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_PENDING}`);
+      // ignore for now
+    })
+    .on(MOCHA_EVENTS.TEST_END, test => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_END}`);
+      logEvent(test.title);
+
+      // after each is not called for pending tests
+      if (test.state === 'pending') {
+        runner.emit(CUSTOM_EVENTS.TEST_END, test);
+      }
+
+      if (!afterHooks.hasAftersEaches()) {
+        logEvent('TEST END AFTER ALL AFTER EACHES');
+        runner.emit(CUSTOM_EVENTS.TEST_END, test);
+      }
+    })
+
+    .on(MOCHA_EVENTS.SUITE_END, async suite => {
+      logEvent(`event ${MOCHA_EVENTS.SUITE_END}`);
+      logEvent(suite.title);
+      logEvent(suite.file);
+
+      if (isRootSuite(suite)) {
+        return;
+      }
+      await message({ task: 'suiteEnded', arg: {} });
+    })
+    .on(MOCHA_EVENTS.RUN_END, async () => {
+      logEvent(`event ${MOCHA_EVENTS.RUN_END}`);
+
+      await message('RUN_END');
+    });
+
+  // custom events
+  runner
+    .on(CUSTOM_EVENTS.HOOK_END, async hook => {
+      logEvent(`event ${CUSTOM_EVENTS.HOOK_END}`);
+      await message({
+        task: 'hookEnded',
+        arg: {
+          title: hook.title,
+          result: hook.err ? Status.FAILED : Status.PASSED,
+          details: {
+            message: hook.err?.message,
+            trace: hook.err?.stack,
+          },
+        },
       });
     })
 
@@ -179,28 +355,11 @@ export const registerMochaReporter = (ws: WebSocket) => {
       }
     })
 
-    .on(MOCHA_EVENTS.HOOK_END, async hook => {
-      logEvent(`event ${MOCHA_EVENTS.HOOK_END}`);
-      logEvent(`name ${hook.title}`);
-      logEvent(`HOOK STATE ${hook.state}`);
-      logEvent(hook);
+    .on(CUSTOM_EVENTS.TEST_BEGIN, async test => {
+      logEvent(`event ${MOCHA_EVENTS.TEST_BEGIN}`);
+      logEvent(test.title);
 
-      if (hook.title?.indexOf(TECH_POST_FIX) !== -1) {
-        // do not log technical after eaches
-        return;
-      }
-
-      await message({
-        task: 'hookEnded',
-        arg: {
-          title: hook.title,
-          result: hook.err ? Status.FAILED : Status.PASSED,
-          details: {
-            message: hook.err?.message,
-            trace: hook.err?.stack,
-          },
-        },
-      });
+      await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
     })
 
     .on(CUSTOM_EVENTS.TASK, async payload => {
@@ -208,16 +367,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
       logEvent(payload);
 
       await message(payload);
-    })
-
-    .on(MOCHA_EVENTS.TEST_BEGIN, async test => {
-      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-    })
-    .on(CUSTOM_EVENTS.TEST_BEGIN, async test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_BEGIN}`);
-      logEvent(test.title);
-
-      await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
     })
 
     .on(CUSTOM_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
@@ -232,48 +381,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
           details: { message: test.err?.message, trace: test.err?.stack },
         },
       });
-    })
-
-    .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}`);
-      logEvent(test?.title);
-
-      if ((test as any).type === 'hook' && (test as any).hookName === 'before all') {
-        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
-      } else {
-        runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
-      }
-    })
-
-    .on(MOCHA_EVENTS.TEST_RETRY, async test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}`);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
-    })
-
-    .on(MOCHA_EVENTS.TEST_PASS, async test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_PASS}`);
-      logEvent(test.title);
-
-      await message({
-        task: 'testResult',
-        arg: {
-          suite: test.parent?.fullTitle() ?? '',
-          title: test.title,
-          fullTitle: test.fullTitle(),
-          id: test.id,
-          result: convertState('passed'),
-        },
-      });
-    })
-
-    .on(MOCHA_EVENTS.TEST_END, test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_END}`);
-      logEvent(test.title);
-
-      // after each is not called for pending tests
-      if (test.state === 'pending') {
-        runner.emit(CUSTOM_EVENTS.TEST_END, test);
-      }
     })
 
     .on(CUSTOM_EVENTS.TEST_END, async test => {
@@ -292,41 +399,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
           },
         },
       });
-    })
-
-    .on(MOCHA_EVENTS.SUITE_END, async suite => {
-      logEvent(`event ${MOCHA_EVENTS.SUITE_END}`);
-      logEvent(suite.title);
-      logEvent(suite.file);
-
-      if (isRootSuite(suite)) {
-        return;
-      }
-      await message({ task: 'suiteEnded', arg: {} });
-    })
-    .on(MOCHA_EVENTS.RUN_END, async () => {
-      logEvent(`event ${MOCHA_EVENTS.RUN_END}`);
-
-      await message('RUN_END');
     });
-
-  runner.suite.on('afterEach', (hook: Hook) => {
-    // technical hook
-    hook.title = `${hook.title}${TECH_POST_FIX}`;
-  });
-
-  // after each is not called when pending test
-  afterEach(function (this: Mocha.Context) {
-    const test = this.currentTest;
-
-    if (test) {
-      // need to send event that test ended after all after eaches,
-      // so test will be written correctly
-      cy.wrap(null, { log: false }).then(() => {
-        runner.emit(CUSTOM_EVENTS.TEST_END, test);
-      });
-    }
-  });
 
   const ignoreMoreCommands = (Cypress.env('allureSkipCommands') ?? '').split(',');
 
