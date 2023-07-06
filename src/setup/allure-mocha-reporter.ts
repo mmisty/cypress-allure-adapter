@@ -393,7 +393,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
       tests.pop();
       const detailsErr = test.err as Error;
       const testState = convertState(test.state);
-      const detailsMessage = msg => (!msg && testState === 'skipped' ? TEST_PENDING_DETAILS : msg);
+      const detailsMessage = (msg?: string) => (!msg && testState === 'skipped' ? TEST_PENDING_DETAILS : msg);
+
       await message({
         task: 'testEnded',
         arg: {
