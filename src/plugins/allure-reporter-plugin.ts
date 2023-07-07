@@ -207,7 +207,7 @@ export class AllureReporter {
     const { title, date, result, details } = arg ?? {};
 
     if (!this.currentGroup) {
-      log('no current group - not logging hook');
+      log('no current group - will end hook in storage');
       this.globalHooks.end(result, details);
 
       return;
@@ -560,7 +560,6 @@ export class AllureReporter {
 
       if (this.currentSpec?.relative) {
         this.currentTest.addLabel('path', this.currentSpec.relative);
-        // this.addDescriptionHtml({ value: this.currentSpec.relative });
       }
       this.globalHooks.processForTest();
     }
@@ -588,8 +587,6 @@ export class AllureReporter {
   addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
     this.descriptionHtml.push(arg.value);
     this.applyDescriptionHtml();
-    // this.currentTest.descriptionHtml = (this.currentTest.descriptionHtml ?? '') + descriptionHtml;
-    //this.currentTest.des
   }
 
   applyDescriptionHtml() {
@@ -618,7 +615,6 @@ export class AllureReporter {
     const storedDetails = this.testDetailsStored;
     this.endAllSteps({ status: result, details });
 
-    // this.currentTest.status = result; //todo
     if (!this.currentTest) {
       return;
     }
@@ -659,11 +655,9 @@ export class AllureReporter {
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
     const { name, date } = arg;
 
-    // const executable = this.currentStep ?? this.currentTest;
     if (!this.currentExecutable) {
-      log('No current executable, test or hook');
+      log('No current executable, test or hook - will start step for global hook');
       this.globalHooks.startStep(name);
-      //this.currentHookNoGroupCurrent?.steps?.push({ title: name, date: Date.now(), event: 'start' });
 
       return;
     }
@@ -681,6 +675,7 @@ export class AllureReporter {
     const { status, date, details } = arg;
 
     if (!this.currentExecutable) {
+      log('No current executable, test or hook - will end step for global hook');
       this.globalHooks.endStep(arg.status, details);
 
       return;

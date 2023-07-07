@@ -7,6 +7,7 @@ describe('skipped inside', () => {
     cy.log('skipped inside');
     cy.allure().tag('MY');
     this.skip();
+    cy.log('this should be skipped step');
   });
 
   afterEach(() => {

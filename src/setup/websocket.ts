@@ -1,5 +1,4 @@
-import { delay } from 'cypress-redirect-browser-log/utils/functions';
-import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
+import { delay, ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 
 const timeout = 5000;

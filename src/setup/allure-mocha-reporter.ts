@@ -4,6 +4,7 @@ import { handleCyLogEvents } from './cypress-events';
 import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
+import { delay } from '../common';
 
 const debug = Debug('cypress-allure:mocha-reporter');
 // this is running in Browser
@@ -50,7 +51,6 @@ const CUSTOM_EVENTS = {
   HOOK_END: 'hook end allure',
   TASK: 'task',
   GLOBAL_HOOK_FAIL: 'global hook fail',
-  GLOBAL_HOOK_PASS: 'global hook pass',
 };
 
 const convertState = (state: string): Status => {
@@ -63,6 +63,10 @@ const convertState = (state: string): Status => {
 
 const isRootSuite = (suite: Mocha.Suite) => {
   return suite.fullTitle() === '';
+};
+
+const isRootSuiteTest = (test: Mocha.Test) => {
+  return test.parent?.title === '';
 };
 
 export const allureInterface = (
@@ -111,110 +115,79 @@ export const registerStubReporter = () => {
     // do nothing when no allure reporting enabled
   });
 };
-/*
-const allAfters = (s: Mocha.Suite | undefined, res: Hook[] = []): Hook[] => {
-  if (!s) {
-    return res;
-  }
-  const extSuite = s as SuiteExtended;
-  const curr = extSuite.hooks ? extSuite.hooks.filter(x => x.hookName === 'after each') : [];
 
-  return allAfters(s.parent, [...res, ...curr]);
+const isBeforeAllHook = (test: Mocha.Test) => {
+  return (test as any).type === 'hook' && (test as any).hookName === 'before all';
 };
-
-class AfterEachHookManager {
-  private currentTestLocal: Mocha.Test | undefined = undefined;
-  private afterHooks = 0;
-  private currentTestHooksLocal: Hook[] = [];
-
-  get currentTest() {
-    return this.currentTestLocal;
-  }
-
-  clear() {
-    this.afterHooks = 0;
-    this.currentTestHooksLocal = [];
-    this.currentTestLocal = undefined;
-  }
-
-  addStartedAfterEach(hook: Hook) {
-    if ((hook as any).hookName === 'after each') {
-      this.afterHooks++;
-    }
-  }
-
-  hasAftersEaches() {
-    logEvent(this.currentTestHooksLocal);
-
-    return this.currentTestHooksLocal.length !== 0;
-  }
-
-  isLastHook(hook: Hook) {
-    return (hook as any).hookName === 'after each' && this.currentTestHooksLocal.length === this.afterHooks;
-  }
-
-  setCurrentTestHooks(test: Mocha.Test) {
-    this.currentTestLocal = test;
-    this.currentTestHooksLocal = allAfters(test.parent);
-  }
-}
-type SuiteExtended = Mocha.Suite & { parent: SuiteExtended; hooks: (Mocha.Hook & { hookName?: string })[] };
-*/
 
 export const registerMochaReporter = (ws: WebSocket) => {
   const tests: string[] = [];
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   runner.setMaxListeners(20);
-  //const afterHooks = new AfterEachHookManager();
   const message = createMessage(ws);
   const allureInterfaceInstance = allureInterface(message);
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = allureInterfaceInstance;
+  let startedSuite = false;
+  let runEnded = true;
 
-  const isStartedTest = () => {
-    return tests.length > 0;
-  };
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
+      runEnded = false;
       logEvent(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
-      runner.emit('task', { task: 'endAll', arg: {} });
-      await message({ task: 'specStarted', arg: { spec: Cypress.spec } });
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'specStarted', arg: { spec: Cypress.spec } });
     })
 
     .on(MOCHA_EVENTS.SUITE_BEGIN, async suite => {
       logEvent(`event ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title} + ${suite.fullTitle()}`);
 
       if (isRootSuite(suite)) {
-        runner.emit('task', { task: 'endAll', arg: {} });
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
 
         return;
       }
-
-      await message({
+      startedSuite = true;
+      runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'suiteStarted',
         arg: { title: suite.title, fullTitle: suite.fullTitle(), file: suite.file },
       });
     })
 
+    .on(MOCHA_EVENTS.SUITE_END, async suite => {
+      logEvent(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+
+      if (isRootSuite(suite)) {
+        startedSuite = false;
+
+        return;
+      }
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
+    })
+
     .on(MOCHA_EVENTS.HOOK_START, async hook => {
       logEvent(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
-      //afterHooks.addStartedAfterEach(hook);
 
-      // do not log technical after eaches
-      //if (hook.title?.indexOf(TECH_POSTFIX) === -1) {
-      await message({
+      if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
+        logEvent('GLOBAL BEFORE ALL - end all existing');
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
+      }
+
+      runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'hookStarted',
         arg: { title: hook.title, file: hook.file, hookId: hook.hookId },
       });
-      //}
     })
 
     .on(MOCHA_EVENTS.HOOK_END, async hook => {
       logEvent(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
 
-      // do not log technical after eaches
-      //if (hook.title?.indexOf(TECH_POSTFIX) === -1) {
-      await message({
+      /*if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
+        logEvent('GLOBAL BEFORE ALL - end all existing ');
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
+      }*/
+
+      runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'hookEnded',
         arg: {
           title: hook.title,
@@ -225,68 +198,63 @@ export const registerMochaReporter = (ws: WebSocket) => {
           },
         },
       });
-
-      //if (afterHooks.isLastHook(hook)) {
-      //runner.emit(CUSTOM_EVENTS.TEST_END, afterHooks.currentTest);
-      //}
     })
 
     .on(MOCHA_EVENTS.TEST_PENDING, test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_PENDING}: ${test.title}`);
-
-      if (!isStartedTest()) {
-        tests.push(test.fullTitle());
-        runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-      }
+      // ignore
     })
 
     .on(MOCHA_EVENTS.TEST_BEGIN, async (test: Mocha.Test) => {
       logEvent(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
       logEvent(`${JSON.stringify(tests)}`);
-
-      if (isStartedTest()) {
-        // for some reason begin event fires twice when test is skipped by this.skip();
-        logEvent('test pending');
-
-        return;
-      }
-
-      tests.push(test.fullTitle());
-      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-      //afterHooks.clear();
-      //afterHooks.setCurrentTestHooks(test);
-      // when no hooks use original event
+      // ignore
     })
 
     .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
       logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
-      if ((test as any).type === 'hook' && (test as any).hookName === 'before all') {
-        runner.emit(CUSTOM_EVENTS.HOOK_END, test);
-        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
-      } else {
+      if (!isBeforeAllHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
+
+        return;
       }
+      // hook end not fired when hook fails
+      runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+
+      if (isRootSuiteTest(test)) {
+        // only for root suite
+        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
+
+        return;
+      }
+
+      console.log('ALL ');
+      console.log(test);
+      let index = 0;
+      test.parent?.eachTest(ts => {
+        index++;
+
+        if (ts) {
+          runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
+          runner.emit(CUSTOM_EVENTS.TEST_FAIL, index === 1 ? test : { ...ts, err: test.err });
+          runner.emit(CUSTOM_EVENTS.TEST_END, index === 1 ? test : { ...ts, err: test.err });
+        }
+      });
     })
 
     .on(MOCHA_EVENTS.TEST_RETRY, async test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
-
-      //if (!afterHooks.hasAftersEaches()) {
-      //runner.emit(CUSTOM_EVENTS.TEST_END, test);
-      //}
     })
 
     .on(MOCHA_EVENTS.TEST_PASS, async test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_PASS}: ${test.title}`);
 
-      await message({
+      runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'testResult',
         arg: {
-          suite: test.parent?.fullTitle() ?? '',
           title: test.title,
-          fullTitle: test.fullTitle(),
           id: test.id,
           result: convertState('passed'),
         },
@@ -294,25 +262,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
     .on(MOCHA_EVENTS.TEST_END, test => {
       logEvent(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
-
-      //if (!afterHooks.hasAftersEaches()) {
-      //runner.emit(CUSTOM_EVENTS.TEST_END, test);
-      // }
-    })
-
-    .on(MOCHA_EVENTS.SUITE_END, async suite => {
-      logEvent(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
-
-      if (isRootSuite(suite)) {
-        return;
-      }
-      await message({ task: 'suiteEnded', arg: {} });
     })
 
     .on(MOCHA_EVENTS.RUN_END, async () => {
       logEvent(`event ${MOCHA_EVENTS.RUN_END}`);
-
-      await message('RUN_END');
+      runEnded = true;
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
     });
 
   // custom events
@@ -336,6 +291,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, async hook => {
       logEvent(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
       let i = 0;
+
+      await message({ task: 'endAll', arg: {} });
 
       for (const sui of hook.parent?.suites) {
         runner.emit(MOCHA_EVENTS.SUITE_BEGIN, sui);
@@ -372,9 +329,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       await message({
         task: 'testResult',
         arg: {
-          suite: test.parent?.fullTitle() ?? '',
           title: test.title,
-          fullTitle: test.fullTitle(),
           id: (test as any).id,
           result: convertState('failed'),
           details: { message: test.err?.message, trace: test.err?.stack },
@@ -402,8 +357,19 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     });
 
-  Cypress.on('test:after:run', (_t, test) => {
+  Cypress.on('test:before:run', async (_t, test) => {
+    const started = Date.now();
+
+    while (!startedSuite && !runEnded && Date.now() - started < Cypress.config('defaultCommandTimeout')) {
+      await delay(1);
+    }
+    runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
+    await message({ task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
+  });
+
+  Cypress.on('test:after:run', async (_t, test) => {
     runner.emit(CUSTOM_EVENTS.TEST_END, test);
+    await message({ task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
   });
 
   const ignoreMoreCommands = (Cypress.env('allureSkipCommands') ?? '').split(',');

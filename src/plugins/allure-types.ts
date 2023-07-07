@@ -50,9 +50,7 @@ type AllureTask = {
   screenshotOne: { name: string; forStep?: boolean };
   attachVideoToTests: { path: string };
   testResult: {
-    suite: string;
     title: string;
-    fullTitle: string;
     id: string;
     result: Status;
     details?: StatusDetails;
