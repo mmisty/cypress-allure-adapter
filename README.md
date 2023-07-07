@@ -1,14 +1,26 @@
 
-# cypress-template
+# Cypress-allure-adapter
 
-Template to create cypress library with jest tests, correct package structure,
-coverage connected to cypress and merging coverage for jest and cypress
+This is allure adapter for cypress providing realtime results.
+It is useful when using Allure TestOps - so you can watch tests execution.
 
 - [x] typescript support
 - [x] code coverage for cypress and jest, merge coverage
 - [x] formatting and eslint
 - [x] jest tests
-- [x] proper library extraction
+- [ ]
+
+## TODO
+ - [ ] Readme, setup and installation
+ - [ ] proper tests
+ - [ ] rename setup method
+ - [ ] before each hook failure case (show error for all skipped)
+
+## Contribution
+todo
+
+## Tests
+todo
 
 Create repository using this template if you need to create cypress library.
 
