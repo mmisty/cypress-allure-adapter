@@ -24,6 +24,7 @@ export const registerCommands = () => {
     addDescriptionHtml: (allure, value) => allure.addDescriptionHtml(value),
     //testName: (allure, name) => allure.testName(name),
     host: (allure, value) => allure.host(value),
+    deleteResults: allure => allure.deleteResults(),
     language: (allure, value) => allure.language(value),
     severity: (allure, value) => allure.severity(value),
     epic: (allure, value) => allure.epic(value),

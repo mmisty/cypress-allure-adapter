@@ -46,7 +46,7 @@
     "publish:patch": "export ver=$(semver $(npm show . version) --increment -i patch) && npm run publishPack && npm run postpublish",
     "publish:minor": "export ver=$(semver $(npm show . version) --increment -i minor) && npm run publishPack && npm run postpublish",
     "publish:major": "export ver=$(semver $(npm show . version) --increment -i major) && npm run publishPack && npm run postpublish",
-    "publish:pack": "export ver=\"0.0.2-alpha-1\" && npm run publishPack && npm run postpublish",
+    "publish:pack": "export ver=\"0.0.2-alpha-2\" && npm run publishPack && npm run postpublish",
     "postpublish": "git tag v$ver"
   },
   "devDependencies": {
