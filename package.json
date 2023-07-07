@@ -28,7 +28,7 @@
     "cy:run:grep": "export CYPRESS_GREP_RESULTS_FILE='./filtered_tests.json' && npm run cy:filter && npm run cy:run -- --config specPattern='*.*'",
     "cy:run:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- run || true",
     "cy:open:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- open",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "rm -rf lib && tsc --project tsconfig.build.json",
     "build:tests": "tsc && cd tests && tsc",
     "build:cy": "cd integration && tsc",
     "build:all": "npm run build && npm run build:cy && npm run build:tests",
@@ -40,11 +40,13 @@
     "cov:check": "COVERAGE_TEMP=reports/coverage-temp nyc check-coverage",
     "all": "npm run pre && npm run cov:check && npm run cov",
     "pre": "rm -rf ./node_modules/.cache lib reports coverage-nyc .nyc_output && npm run lint && npm run build:all && npm run test:all && npm run cov:merge",
-    "extract": "node .scripts/extract.js  --source lib --target . --package package.json",
-    "extract:undo": "npm run extract -- --undo",
-    "prepublishOnly": "npm run build && npm run extract",
-    "postpublish": "npm run extract:undo",
-    "try:pack": "npm run prepublishOnly && npm pack && npm run postpublish"
+    "pack": "npm run build && cp package.json ./lib/package.json && cp README.pack.md ./lib/README.md && sh .scripts/remove.sh && cd lib && npm version $ver --no-git-tag-version ",
+    "prepublish": "npm run lint",
+    "publishPack": "npm run pack && cd lib && npm publish",
+    "publish:patch": "export ver=$(semver $(npm show . version) --increment -i patch) && npm run publishPack && npm run postpublish",
+    "publish:minor": "export ver=$(semver $(npm show . version) --increment -i minor) && npm run publishPack && npm run postpublish",
+    "publish:major": "export ver=$(semver $(npm show . version) --increment -i major) && npm run publishPack && npm run postpublish",
+    "postpublish": "git tag v$ver"
   },
   "devDependencies": {
     "@cypress/code-coverage": "^3.10.0",

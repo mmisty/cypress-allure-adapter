@@ -25,8 +25,6 @@ install git pre-commit hooks - will be located in `.husky` folder
 | `cov`           | show html report for full coverage                                                                                                                          |
 | `cov:check`     | check coverage by thresholds specified in [nyc.config.js](./nyc.config.js)                                                                                  |
 | `pre`           | run all necessary scripts  (fmt, lint, build, tests and check cov)                                                                                          |
-| `extract`       | should be run after tsc and after everything is staged. Extracts everything from 'lib' to root directory. This is required for nice imports in target library |
-| `extract:undo`  | Be careful, commit everything you need before. Removes files and dirs that were extracted after `extract`                                                     |
 | `try:pack`      | try to pack the library - will create archieve with library files                                                                                             |
 
 
