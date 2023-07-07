@@ -2,7 +2,10 @@
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type StatusDetails = import('allure-js-commons').StatusDetails;
+  export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../plugins/allure-types').ContentType;
+  export type EnvironmentInfo = import('../plugins/allure-types').EnvironmentInfo;
+  export type ExecutorInfo = import('../plugins/allure-types').ExecutorInfo;
   type LinkType = 'issue' | 'tms';
   type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
   type Parameter = { name: string; value: string };
@@ -49,5 +52,8 @@ declare namespace Cypress {
     parameters(...params: Parameter[]): T;
     testParameter(name: string, value: string): T;
     addDescriptionHtml(value: string): T;
+    writeEnvironmentInfo(info: EnvironmentInfo): T;
+    writeExecutorInfo(info: ExecutorInfo): T;
+    writeCategoriesDefinitions(categories: Category[]): T;
   }
 }

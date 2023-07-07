@@ -1,7 +1,8 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { existsSync, rmdir, rmSync } from 'fs';
+import { existsSync, rmSync, writeFileSync } from 'fs';
+import { packageLog } from '../common';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -77,6 +78,22 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log(`testStarted ${JSON.stringify(arg)}`);
       allureReporter.startTest(arg);
       log('testStarted');
+    },
+
+    writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
+      allureReporter.allureRuntime.writer.writeEnvironmentInfo(arg.info);
+    },
+
+    writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
+      try {
+        writeFileSync(`${opts.allureResults}/executor.json`, JSON.stringify(arg.info));
+      } catch (err) {
+        console.error(`${packageLog} Could not write executor info`);
+      }
+    },
+
+    writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
+      allureReporter.allureRuntime.writer.writeCategoriesDefinitions(arg.categories);
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {

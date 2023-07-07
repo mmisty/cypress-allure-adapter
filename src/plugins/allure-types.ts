@@ -13,6 +13,9 @@ export interface AutoScreen {
 
 type AllureTask = {
   specStarted: { spec: Cypress.Spec };
+  writeEnvironmentInfo: { info: EnvironmentInfo };
+  writeExecutorInfo: { info: ExecutorInfo };
+  writeCategoriesDefinitions: { categories: Category[] };
   testEnded: { result: Status; details?: StatusDetails };
   testStarted: { title: string; fullTitle: string; id: string };
   suiteStarted: { title: string; fullTitle: string; file?: string };
@@ -111,3 +114,25 @@ type KeysStatus = keyof typeof Status;
 export type StatusType = typeof Status[KeysStatus];
 
 export const UNKNOWN = 'unknown' as Status;
+
+export type ExecutorInfo = {
+  name?: string;
+  type?: string;
+  url?: string;
+  buildOrder?: number;
+  buildName?: string;
+  buildUrl?: string;
+  reportUrl?: string;
+  reportName?: string;
+};
+
+export interface Category {
+  name?: string;
+  description?: string;
+  descriptionHtml?: string;
+  messageRegex?: string | RegExp;
+  traceRegex?: string | RegExp;
+  matchedStatuses?: Status[];
+  flaky?: boolean;
+}
+export type EnvironmentInfo = Record<string, string>;

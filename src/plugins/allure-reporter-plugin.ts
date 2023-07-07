@@ -128,7 +128,6 @@ export class AllureReporter {
     if (!existsSync(this.allureResults)) {
       mkdirSync(this.allureResults);
     }
-    this.allureRuntime.writer.writeEnvironmentInfo({ evd: 'test env' });
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {

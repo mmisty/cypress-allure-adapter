@@ -1,7 +1,7 @@
 import Debug from 'debug';
 import { createMessage } from './websocket';
 import { handleCyLogEvents } from './cypress-events';
-import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; // todo
+import { AllureTransfer, EnvironmentInfo, ExecutorInfo, RequestTask, Status, Category } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient, delay } from './helper';
@@ -57,6 +57,10 @@ export const allureInterface = (
 ): Cypress.AllureReporter<void> => {
   return {
     tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: 'tag', value: tag } })),
+    writeEnvironmentInfo: (info: EnvironmentInfo) => fn({ task: 'writeEnvironmentInfo', arg: { info } }),
+    writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
+    writeCategoriesDefinitions: (categories: Category[]) =>
+      fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
     endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
