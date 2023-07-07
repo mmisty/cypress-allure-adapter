@@ -513,8 +513,19 @@ export class AllureReporter {
   }
 
   applyGroupLabels() {
-    this.currentTest?.addLabel(LabelName.PACKAGE, this.groups.map(t => t.name.replace(/\./g, ' ')).join('.'));
     const [parentSuite, suite, subSuite] = this.groups;
+
+    if (this.currentSpec) {
+      const paths = this.currentSpec.relative?.split('/');
+
+      if (paths.length > 1) {
+        const pack = `${paths
+          .slice(0, paths.length - 1)
+          .map(t => t.replace(/\./g, ' '))
+          .join('.')}`;
+        this.currentTest?.addLabel(LabelName.PACKAGE, pack);
+      }
+    }
 
     if (this.groups.length > 0) {
       this.currentTest?.addLabel(LabelName.PARENT_SUITE, parentSuite.name);
