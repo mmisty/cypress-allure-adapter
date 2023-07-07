@@ -38,3 +38,8 @@ Cypress.Commands.add('myLog', (message: string) => {
   Cypress.log({ name: 'myLog', message });
   cy.task('log', message);
 });
+
+if (Cypress.config('isInteractive')) {
+  console.log('DELETE');
+  Cypress.Allure.deleteResults();
+}

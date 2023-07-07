@@ -61,6 +61,7 @@ export const allureInterface = (
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
     endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
     step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
+    deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     severity: (level: Cypress.Severity) => fn({ task: 'severity', arg: { level } }),
     language: (value: string) => fn({ task: 'language', arg: { value } }),
     link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
@@ -210,8 +211,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
       if (!isBeforeAllHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
+        // hook end not fired when hook fails
+        runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+
         return;
       }
+
       // hook end not fired when hook fails
       runner.emit(CUSTOM_EVENTS.HOOK_END, test);
 
@@ -226,10 +231,17 @@ export const registerMochaReporter = (ws: WebSocket) => {
       test.parent?.eachTest(ts => {
         index++;
 
+        ts.err = test.err;
+
         if (ts) {
-          runner.emit(CUSTOM_EVENTS.TEST_BEGIN, index === 1 ? test : ts);
+          runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
           runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
-          runner.emit(CUSTOM_EVENTS.TEST_END, index === 1 ? test : { ...ts, err: test.err });
+
+          if (index !== 1) {
+            // end all except first
+            // first test will be ended in cy event with proper message
+            runner.emit(CUSTOM_EVENTS.TEST_END, ts);
+          }
         }
       });
     })

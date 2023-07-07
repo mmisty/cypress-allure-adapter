@@ -2,6 +2,7 @@ describe('before each fail', () => {
   beforeEach(() => {
     cy.log('no name hook - before each');
   });
+
   beforeEach('Named hook', () => {
     cy.log('before each');
     cy.wrap(null).then(() => {

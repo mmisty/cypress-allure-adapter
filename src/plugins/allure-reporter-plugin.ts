@@ -195,11 +195,34 @@ export class AllureReporter {
       executable.status = UNKNOWN;
       executable.stage = Stage.PENDING;
 
-      executable.detailsMessage = dtls?.message || `Unknown result: ${res ?? '<no>'}`;
+      executable.detailsMessage = dtls?.message || `Result: ${res ?? '<no>'}`;
     }
 
     if (dtls) {
       executable.statusDetails = dtls;
+    }
+  }
+
+  setExecutableItemStatus(executableItem: ExecutableItem | undefined, res: Status, dtls?: StatusDetails) {
+    if (!executableItem) {
+      return;
+    }
+
+    executableItem.status = res;
+
+    if (res === Status.FAILED) {
+      if (dtls) {
+        executableItem.statusDetails.message = dtls?.message;
+        executableItem.statusDetails.trace = dtls?.trace;
+      }
+    }
+
+    if (res === Status.SKIPPED) {
+      executableItem.statusDetails.message = dtls?.message;
+    }
+
+    if (res !== Status.FAILED && res !== Status.BROKEN && res !== Status.PASSED && res !== Status.SKIPPED) {
+      executableItem.statusDetails.message = dtls?.message;
     }
   }
 
@@ -294,7 +317,6 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      console.log(file);
       const executable = this.currentStep ?? this.currentTest;
       const attachTo = forStep ? executable : this.currentTest;
 
@@ -488,7 +510,7 @@ export class AllureReporter {
     }
 
     if (!existsSync(arg.file)) {
-      console.log(`file ${arg.file} doesnt exist`);
+      console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
 
       return;
     }
@@ -663,7 +685,7 @@ export class AllureReporter {
 
   endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
     this.steps.forEach(() => {
-      this.endStep({ status: arg.status });
+      this.endStep(arg);
     });
   }
 
@@ -681,22 +703,23 @@ export class AllureReporter {
       return;
     }
 
-    this.currentStep.status = status;
-
     // set status to last step recursively
     const setLast = (steps: ExecutableItem[]) => {
       const stepsCount = steps.length;
 
-      if (steps.length > 0) {
+      if (stepsCount > 0) {
         setLast(steps[stepsCount - 1].steps);
-        steps[stepsCount - 1].status = status;
+        // steps[stepsCount - 1].status = status;
+        // check
+        this.setExecutableItemStatus(steps[stepsCount - 1], status, details);
       }
     };
     setLast(this.currentStep.wrappedItem.steps);
 
-    if (details) {
+    this.setExecutableStatus(this.currentStep, status, details);
+    /*if (details) {
       this.currentStep.statusDetails = { message: details?.message };
-    }
+    }*/
     this.currentStep.endStep(date);
 
     this.steps.pop();

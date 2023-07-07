@@ -1,6 +1,7 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
+import { existsSync, rmdir, rmSync } from 'fs';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -78,11 +79,23 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('testStarted');
     },
 
+    deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
+      allureReporter = new AllureReporter(opts);
+
+      try {
+        if (existsSync(opts.allureResults)) {
+          rmSync(opts.allureResults, { recursive: true });
+        }
+      } catch (err) {
+        log(`Could not delete: ${(err as Error).message}`);
+      }
+    },
+
     testResult(arg: AllureTaskArgs<'testResult'>) {
       log(`testResult ${JSON.stringify(arg)}`);
 
       if (allureReporter.currentTest) {
-        allureReporter.endAllSteps({ status: arg.result as Status });
+        allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
         allureReporter.currentTest.status = arg.result as any;
         allureReporter.currentTest.detailsMessage = arg.details?.message as any;
       }

@@ -1,6 +1,6 @@
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { RawData, WebSocketServer } from 'ws';
-import { ENV_WS, wsPath } from '../common';
+import { ENV_WS, packageLog, wsPath } from '../common';
 import Debug from 'debug';
 import { AllureTasks, RequestTask } from '../plugins/allure-types';
 
@@ -50,13 +50,18 @@ const executeTask = (tasks: AllureTasks, data: { task: any; arg: any }) => {
     return;
   }
 
-  if (Object.keys(tasks).indexOf(data.task) !== -1) {
-    const task = data.task as RequestTask; // todo check
-    log(task);
-    tasks[task](data.arg);
-  } else {
-    const msg = data.task ? `No such task: ${data.task}` : 'No task property in message';
-    log(msg);
+  try {
+    if (Object.keys(tasks).indexOf(data.task) !== -1) {
+      const task = data.task as RequestTask; // todo check
+      log(task);
+      tasks[task](data.arg);
+    } else {
+      const msg = data.task ? `No such task: ${data.task}` : 'No task property in message';
+      log(msg);
+    }
+  } catch (err) {
+    console.error(`${packageLog} Error running task: '${data.task}': ${(err as Error).message}`);
+    console.log((err as Error).stack);
   }
 };
 

@@ -30,6 +30,7 @@ declare namespace Cypress {
     severity(level: Severity): T;
     thread(value: string): T;
     fullName(value: string): T;
+    deleteResults(): T;
     testStatus(result: Status, details?: StatusDetails): T;
     testDetails(details?: StatusDetails): T;
     testAttachment(name: string, content: Buffer | string, type: ContentType): T;
