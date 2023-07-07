@@ -4,13 +4,13 @@ import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import { existsSync, mkdirSync, rmSync } from 'fs';
-import type { AutoScreen } from './allure-types';
+import type { AllureTasks, AutoScreen } from './allure-types';
 
 const debug = Debug('cypress-allure:plugins');
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
+export const configureEnv = (on: PluginEvents, config: PluginConfigOptions): AllureTasks | undefined => {
   // do setup with events and env, register tasks
   // register plugin events
   if (process.env.DEBUG) {
@@ -20,7 +20,7 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
   if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
     debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
 
-    return;
+    return undefined;
   }
 
   debug('Register plugin');
@@ -91,4 +91,6 @@ export const configureEnv = (on: PluginEvents, config: PluginConfigOptions) => {
     reporter.attachVideoToTests({ path: results.video ?? '' });
     // repuload with new ids for testops
   });
+
+  return reporter;
 };
