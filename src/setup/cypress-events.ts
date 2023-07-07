@@ -1,4 +1,8 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
+import Debug from 'debug';
+import { logClient } from './helper';
+
+const debug = logClient(Debug('cypress-allure:cy-events'));
 
 const stepMessage = (name: string, args: string) => {
   return `${name}: ${args}`;
@@ -29,7 +33,9 @@ const commandParams = (command: any) => {
     try {
       if (Array.isArray(commandArgs)) {
         return commandArgs
-          .map(t => (typeof t === 'string' ? t : convertEmptyObj(t)))
+          .map(t =>
+            typeof t === 'string' || typeof t === 'number' || typeof t === 'boolean' ? `${t}` : convertEmptyObj(t),
+          )
           .filter(t => t.trim() !== '')
           .join(', ');
       }
@@ -74,33 +80,18 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
     // logs are being added for all from command log, need to exclude same items
     if (cmdMessage !== lastCommand && cmdMessage !== lastLogCommand && !ignoreCommands.includes(logName)) {
       logCommands.push(cmdMessage);
-      emit({ task: 'step', arg: { name: cmdMessage } });
+      debug(`step: ${cmdMessage}`);
+      emit({ task: 'step', arg: { name: cmdMessage, date: Date.now() } });
     }
   });
-
-  /* Cypress.on('log:changed', async log => {
-    const cmdMessage = stepMessage(log.name, log.message);
-    const logId = log.id;
-    const isEnded = log.ended;
-    const status = log.state;
-
-    if (
-      isEnded &&
-      currentLog.includes(logId) &&
-      !ignoreCommands.includes(log.name)
-    ) {
-    
-      emit({ task: 'step', arg: { name: cmdMessage, status } }));
-      currentLog.pop();
-    }
-  });*/
 
   Cypress.on('command:start', async command => {
     const { name, message: cmdMessage, isLog } = commandParams(command);
 
     if (isLogCommand(isLog, name)) {
+      debug(`started: ${cmdMessage}`);
       commands.push(cmdMessage);
-      emit({ task: 'stepStarted', arg: { name: cmdMessage } });
+      emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
     }
 
     if (name === 'screenshot') {
@@ -109,24 +100,13 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
     }
   });
 
-  /* Cypress.on('skipped:command:end', async command => {
-    console.log('skipped:command:end');
-    console.log(command);
-  });
-
-  Cypress.on('command:enqueued', async command => {
-    console.log('command:enqueued');
-    console.log(command.name);
-    console.log(command);
-  });
-  s*/
-
   Cypress.on('command:end', async command => {
     const { name, isLog, state } = commandParams(command);
 
     if (isLogCommand(isLog, name)) {
-      emit({ task: 'stepEnded', arg: { status: state } });
-      commands.pop();
+      const cmd = commands.pop();
+      debug(`ended: ${cmd}`);
+      emit({ task: 'stepEnded', arg: { status: state, date: Date.now() } });
     }
   });
 };

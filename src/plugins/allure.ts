@@ -66,6 +66,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endGroup();
       log('suiteEnded');
     },
+    globalHook: (arg: AllureTaskArgs<'globalHook'>) => {
+      log(`globalHook ${JSON.stringify(arg)}`);
+      allureReporter.addGlobalHooks();
+      log('globalHook');
+    },
 
     testStarted(arg: AllureTaskArgs<'testStarted'>) {
       log(`testStarted ${JSON.stringify(arg)}`);

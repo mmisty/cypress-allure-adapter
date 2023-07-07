@@ -4,29 +4,12 @@ import { handleCyLogEvents } from './cypress-events';
 import { AllureTransfer, RequestTask, Status } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
-import { delay } from '../common';
+import { logClient, delay } from './helper';
 
-const debug = Debug('cypress-allure:mocha-reporter');
+const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser
 const ignoreCommands = ['allure', 'then'];
 const TEST_PENDING_DETAILS = 'Test ignored';
-
-const logEvent = (...args: any[]) => {
-  if (Cypress.env('DEBUG')) {
-    debug.enabled = true;
-
-    // todo log namespace
-    try {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      debug(JSON.stringify(...args));
-    } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      debug(...args);
-    }
-  }
-};
 
 const MOCHA_EVENTS = {
   RUN_BEGIN: 'start',
@@ -75,9 +58,9 @@ export const allureInterface = (
   return {
     tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: 'tag', value: tag } })),
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
-    startStep: (name: string) => fn({ task: 'stepStarted', arg: { name } }),
-    endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED } }),
-    step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed' } }),
+    startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
+    endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
+    step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
     severity: (level: Cypress.Severity) => fn({ task: 'severity', arg: { level } }),
     language: (value: string) => fn({ task: 'language', arg: { value } }),
     link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
@@ -124,30 +107,34 @@ export const registerMochaReporter = (ws: WebSocket) => {
   const tests: string[] = [];
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   runner.setMaxListeners(20);
-  const message = createMessage(ws);
+  const messageManager = createMessage(ws);
+  const message = messageManager.message;
+
   const allureInterfaceInstance = allureInterface(message);
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = allureInterfaceInstance;
-  let startedSuite = false;
+  const startedSuites: Mocha.Suite[] = [];
   let runEnded = true;
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
       runEnded = false;
-      logEvent(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
+      debug(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'specStarted', arg: { spec: Cypress.spec } });
+      messageManager.process();
     })
 
     .on(MOCHA_EVENTS.SUITE_BEGIN, async suite => {
-      logEvent(`event ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title} + ${suite.fullTitle()}`);
+      debug(`event ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title} + ${suite.fullTitle()}`);
 
       if (isRootSuite(suite)) {
         runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
 
         return;
       }
-      startedSuite = true;
+
+      startedSuites.push(suite);
       runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'suiteStarted',
         arg: { title: suite.title, fullTitle: suite.fullTitle(), file: suite.file },
@@ -155,21 +142,27 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.SUITE_END, async suite => {
-      logEvent(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+      debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+
+      if (startedSuites.length === 1) {
+        // will end later with run end
+        return;
+      }
 
       if (isRootSuite(suite)) {
-        startedSuite = false;
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'globalHook', arg: {} });
 
         return;
       }
+      startedSuites.pop();
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
     })
 
     .on(MOCHA_EVENTS.HOOK_START, async hook => {
-      logEvent(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
+      debug(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
 
       if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
-        logEvent('GLOBAL BEFORE ALL - end all existing');
+        debug('GLOBAL BEFORE ALL - end all existing');
         runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
       }
 
@@ -180,12 +173,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.HOOK_END, async hook => {
-      logEvent(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
+      debug(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
 
-      /*if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
-        logEvent('GLOBAL BEFORE ALL - end all existing ');
+      if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
+        debug('GLOBAL BEFORE ALL - end all existing ');
         runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
-      }*/
+      }
 
       runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'hookEnded',
@@ -201,18 +194,18 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.TEST_PENDING, test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_PENDING}: ${test.title}`);
+      debug(`event ${MOCHA_EVENTS.TEST_PENDING}: ${test.title}`);
       // ignore
     })
 
     .on(MOCHA_EVENTS.TEST_BEGIN, async (test: Mocha.Test) => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
-      logEvent(`${JSON.stringify(tests)}`);
+      debug(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
+      debug(`${JSON.stringify(tests)}`);
       // ignore
     })
 
     .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
+      debug(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
       if (!isBeforeAllHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
@@ -229,27 +222,25 @@ export const registerMochaReporter = (ws: WebSocket) => {
         return;
       }
 
-      console.log('ALL ');
-      console.log(test);
       let index = 0;
       test.parent?.eachTest(ts => {
         index++;
 
         if (ts) {
-          runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-          runner.emit(CUSTOM_EVENTS.TEST_FAIL, index === 1 ? test : { ...ts, err: test.err });
+          runner.emit(CUSTOM_EVENTS.TEST_BEGIN, index === 1 ? test : ts);
+          runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
           runner.emit(CUSTOM_EVENTS.TEST_END, index === 1 ? test : { ...ts, err: test.err });
         }
       });
     })
 
     .on(MOCHA_EVENTS.TEST_RETRY, async test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
+      debug(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
     })
 
     .on(MOCHA_EVENTS.TEST_PASS, async test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_PASS}: ${test.title}`);
+      debug(`event ${MOCHA_EVENTS.TEST_PASS}: ${test.title}`);
 
       runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'testResult',
@@ -261,19 +252,22 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
     .on(MOCHA_EVENTS.TEST_END, test => {
-      logEvent(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
+      debug(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
     })
 
     .on(MOCHA_EVENTS.RUN_END, async () => {
-      logEvent(`event ${MOCHA_EVENTS.RUN_END}`);
+      debug(`event ${MOCHA_EVENTS.RUN_END}`);
       runEnded = true;
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
+
+      messageManager.stop();
     });
 
   // custom events
   runner
     .on(CUSTOM_EVENTS.HOOK_END, async hook => {
-      logEvent(`event ${CUSTOM_EVENTS.HOOK_END}: ${hook.title}`);
+      debug(`event ${CUSTOM_EVENTS.HOOK_END}: ${hook.title}`);
 
       await message({
         task: 'hookEnded',
@@ -289,7 +283,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, async hook => {
-      logEvent(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
+      debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
       let i = 0;
 
       await message({ task: 'endAll', arg: {} });
@@ -312,33 +306,33 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(CUSTOM_EVENTS.TEST_BEGIN, async test => {
-      logEvent(`event ${CUSTOM_EVENTS.TEST_BEGIN}: ${test.title}`);
+      debug(`event ${CUSTOM_EVENTS.TEST_BEGIN}: ${test.title}`);
 
       await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
     })
 
     .on(CUSTOM_EVENTS.TASK, async payload => {
-      logEvent(`event ${CUSTOM_EVENTS.TASK}`);
-      logEvent(payload);
+      debug(`event ${CUSTOM_EVENTS.TASK}`);
+      debug(payload);
 
       await message(payload);
     })
 
     .on(CUSTOM_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
-      logEvent(`event ${CUSTOM_EVENTS.TEST_FAIL}: ${test.title}`);
+      debug(`event ${CUSTOM_EVENTS.TEST_FAIL}: ${test.title}`);
       await message({
         task: 'testResult',
         arg: {
-          title: test.title,
-          id: (test as any).id,
+          title: test?.title,
+          id: (test as any)?.id,
           result: convertState('failed'),
-          details: { message: test.err?.message, trace: test.err?.stack },
+          details: { message: test?.err?.message, trace: test?.err?.stack },
         },
       });
     })
 
     .on(CUSTOM_EVENTS.TEST_END, async test => {
-      logEvent(`event ${CUSTOM_EVENTS.TEST_END}: ${test.title}`);
+      debug(`event ${CUSTOM_EVENTS.TEST_END}: ${test.title}`);
 
       tests.pop();
       const detailsErr = test.err as Error;
@@ -360,16 +354,19 @@ export const registerMochaReporter = (ws: WebSocket) => {
   Cypress.on('test:before:run', async (_t, test) => {
     const started = Date.now();
 
-    while (!startedSuite && !runEnded && Date.now() - started < Cypress.config('defaultCommandTimeout')) {
+    // cypress test:before:run event fires for first test in suite along with
+    // before hook event, need to wait until suite starts
+    while (startedSuites.length === 0 && !runEnded && Date.now() - started < Cypress.config('defaultCommandTimeout')) {
       await delay(1);
     }
+
     runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-    await message({ task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
+    runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
   });
 
   Cypress.on('test:after:run', async (_t, test) => {
     runner.emit(CUSTOM_EVENTS.TEST_END, test);
-    await message({ task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
+    runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
   });
 
   const ignoreMoreCommands = (Cypress.env('allureSkipCommands') ?? '').split(',');

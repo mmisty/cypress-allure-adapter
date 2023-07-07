@@ -153,5 +153,6 @@ export class GlobalHooks {
         date: hook.stop,
       });
     });
+    this.hooks = [];
   }
 }

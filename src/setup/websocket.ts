@@ -1,7 +1,11 @@
-import { delay, ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
+import Debug from 'debug';
+import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
+import { logClient, delay } from './helper';
 
-const timeout = 5000;
+const debug = logClient(Debug('cypress-allure:ws-client'));
+const CONNECTION_TIMEOUT_MS = 10000;
+const PROCESS_INTERVAL_MS = 10;
 
 export const startWsClient = (): WebSocket | undefined => {
   const port = Cypress.env(ENV_WS);
@@ -17,15 +21,14 @@ export const startWsClient = (): WebSocket | undefined => {
   const started = Date.now();
   const wsPathFixed = `${port}/${wsPath}`.replace(/\/\//g, '/');
   const ws = new WebSocket(`ws://localhost:${wsPathFixed}`);
-  (Cypress as any).ws = ws;
 
   ws.onopen = () => {
     ws.send('WS opened');
-    console.log(`${packageLog} Opened ws connection`);
+    debug(`${packageLog} Opened ws connection`);
   };
 
   Cypress.on('window:load', async () => {
-    while (ws.readyState !== ws.OPEN && Date.now() - started < timeout) {
+    while (ws.readyState !== ws.OPEN && Date.now() - started < CONNECTION_TIMEOUT_MS) {
       await delay(1);
     }
   });
@@ -36,27 +39,54 @@ export const startWsClient = (): WebSocket | undefined => {
 const messageQueue = new MessageQueue();
 
 export const createMessage = (ws: WebSocket) => {
-  return async <T extends RequestTask>(data: AllureTransfer<T> | string) => {
-    messageQueue.enqueue(data);
-    const started = Date.now();
+  let idInterval: NodeJS.Timer;
 
-    while (ws.readyState !== ws.OPEN && Date.now() - started < timeout) {
-      await delay(1);
+  const process = () => {
+    if (ws.readyState !== ws.OPEN) {
+      debug('ws connection is not opened yet');
 
-      if (Date.now() - started > timeout) {
-        console.log(`${packageLog} Could not connect, will not report!`);
-
-        return;
-      }
-    }
-
-    const messages = messageQueue.dequeueAll();
-
-    if (!messages) {
       return;
     }
+    const messages = messageQueue.dequeueAll();
+
+    if (!messages || messages.length === 0) {
+      return;
+    }
+
+    debug(`processing events ${messages?.length}`);
+
     messages.forEach(msg => {
       ws.send(JSON.stringify(msg));
     });
+  };
+
+  return {
+    stop: () => {
+      // process last events
+      process();
+
+      if (idInterval) {
+        clearInterval(idInterval);
+      }
+    },
+    process: () => {
+      // process initial events
+      process();
+      idInterval = setInterval(process, PROCESS_INTERVAL_MS);
+    },
+
+    message: async <T extends RequestTask>(data: AllureTransfer<T> | string) => {
+      messageQueue.enqueue(data); // todo add date time for every event
+
+      ws.onclose = () => {
+        if (idInterval) {
+          clearInterval(idInterval);
+        }
+      };
+
+      ws.onerror = ev => {
+        console.error(`${packageLog} Ws error ${ev}`);
+      };
+    },
   };
 };

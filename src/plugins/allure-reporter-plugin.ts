@@ -18,6 +18,7 @@ import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
+import { packageLog } from '../common';
 
 const debug = Debug('cypress-allure:reporter');
 
@@ -94,6 +95,8 @@ export class AllureReporter {
   }
 
   addGlobalHooks() {
+    log('>>> add Global Hooks');
+
     if (this.groups.length > 1 || !this.globalHooks.hasHooks()) {
       log('not root hooks');
 
@@ -108,9 +111,6 @@ export class AllureReporter {
     const { title } = arg;
     log(`start group: ${title}`);
 
-    if (this.groups.length === 0 && title === '') {
-      return;
-    }
     const group = (this.currentGroup ?? this.allureRuntime).startGroup(title);
     this.groups.push(group);
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
@@ -314,10 +314,6 @@ export class AllureReporter {
       }
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
-      /*const pathDir = allureReporter.allureRuntime.writeAttachment(fileCot, {
-      fileExtension: 'png',
-      contentType: 'image/png',
-    });*/
       attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
       this.attached.push(fileNew);
     });
@@ -364,6 +360,10 @@ export class AllureReporter {
   }
 
   endGroup() {
+    if (this.groups.length >= 1) {
+      this.addGlobalHooks();
+    }
+
     if (this.currentGroup) {
       this.currentGroup?.endGroup();
       this.groups.pop();
@@ -534,11 +534,11 @@ export class AllureReporter {
     const duplicates = this.allTests.filter(t => t.fullTitle === fullTitle);
 
     const warn =
-      'STARTING TEST WITH THE SAME fullName as already, will be shown as' +
-      `retried: ${fullTitle}\nTo solve this rename the test. Spec ${this.currentSpec?.relative}`;
+      'Starting test with the same fullName as already exist, will be shown as' +
+      `retried: ${fullTitle}\nTo solve this rename the test. Spec ${this.currentSpec?.relative}, test full title:  ${fullTitle}`;
 
     if (duplicates.length > 0) {
-      console.warn(warn);
+      console.warn(`${packageLog} ${warn}`);
     }
 
     if (!this.currentGroup) {
@@ -629,21 +629,6 @@ export class AllureReporter {
       this.setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
     }
 
-    // this.endSteps();
-
-    /*this.featureProps.apply(a => super.feature(a));
-      this.storyProps.apply(a => super.story(a));
-      this.frameworkProps.apply(a => super.label(LabelName.FRAMEWORK, a));
-      this.languageProps.apply(a => super.label(LabelName.LANGUAGE, a));
-      this.hostProps.apply(a => super.label(LabelName.HOST, a));
-  
-      this.applyDescription();
-  
-      if (this.config?.autoHistoryId !== false) {
-        this.setHistoryId(spec.fullName);
-      }
-      this.currentTest.endTest(stop || dateNow());*/
-
     this.currentTest.endTest();
 
     this.tests.pop();
@@ -655,8 +640,8 @@ export class AllureReporter {
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
     const { name, date } = arg;
 
-    if (!this.currentExecutable) {
-      log('No current executable, test or hook - will start step for global hook');
+    if (!this.currentExecutable || this.globalHooks.currentHook) {
+      log('will start step for global hook');
       this.globalHooks.startStep(name);
 
       return;

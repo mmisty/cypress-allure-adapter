@@ -5,6 +5,7 @@ before('Global Setup', () => {
 
 after('Global teardown', () => {
   console.log('teardown');
+  cy.allure().step('global teardown');
 });
 
 describe('hooks test', () => {

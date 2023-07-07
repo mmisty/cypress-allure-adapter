@@ -1,7 +1,8 @@
 import { ContentType } from './../plugins/allure-types';
 import Debug from 'debug';
+import { logClient } from './helper';
 
-const debug = Debug('cypress-allure:mocha-reporter');
+const debug = logClient(Debug('cypress-allure:screenshots'));
 
 const extname = (path: string): string => {
   return path.match(/(\.[^.]+)$/)?.[0] ?? '.unknown';
@@ -88,6 +89,7 @@ export const registerScreenshotHandler = (allureReporter: Cypress.AllureReporter
 
     if (path) {
       // todo setting
+      debug(`Attaching: ${path}`);
       allureReporter.testFileAttachment(basename(path), path, getContentType(path));
     }
 

@@ -34,7 +34,7 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     config.env[COVERAGE] = true;
   }
 
-  const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn']);
+  const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn', 'test:log']);
 
   on('before:browser:launch', (browser, opts) => {
     return browserHandler(browser, opts);
