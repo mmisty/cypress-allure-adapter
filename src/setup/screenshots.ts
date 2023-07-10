@@ -1,12 +1,9 @@
 import { ContentType } from './../plugins/allure-types';
 import Debug from 'debug';
 import { logClient } from './helper';
+import { extname } from '../common';
 
 const debug = logClient(Debug('cypress-allure:screenshots'));
-
-export const extname = (path: string): string => {
-  return path.match(/(\.[^.]+)$/)?.[0] ?? '.unknown';
-};
 
 const basename = (path: string): string => {
   const slashIndex = path.lastIndexOf('/');

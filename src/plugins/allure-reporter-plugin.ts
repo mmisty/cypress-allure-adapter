@@ -18,8 +18,7 @@ import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
-import { packageLog } from '../common';
-import { extname } from '../setup/screenshots';
+import { packageLog, extname } from '../common';
 
 const debug = Debug('cypress-allure:reporter');
 
@@ -342,6 +341,8 @@ export class AllureReporter {
   }
 
   attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
+    // this happend after test already finishied
+    // test will not upload this
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
     const ext = '.mp4';
@@ -352,8 +353,8 @@ export class AllureReporter {
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
     log(JSON.stringify(testsAttach));
 
-    testsAttach.forEach(t => {
-      const testFile = `${this.allureResults}/${t.id}-result.json`;
+    testsAttach.forEach(test => {
+      const testFile = `${this.allureResults}/${test.id}-result.json`;
       const contents = readFileSync(testFile);
       const testCon = JSON.parse(contents.toString());
       const nameAttAhc = `${getUuid(videoPath)}-attachment${ext}`; // todo not copy same video
@@ -370,10 +371,15 @@ export class AllureReporter {
       testCon.attachments.push({
         name: `${specname}${ext}`,
         type: ContentType.MP4,
-        source: nameAttAhc, // todo
+        source: nameAttAhc,
       });
 
+      const newUuid = getUuid(testFile);
+      const nameAttAhc2 = `${newUuid}-result.json`;
+      const newPath2 = path.join(this.allureResults, nameAttAhc2);
       writeFileSync(testFile, JSON.stringify(testCon));
+      copyFileSync(testFile, newPath2);
+
       //testCon.attachments = []
       // need to regenerate ids for testops
       //const files = readdirSync(this.allureResults);

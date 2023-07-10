@@ -46,3 +46,8 @@ export const tmsIssueUrl = (env: Record<string, string>, value: string, type: 'i
 
   return `${prefixFixed}/${value}`;
 };
+
+// needed to work in browser
+export const extname = (path: string): string => {
+  return path.match(/(\.[^.]+)$/)?.[0] ?? '.unknown';
+};
