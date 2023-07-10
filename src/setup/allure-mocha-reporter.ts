@@ -1,11 +1,18 @@
 import Debug from 'debug';
 import { createMessage } from './websocket';
 import { handleCyLogEvents } from './cypress-events';
-import { AllureTransfer, EnvironmentInfo, ExecutorInfo, RequestTask, Status, Category } from '../plugins/allure-types'; // todo
+import {
+  AllureTransfer,
+  EnvironmentInfo,
+  ExecutorInfo,
+  RequestTask,
+  Status,
+  Category,
+  LabelName,
+} from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient, delay } from './helper';
-import { LabelName } from 'allure-js-commons';
 
 const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser

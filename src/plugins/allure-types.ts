@@ -96,6 +96,29 @@ export enum Stage {
   INTERRUPTED = 'interrupted',
 }
 
+export enum LabelName {
+  ALLURE_ID = 'ALLURE_ID',
+  AS_ID = 'ALLURE_ID',
+  SUITE = 'suite',
+  PARENT_SUITE = 'parentSuite',
+  SUB_SUITE = 'subSuite',
+  EPIC = 'epic',
+  FEATURE = 'feature',
+  STORY = 'story',
+  SEVERITY = 'severity',
+  TAG = 'tag',
+  OWNER = 'owner',
+  LEAD = 'lead',
+  HOST = 'host',
+  THREAD = 'thread',
+  TEST_METHOD = 'testMethod',
+  TEST_CLASS = 'testClass',
+  PACKAGE = 'package',
+  FRAMEWORK = 'framework',
+  LANGUAGE = 'language',
+  LAYER = 'layer',
+}
+
 type KeysContent = keyof typeof ContentType;
 export type ContentType2 = typeof ContentType[KeysContent];
 
