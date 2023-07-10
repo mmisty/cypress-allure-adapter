@@ -405,75 +405,15 @@ export class AllureReporter {
     }
   }
 
-  thread(arg: AllureTaskArgs<'thread'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.THREAD, arg.value);
-    }
-  }
-
-  host(arg: AllureTaskArgs<'host'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.HOST, arg.value);
-    }
-  }
-
-  language(arg: AllureTaskArgs<'language'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.LANGUAGE, arg.value);
-    }
-  }
-
-  epic(arg: AllureTaskArgs<'epic'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.EPIC, arg.value);
-    }
-  }
-
   link(arg: AllureTaskArgs<'link'>) {
     if (this.currentTest) {
       this.currentTest.addLink(arg.url, arg.name, arg.type);
     }
   }
 
-  feature(arg: AllureTaskArgs<'feature'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.FEATURE, arg.value);
-    }
-  }
-
-  story(arg: AllureTaskArgs<'story'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.STORY, arg.value);
-    }
-  }
-
-  allureId(arg: AllureTaskArgs<'allureId'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.AS_ID, arg.value);
-    }
-  }
-
-  owner(arg: AllureTaskArgs<'owner'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.OWNER, arg.value);
-    }
-  }
-
   fullName(arg: AllureTaskArgs<'fullName'>) {
     if (this.currentTest) {
       this.currentTest.fullName = arg.value;
-    }
-  }
-
-  lead(arg: AllureTaskArgs<'lead'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.LEAD, arg.value);
-    }
-  }
-
-  severity(arg: AllureTaskArgs<'severity'>) {
-    if (this.currentTest) {
-      this.currentTest.addLabel(LabelName.SEVERITY, arg.level);
     }
   }
 

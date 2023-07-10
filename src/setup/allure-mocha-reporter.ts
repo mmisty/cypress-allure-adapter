@@ -5,6 +5,7 @@ import { AllureTransfer, EnvironmentInfo, ExecutorInfo, RequestTask, Status, Cat
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient, delay } from './helper';
+import { LabelName } from 'allure-js-commons';
 
 const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser
@@ -56,20 +57,14 @@ export const allureInterface = (
   fn: <T extends RequestTask>(data: AllureTransfer<T> | string) => void,
 ): Cypress.AllureReporter<void> => {
   return {
-    tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: 'tag', value: tag } })),
     writeEnvironmentInfo: (info: EnvironmentInfo) => fn({ task: 'writeEnvironmentInfo', arg: { info } }),
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
     writeCategoriesDefinitions: (categories: Category[]) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
-    label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
     endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
     step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
-    severity: (level: Cypress.Severity) => fn({ task: 'severity', arg: { level } }),
-    language: (value: string) => fn({ task: 'language', arg: { value } }),
-    link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
-    host: (value: string) => fn({ task: 'host', arg: { value } }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
     testAttachment: (name: string, content: string | Buffer, type) =>
       fn({ task: 'testAttachment', arg: { name, content, type } }),
@@ -80,13 +75,7 @@ export const allureInterface = (
     fileAttachment: (name: string, file: string, type) => fn({ task: 'fileAttachment', arg: { name, file, type } }),
     attachment: (name: string, content: string | Buffer, type) =>
       fn({ task: 'attachment', arg: { name, content, type } }),
-    owner: (value: string) => fn({ task: 'owner', arg: { value } }),
-    lead: (value: string) => fn({ task: 'lead', arg: { value } }),
-    feature: (value: string) => fn({ task: 'feature', arg: { value } }),
-    story: (value: string) => fn({ task: 'story', arg: { value } }),
-    epic: (value: string) => fn({ task: 'epic', arg: { value } }),
-    allureId: (value: string) => fn({ task: 'allureId', arg: { value } }),
-    thread: (value: string) => fn({ task: 'thread', arg: { value } }),
+
     parameter: (name: string, value: string) => fn({ task: 'parameter', arg: { name, value } }),
     parameters: (...params: Cypress.Parameter[]) =>
       params.forEach(p => fn({ task: 'parameter', arg: { name: p.name, value: p.value } })),
@@ -96,6 +85,26 @@ export const allureInterface = (
     addDescriptionHtml(value: string): void {
       fn({ task: 'addDescriptionHtml', arg: { value } });
     },
+
+    link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
+    tms: (url: string, name?: string) => fn({ task: 'link', arg: { url, name, type: 'tms' } }),
+    issue: (url: string, name?: string) => fn({ task: 'link', arg: { url, name, type: 'issue' } }),
+    label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
+    tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: LabelName.TAG, value: tag } })),
+    severity: (value: Cypress.Severity) => fn({ task: 'label', arg: { name: LabelName.SEVERITY, value } }),
+    language: (value: string) => fn({ task: 'label', arg: { name: LabelName.LANGUAGE, value } }),
+    owner: (value: string) => fn({ task: 'label', arg: { name: LabelName.OWNER, value } }),
+    os: (value: string) => fn({ task: 'label', arg: { name: 'os', value } }),
+    host: (value: string) => fn({ task: 'label', arg: { name: LabelName.HOST, value } }),
+    layer: (value: string) => fn({ task: 'label', arg: { name: LabelName.LAYER, value } }),
+    browser: (value: string) => fn({ task: 'label', arg: { name: 'browser', value } }),
+    device: (value: string) => fn({ task: 'label', arg: { name: 'device', value } }),
+    lead: (value: string) => fn({ task: 'label', arg: { name: LabelName.LEAD, value } }),
+    feature: (value: string) => fn({ task: 'label', arg: { name: LabelName.FEATURE, value } }),
+    story: (value: string) => fn({ task: 'label', arg: { name: LabelName.STORY, value } }),
+    epic: (value: string) => fn({ task: 'label', arg: { name: LabelName.EPIC, value } }),
+    allureId: (value: string) => fn({ task: 'label', arg: { name: LabelName.ALLURE_ID, value } }),
+    thread: (value: string) => fn({ task: 'label', arg: { name: LabelName.THREAD, value } }),
   };
 };
 

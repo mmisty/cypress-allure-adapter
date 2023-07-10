@@ -30,18 +30,8 @@ type AllureTask = {
   stepStarted: { name: string; date?: number };
   step: { name: string; status?: string; date?: number };
   parameter: { name: string; value: string };
-  severity: { level: string };
-  epic: { value: string };
-  feature: { value: string };
-  story: { value: string };
   fullName: { value: string };
   link: { url: string; name?: string; type?: LinkType };
-  thread: { value: string };
-  host: { value: string };
-  owner: { value: string };
-  lead: { value: string };
-  allureId: { value: string };
-  language: { value: string };
   testParameter: { name: string; value: string };
   testStatus: { result: Status; details?: StatusDetails };
   testDetails: { details?: StatusDetails };

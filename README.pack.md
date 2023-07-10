@@ -1,7 +1,10 @@
-# Cypress-allure-adapter
+# cypress-allure-adapter
 
 This is allure adapter for cypress providing realtime results. 
 It is useful when using Allure TestOps - so you can watch tests execution.
+It adds tests, steps, suites and screenshots during tests execution.
+
+Note: Video uploads doesn't work well yet since video is being generated after all tests in spec are finished.
 
 ## Installation
 
@@ -49,10 +52,14 @@ Setup:
    ```
 
 4. no need to setup types - should be done automatically
-   
+
+### To see report
+To see Allure report locally after tests were executed install `allure-commandline`: `npm i -D allure-commandline`
+
+and run command `allure serve`
 
 ### Advanced
-If you are using Cypress action 'after:spec' in plugins you 
+If you are using Cypress action `after:spec` in plugins you 
 can use the following configuration to have video attached to tests: 
 
 ```javascript
@@ -78,9 +85,10 @@ export default defineConfig({
 ```
 
 
-## Allure Interface
 
-todo
+## Allure Interface
+The following commands available from tests: 
+
 
 ### Scripts
 

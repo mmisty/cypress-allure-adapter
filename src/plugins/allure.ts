@@ -118,6 +118,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       }
       log('testResult');
     },
+
     testEnded: async (arg: AllureTaskArgs<'testEnded'>) => {
       log(`testEnded ${JSON.stringify(arg)}`);
       allureReporter.endTest(arg);
@@ -165,65 +166,15 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.attachment(arg);
       log('attachment');
     },
-    thread: (arg: AllureTaskArgs<'thread'>) => {
-      log(`priority ${JSON.stringify(arg)}`);
-      allureReporter.thread(arg);
-      log('priority');
-    },
-    owner: (arg: AllureTaskArgs<'owner'>) => {
-      log(`owner ${JSON.stringify(arg)}`);
-      allureReporter.owner(arg);
-      log('owner');
-    },
     fullName: (arg: AllureTaskArgs<'fullName'>) => {
       log(`fullName ${JSON.stringify(arg)}`);
       allureReporter.fullName(arg);
       log('fullName');
     },
-    lead: (arg: AllureTaskArgs<'lead'>) => {
-      log(`owner ${JSON.stringify(arg)}`);
-      allureReporter.lead(arg);
-      log('lead');
-    },
-    host: (arg: AllureTaskArgs<'host'>) => {
-      log(`host ${JSON.stringify(arg)}`);
-      allureReporter.host(arg);
-      log('host');
-    },
-    language: (arg: AllureTaskArgs<'language'>) => {
-      log(`language ${JSON.stringify(arg)}`);
-      allureReporter.language(arg);
-      log('language');
-    },
     link: (arg: AllureTaskArgs<'link'>) => {
       log(`link ${JSON.stringify(arg)}`);
       allureReporter.link(arg);
       log('link');
-    },
-    epic: (arg: AllureTaskArgs<'epic'>) => {
-      log(`epic ${JSON.stringify(arg)}`);
-      allureReporter.epic(arg);
-      log('epic');
-    },
-    feature: (arg: AllureTaskArgs<'feature'>) => {
-      log(`feature ${JSON.stringify(arg)}`);
-      allureReporter.feature(arg);
-      log('feature');
-    },
-    story: (arg: AllureTaskArgs<'story'>) => {
-      log(`story ${JSON.stringify(arg)}`);
-      allureReporter.story(arg);
-      log('story');
-    },
-    allureId: (arg: AllureTaskArgs<'allureId'>) => {
-      log(`allureId ${JSON.stringify(arg)}`);
-      allureReporter.allureId(arg);
-      log('allureId');
-    },
-    severity: (arg: AllureTaskArgs<'severity'>) => {
-      log(`severity ${JSON.stringify(arg)}`);
-      allureReporter.severity(arg);
-      log('severity');
     },
     addDescriptionHtml: (arg: AllureTaskArgs<'addDescriptionHtml'>) => {
       log(`addDescriptionHtml ${JSON.stringify(arg)}`);

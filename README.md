@@ -1,5 +1,4 @@
-
-# Cypress-allure-adapter
+# cypress-allure-adapter
 
 This is allure adapter for cypress providing realtime results.
 It is useful when using Allure TestOps - so you can watch tests execution.
@@ -62,15 +61,11 @@ To see individual coverage reports run:
 - `npm run cov:cy`  html report with coverage for jest tests
 - `npm run cov`  html report with combined coverage
 
-### Extraction
-
-Before publishing do not forget:
- - to increment package version  for your package
- - fill all fields in package.json for your package
-
-You can test your package by running `npm run try:pack` (All changes should be committed before that)
-
-![structure](./docs-template/structure.jpg)
+### Publishing
+ - `npm run publish:patch` - publish patch
+ - `npm run publish:minor` - publish minor
+ - `npm run publish:major` - publish major
+ - `npm run publish:pack` -  publish version specified in package.json script
 
 ### Scripts
 
@@ -91,6 +86,3 @@ You can test your package by running `npm run try:pack` (All changes should be c
 | `cov`           | show html report for full coverage (http-server should be installed globally, `npm i http-server -g`)                                                         |
 | `cov:check`     | check coverage by thresholds specified in [nyc.config.js](./nyc.config.js)                                                                                    |
 | `pre`           | run all necessary scripts  (fmt, lint, build, tests and check cov)                                                                                            |
-| `extract`       | should be run after tsc and after everything is staged. Extracts everything from 'lib' to root directory. This is required for nice imports in target library |
-| `extract:undo`  | Be careful, commit everything you need before. Removes files and dirs that were extracted after `extract`                                                     |
-| `try:pack`      | try to pack the library - will create archieve with library files                                                                                             |
