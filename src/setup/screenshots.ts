@@ -4,7 +4,7 @@ import { logClient } from './helper';
 
 const debug = logClient(Debug('cypress-allure:screenshots'));
 
-const extname = (path: string): string => {
+export const extname = (path: string): string => {
   return path.match(/(\.[^.]+)$/)?.[0] ?? '.unknown';
 };
 
@@ -91,6 +91,8 @@ export const registerScreenshotHandler = (allureReporter: Cypress.AllureReporter
       // todo setting
       debug(`Attaching: ${path}`);
       allureReporter.testFileAttachment(basename(path), path, getContentType(path));
+    } else {
+      debug(`No path: ${JSON.stringify(args)}`);
     }
 
     originalHandler(_$el, ...args);

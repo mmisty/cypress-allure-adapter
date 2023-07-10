@@ -19,6 +19,7 @@ import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
 import { packageLog } from '../common';
+import { extname } from '../setup/screenshots';
 
 const debug = Debug('cypress-allure:reporter');
 
@@ -672,16 +673,21 @@ export class AllureReporter {
 
       return;
     }
-    const fileCot = readFileSync(arg.file);
 
-    // to have it in allure-results directory
-    const fileNew = `${getUuidByString(fileCot.toString())}-attachment.txt`;
+    try {
+      const fileCot = readFileSync(arg.file);
 
-    if (!existsSync(this.allureResults)) {
-      mkdirSync(this.allureResults); //toto try
+      // to have it in allure-results directory
+      const fileNew = `${getUuidByString(fileCot.toString())}-attachment${extname(arg.file)}`;
+
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults); // todo try
+      }
+
+      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+      exec.addAttachment(arg.name, arg.type, fileNew);
+    } catch (err) {
+      console.error(`${packageLog} Could not attach ${arg.file}`);
     }
-
-    copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-    exec.addAttachment(arg.name, arg.type, fileNew);
   }
 }
