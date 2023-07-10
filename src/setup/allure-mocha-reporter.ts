@@ -13,7 +13,7 @@ import {
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient, delay } from './helper';
-import { tmsIssueUrl } from '@src/common';
+import { tmsIssueUrl } from '../common';
 
 const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser
