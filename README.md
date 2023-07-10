@@ -4,21 +4,6 @@
 This is allure adapter for cypress providing realtime results.
 It is useful when using Allure TestOps - so you can watch tests execution.
 
-## Installation
-
-1. add `allureAdapterSetup(); ` in your `support/index.ts` file
-2. add `configureAllureAdapterPlugins(on, config);` into your plugins file 
-3. add env variables: 
-   - 'allure': 'true' - will enable reporting
-   - 'allureResults': 'allure-results' - path to allure-results
-   - 'allureCleanResults' : 'true' - will remove allure results on cypress start
-   - 'allureSkipCommands': 'wrapNoLog,sync' - commands that will not be logged separated with comma
-4. no need to setup types - should be done automatically
-
-
-## Allure Interface
-
- todo 
 
 ## TODO
  - [ ] Readme, setup and installation

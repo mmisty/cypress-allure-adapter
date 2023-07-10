@@ -62,6 +62,7 @@ type AllureTask = {
     details?: StatusDetails;
   };
   endAll: undefined;
+  afterSpec: { results: CypressCommandLine.RunResult };
 };
 
 export type RequestTask = keyof AllureTask;

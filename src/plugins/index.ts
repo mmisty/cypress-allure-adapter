@@ -4,7 +4,7 @@ import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import { existsSync, mkdirSync, rmSync } from 'fs';
-import type { AllureTasks, AutoScreen } from './allure-types';
+import type { AllureTasks } from './allure-types';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -85,12 +85,7 @@ export const configureAllureAdapterPlugins = (
   // });
 
   on('after:spec', (spec, results) => {
-    debug('AFTER SPEC');
-    const scr = (results as any).screenshots as AutoScreen[];
-    debug(scr);
-    // reporter.attachScreenshots({ screenshots: scr });
-    reporter.attachVideoToTests({ path: results.video ?? '' });
-    // repuload with new ids for testops
+    reporter.afterSpec({ results });
   });
 
   return reporter;

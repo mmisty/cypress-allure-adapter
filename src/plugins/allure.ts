@@ -263,5 +263,21 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.attachVideoToTests(arg);
       log('attachVideoToTests');
     },
+
+    afterSpec: (arg: AllureTaskArgs<'afterSpec'>) => {
+      log(`afterSpec ${JSON.stringify(arg)}`);
+      const { video } = arg.results;
+      log(`afterSpec video path: ${video}`);
+
+      if (!video) {
+        console.error(`${packageLog} No video path in afterSpec result`);
+
+        return;
+      }
+      allureReporter.attachVideoToTests({ path: video ?? '' });
+      log('afterSpec');
+
+      // todo: reupload with new ids for testops
+    },
   };
 };
