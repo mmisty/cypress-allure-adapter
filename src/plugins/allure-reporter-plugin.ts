@@ -617,6 +617,18 @@ export class AllureReporter {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
+
+    /*
+      todo case when all steps finished but test failed
+      if (this.steps.length === 0) {
+       */
+    // all ended already
+    /*this.currentExecutable?.wrappedItem.steps && this.currentExecutable.wrappedItem.steps.length > 0) {
+        this.startStep({ name: 'some of previous steps failed' });
+        this.endStep({ status: arg.result, details: arg.details });
+      }
+      }
+    */
     this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
@@ -660,6 +672,16 @@ export class AllureReporter {
     });
   }
 
+  // set status to last step recursively
+  setLastStepStatus(steps: ExecutableItem[], status: Status, details?: StatusDetails) {
+    const stepsCount = steps.length;
+
+    if (stepsCount > 0) {
+      this.setLastStepStatus(steps[stepsCount - 1].steps, status, details);
+      this.setExecutableItemStatus(steps[stepsCount - 1], status, details);
+    }
+  }
+
   endStep(arg: AllureTaskArgs<'stepEnded'>) {
     const { status, date, details } = arg;
 
@@ -671,26 +693,13 @@ export class AllureReporter {
     }
 
     if (!this.currentStep) {
+      this.setLastStepStatus(this.currentExecutable.wrappedItem.steps, status, details);
+
       return;
     }
 
-    // set status to last step recursively
-    const setLast = (steps: ExecutableItem[]) => {
-      const stepsCount = steps.length;
-
-      if (stepsCount > 0) {
-        setLast(steps[stepsCount - 1].steps);
-        // steps[stepsCount - 1].status = status;
-        // check
-        this.setExecutableItemStatus(steps[stepsCount - 1], status, details);
-      }
-    };
-    setLast(this.currentStep.wrappedItem.steps);
-
+    this.setLastStepStatus(this.currentStep.wrappedItem.steps, status, details);
     this.setExecutableStatus(this.currentStep, status, details);
-    /*if (details) {
-      this.currentStep.statusDetails = { message: details?.message };
-    }*/
     this.currentStep.endStep(date);
 
     this.steps.pop();
