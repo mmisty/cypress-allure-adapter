@@ -11,7 +11,7 @@ module.exports = {
     'no-restricted-imports': [
       'error',
       {
-        patterns: ['**/src/**', '!**/@src', '!**/@src/*'],
+        patterns: ['!**/src/**', '**/@src', '**/@src/*'],
       },
     ],
   },

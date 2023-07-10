@@ -6,6 +6,10 @@ It adds tests, steps, suites and screenshots during tests execution.
 
 Note: Video uploads doesn't work well yet since video is being generated after all tests in spec are finished.
 
+
+Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.com/package/@shelex/cypress-allure-plugin)
+
+
 ## Installation
 
 Install adapter by `npm i -D @mmisty/cypress-allure-adapter`
@@ -84,6 +88,19 @@ export default defineConfig({
 
 ```
 
+## Env variables
+
+ - `tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this. 
+    Also link can be specified with `*` - it will be replced with id. 
+   ```javascript
+   env: {
+      tmsPrefix: 'http://jira.com' 
+      issuePrefix: 'http://jira.com/PROJECT-1/*/browse' 
+   }
+   // 
+   cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
+   cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
+   ```
 
 
 ## Allure Interface

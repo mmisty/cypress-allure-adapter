@@ -13,6 +13,7 @@ import {
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient, delay } from './helper';
+import { tmsIssueUrl } from '@src/common';
 
 const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser
@@ -61,6 +62,7 @@ const isRootSuiteTest = (test: Mocha.Test) => {
 };
 
 export const allureInterface = (
+  env: Record<string, string>,
   fn: <T extends RequestTask>(data: AllureTransfer<T> | string) => void,
 ): Cypress.AllureReporter<void> => {
   return {
@@ -94,8 +96,10 @@ export const allureInterface = (
     },
 
     link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
-    tms: (url: string, name?: string) => fn({ task: 'link', arg: { url, name, type: 'tms' } }),
-    issue: (url: string, name?: string) => fn({ task: 'link', arg: { url, name, type: 'issue' } }),
+    tms: (url: string, name?: string) =>
+      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'tms'), name, type: 'tms' } }),
+    issue: (url: string, name?: string) =>
+      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name, type: 'issue' } }),
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
     tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: LabelName.TAG, value: tag } })),
     severity: (value: Cypress.Severity) => fn({ task: 'label', arg: { name: LabelName.SEVERITY, value } }),
@@ -116,7 +120,7 @@ export const allureInterface = (
 };
 
 export const registerStubReporter = () => {
-  Cypress.Allure = allureInterface(() => {
+  Cypress.Allure = allureInterface(Cypress.env(), () => {
     // do nothing when no allure reporting enabled
   });
 };
@@ -132,7 +136,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   const messageManager = createMessage(ws);
   const message = messageManager.message;
 
-  const allureInterfaceInstance = allureInterface(message);
+  const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = allureInterfaceInstance;
   const startedSuites: Mocha.Suite[] = [];

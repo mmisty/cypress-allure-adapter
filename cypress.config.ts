@@ -21,6 +21,9 @@ export default defineConfig({
       allureCleanResults: 'true',
       allureResults: 'allure-results',
       allureSkipCommands: 'wrap', // separated comma
+
+      tmsPrefix: 'http://jira',
+      issuePrefix: 'http://jira/*',
     },
 
     setupNodeEvents(on, config) {
