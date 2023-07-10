@@ -60,6 +60,7 @@
     "@types/express": "^4.17.17",
     "@types/jest": "^29.2.3",
     "@types/node": "^18.11.9",
+    "@types/uuid": "^9.0.2",
     "@types/ws": "^8.5.5",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
@@ -91,6 +92,7 @@
     "allure-js-commons": "^2.4.0",
     "debug": "^4.3.4",
     "fast-glob": "^3.2.12",
+    "uuid": "^9.0.0",
     "uuid-by-string": "^4.0.0",
     "ws": "^8.13.0"
   }

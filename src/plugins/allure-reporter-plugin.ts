@@ -19,6 +19,7 @@ import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
 import { packageLog, extname } from '../common';
+import { randomUUID } from 'crypto';
 
 const debug = Debug('cypress-allure:reporter');
 
@@ -281,7 +282,8 @@ export class AllureReporter {
         const name = path.basename(x.path);
         type ParsedAttachment = { name: string; type: ContentType; source: string };
         const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
-        const nameAttAhc = `${getUuid(x.path)}-attachment${ext}`; // todo not copy same video
+        const uuidNew = randomUUID();
+        const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same video
         const newPath = path.join(this.allureResults, nameAttAhc);
 
         if (!existsSync(newPath)) {
@@ -318,11 +320,10 @@ export class AllureReporter {
     files.forEach(file => {
       const executable = this.currentStep ?? this.currentTest;
       const attachTo = forStep ? executable : this.currentTest;
-
-      const fileCot = readFileSync(file);
-
       // to have it in allure-results directory
-      const fileNew = `${getUuidByString(fileCot.toString())}-attachment.png`;
+
+      const newUuid = randomUUID();
+      const fileNew = `${newUuid}-attachment.png`;
 
       if (!existsSync(this.allureResults)) {
         mkdirSync(this.allureResults);
@@ -357,7 +358,8 @@ export class AllureReporter {
       const testFile = `${this.allureResults}/${test.id}-result.json`;
       const contents = readFileSync(testFile);
       const testCon = JSON.parse(contents.toString());
-      const nameAttAhc = `${getUuid(videoPath)}-attachment${ext}`; // todo not copy same video
+      const uuid = randomUUID();
+      const nameAttAhc = `${uuid}-attachment${ext}`; // todo not copy same video
       const newPath = path.join(this.allureResults, nameAttAhc);
 
       if (!existsSync(newPath)) {
@@ -374,7 +376,7 @@ export class AllureReporter {
         source: nameAttAhc,
       });
 
-      const newUuid = getUuid(testFile);
+      const newUuid = randomUUID();
       const nameAttAhc2 = `${newUuid}-result.json`;
       const newPath2 = path.join(this.allureResults, nameAttAhc2);
       writeFileSync(testFile, JSON.stringify(testCon));
@@ -681,13 +683,13 @@ export class AllureReporter {
     }
 
     try {
-      const fileCot = readFileSync(arg.file);
+      const uuid = randomUUID();
 
       // to have it in allure-results directory
-      const fileNew = `${getUuidByString(fileCot.toString())}-attachment${extname(arg.file)}`;
+      const fileNew = `${uuid}-attachment${extname(arg.file)}`;
 
       if (!existsSync(this.allureResults)) {
-        mkdirSync(this.allureResults); // todo try
+        mkdirSync(this.allureResults);
       }
 
       copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
