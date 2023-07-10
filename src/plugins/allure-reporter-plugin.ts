@@ -489,48 +489,20 @@ export class AllureReporter {
     }
   }
 
-  testAttachment(arg: AllureTaskArgs<'testAttachment'>) {
-    if (this.currentTest) {
-      const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
-      this.currentTest.addAttachment(arg.name, arg.type, file);
-    }
+  testFileAttachment(arg: AllureTaskArgs<'testFileAttachment'>) {
+    this.executableFileAttachment(this.currentTest, arg);
   }
 
-  testFileAttachment(arg: AllureTaskArgs<'testFileAttachment'>) {
-    if (!this.currentExecutable && this.globalHooks.currentHook) {
-      log('No current executable, test or hook - add to global hook');
-      this.globalHooks.attachment(arg.name, arg.file, arg.type);
+  fileAttachment(arg: AllureTaskArgs<'fileAttachment'>) {
+    this.executableFileAttachment(this.currentExecutable, arg);
+  }
 
-      return;
-    }
-
-    if (!this.currentTest) {
-      return;
-    }
-
-    if (!existsSync(arg.file)) {
-      console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
-
-      return;
-    }
-    const fileCot = readFileSync(arg.file);
-
-    // to have it in allure-results directory
-    const fileNew = `${getUuidByString(fileCot.toString())}-attachment.txt`;
-
-    if (!existsSync(this.allureResults)) {
-      mkdirSync(this.allureResults); //toto try
-    }
-
-    copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-    this.currentTest.addAttachment(arg.name, arg.type, fileNew);
+  testAttachment(arg: AllureTaskArgs<'testAttachment'>) {
+    this.executableAttachment(this.currentTest, arg);
   }
 
   attachment(arg: AllureTaskArgs<'attachment'>) {
-    if (this.currentExecutable) {
-      const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
-      this.currentExecutable.addAttachment(arg.name, arg.type, file);
-    }
+    this.executableAttachment(this.currentExecutable, arg);
   }
 
   applyGroupLabels() {
@@ -722,5 +694,45 @@ export class AllureReporter {
     this.currentStep.endStep(date);
 
     this.steps.pop();
+  }
+
+  private executableAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'attachment'>) {
+    if (!exec) {
+      log('No current executable - will not attach');
+
+      return;
+    }
+    const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
+    exec.addAttachment(arg.name, arg.type, file);
+  }
+
+  private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
+    if (!this.currentExecutable && this.globalHooks.currentHook) {
+      log('No current executable, test or hook - add to global hook');
+      this.globalHooks.attachment(arg.name, arg.file, arg.type);
+
+      return;
+    }
+
+    if (!exec) {
+      return;
+    }
+
+    if (!existsSync(arg.file)) {
+      console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
+
+      return;
+    }
+    const fileCot = readFileSync(arg.file);
+
+    // to have it in allure-results directory
+    const fileNew = `${getUuidByString(fileCot.toString())}-attachment.txt`;
+
+    if (!existsSync(this.allureResults)) {
+      mkdirSync(this.allureResults); //toto try
+    }
+
+    copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+    exec.addAttachment(arg.name, arg.type, fileNew);
   }
 }

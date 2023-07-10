@@ -39,6 +39,7 @@ declare namespace Cypress {
     testAttachment(name: string, content: Buffer | string, type: ContentType): T;
     testFileAttachment(name: string, file: string, type: ContentType): T;
     attachment(name: string, content: Buffer | string, type: ContentType): T;
+    fileAttachment(name: string, file: string, type: ContentType): T;
     owner(value: string): T;
     lead(value: string): T;
     host(value: string): T;

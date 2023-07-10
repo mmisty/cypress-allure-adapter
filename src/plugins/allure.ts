@@ -155,6 +155,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.testFileAttachment(arg);
       log('testFileAttachment');
     },
+    fileAttachment: (arg: AllureTaskArgs<'fileAttachment'>) => {
+      log(`fileAttachment ${JSON.stringify(arg)}`);
+      allureReporter.fileAttachment(arg);
+      log('fileAttachment');
+    },
     attachment: (arg: AllureTaskArgs<'attachment'>) => {
       log(`attachment ${JSON.stringify(arg)}`);
       allureReporter.attachment(arg);

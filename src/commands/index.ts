@@ -38,6 +38,7 @@ export const registerCommands = () => {
     testDetails: (allure, details) => allure.testDetails(details),
     testAttachment: (allure, name, content, type) => allure.testAttachment(name, content, type),
     testFileAttachment: (allure, name, file, type) => allure.testFileAttachment(name, file, type),
+    fileAttachment: (allure, name, file, type) => allure.fileAttachment(name, file, type),
     attachment: (allure, name, content, type) => allure.attachment(name, content, type),
     owner: (allure, name) => allure.owner(name),
     fullName: (allure, name) => allure.fullName(name),

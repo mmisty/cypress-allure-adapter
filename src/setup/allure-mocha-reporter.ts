@@ -77,6 +77,7 @@ export const allureInterface = (
     testDetails: (details?: StatusDetails) => fn({ task: 'testDetails', arg: { details } }),
     testFileAttachment: (name: string, file: string, type) =>
       fn({ task: 'testFileAttachment', arg: { name, file, type } }),
+    fileAttachment: (name: string, file: string, type) => fn({ task: 'fileAttachment', arg: { name, file, type } }),
     attachment: (name: string, content: string | Buffer, type) =>
       fn({ task: 'attachment', arg: { name, content, type } }),
     owner: (value: string) => fn({ task: 'owner', arg: { value } }),
