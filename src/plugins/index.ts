@@ -10,9 +10,10 @@ const debug = Debug('cypress-allure:plugins');
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const configureEnv = (on: PluginEvents, config: PluginConfigOptions): AllureTasks | undefined => {
-  // do setup with events and env, register tasks
-  // register plugin events
+export const configureAllureAdapterPlugins = (
+  on: PluginEvents,
+  config: PluginConfigOptions,
+): AllureTasks | undefined => {
   if (process.env.DEBUG) {
     config.env['DEBUG'] = process.env.DEBUG;
   }

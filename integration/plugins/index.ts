@@ -6,7 +6,7 @@ import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
-import { configureEnv } from '@src/plugins';
+import { configureAllureAdapterPlugins } from '@src/plugins';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -40,8 +40,7 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     return browserHandler(browser, opts);
   });
 
-  // HERE you put your plugin functions
-  configureEnv(on, config);
+  configureAllureAdapterPlugins(on, config);
 
   on('file:preprocessor', preprocessor(isCov));
 

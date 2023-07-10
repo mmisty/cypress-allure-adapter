@@ -15,11 +15,6 @@ export default defineConfig({
     video: true,
     chromeWebSecurity: false,
     videoUploadOnPasses: true,
-    // report: true,
-    //reporter: 'lib/setup/allure-mocha-reporter.js',
-    // reporterOptions: {
-    //   allureResults: 'allure-results',
-    // },
     env: {
       REDIRECT_BROWSER_LOG: true,
       allure: 'true',
