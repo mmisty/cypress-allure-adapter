@@ -1,4 +1,4 @@
-import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
+import type { AllureTasks, AllureTransfer, RequestTask } from '../plugins/allure-types';
 import Debug from 'debug';
 import { logClient } from './helper';
 import { ContentType, Status } from '../plugins/allure-types';
@@ -19,6 +19,64 @@ const stringify = (args: any) => {
   return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean'
     ? `${args}`
     : convertEmptyObj(args);
+};
+
+const attachRequests = (
+  emit: <T extends keyof AllureTasks>(args: AllureTransfer<T>) => void,
+  command: any,
+  state: Status,
+) => {
+  debug(command);
+  debug(command.attributes.logs.map(t => t.attributes.consoleProps()));
+
+  const requests: {
+    'Request Body': any;
+    'Request Headers': any;
+    'Request URL': string;
+    'Response Body'?: any;
+    'Response Headers'?: any;
+    'Response Status'?: number;
+  }[] = command.attributes.logs
+    .map(t => t.attributes.consoleProps())
+    .filter(t => t.Command === 'request')
+    .flatMap(t => t.Requests);
+
+  requests.forEach(t => {
+    emit({ task: 'stepStarted', arg: { name: `${t['Response Status']} ${t['Request URL']}`, date: Date.now() } });
+
+    if (t['Request Body']) {
+      emit({
+        task: 'attachment',
+        arg: { name: 'Request body', content: stringify(t['Request Body']), type: ContentType.JSON },
+      });
+    }
+
+    if (t['Request Headers']) {
+      emit({
+        task: 'attachment',
+        arg: { name: 'Request headers', content: stringify(t['Request Headers']), type: ContentType.JSON },
+      });
+    }
+
+    if (t['Response Body']) {
+      emit({
+        task: 'attachment',
+        arg: { name: 'Response body', content: stringify(t['Response Body']), type: ContentType.JSON },
+      });
+    }
+
+    if (t['Response Headers']) {
+      emit({
+        task: 'attachment',
+        arg: {
+          name: 'Response Headers',
+          content: stringify(t['Response Headers']),
+          type: ContentType.JSON,
+        },
+      });
+    }
+    emit({ task: 'stepEnded', arg: { status: state, date: Date.now() } });
+  });
 };
 
 const commandParams = (command: any) => {
@@ -73,6 +131,10 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   const logCommands: string[] = [];
   const emit = createEmitEvent(runner);
 
+  const allureAttachRequests = Cypress.env('allureAttachRequests')
+    ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
+    : false;
+
   const isLogCommand = (isLog: boolean, name: string) => {
     return isLog && !ignoreCommands.includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
@@ -85,7 +147,12 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
     // const isEnded = log.end;
 
     // logs are being added for all from command log, need to exclude same items
-    if (cmdMessage !== lastCommand && cmdMessage !== lastLogCommand && !ignoreCommands.includes(logName)) {
+    if (
+      cmdMessage !== lastCommand &&
+      cmdMessage !== lastLogCommand &&
+      !ignoreCommands.includes(logName) &&
+      !['request'].includes(logName)
+    ) {
       logCommands.push(cmdMessage);
       debug(`step: ${cmdMessage}`);
       emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
@@ -103,6 +170,7 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
     if (isLogCommand(isLog, name)) {
       debug(`started: ${cmdMessage}`);
       commands.push(cmdMessage);
+
       emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
 
       if (args.some(t => t.length > ARGS_TRIM_AT)) {
@@ -131,6 +199,10 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
 
     if (isLogCommand(isLog, name)) {
       const cmd = commands.pop();
+
+      if (allureAttachRequests && name === 'request') {
+        attachRequests(emit, command, state);
+      }
       debug(`ended: ${cmd}`);
       emit({ task: 'stepEnded', arg: { status: state, date: Date.now() } });
     }

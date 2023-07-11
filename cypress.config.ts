@@ -19,6 +19,7 @@ export default defineConfig({
       REDIRECT_BROWSER_LOG: true,
       allure: 'true',
       allureCleanResults: 'true',
+      allureAttachRequests: false,
       allureResults: 'allure-results',
       allureSkipCommands: 'wrap', // separated comma
 
