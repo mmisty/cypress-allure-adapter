@@ -4,7 +4,6 @@ describe('tmsIssueUrl', () => {
   it('issuePrefix not set', () => {
     expect(tmsIssueUrl({}, 'MY-1', 'issue')).toEqual('MY-1');
   });
-
   it('issuePrefix set', () => {
     expect(tmsIssueUrl({ issuePrefix: 'http://jira.com' }, 'MY-1', 'issue')).toEqual('http://jira.com/MY-1');
   });

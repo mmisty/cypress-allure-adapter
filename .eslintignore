@@ -2,3 +2,5 @@
 /lib
 /js-files-cypress
 /node_modules
+/allure-results
+/allure-report

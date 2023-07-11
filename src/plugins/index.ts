@@ -18,6 +18,12 @@ export const configureAllureAdapterPlugins = (
     config.env['DEBUG'] = process.env.DEBUG;
   }
 
+  if (config.env['GREP_PRE_FILTER'] === 'true' || config.env['GREP_PRE_FILTER'] === true) {
+    debug('Not running allure in prefiltering mode');
+
+    return undefined;
+  }
+
   if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
     debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
 
@@ -25,12 +31,16 @@ export const configureAllureAdapterPlugins = (
   }
 
   debug('Register plugin');
+  const results = config.env['allureResults'] ?? 'allure-results';
 
   const options: ReporterOptions = {
-    allureResults: config.env['allureResults'] ?? 'allure-results',
+    allureResults: results,
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
   };
+
+  debug('OPTIONS:');
+  debug(JSON.stringify(options, null, ' '));
 
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
     debug('Clean results');
@@ -45,7 +55,7 @@ export const configureAllureAdapterPlugins = (
       }
 
       try {
-        mkdirSync(options.allureResults);
+        mkdirSync(options.allureResults, { recursive: true });
       } catch (err) {
         debug(`Error creating allure-results: ${(err as Error).message}`);
       }

@@ -5,18 +5,17 @@ import {
   AllureTest,
   ExecutableItem,
   ExecutableItemWrapper,
-  LabelName,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { copyFile, copyFileSync, existsSync, mkdirSync, readFile, readFileSync, writeFile, writeFileSync } from 'fs';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
-import { AllureTaskArgs, ContentType, Stage, Status, StatusType, UNKNOWN } from './allure-types';
+import { AllureTaskArgs, ContentType, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
 import { packageLog, extname } from '../common';
 import { randomUUID } from 'crypto';
@@ -127,7 +126,7 @@ export class AllureReporter {
     this.currentSpec = args.spec;
 
     if (!existsSync(this.allureResults)) {
-      mkdirSync(this.allureResults);
+      mkdirSync(this.allureResults, { recursive: true });
     }
   }
 
@@ -326,7 +325,7 @@ export class AllureReporter {
       const fileNew = `${newUuid}-attachment.png`;
 
       if (!existsSync(this.allureResults)) {
-        mkdirSync(this.allureResults);
+        mkdirSync(this.allureResults, { recursive: true });
       }
 
       if (!existsSync(file)) {
@@ -342,50 +341,67 @@ export class AllureReporter {
   }
 
   attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
-    // this happend after test already finishied
-    // test will not upload this
+    // this happens after test has already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
     const ext = '.mp4';
     const specname = basename(videoPath, ext);
     log(specname);
     const res = parseAllure(this.allureResults);
-    const tests = res.map(t => ({ path: t.labels.find(l => l.name === 'path')?.value, id: t.uuid }));
+
+    const tests = res.map(t => ({
+      path: t.labels.find(l => l.name === 'path')?.value,
+      id: t.uuid,
+      fullName: t.fullName,
+    }));
+
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
     log(JSON.stringify(testsAttach));
 
     testsAttach.forEach(test => {
+      log(`ATTACHING to ${test.id} ${test.path} ${test.fullName}`);
       const testFile = `${this.allureResults}/${test.id}-result.json`;
-      const contents = readFileSync(testFile);
-      const testCon = JSON.parse(contents.toString());
-      const uuid = randomUUID();
-      const nameAttAhc = `${uuid}-attachment${ext}`; // todo not copy same video
-      const newPath = path.join(this.allureResults, nameAttAhc);
 
-      if (!existsSync(newPath)) {
-        copyFileSync(videoPath, path.join(this.allureResults, nameAttAhc));
-      }
+      readFile(testFile, (err, contents) => {
+        if (err) {
+          return;
+        }
+        const testCon = JSON.parse(contents.toString());
+        const uuid = randomUUID();
+        const nameAttAhc = `${uuid}-attachment${ext}`; // todo not copy same video
+        const newPath = path.join(this.allureResults, nameAttAhc);
 
-      if (!testCon.attachments) {
-        testCon.attachments = [];
-      }
+        if (!testCon.attachments) {
+          testCon.attachments = [];
+        }
+        testCon.attachments.push({
+          name: `${specname}${ext}`,
+          type: ContentType.MP4,
+          source: nameAttAhc,
+        });
 
-      testCon.attachments.push({
-        name: `${specname}${ext}`,
-        type: ContentType.MP4,
-        source: nameAttAhc,
+        if (!existsSync(newPath)) {
+          log(`write video file ${newPath} `);
+          copyFile(videoPath, newPath, errCopy => {
+            if (errCopy) {
+              log(`error copy file  ${errCopy.message} `);
+
+              return;
+            }
+            log(`write test file ${testFile} `);
+            writeFile(testFile, JSON.stringify(testCon), errWrite => {
+              if (errWrite) {
+                log(`error test file  ${errWrite.message} `);
+
+                return;
+              }
+              log(`write test file done ${testFile} `);
+            });
+          });
+        } else {
+          log(`not writing! video file ${newPath} `);
+        }
       });
-
-      const newUuid = randomUUID();
-      const nameAttAhc2 = `${newUuid}-result.json`;
-      const newPath2 = path.join(this.allureResults, nameAttAhc2);
-      writeFileSync(testFile, JSON.stringify(testCon));
-      copyFileSync(testFile, newPath2);
-
-      //testCon.attachments = []
-      // need to regenerate ids for testops
-      //const files = readdirSync(this.allureResults);
-      //files
     });
   }
 
@@ -459,14 +475,7 @@ export class AllureReporter {
 
     if (this.currentSpec) {
       const paths = this.currentSpec.relative?.split('/');
-
-      if (paths.length > 1) {
-        const pack = `${paths
-          .slice(0, paths.length - 1)
-          .map(t => t.replace(/\./g, ' '))
-          .join('.')}`;
-        this.currentTest?.addLabel(LabelName.PACKAGE, pack);
-      }
+      this.currentTest?.addLabel(LabelName.PACKAGE, paths.join('.'));
     }
 
     if (this.groups.length > 0) {
@@ -689,7 +698,7 @@ export class AllureReporter {
       const fileNew = `${uuid}-attachment${extname(arg.file)}`;
 
       if (!existsSync(this.allureResults)) {
-        mkdirSync(this.allureResults);
+        mkdirSync(this.allureResults, { recursive: true });
       }
 
       copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);

@@ -51,3 +51,7 @@ export const tmsIssueUrl = (env: Record<string, string>, value: string, type: 'i
 export const extname = (path: string): string => {
   return path.match(/(\.[^.]+)$/)?.[0] ?? '.unknown';
 };
+
+export async function delay(ms: number) {
+  await new Promise(resolve => setTimeout(resolve, ms));
+}

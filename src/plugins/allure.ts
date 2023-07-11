@@ -1,8 +1,9 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { existsSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, readFile, rmSync, writeFile, writeFileSync } from 'fs';
 import { packageLog } from '../common';
+import { sync } from 'fast-glob';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -19,6 +20,7 @@ export type ReporterOptions = {
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
   let allureReporter = new AllureReporter(opts);
+  const allureResults = opts.allureResults;
 
   return {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
@@ -86,7 +88,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
       try {
-        writeFileSync(`${opts.allureResults}/executor.json`, JSON.stringify(arg.info));
+        writeFileSync(`${allureResults}/executor.json`, JSON.stringify(arg.info));
       } catch (err) {
         console.error(`${packageLog} Could not write executor info`);
       }
@@ -100,8 +102,8 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter = new AllureReporter(opts);
 
       try {
-        if (existsSync(opts.allureResults)) {
-          rmSync(opts.allureResults, { recursive: true });
+        if (existsSync(allureResults)) {
+          rmSync(allureResults, { recursive: true });
         }
       } catch (err) {
         log(`Could not delete: ${(err as Error).message}`);
@@ -215,7 +217,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('attachVideoToTests');
     },
 
-    afterSpec: (arg: AllureTaskArgs<'afterSpec'>) => {
+    afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
       const { video } = arg.results;
       log(`afterSpec video path: ${video}`);
@@ -226,9 +228,33 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         return;
       }
       allureReporter.attachVideoToTests({ path: video ?? '' });
+      this.flushWatcher({});
       log('afterSpec');
+    },
 
-      // todo: reupload with new ids for testops
+    flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
+      const allFiles = sync(`${allureResults}/*`);
+      debug('FLUSH spec');
+
+      for (const fl of allFiles) {
+        if (!existsSync(fl)) {
+          return;
+        }
+
+        readFile(fl, (err, content) => {
+          if (!err) {
+            writeFile(fl, content, errWrite => {
+              if (errWrite) {
+                debug(`Error writing file: ${errWrite.message}`);
+              } else {
+                debug('done writing');
+              }
+            });
+          } else {
+            debug(`Error reading file: ${err?.message}`);
+          }
+        });
+      }
     },
   };
 };
