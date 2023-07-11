@@ -27,17 +27,19 @@ const attachRequests = (
   state: Status,
 ) => {
   debug(command);
-  debug(command.attributes.logs.map(t => t.attributes.consoleProps()));
-
-  const requests: {
+  type OneRequestConsoleProp = {
     'Request Body': any;
     'Request Headers': any;
     'Request URL': string;
     'Response Body'?: any;
     'Response Headers'?: any;
     'Response Status'?: number;
-  }[] = command.attributes.logs
-    .map(t => t.attributes.consoleProps())
+  };
+
+  type ConsolePropsRequestCmd = { Requests: OneRequestConsoleProp[]; Command: string };
+
+  const requests: OneRequestConsoleProp[] = (command.attributes.logs as any[])
+    .map(t => t.attributes.consoleProps() as ConsolePropsRequestCmd)
     .filter(t => t.Command === 'request')
     .flatMap(t => t.Requests);
 
