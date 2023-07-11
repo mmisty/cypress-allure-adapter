@@ -1,11 +1,24 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import Debug from 'debug';
 import { logClient } from './helper';
+import { ContentType, Status } from '../plugins/allure-types';
 
 const debug = logClient(Debug('cypress-allure:cy-events'));
+const ARGS_TRIM_AT = 50;
 
-const stepMessage = (name: string, args: string) => {
-  return `${name}: ${args}`;
+const stepMessage = (name: string, args: string | undefined) => {
+  const argsLine = args && args.length > ARGS_TRIM_AT ? '' : `: ${args}`;
+
+  return `${name}${argsLine}`;
+};
+
+const convertEmptyObj = (obj: Record<string, unknown>): string =>
+  obj == null ? 'null' : Object.keys(obj).length > 0 ? JSON.stringify(obj) : '';
+
+const stringify = (args: any) => {
+  return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean'
+    ? `${args}`
+    : convertEmptyObj(args);
 };
 
 const commandParams = (command: any) => {
@@ -26,29 +39,23 @@ const commandParams = (command: any) => {
     }
   };
 
-  const getArgs = () => {
-    const convertEmptyObj = (obj: Record<string, unknown>) =>
-      obj == null ? 'null' : Object.keys(obj).length > 0 ? JSON.stringify(obj) : '';
-
+  const getArgs = (): string[] => {
     try {
       if (Array.isArray(commandArgs)) {
-        return commandArgs
-          .map(t =>
-            typeof t === 'string' || typeof t === 'number' || typeof t === 'boolean' ? `${t}` : convertEmptyObj(t),
-          )
-          .filter(t => t.trim() !== '')
-          .join(', ');
+        return commandArgs.map(t => stringify(t)).filter(x => x.trim() !== '');
       }
 
-      return convertEmptyObj(commandArgs);
+      return [convertEmptyObj(commandArgs)];
     } catch (err) {
-      return 'could not parse args';
+      return ['could not parse args'];
     }
   };
+  const args = getArgs();
 
   return {
     name,
-    message: stepMessage(name, getArgs()),
+    args,
+    message: stepMessage(name, args.filter(t => t.length < ARGS_TRIM_AT).join(', ')),
     isLog: isLog(),
     state,
   };
@@ -81,17 +88,36 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
     if (cmdMessage !== lastCommand && cmdMessage !== lastLogCommand && !ignoreCommands.includes(logName)) {
       logCommands.push(cmdMessage);
       debug(`step: ${cmdMessage}`);
-      emit({ task: 'step', arg: { name: cmdMessage, date: Date.now() } });
+      emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
+
+      if (cmdMessage.length > ARGS_TRIM_AT) {
+        emit({ task: 'attachment', arg: { name: cmdMessage, content: cmdMessage, type: ContentType.JSON } });
+      }
+      emit({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } });
     }
   });
 
   Cypress.on('command:start', async command => {
-    const { name, message: cmdMessage, isLog } = commandParams(command);
+    const { name, message: cmdMessage, isLog, args } = commandParams(command);
 
     if (isLogCommand(isLog, name)) {
       debug(`started: ${cmdMessage}`);
       commands.push(cmdMessage);
       emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
+
+      if (args.some(t => t.length > ARGS_TRIM_AT)) {
+        emit({
+          task: 'attachment',
+          arg: {
+            name: cmdMessage,
+            content: args
+              .filter(t => t.length >= ARGS_TRIM_AT)
+              .map(a => stringify(a))
+              .join('\n'),
+            type: ContentType.JSON,
+          },
+        });
+      }
     }
 
     if (name === 'screenshot') {
