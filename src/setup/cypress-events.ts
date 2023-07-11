@@ -4,7 +4,7 @@ import { logClient } from './helper';
 import { ContentType, Status } from '../plugins/allure-types';
 
 const debug = logClient(Debug('cypress-allure:cy-events'));
-const ARGS_TRIM_AT = 50;
+const ARGS_TRIM_AT = 100;
 
 const stepMessage = (name: string, args: string | undefined) => {
   const argsLine = args && args.length > ARGS_TRIM_AT ? '' : `: ${args}`;
