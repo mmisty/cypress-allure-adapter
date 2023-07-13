@@ -28,7 +28,8 @@ const attachRequests = (
 ) => {
   debug(command);
   debug('consoleProps:');
-  debug(command.attributes.logs.map(t => t.attributes.consoleProps()));
+  const logsAttr = command.attributes.logs as any[];
+  debug(logsAttr.map(t => t.attributes.consoleProps()));
 
   type OneRequestConsoleProp = {
     'Request Body': any;
@@ -39,9 +40,7 @@ const attachRequests = (
     'Response Status'?: number;
   };
 
-  const logs = (command.attributes.logs as any[])
-    .map(t => t.attributes.consoleProps())
-    .filter(t => t.Command === 'request');
+  const logs = logsAttr.map(t => t.attributes.consoleProps()).filter(t => t.Command === 'request');
 
   const getRequests = (): OneRequestConsoleProp[] | undefined => {
     if (logs.every(t => !!t.Requests)) {
