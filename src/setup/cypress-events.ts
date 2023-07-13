@@ -2,15 +2,27 @@ import type { AllureTasks, AllureTransfer, RequestTask } from '../plugins/allure
 import Debug from 'debug';
 import { logClient } from './helper';
 import { ContentType, Status } from '../plugins/allure-types';
+import { packageLog } from '../common';
 
 const debug = logClient(Debug('cypress-allure:cy-events'));
 const ARGS_TRIM_AT = 100;
+
+const withTry = (message: string, callback: () => void) => {
+  try {
+    callback();
+  } catch (err) {
+    const e = err as Error;
+    console.error(`${packageLog} could do '${message}': ${e.message}`);
+    console.error(e.stack);
+  }
+};
 
 const stepMessage = (name: string, args: string | undefined) => {
   const argsLine = args && args.length > ARGS_TRIM_AT ? '' : `: ${args}`;
 
   return `${name}${argsLine}`;
 };
+type Command = { state?: string; attributes?: { name?: string; args?: any } };
 
 const convertEmptyObj = (obj: Record<string, unknown>): string =>
   obj == null ? 'null' : Object.keys(obj).length > 0 ? JSON.stringify(obj) : '';
@@ -105,15 +117,15 @@ const attachRequests = (
   });
 };
 
-const commandParams = (command: any) => {
-  const name = command.attributes.name;
-  const commandArgs = command.attributes.args as any;
-  const state = command.state;
+const commandParams = (command: Command) => {
+  const name = command.attributes?.name ?? 'no name';
+  const commandArgs = command.attributes?.args as any;
+  const state = (command.state ?? Status.PASSED) as Status;
 
   // exclude command logs with Cypress options isLog = false
   const isLog = () => {
     try {
-      if (Array.isArray(commandArgs)) {
+      if (commandArgs && Array.isArray(commandArgs)) {
         return !commandArgs.some(a => a && a.log === false);
       }
 
@@ -166,31 +178,33 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   };
 
   Cypress.on('log:added', async log => {
-    const cmdMessage = stepMessage(log.name, log.message);
-    const logName = log.name;
-    const lastCommand = commands[commands.length - 1];
-    const lastLogCommand = logCommands[logCommands.length - 1];
-    // const isEnded = log.end;
+    withTry('report log:added', () => {
+      const cmdMessage = stepMessage(log.name, log.message);
+      const logName = log.name;
+      const lastCommand = commands[commands.length - 1];
+      const lastLogCommand = logCommands[logCommands.length - 1];
+      // const isEnded = log.end;
 
-    // logs are being added for all from command log, need to exclude same items
-    if (
-      cmdMessage !== lastCommand &&
-      cmdMessage !== lastLogCommand &&
-      !ignoreCommands.includes(logName) &&
-      !['request'].includes(logName)
-    ) {
-      logCommands.push(cmdMessage);
-      debug(`step: ${cmdMessage}`);
-      emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
+      // logs are being added for all from command log, need to exclude same items
+      if (
+        cmdMessage !== lastCommand &&
+        cmdMessage !== lastLogCommand &&
+        !ignoreCommands.includes(logName) &&
+        !['request'].includes(logName)
+      ) {
+        logCommands.push(cmdMessage);
+        debug(`step: ${cmdMessage}`);
+        emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
 
-      if (cmdMessage.length > ARGS_TRIM_AT) {
-        emit({ task: 'attachment', arg: { name: cmdMessage, content: cmdMessage, type: ContentType.JSON } });
+        if (cmdMessage.length > ARGS_TRIM_AT) {
+          emit({ task: 'attachment', arg: { name: cmdMessage, content: cmdMessage, type: ContentType.JSON } });
+        }
+        emit({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } });
       }
-      emit({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } });
-    }
+    });
   });
 
-  Cypress.on('command:start', async command => {
+  Cypress.on('command:start', async (command: Command) => {
     const { name, message: cmdMessage, isLog, args } = commandParams(command);
 
     if (isLogCommand(isLog, name)) {
@@ -199,35 +213,39 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
 
       emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
 
-      if (args.some(t => t.length > ARGS_TRIM_AT)) {
-        emit({
-          task: 'attachment',
-          arg: {
-            name: cmdMessage,
-            content: args
-              .filter(t => t.length >= ARGS_TRIM_AT)
-              .map(a => stringify(a))
-              .join('\n'),
-            type: ContentType.JSON,
-          },
-        });
-      }
+      withTry('report command:attachment', () => {
+        if (args.some(t => t.length > ARGS_TRIM_AT)) {
+          emit({
+            task: 'attachment',
+            arg: {
+              name: cmdMessage,
+              content: args
+                .filter(t => t.length >= ARGS_TRIM_AT)
+                .map(a => stringify(a))
+                .join('\n'),
+              type: ContentType.JSON,
+            },
+          });
+        }
+      });
     }
 
     if (name === 'screenshot') {
-      const screenName = command.attributes.args[0] ?? 'anyName';
+      const screenName = command.attributes?.args[0] ?? 'anyName';
       emit({ task: 'screenshotOne', arg: { forStep: true, name: screenName } });
     }
   });
 
-  Cypress.on('command:end', async command => {
+  Cypress.on('command:end', async (command: Command) => {
     const { name, isLog, state } = commandParams(command);
 
     if (isLogCommand(isLog, name)) {
       const cmd = commands.pop();
 
       if (allureAttachRequests && name === 'request') {
-        attachRequests(emit, command, state);
+        withTry('report attach:requests', () => {
+          attachRequests(emit, command, state);
+        });
       }
       debug(`ended: ${cmd}`);
       emit({ task: 'stepEnded', arg: { status: state, date: Date.now() } });
