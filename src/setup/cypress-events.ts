@@ -24,8 +24,21 @@ const stepMessage = (name: string, args: string | undefined) => {
 };
 type Command = { state?: string; attributes?: { name?: string; args?: any } };
 
-const convertEmptyObj = (obj: Record<string, unknown>): string =>
-  obj == null ? 'null' : Object.keys(obj).length > 0 ? JSON.stringify(obj) : '';
+const convertEmptyObj = (obj: Record<string, unknown>): string => {
+  if (obj == null) {
+    return 'null';
+  }
+
+  if (Object.keys(obj).length > 0) {
+    try {
+      JSON.stringify(obj);
+    } catch (e) {
+      return 'could not stringify';
+    }
+  }
+
+  return '';
+};
 
 const stringify = (args: any) => {
   return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean'
@@ -190,7 +203,7 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
         cmdMessage !== lastCommand &&
         cmdMessage !== lastLogCommand &&
         !ignoreCommands.includes(logName) &&
-        !['request'].includes(logName)
+        logName !== 'request'
       ) {
         logCommands.push(cmdMessage);
         debug(`step: ${cmdMessage}`);
@@ -214,17 +227,14 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
       emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
 
       withTry('report command:attachment', () => {
-        if (args.some(t => t.length > ARGS_TRIM_AT)) {
+        const longArgs = args.filter(t => t.length >= ARGS_TRIM_AT);
+
+        if (!allureAttachRequests && name !== 'request' && longArgs.length > 0) {
+          const content = longArgs.map(a => stringify(a)).join('\n');
+
           emit({
             task: 'attachment',
-            arg: {
-              name: cmdMessage,
-              content: args
-                .filter(t => t.length >= ARGS_TRIM_AT)
-                .map(a => stringify(a))
-                .join('\n'),
-              type: ContentType.JSON,
-            },
+            arg: { name: cmdMessage, content, type: ContentType.JSON },
           });
         }
       });
