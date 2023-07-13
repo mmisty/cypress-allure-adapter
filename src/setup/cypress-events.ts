@@ -27,6 +27,9 @@ const attachRequests = (
   state: Status,
 ) => {
   debug(command);
+  debug('consoleProps:');
+  debug(command.attributes.logs.map(t => t.attributes.consoleProps()));
+
   type OneRequestConsoleProp = {
     'Request Body': any;
     'Request Headers': any;
@@ -36,15 +39,37 @@ const attachRequests = (
     'Response Status'?: number;
   };
 
-  type ConsolePropsRequestCmd = { Requests: OneRequestConsoleProp[]; Command: string };
+  const logs = (command.attributes.logs as any[])
+    .map(t => t.attributes.consoleProps())
+    .filter(t => t.Command === 'request');
 
-  const requests: OneRequestConsoleProp[] = (command.attributes.logs as any[])
-    .map(t => t.attributes.consoleProps() as ConsolePropsRequestCmd)
-    .filter(t => t.Command === 'request')
-    .flatMap(t => t.Requests);
+  const getRequests = (): OneRequestConsoleProp[] | undefined => {
+    if (logs.every(t => !!t.Requests)) {
+      return logs.flatMap(t => t.Requests);
+    }
+
+    if (logs.every(t => !!t.Request)) {
+      return logs.map(t => t.Request);
+    }
+
+    return undefined;
+  };
+
+  const requests = getRequests();
+
+  if (!requests) {
+    return;
+  }
 
   requests.forEach(t => {
-    emit({ task: 'stepStarted', arg: { name: `${t['Response Status']} ${t['Request URL']}`, date: Date.now() } });
+    if (!t) {
+      return;
+    }
+
+    emit({
+      task: 'stepStarted',
+      arg: { name: `${t['Response Status'] ?? ''} ${t['Request URL'] ?? ''}`, date: Date.now() },
+    });
 
     if (t['Request Body']) {
       emit({
