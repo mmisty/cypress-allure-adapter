@@ -75,7 +75,7 @@ export const createMessage = (ws: WebSocket) => {
       idInterval = setInterval(process, PROCESS_INTERVAL_MS);
     },
 
-    message: async <T extends RequestTask>(data: AllureTransfer<T> | string) => {
+    message: <T extends RequestTask>(data: AllureTransfer<T> | string) => {
       messageQueue.enqueue(data); // todo add date time for every event
 
       ws.onclose = () => {

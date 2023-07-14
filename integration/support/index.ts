@@ -21,6 +21,21 @@ if (Cypress.env('allure') === 'true' || Cypress.env('allure') === true) {
 }
 
 allureAdapterSetup();
+
+Cypress.Allure.on('test:started', test => {
+  console.log(`AFTER TEST STARTED: ${test.title}`);
+  Cypress.Allure.label('event', 'started');
+  Cypress.Allure.label('tag', 'started');
+  Cypress.Allure.step('after start');
+});
+
+Cypress.Allure.on('test:ended', test => {
+  console.log(`BEFORE ENDING TEST: ${test.title}`);
+  Cypress.Allure.label('event', 'started');
+  Cypress.Allure.label('tag', 'ended');
+  Cypress.Allure.step('before end');
+});
+
 redirectTestLogs({
   isLogCommandDetails: false,
 });

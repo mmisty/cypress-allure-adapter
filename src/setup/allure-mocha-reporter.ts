@@ -72,23 +72,13 @@ const allureEventsEmitter = new EventEmitter();
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
-    if (isStub) {
+    if (isStub && ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END].includes(event)) {
       return;
     }
 
-    if (event === USER_EVENTS.TEST_START) {
-      allureEventsEmitter.addListener(USER_EVENTS.TEST_START, test => {
-        debug(`ADDED LISTENER: ${event} ${test.title}`);
-        testHandler(test);
-      });
-    }
+    debug(`ADD LISTENER: ${event}`);
 
-    if (event === USER_EVENTS.TEST_END) {
-      allureEventsEmitter.addListener(USER_EVENTS.TEST_END, test => {
-        debug(`ADDED LISTENER: ${event} ${test.title}`);
-        testHandler(test);
-      });
-    }
+    allureEventsEmitter.addListener(event, testHandler);
   },
 });
 
@@ -179,7 +169,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   let runEnded = true;
 
   runner
-    .once(MOCHA_EVENTS.RUN_BEGIN, async () => {
+    .once(MOCHA_EVENTS.RUN_BEGIN, () => {
       runEnded = false;
       debug(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
@@ -187,7 +177,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       messageManager.process();
     })
 
-    .on(MOCHA_EVENTS.SUITE_BEGIN, async suite => {
+    .on(MOCHA_EVENTS.SUITE_BEGIN, suite => {
       debug(`event ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title} + ${suite.fullTitle()}`);
 
       if (isRootSuite(suite)) {
@@ -203,7 +193,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .on(MOCHA_EVENTS.SUITE_END, async suite => {
+    .on(MOCHA_EVENTS.SUITE_END, suite => {
       debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
 
       if (startedSuites.length === 1) {
@@ -220,7 +210,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
     })
 
-    .on(MOCHA_EVENTS.HOOK_START, async hook => {
+    .on(MOCHA_EVENTS.HOOK_START, hook => {
       debug(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
 
       if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
@@ -234,7 +224,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .on(MOCHA_EVENTS.HOOK_END, async hook => {
+    .on(MOCHA_EVENTS.HOOK_END, hook => {
       debug(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
 
       if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
@@ -260,13 +250,13 @@ export const registerMochaReporter = (ws: WebSocket) => {
       // ignore
     })
 
-    .on(MOCHA_EVENTS.TEST_BEGIN, async (test: Mocha.Test) => {
+    .on(MOCHA_EVENTS.TEST_BEGIN, (test: Mocha.Test) => {
       debug(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
       debug(`${JSON.stringify(tests)}`);
       // ignore
     })
 
-    .on(MOCHA_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
+    .on(MOCHA_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
       debug(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
       if (!isBeforeAllHook(test)) {
@@ -307,12 +297,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .on(MOCHA_EVENTS.TEST_RETRY, async test => {
+    .on(MOCHA_EVENTS.TEST_RETRY, test => {
       debug(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
     })
 
-    .on(MOCHA_EVENTS.TEST_PASS, async test => {
+    .on(MOCHA_EVENTS.TEST_PASS, test => {
       debug(`event ${MOCHA_EVENTS.TEST_PASS}: ${test.title}`);
 
       runner.emit(CUSTOM_EVENTS.TASK, {
@@ -328,7 +318,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       debug(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
     })
 
-    .on(MOCHA_EVENTS.RUN_END, async () => {
+    .on(MOCHA_EVENTS.RUN_END, () => {
       debug(`event ${MOCHA_EVENTS.RUN_END}`);
       runEnded = true;
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
@@ -339,10 +329,10 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   // custom events
   runner
-    .on(CUSTOM_EVENTS.HOOK_END, async hook => {
+    .on(CUSTOM_EVENTS.HOOK_END, hook => {
       debug(`event ${CUSTOM_EVENTS.HOOK_END}: ${hook.title}`);
 
-      await message({
+      message({
         task: 'hookEnded',
         arg: {
           title: hook.title,
@@ -355,11 +345,11 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, async hook => {
+    .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, hook => {
       debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
       let i = 0;
 
-      await message({ task: 'endAll', arg: {} });
+      message({ task: 'endAll', arg: {} });
 
       for (const sui of hook.parent?.suites) {
         runner.emit(MOCHA_EVENTS.SUITE_BEGIN, sui);
@@ -378,23 +368,26 @@ export const registerMochaReporter = (ws: WebSocket) => {
       }
     })
 
-    .on(CUSTOM_EVENTS.TEST_BEGIN, async test => {
+    .on(CUSTOM_EVENTS.TEST_BEGIN, test => {
       debug(`event ${CUSTOM_EVENTS.TEST_BEGIN}: ${test.title}`);
 
-      await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
-      allureEventsEmitter.emit(USER_EVENTS.TEST_START, test);
+      message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
+
+      allureEventsEmitter.emit(USER_EVENTS.TEST_START, test, () => {
+        debug('After start callback');
+      });
     })
 
-    .on(CUSTOM_EVENTS.TASK, async payload => {
+    .on(CUSTOM_EVENTS.TASK, payload => {
       debug(`event ${CUSTOM_EVENTS.TASK}`);
       debug(payload);
 
-      await message(payload);
+      message(payload);
     })
 
-    .on(CUSTOM_EVENTS.TEST_FAIL, async (test: Mocha.Test) => {
+    .on(CUSTOM_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
       debug(`event ${CUSTOM_EVENTS.TEST_FAIL}: ${test.title}`);
-      await message({
+      message({
         task: 'testResult',
         arg: {
           title: test?.title,
@@ -405,7 +398,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .on(CUSTOM_EVENTS.TEST_END, async test => {
+    .on(CUSTOM_EVENTS.TEST_END, test => {
       debug(`event ${CUSTOM_EVENTS.TEST_END}: ${test.title}`);
 
       tests.pop();
@@ -414,7 +407,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       const testState = convertState(test.state);
       const detailsMessage = (msg?: string) => (!msg && testState === 'skipped' ? TEST_PENDING_DETAILS : msg);
 
-      await message({
+      message({
         task: 'testEnded',
         arg: {
           result: testState,
@@ -439,7 +432,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
   });
 
-  Cypress.on('test:after:run', async (_t, test) => {
+  Cypress.on('test:after:run', (_t, test) => {
     runner.emit(CUSTOM_EVENTS.TEST_END, test);
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
   });
