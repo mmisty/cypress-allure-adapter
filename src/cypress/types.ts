@@ -14,12 +14,41 @@ declare namespace Cypress {
   interface Chainable {
     allure(): Allure;
   }
+  interface AllureEvents {
+    /**
+     * This is handler for adding allure meta info after test is started
+     * @param event 'test:started'
+     * @param handler  - handler to add allure meta info
+     * @example
+     * // can be added into support file
+     * Cypress.Allure.on('test:started', test => {
+     *     Cypress.Allure.label('tag', 'started');
+     *     Cypress.Allure.step('first step');
+     *     console.log('AFTER TEST STARTED');
+     * });
+     */
+    on(event: 'test:started', handler: (test: Mocha.Test) => void): void;
+
+    /**
+     * This is handler for adding allure meta info before test is ended
+     * @param event 'test:ended'
+     * @param handler  - handler to add allure meta info
+     * @example
+     * // can be added into support file
+     * Cypress.Allure.on('test:ended', test => {
+     *     Cypress.Allure.label('tag', 'started');
+     *     Cypress.Allure.step('first step');
+     *     console.log('AFTER TEST STARTED');
+     * });
+     */
+    on(event: 'test:ended', handler: (test: Mocha.Test) => void): void;
+  }
 
   interface Cypress {
     /**
      * Interface via Cypress global object
      */
-    Allure: AllureReporter<void>;
+    Allure: AllureReporter<void> & AllureEvents;
   }
 
   type Allure = AllureReporter<Allure>;

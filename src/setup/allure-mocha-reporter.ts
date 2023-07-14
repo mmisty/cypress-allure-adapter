@@ -14,6 +14,8 @@ import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient, delay } from './helper';
 import { tmsIssueUrl } from '../common';
+import { EventEmitter } from 'events';
+import AllureEvents = Cypress.AllureEvents;
 
 const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser
@@ -45,6 +47,11 @@ const CUSTOM_EVENTS = {
   GLOBAL_HOOK_FAIL: 'global hook fail',
 };
 
+const USER_EVENTS = {
+  TEST_START: 'test:started',
+  TEST_END: 'test:ended',
+};
+
 const convertState = (state: string): Status => {
   if (state === 'pending') {
     return Status.SKIPPED;
@@ -60,6 +67,30 @@ const isRootSuite = (suite: Mocha.Suite) => {
 const isRootSuiteTest = (test: Mocha.Test) => {
   return test.parent?.title === '';
 };
+
+const allureEventsEmitter = new EventEmitter();
+
+const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
+  on: (event, testHandler) => {
+    if (isStub) {
+      return;
+    }
+
+    if (event === USER_EVENTS.TEST_START) {
+      allureEventsEmitter.addListener(USER_EVENTS.TEST_START, test => {
+        debug(`ADDED LISTENER: ${event} ${test.title}`);
+        testHandler(test);
+      });
+    }
+
+    if (event === USER_EVENTS.TEST_END) {
+      allureEventsEmitter.addListener(USER_EVENTS.TEST_END, test => {
+        debug(`ADDED LISTENER: ${event} ${test.title}`);
+        testHandler(test);
+      });
+    }
+  },
+});
 
 export const allureInterface = (
   env: Record<string, string>,
@@ -120,9 +151,12 @@ export const allureInterface = (
 };
 
 export const registerStubReporter = () => {
-  Cypress.Allure = allureInterface(Cypress.env(), () => {
-    // do nothing when no allure reporting enabled
-  });
+  Cypress.Allure = {
+    ...allureInterface(Cypress.env(), () => {
+      // do nothing when no allure reporting enabled
+    }),
+    ...eventsInterfaceInstance(true),
+  };
 };
 
 const isBeforeAllHook = (test: Mocha.Test) => {
@@ -135,10 +169,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
   runner.setMaxListeners(20);
   const messageManager = createMessage(ws);
   const message = messageManager.message;
+  allureEventsEmitter.removeAllListeners();
 
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
+  const allureEvents = eventsInterfaceInstance(false);
   registerScreenshotHandler(allureInterfaceInstance);
-  Cypress.Allure = allureInterfaceInstance;
+  Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
   const startedSuites: Mocha.Suite[] = [];
   let runEnded = true;
 
@@ -346,6 +382,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       debug(`event ${CUSTOM_EVENTS.TEST_BEGIN}: ${test.title}`);
 
       await message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
+      allureEventsEmitter.emit(USER_EVENTS.TEST_START, test);
     })
 
     .on(CUSTOM_EVENTS.TASK, async payload => {
@@ -372,6 +409,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       debug(`event ${CUSTOM_EVENTS.TEST_END}: ${test.title}`);
 
       tests.pop();
+      allureEventsEmitter.emit(USER_EVENTS.TEST_END, test);
       const detailsErr = test.err as Error;
       const testState = convertState(test.state);
       const detailsMessage = (msg?: string) => (!msg && testState === 'skipped' ? TEST_PENDING_DETAILS : msg);
