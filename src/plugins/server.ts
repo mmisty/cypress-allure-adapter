@@ -32,6 +32,7 @@ const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer
   for (let i = 0; i < 20; i++) {
     try {
       const wsPort = getPort();
+      // todo fix for port is in use
       const sockserver = new WebSocketServer({ port: wsPort, path: wsPath });
 
       configOptions.env[ENV_WS] = wsPort;

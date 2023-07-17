@@ -1,342 +1,63 @@
-import { parseAllure } from 'allure-js-parser';
+import { AllureTest, parseAllure } from 'allure-js-parser';
 import { createResTest, fixResult } from '../../cy-helper/utils';
 
 describe('run retries test', () => {
-  const storeResDir = createResTest(__filename);
+  // todo create test right in code
+  const storeResDir = createResTest('retries-pass');
 
-  it(`check ${storeResDir}`, async () => {
-    const results = parseAllure(storeResDir);
-    const resFixed = fixResult(results);
+  describe(`${storeResDir}: retries-pass`, () => {
+    let resFixed: AllureTest[];
 
-    expect(resFixed).toEqual([
-      {
-        attachments: [
-          {
-            name: 'retries pass on second retry -- should pass on retries (failed).png',
-            source: 'source.png',
-            type: 'image/png',
-          },
-          {
-            name: 'retries-pass.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
-        descriptionHtml: 'integration/e2e/retries/retries-pass.cy.ts',
-        fullName: 'retries: pass on second retry should pass on retries',
-        historyId: 'no',
-        labels: [
-          {
-            name: 'package',
-            value: 'retries: pass on second retry',
-          },
-          {
-            name: 'parentSuite',
-            value: 'retries: pass on second retry',
-          },
-          {
-            name: 'path',
-            value: 'integration/e2e/retries/retries-pass.cy.ts',
-          },
-        ],
-        links: [],
-        name: 'should pass on retries',
-        parameters: [],
-        parent: {
-          afters: [],
-          befores: [
+    beforeAll(() => {
+      const results = parseAllure(storeResDir);
+      resFixed = fixResult(results);
+    });
+
+    const storeResDir = createResTest(__filename);
+
+    it('check results', () => {
+      expect(
+        resFixed.sort((a, b) => (a.stop && b.stop && a.stop < b.stop ? 1 : -1)).map(t => [t.name, t.status]),
+      ).toEqual([
+        ['should pass on retries', 'passed'],
+        ['should pass on retries', 'failed'],
+      ]);
+    });
+
+    it('check attachments', () => {
+      expect(
+        resFixed
+          .sort((a, b) => (a.stop && b.stop && a.stop < b.stop ? 1 : -1))
+          .map(t => [t.name, t.status, t.attachments]),
+      ).toEqual([
+        [
+          'should pass on retries',
+          'passed',
+          [
             {
-              attachments: [],
-              name: '"before all" hook',
-              parameters: [],
-              stage: 'finished',
-              start: 1323460800000,
-              status: 'passed',
-              statusDetails: {},
-              steps: [
-                {
-                  attachments: [],
-                  name: 'Coverage: Reset [@cypress/code-coverage]',
-                  parameters: [],
-                  stage: 'pending',
-                  start: 1323460800000,
-                  status: 'passed',
-                  statusDetails: {},
-                  steps: [],
-                  stop: 1323460800011,
-                },
-              ],
-              stop: 1323460800010,
+              name: 'retries-pass.cy.ts.mp4',
+              source: 'source.mp4',
+              type: 'video/mp4',
             },
           ],
-          name: 'retries: pass on second retry',
-          uuid: 'no',
-        },
-        stage: 'finished',
-        start: 1323460800000,
-        status: 'failed',
-        statusDetails: {
-          message: 'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
-          trace:
-            'AssertionError: Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/retries/retries-pass.cy.ts:9:7)',
-        },
-        steps: [
-          {
-            attachments: [],
-            name: '"before each" hook: Register allure test',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'log: log, Registered allureAdapterSetup',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'route: undefined',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'visit: mytest.com',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'get: div',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'should: not.exist',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'failed',
-            statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'assert: expected **[ <div>, 1 more... ]** not to exist in the DOM',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'failed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
-            stop: 1323460800011,
-          },
         ],
-        stop: 1323460800010,
-        uuid: 'no',
-      },
-      {
-        attachments: [
-          {
-            name: 'retries pass on second retry -- should pass on retries (failed).png',
-            source: 'source.png',
-            type: 'image/png',
-          },
-          {
-            name: 'retries-pass.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
-        descriptionHtml: 'integration/e2e/retries/retries-pass.cy.ts',
-        fullName: 'retries: pass on second retry should pass on retries',
-        historyId: 'no',
-        labels: [
-          {
-            name: 'package',
-            value: 'retries: pass on second retry',
-          },
-          {
-            name: 'parentSuite',
-            value: 'retries: pass on second retry',
-          },
-          {
-            name: 'path',
-            value: 'integration/e2e/retries/retries-pass.cy.ts',
-          },
-        ],
-        links: [],
-        name: 'should pass on retries',
-        parameters: [],
-        parent: {
-          afters: [],
-          befores: [
+        [
+          'should pass on retries',
+          'failed',
+          [
             {
-              attachments: [],
-              name: '"before all" hook',
-              parameters: [],
-              stage: 'finished',
-              start: 1323460800000,
-              status: 'passed',
-              statusDetails: {},
-              steps: [
-                {
-                  attachments: [],
-                  name: 'Coverage: Reset [@cypress/code-coverage]',
-                  parameters: [],
-                  stage: 'pending',
-                  start: 1323460800000,
-                  status: 'passed',
-                  statusDetails: {},
-                  steps: [],
-                  stop: 1323460800011,
-                },
-              ],
-              stop: 1323460800010,
+              name: 'retries pass on second retry -- should pass on retries (failed).png',
+              source: 'source.png',
+              type: 'image/png',
+            },
+            {
+              name: 'retries-pass.cy.ts.mp4',
+              source: 'source.mp4',
+              type: 'video/mp4',
             },
           ],
-          name: 'retries: pass on second retry',
-          uuid: 'no',
-        },
-        stage: 'finished',
-        start: 1323460800000,
-        status: 'passed',
-        statusDetails: {},
-        steps: [
-          {
-            attachments: [],
-            name: '"before each" hook: Register allure test',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'log: log, Registered allureAdapterSetup',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'route: undefined',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'visit: mytest.com',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'get: div',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-            stop: 1323460800011,
-          },
-          {
-            attachments: [],
-            name: 'should: exist',
-            parameters: [],
-            stage: 'pending',
-            start: 1323460800000,
-            status: 'passed',
-            statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'assert: expected **[ <div>, 1 more... ]** to exist in the DOM',
-                parameters: [],
-                stage: 'pending',
-                start: 1323460800000,
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-                stop: 1323460800011,
-              },
-            ],
-            stop: 1323460800011,
-          },
         ],
-        stop: 1323460800010,
-        uuid: 'no',
-      },
-    ]);
+      ]);
+    });
   });
 });

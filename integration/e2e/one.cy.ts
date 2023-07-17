@@ -13,6 +13,7 @@ describe('suite with one test', () => {
   it('#2', () => {
     cy.allure().tag('My');
   });
+
   it('#1 test fail', function () {
     visitHtml();
 

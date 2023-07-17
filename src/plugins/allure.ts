@@ -1,9 +1,10 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { existsSync, readFile, rmSync, writeFile, writeFileSync } from 'fs';
+import { copyFile, copyFileSync, existsSync, mkdirSync, readFile, rmSync, writeFile, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
-import { sync } from 'fast-glob';
+import glob, { sync } from 'fast-glob';
+import { basename } from 'path';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -13,6 +14,7 @@ const log = (...args: unknown[]) => {
 
 export type ReporterOptions = {
   allureResults: string;
+  techAllureResults: string;
   videos: string;
   screenshots: string;
 };
@@ -20,7 +22,8 @@ export type ReporterOptions = {
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
   let allureReporter = new AllureReporter(opts);
-  const allureResults = opts.allureResults;
+  const allureResults = opts.techAllureResults;
+  const allureResultsUser = opts.allureResults;
 
   return {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
@@ -212,9 +215,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('attachScreenshots');
     },
 
-    attachVideoToTests: (arg: AllureTaskArgs<'attachVideoToTests'>) => {
+    attachVideoToTests: async (arg: AllureTaskArgs<'attachVideoToTests'>) => {
       log(`attachScreenshots ${JSON.stringify(arg)}`);
-      allureReporter.attachVideoToTests(arg);
+      await allureReporter.attachVideoToTests(arg);
       log('attachVideoToTests');
     },
 
@@ -229,7 +232,38 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         return;
       }
       await allureReporter.attachVideoToTests({ path: video ?? '' });
-      // await this.flushWatcher({});
+
+      if (opts.allureResults !== opts.techAllureResults) {
+        const results = glob.sync(`${allureResults}/*.*`);
+
+        if (!existsSync(allureResultsUser)) {
+          mkdirSync(allureResultsUser);
+        }
+        log(`allureResults: ${allureResults}`);
+        log(`allureResultsUser: ${allureResultsUser}`);
+        let doneFiles = 0;
+        const started = Date.now();
+        const timeout = 10000;
+        results.forEach(res => {
+          const to = `${allureResultsUser}/${basename(res)}`;
+          log(`res: ${res} to ${to}`);
+          copyFile(res, to, err => {
+            if (err) {
+              log(err);
+            }
+            doneFiles = doneFiles + 1;
+          });
+        });
+
+        while (doneFiles < results.length) {
+          if (Date.now() - started >= timeout) {
+            console.error(`${packageLog} Could not write all video attachments in ${timeout}ms`);
+            break;
+          }
+          await delay(100);
+        }
+      }
+
       log('afterSpec');
     },
 

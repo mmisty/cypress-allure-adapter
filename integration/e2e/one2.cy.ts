@@ -1,6 +1,6 @@
 import { visitHtml } from '../common/helper';
 
-describe('suite with one test', () => {
+describe('suite with one test 2', () => {
   it('#2', () => {
     cy.allure().tag('@my');
     cy.wrap(null, { log: false }).then(() => {

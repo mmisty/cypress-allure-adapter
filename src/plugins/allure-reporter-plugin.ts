@@ -59,7 +59,7 @@ export class AllureReporter {
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
   constructor(opts: ReporterOptions) {
-    this.allureResults = opts.allureResults;
+    this.allureResults = opts.techAllureResults;
     this.videos = opts.videos;
     this.screenshots = opts.screenshots;
 
@@ -396,7 +396,7 @@ export class AllureReporter {
 
           // todo do not copy same video
           // currently Allure Testops does not rewrite uploaded results if use same file
-          // const uuid = getUuidByString(videoContent);
+          // const uuid = getUuidByString(contentVideo.toString());
 
           const nameAttAhc = `${uuid}-attachment${ext}`;
           const newPath = path.join(this.allureResults, nameAttAhc);

@@ -23,5 +23,6 @@
 /lib
 
 /allure-results
+/allure-results-2
 /allure-report
 /filtered_tests.json

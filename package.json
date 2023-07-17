@@ -19,8 +19,8 @@
   "scripts": {
     "husky:install": "husky install",
     "lint": "eslint --fix '**/*.{ts,tsx,js}'",
-    "test": "jest",
-    "test:cov": "jest --coverage --coverageDirectory reports/coverage-jest",
+    "test": "jest --runInBand",
+    "test:cov": "jest --runInBand --coverage --coverageDirectory reports/coverage-jest",
     "cy": "cypress",
     "cy:open": "npm run cy -- open",
     "cy:run": "npm run cy -- run --browser chrome --headless",

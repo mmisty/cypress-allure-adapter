@@ -79,7 +79,7 @@ export const createResTest = (fileName: string, envConfig?: Record<string, strin
     let err: Error | undefined;
 
     try {
-      process.env.DEBUG = 'cypress-allure*';
+      process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
       console.log(env);
       await cy.run({
         spec,

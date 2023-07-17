@@ -20,7 +20,8 @@ export default defineConfig({
       allure: 'true',
       allureCleanResults: 'true',
       allureAttachRequests: false,
-      allureResults: 'allure-results',
+      allureResults: 'allure-results', // for test ops to watch
+      allureResultsTestOps: 'allure-results-2', // for test results to write
       allureSkipCommands: 'wrap', // separated comma
 
       tmsPrefix: 'http://jira',

@@ -1,7 +1,8 @@
-describe('before each fail with retry', { retries: 2 }, () => {
+describe('before each fail with retry @beforeEachRetry', { retries: 2 }, () => {
   beforeEach(() => {
     cy.log('no name hook - before each');
   });
+
   beforeEach('Named hook', () => {
     cy.log('before each');
 
@@ -12,13 +13,9 @@ describe('before each fail with retry', { retries: 2 }, () => {
     }
   });
 
-  it('test 1', () => {
-    cy.log('test 1');
-  });
-
-  for (let i = 2; i <= 30; i++) {
+  for (let i = 1; i <= 10; i++) {
     it(`test ${`0${i}`.slice(-2)}`, () => {
-      cy.log(`test ${i.toFixed(-2)}`);
+      cy.log(`test ${i}`);
     });
   }
 

@@ -14,6 +14,8 @@ export const configureAllureAdapterPlugins = (
   on: PluginEvents,
   config: PluginConfigOptions,
 ): AllureTasks | undefined => {
+  let flushAfterSpec: boolean | undefined = undefined;
+
   if (process.env.DEBUG) {
     config.env['DEBUG'] = process.env.DEBUG;
   }
@@ -22,6 +24,10 @@ export const configureAllureAdapterPlugins = (
     debug('Not running allure in prefiltering mode');
 
     return undefined;
+  }
+
+  if (config.env['allureResultsTestOps'] !== '' || config.env['allureResultsTestOps'] !== undefined) {
+    flushAfterSpec = true;
   }
 
   if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
@@ -35,6 +41,7 @@ export const configureAllureAdapterPlugins = (
 
   const options: ReporterOptions = {
     allureResults: results,
+    techAllureResults: flushAfterSpec ? config.env['allureResultsTestOps'] : results, //allure-results`${results}/test-ops`
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
   };
@@ -45,20 +52,28 @@ export const configureAllureAdapterPlugins = (
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
     debug('Clean results');
 
-    if (existsSync(options.allureResults)) {
-      debug(`Deleting allure-results: ${options.allureResults}`);
-
-      try {
-        rmSync(options.allureResults, { recursive: true });
-      } catch (err) {
-        debug(`Error deleting allure-results: ${(err as Error).message}`);
+    const cleanDir = (dir: string) => {
+      if (!existsSync(dir)) {
+        return;
       }
 
+      debug(`Deleting ${dir}`);
+
       try {
-        mkdirSync(options.allureResults, { recursive: true });
+        rmSync(dir, { recursive: true });
       } catch (err) {
-        debug(`Error creating allure-results: ${(err as Error).message}`);
+        debug(`Error deleting ${dir}: ${(err as Error).message}`);
       }
+    };
+
+    cleanDir(options.allureResults);
+    cleanDir(options.techAllureResults);
+
+    try {
+      mkdirSync(options.allureResults, { recursive: true });
+      mkdirSync(options.techAllureResults, { recursive: true });
+    } catch (err) {
+      debug(`Error creating allure-results: ${(err as Error).message}`);
     }
   }
 
