@@ -26,6 +26,18 @@ const log = (...args: unknown[]) => {
   debug(args);
 };
 
+const writeTestFile = (testFile: string, content: string, callBack: () => void) => {
+  writeFile(testFile, content, errWrite => {
+    if (errWrite) {
+      log(`error test file  ${errWrite.message} `);
+
+      return;
+    }
+    log(`write test file done ${testFile} `);
+    callBack();
+  });
+};
+
 export class AllureReporter {
   // todo config
   private allureResults: string;
@@ -361,31 +373,53 @@ export class AllureReporter {
     }));
 
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
-    log(JSON.stringify(testsAttach));
+
     let doneFiles = 0;
-    testsAttach.forEach(test => {
-      log(`ATTACHING to ${test.id} ${test.path} ${test.fullName}`);
-      const testFile = `${this.allureResults}/${test.id}-result.json`;
 
-      readFile(testFile, (err, contents) => {
-        if (err) {
-          return;
-        }
-        const testCon = JSON.parse(contents.toString());
-        const uuid = randomUUID();
-        const nameAttAhc = `${uuid}-attachment${ext}`; // todo not copy same video
-        const newPath = path.join(this.allureResults, nameAttAhc);
+    readFile(videoPath, (errVideo, _contentVideo) => {
+      if (errVideo) {
+        console.error(`Could not read video: ${errVideo}`);
 
-        if (!testCon.attachments) {
-          testCon.attachments = [];
-        }
-        testCon.attachments.push({
-          name: `${specname}${ext}`,
-          type: ContentType.MP4,
-          source: nameAttAhc,
-        });
+        return;
+      }
 
-        if (!existsSync(newPath)) {
+      testsAttach.forEach(test => {
+        log(`ATTACHING to ${test.id} ${test.path} ${test.fullName}`);
+        const testFile = `${this.allureResults}/${test.id}-result.json`;
+
+        readFile(testFile, (err, contents) => {
+          if (err) {
+            return;
+          }
+          const testCon = JSON.parse(contents.toString());
+          const uuid = randomUUID();
+
+          // todo do not copy same video
+          // currently Allure Testops does not rewrite uploaded results if use same file
+          // const uuid = getUuidByString(videoContent);
+
+          const nameAttAhc = `${uuid}-attachment${ext}`;
+          const newPath = path.join(this.allureResults, nameAttAhc);
+
+          if (!testCon.attachments) {
+            testCon.attachments = [];
+          }
+          testCon.attachments.push({
+            name: `${specname}${ext}`,
+            type: ContentType.MP4,
+            source: nameAttAhc,
+          });
+
+          if (existsSync(newPath)) {
+            log(`not writing! video file ${newPath} `);
+
+            writeTestFile(testFile, JSON.stringify(testCon), () => {
+              doneFiles = doneFiles + 1;
+            });
+
+            return;
+          }
+
           log(`write video file ${newPath} `);
           copyFile(videoPath, newPath, errCopy => {
             if (errCopy) {
@@ -394,25 +428,21 @@ export class AllureReporter {
               return;
             }
             log(`write test file ${testFile} `);
-            writeFile(testFile, JSON.stringify(testCon), errWrite => {
-              if (errWrite) {
-                log(`error test file  ${errWrite.message} `);
-
-                return;
-              }
-              log(`write test file done ${testFile} `);
+            writeTestFile(testFile, JSON.stringify(testCon), () => {
               doneFiles = doneFiles + 1;
             });
           });
-        } else {
-          log(`not writing! video file ${newPath} `);
-        }
+        });
       });
     });
     const started = Date.now();
     const timeout = 10000;
 
-    while (doneFiles < testsAttach.length && Date.now() - started < timeout) {
+    while (doneFiles < testsAttach.length) {
+      if (Date.now() - started >= timeout) {
+        console.error(`Could not write all video attachments in ${timeout}ms`);
+        break;
+      }
       await delay(100);
     }
   }

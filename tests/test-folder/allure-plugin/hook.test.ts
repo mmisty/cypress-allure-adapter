@@ -5,7 +5,7 @@ describe('run one test', () => {
   // todo create test right in code
   const storeResDir = createResTest('before-each-fail');
 
-  describe.only(`${storeResDir}: before-each-fail`, () => {
+  describe(`${storeResDir}: before-each-fail`, () => {
     let resFixed: AllureTest[];
     const TESTS_COUNT = 30;
 

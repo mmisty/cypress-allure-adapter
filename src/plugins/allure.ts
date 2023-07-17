@@ -2,7 +2,7 @@ import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { existsSync, readFile, rmSync, writeFile, writeFileSync } from 'fs';
-import { packageLog } from '../common';
+import { delay, packageLog } from '../common';
 import { sync } from 'fast-glob';
 
 const debug = Debug('cypress-allure:proxy');
@@ -229,16 +229,19 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         return;
       }
       await allureReporter.attachVideoToTests({ path: video ?? '' });
-      // this.flushWatcher({});
+      // await this.flushWatcher({});
       log('afterSpec');
     },
 
     flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
       const allFiles = sync(`${allureResults}/*`);
       debug('FLUSH spec');
+      let doneFiles = 0;
 
       for (const fl of allFiles) {
         if (!existsSync(fl)) {
+          doneFiles = doneFiles + 1;
+
           return;
         }
 
@@ -249,12 +252,24 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
                 debug(`Error writing file: ${errWrite.message}`);
               } else {
                 debug('done writing');
+                doneFiles++;
               }
             });
           } else {
             debug(`Error reading file: ${err?.message}`);
           }
         });
+      }
+
+      const started = Date.now();
+      const timeout = 10000;
+
+      while (doneFiles < allFiles.length) {
+        if (Date.now() - started >= timeout) {
+          console.error(`Could not flush all files in ${timeout}ms`);
+          break;
+        }
+        await delay(100);
       }
     },
   };
