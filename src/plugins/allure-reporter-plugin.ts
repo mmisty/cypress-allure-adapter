@@ -538,8 +538,9 @@ export class AllureReporter {
     const duplicates = this.allTests.filter(t => t.fullTitle === fullTitle);
 
     const warn =
-      'Starting test with the same fullName as already exist, will be shown as' +
-      `retried: ${fullTitle}\nTo solve this rename the test. Spec ${this.currentSpec?.relative}, test full title:  ${fullTitle}`;
+      'Starting test with the same fullName as already exist, will be shown as ' +
+      `retried: ${fullTitle}\nTo solve this rename the test. Spec ${this.currentSpec?.relative}, ` +
+      `test full title:  ${fullTitle}`;
 
     if (duplicates.length > 0) {
       console.warn(`${packageLog} ${warn}`);
