@@ -37,16 +37,18 @@ const writeTestFile = (testFile: string, content: string, callBack: () => void) 
     callBack();
   });
 };
+// all tests for session
+const allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
 
 export class AllureReporter {
   // todo config
+  private showDuplicateWarn: boolean;
   private allureResults: string;
   private allureAddVideoOnPass: boolean;
   private videos: string;
   private screenshots: string;
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
-  allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
   steps: AllureStep[] = [];
   globalHooks = new GlobalHooks(this);
 
@@ -60,6 +62,7 @@ export class AllureReporter {
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
   constructor(opts: ReporterOptions) {
+    this.showDuplicateWarn = opts.showDuplicateWarn;
     this.allureResults = opts.allureResults;
     this.allureAddVideoOnPass = opts.allureAddVideoOnPass;
     this.videos = opts.videos;
@@ -291,7 +294,7 @@ export class AllureReporter {
       }
 
       log(`attachScreenshots:${x.path}`);
-      const uuids = this.allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
+      const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
 
       uuids.forEach(uuid => {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
@@ -301,7 +304,7 @@ export class AllureReporter {
         type ParsedAttachment = { name: string; type: ContentType; source: string };
         const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
         const uuidNew = randomUUID();
-        const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same video
+        const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same image
         const newPath = path.join(this.allureResults, nameAttAhc);
 
         if (!existsSync(newPath)) {
@@ -538,15 +541,15 @@ export class AllureReporter {
   }
 
   startTest(arg: AllureTaskArgs<'testStarted'>) {
-    const { title, fullTitle, id } = arg;
-    const duplicates = this.allTests.filter(t => t.fullTitle === fullTitle);
+    const { title, fullTitle, id, currentRetry } = arg;
+    const duplicates = allTests.filter(t => t.fullTitle === fullTitle);
 
     const warn =
       'Starting test with the same fullName as already exist, will be shown as ' +
       `retried: ${fullTitle}\nTo solve this rename the test. Spec ${this.currentSpec?.relative}, ` +
       `test full title:  ${fullTitle}`;
 
-    if (duplicates.length > 0) {
+    if (duplicates.length > 0 && currentRetry === 0 && this.showDuplicateWarn) {
       console.warn(`${packageLog} ${warn}`);
     }
 
@@ -558,7 +561,7 @@ export class AllureReporter {
     const group = this.currentGroup;
     const test = group!.startTest(title);
 
-    this.allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
+    allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
     this.tests.push(test);
 
     if (this.currentTest) {

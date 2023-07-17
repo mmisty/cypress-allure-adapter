@@ -393,7 +393,10 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(CUSTOM_EVENTS.TEST_BEGIN, test => {
       debug(`event ${CUSTOM_EVENTS.TEST_BEGIN}: ${test.title}`);
 
-      message({ task: 'testStarted', arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id } });
+      message({
+        task: 'testStarted',
+        arg: { title: test.title, fullTitle: test.fullTitle(), id: test.id, currentRetry: test._currentRetry },
+      });
 
       allureEventsEmitter.emit(USER_EVENTS.TEST_START, test, () => {
         debug('After start callback');

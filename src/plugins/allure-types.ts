@@ -17,7 +17,7 @@ type AllureTask = {
   writeExecutorInfo: { info: ExecutorInfo };
   writeCategoriesDefinitions: { categories: Category[] };
   testEnded: { result: Status; details?: StatusDetails };
-  testStarted: { title: string; fullTitle: string; id: string };
+  testStarted: { title: string; fullTitle: string; id: string; currentRetry?: number };
   suiteStarted: { title: string; fullTitle: string; file?: string };
   hookStarted: { title: string; file?: string; hookId?: string; date?: number };
   hookEnded: { title: string; date?: number; result: Status; details?: StatusDetails };

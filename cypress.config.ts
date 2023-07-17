@@ -24,6 +24,7 @@ export default defineConfig({
       allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
       allureSkipCommands: 'wrap', // separated comma
       allureAddVideoOnPass: 'true',
+      allureShowDuplicateWarn: 'true',
 
       tmsPrefix: 'http://jira',
       issuePrefix: 'http://jira/*',

@@ -38,7 +38,12 @@ export const configureAllureAdapterPlugins = (
   const allureAddVideoOnPass =
     config.env['allureAddVideoOnPass'] === true || config.env['allureAddVideoOnPass'] === 'true';
 
+  const showDuplicateWarn = config.env['allureShowDuplicateWarn']
+    ? config.env['allureShowDuplicateWarn'] === true || config.env['allureShowDuplicateWarn'] === 'true'
+    : false;
+
   const options: ReporterOptions = {
+    showDuplicateWarn,
     allureAddVideoOnPass,
     allureResults: results,
     techAllureResults: watchResultsPath ?? results,

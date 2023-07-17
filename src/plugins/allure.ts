@@ -18,6 +18,7 @@ export type ReporterOptions = {
   techAllureResults: string;
   videos: string;
   screenshots: string;
+  showDuplicateWarn: boolean;
 };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {

@@ -51,7 +51,8 @@ Setup:
     - `allureCleanResults` => `true` - will remove allure results on cypress start
     - `allureSkipCommands` => `wrapNoLog,sync` - commands that will not be logged, separated with comma
     - `allureAttachRequests` => `true` - attach request/response body and status
-    - `allureAddVideoOnPass` => `true` - attach video for all tests (including passed), other wise attach only for failed, broken, unknown
+    - `allureAddVideoOnPass` => `true` - attach video for all tests (including passed), otherwise attach only for failed, broken, unknown
+    - `allureShowDuplicateWarn` => `true` - show console warnings about test duplicates, default false
     - `tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this.
       Also link can be specified with `*` - it will be replced with id.
      ```javascript
