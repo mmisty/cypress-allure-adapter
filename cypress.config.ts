@@ -21,7 +21,7 @@ export default defineConfig({
       allureCleanResults: 'true',
       allureAttachRequests: false,
       allureResults: 'allure-results', // for test results to write
-      // allureResultsWatchPath: 'allure-results-2', // for test ops to watch
+      allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
       allureSkipCommands: 'wrap', // separated comma
       allureAddVideoOnPass: 'true',
 
