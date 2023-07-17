@@ -375,6 +375,8 @@ The following commands available from tests with `cy.allure()` or through `Cypre
 To see debug log run cypress with DEBUG env variable like: `DEBUG=cypress-allure* npm run cy:open`
 
 ## Change log
+### 0.6.0
+ - setting to disable warning about duplicates
 
 ### 0.5.0
  - fixes to attach videos by Allure TestOps
