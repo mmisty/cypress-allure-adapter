@@ -27,11 +27,12 @@ Cypress.Allure.on('test:started', test => {
   Cypress.Allure.label('event', 'started');
   Cypress.Allure.label('tag', 'started');
   Cypress.Allure.step('after start');
+  Cypress.Allure.addDescriptionHtml(Cypress.spec.relative);
 });
 
 Cypress.Allure.on('test:ended', test => {
   console.log(`BEFORE ENDING TEST: ${test.title}`);
-  Cypress.Allure.label('event', 'started');
+  Cypress.Allure.label('event', 'ended');
   Cypress.Allure.label('tag', 'ended');
   Cypress.Allure.step('before end');
 });

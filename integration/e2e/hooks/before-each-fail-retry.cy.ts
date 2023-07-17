@@ -16,9 +16,11 @@ describe('before each fail with retry', { retries: 2 }, () => {
     cy.log('test 1');
   });
 
-  it('test 2', () => {
-    cy.log('test 2');
-  });
+  for (let i = 2; i <= 30; i++) {
+    it(`test ${`0${i}`.slice(-2)}`, () => {
+      cy.log(`test ${i.toFixed(-2)}`);
+    });
+  }
 
   afterEach(() => {
     cy.log('log after each');

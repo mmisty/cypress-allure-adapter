@@ -1,4 +1,4 @@
-describe('before each fail', () => {
+describe('before each fail @many', () => {
   beforeEach(() => {
     cy.log('no name hook - before each');
   });
@@ -10,13 +10,11 @@ describe('before each fail', () => {
     });
   });
 
-  it('test 1', () => {
-    cy.log('test 1');
-  });
-
-  it('test 2', () => {
-    cy.log('test 2');
-  });
+  for (let i = 1; i <= 30; i++) {
+    it(`test ${`0${i}`.slice(-2)}`, () => {
+      cy.log(`test ${i}`);
+    });
+  }
 
   afterEach(() => {
     cy.log('log after each');

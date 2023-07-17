@@ -94,8 +94,8 @@ export const configureAllureAdapterPlugins = (
   //   reporter.suiteEnded({});
   // });
 
-  on('after:spec', (spec, results) => {
-    reporter.afterSpec({ results });
+  on('after:spec', async (spec, results) => {
+    await reporter.afterSpec({ results });
   });
 
   return reporter;

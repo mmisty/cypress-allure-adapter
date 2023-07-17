@@ -29,7 +29,7 @@ function getPort(existingPort?: number): number {
 }
 
 const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer | undefined => {
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 20; i++) {
     try {
       const wsPort = getPort();
       const sockserver = new WebSocketServer({ port: wsPort, path: wsPath });
@@ -38,7 +38,7 @@ const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer
 
       return sockserver;
     } catch (err) {
-      log(`Could not created ws server${(err as Error).message}`);
+      log(`Could not create ws server: ${(err as Error).message}`);
     }
   }
 };

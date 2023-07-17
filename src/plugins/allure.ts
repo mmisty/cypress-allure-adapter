@@ -211,13 +211,14 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.attachScreenshots(arg);
       log('attachScreenshots');
     },
+
     attachVideoToTests: (arg: AllureTaskArgs<'attachVideoToTests'>) => {
       log(`attachScreenshots ${JSON.stringify(arg)}`);
       allureReporter.attachVideoToTests(arg);
       log('attachVideoToTests');
     },
 
-    afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
+    async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
       const { video } = arg.results;
       log(`afterSpec video path: ${video}`);
@@ -227,8 +228,8 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
         return;
       }
-      allureReporter.attachVideoToTests({ path: video ?? '' });
-      this.flushWatcher({});
+      await allureReporter.attachVideoToTests({ path: video ?? '' });
+      // this.flushWatcher({});
       log('afterSpec');
     },
 

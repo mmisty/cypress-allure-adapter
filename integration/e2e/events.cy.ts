@@ -2,7 +2,7 @@ Cypress.Allure.on('test:started', test => {
   console.log(`test:started from test: ${test.title}`);
 });
 
-describe('suite', () => {
+describe('events test', () => {
   Cypress.Allure.on('test:started', test => {
     console.log(`test:started 2 from test: ${test.title}`);
     Cypress.Allure.label('event', 'started');

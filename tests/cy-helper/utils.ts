@@ -7,7 +7,7 @@ import { ExecutableItem } from 'allure-js-commons';
 jest.setTimeout(120000);
 
 // eslint-disable-next-line jest/no-export
-export const fixResult = (results: AllureTest[]) => {
+export const fixResult = (results: AllureTest[]): AllureTest[] => {
   const date = Date.parse('10 Dec 2011');
 
   const replaceSteps = (steps: ExecutableItem[]): any[] => {
@@ -44,11 +44,11 @@ export const fixResult = (results: AllureTest[]) => {
       steps: replaceSteps(r.steps),
       attachments: r.attachments.map(t => ({ ...t, source: `source${path.extname(t.source)}` })),
     };
-  });
+  }) as AllureTest[];
 };
 
 // eslint-disable-next-line jest/no-export
-export const createResTest = (fileName: string): string => {
+export const createResTest = (fileName: string, envConfig?: Record<string, string | undefined>): string => {
   const cwd = process.cwd();
   beforeAll(async () => {
     await execSync('npm run build');
@@ -57,6 +57,16 @@ export const createResTest = (fileName: string): string => {
   const name = basename(fileName, '.test.ts');
   const testname = `${name}.cy.ts`;
   const storeResDir = `allure-results/${testname}`;
+
+  const env = {
+    allure: 'true',
+    allureResults: storeResDir,
+    allureCleanResults: 'true',
+    allureSkipCommands: 'intercept',
+    COVERAGE_REPORT_DIR: 'reports/coverage-cypress',
+    COVERAGE: 'false',
+    ...(envConfig || {}),
+  };
 
   it('create results', async () => {
     const g = require('fast-glob');
@@ -70,19 +80,13 @@ export const createResTest = (fileName: string): string => {
 
     try {
       process.env.DEBUG = 'cypress-allure*';
+      console.log(env);
       await cy.run({
         spec,
         port,
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
-        env: {
-          allure: 'true',
-          allureResults: storeResDir,
-          allureCleanResults: 'true',
-          allureSkipCommands: 'intercept',
-          COVERAGE_REPORT_DIR: 'reports/coverage-cypress',
-          COVERAGE: 'true',
-        },
+        env,
       });
     } catch (e) {
       err = e as Error;

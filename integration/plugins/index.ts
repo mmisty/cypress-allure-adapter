@@ -21,7 +21,7 @@ const clearJsFiles = () => {
 };
 
 const isCoverage = (config: PluginConfigOptions) => {
-  return process.env[COVERAGE] || config.env[COVERAGE];
+  return process.env[COVERAGE] === 'true' || config.env[COVERAGE] === true;
 };
 
 export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
@@ -31,6 +31,7 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   if (isCov) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     require('@cypress/code-coverage/task')(on, config);
+    console.log('SETTING UP COVERAGE');
     config.env[COVERAGE] = true;
   }
 

@@ -153,6 +153,30 @@ const isBeforeAllHook = (test: Mocha.Test) => {
   return (test as any).type === 'hook' && (test as any).hookName === 'before all';
 };
 
+const isBeforeEachHook = (test: Mocha.Test) => {
+  return (test as any).type === 'hook' && (test as any).hookName === 'before each';
+};
+
+const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
+  let index = 0;
+  test.parent?.eachTest(ts => {
+    index++;
+
+    ts.err = test.err;
+
+    if (ts) {
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+
+      if (index !== 1) {
+        // end all except first
+        // first test will be ended in cy event with proper message
+        runner.emit(CUSTOM_EVENTS.TEST_END, ts);
+      }
+    }
+  });
+};
+
 export const registerMochaReporter = (ws: WebSocket) => {
   const tests: string[] = [];
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
@@ -259,42 +283,39 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(MOCHA_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
       debug(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
-      if (!isBeforeAllHook(test)) {
+      if (isBeforeEachHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
         // hook end not fired when hook fails
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
 
+        // when before each fails all tests are skipped in current suite
+        createTests(runner, test);
+
         return;
       }
+
+      if (isBeforeAllHook(test)) {
+        // hook end not fired when hook fails
+        runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+
+        if (isRootSuiteTest(test)) {
+          // only for root suite
+          runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
+
+          return;
+        }
+        createTests(runner, test);
+
+        return;
+      }
+
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
       // hook end not fired when hook fails
       runner.emit(CUSTOM_EVENTS.HOOK_END, test);
 
-      if (isRootSuiteTest(test)) {
-        // only for root suite
-        runner.emit(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, test);
-
-        return;
-      }
-
-      let index = 0;
-      test.parent?.eachTest(ts => {
-        index++;
-
-        ts.err = test.err;
-
-        if (ts) {
-          runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-          runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
-
-          if (index !== 1) {
-            // end all except first
-            // first test will be ended in cy event with proper message
-            runner.emit(CUSTOM_EVENTS.TEST_END, ts);
-          }
-        }
-      });
+      return;
     })
 
     .on(MOCHA_EVENTS.TEST_RETRY, test => {
@@ -319,7 +340,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.RUN_END, () => {
-      debug(`event ${MOCHA_EVENTS.RUN_END}`);
+      debug(`event ${MOCHA_EVENTS.RUN_END}: tests length ${tests.length}`);
+
       runEnded = true;
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });

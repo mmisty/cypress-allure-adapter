@@ -17,7 +17,7 @@ import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, ContentType, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
-import { packageLog, extname } from '../common';
+import { packageLog, extname, delay } from '../common';
 import { randomUUID } from 'crypto';
 
 const debug = Debug('cypress-allure:reporter');
@@ -71,6 +71,8 @@ export class AllureReporter {
       return undefined;
     }
 
+    log('current test');
+
     return this.tests[this.tests.length - 1];
   }
 
@@ -79,6 +81,8 @@ export class AllureReporter {
       return undefined;
     }
 
+    log('current hook');
+
     return this.hooks[this.hooks.length - 1].hook;
   }
 
@@ -86,6 +90,7 @@ export class AllureReporter {
     if (this.steps.length === 0) {
       return undefined;
     }
+    log('current step');
 
     return this.steps[this.steps.length - 1];
   }
@@ -340,7 +345,7 @@ export class AllureReporter {
     });
   }
 
-  attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
+  async attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
     // this happens after test has already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
@@ -357,7 +362,7 @@ export class AllureReporter {
 
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
     log(JSON.stringify(testsAttach));
-
+    let doneFiles = 0;
     testsAttach.forEach(test => {
       log(`ATTACHING to ${test.id} ${test.path} ${test.fullName}`);
       const testFile = `${this.allureResults}/${test.id}-result.json`;
@@ -396,6 +401,7 @@ export class AllureReporter {
                 return;
               }
               log(`write test file done ${testFile} `);
+              doneFiles = doneFiles + 1;
             });
           });
         } else {
@@ -403,6 +409,12 @@ export class AllureReporter {
         }
       });
     });
+    const started = Date.now();
+    const timeout = 10000;
+
+    while (doneFiles < testsAttach.length && Date.now() - started < timeout) {
+      await delay(100);
+    }
   }
 
   endGroup() {
@@ -620,6 +632,7 @@ export class AllureReporter {
 
       return;
     }
+    log('start step for current executable');
     const step = this.currentExecutable.startStep(name, date);
     this.steps.push(step);
   }
