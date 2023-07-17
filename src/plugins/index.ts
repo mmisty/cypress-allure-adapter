@@ -14,8 +14,6 @@ export const configureAllureAdapterPlugins = (
   on: PluginEvents,
   config: PluginConfigOptions,
 ): AllureTasks | undefined => {
-  let flushAfterSpec: boolean | undefined = undefined;
-
   if (process.env.DEBUG) {
     config.env['DEBUG'] = process.env.DEBUG;
   }
@@ -26,10 +24,6 @@ export const configureAllureAdapterPlugins = (
     return undefined;
   }
 
-  if (config.env['allureResultsTestOps'] !== '' || config.env['allureResultsTestOps'] !== undefined) {
-    flushAfterSpec = true;
-  }
-
   if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
     debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
 
@@ -37,11 +31,17 @@ export const configureAllureAdapterPlugins = (
   }
 
   debug('Register plugin');
+
   const results = config.env['allureResults'] ?? 'allure-results';
+  const watchResultsPath = config.env['allureResultsWatchPath'];
+
+  const allureAddVideoOnPass =
+    config.env['allureAddVideoOnPass'] === true || config.env['allureAddVideoOnPass'] === 'true';
 
   const options: ReporterOptions = {
+    allureAddVideoOnPass,
     allureResults: results,
-    techAllureResults: flushAfterSpec ? config.env['allureResultsTestOps'] : results, //allure-results`${results}/test-ops`
+    techAllureResults: watchResultsPath ?? results,
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
   };

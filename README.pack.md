@@ -42,18 +42,40 @@ Setup:
    ```
 3. **Update environment variables**: in `cypress.config.ts` or in your env files: 
     - `allure` => `true` - will enable reporting
-    - `allureResults` => `allure-results` - path to allure-results
+    - `allureResults` => `allure-results` - path to allure-results (default 'allure-results')
+    - `allureResultsWatchPath` => path to folder where results will be moved after spec is 
+   done (if you use Allure TestOps specify this path to watch), but default this is not specified
+   When you use this path tests will start to appear in Allure TestOps only after spec is finished. If not use this with Allure 
+   TestOps then some videos may not be uploaded. Will be uploaded only for 1 test from spec.
+
     - `allureCleanResults` => `true` - will remove allure results on cypress start
     - `allureSkipCommands` => `wrapNoLog,sync` - commands that will not be logged, separated with comma
-   ```
-   env: {
-      allure: 'true',
-      allureResults: 'allure-results',
-      allureCleanResults: 'true',
-      allureSkipCommands: 'wrapNoLog,sync', // separated comma
-      //...
-   }
-   ```
+    - `allureAttachRequests` => `true` - attach request/response body and status
+    - `allureAddVideoOnPass` => `true` - attach video for all tests (including passed), other wise attach only for failed, broken, unknown
+    - `tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this.
+      Also link can be specified with `*` - it will be replced with id.
+     ```javascript
+        // cypress.config.ts 
+        env: {
+          tmsPrefix: 'http://jira.com' 
+          issuePrefix: 'http://jira.com/PROJECT-1/*/browse' 
+        }  
+    ```
+    ```javascript
+        // test.spec.ts
+        cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
+        cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
+     ```
+   EXAMPLE: 
+      ```
+      env: {
+         allure: 'true',
+         allureResults: 'allure-results',
+         allureCleanResults: 'true',
+         allureSkipCommands: 'wrapNoLog,sync', // separated comma
+         // ... other env varialbles
+      }
+      ```
 
 4. no need to setup types - should be done automatically
 
@@ -63,6 +85,8 @@ To see Allure report locally after tests were executed install `allure-commandli
 and run command `allure serve`
 
 ### Advanced
+
+#### after:spec
 If you are using Cypress action `after:spec` in plugins you 
 can use the following configuration to have video attached to tests: 
 
@@ -87,21 +111,26 @@ export default defineConfig({
 });
 
 ```
+#### Start/End test events
+If you need to add labels, tags or other meta info for tests you can use the following events: 
+ - `test:started` is fired after tests started but before all "before each" hooks
+ - `test:ended` is fired after all "after each" hooks
 
-## Env variables
+```javascript
+Cypress.Allure.on('test:started', test => {
+    Cypress.Allure.label('tag', 'started');
+  });
+```
 
- - `tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this. 
-    Also link can be specified with `*` - it will be replced with id. 
-   ```javascript
-   env: {
-      tmsPrefix: 'http://jira.com' 
-      issuePrefix: 'http://jira.com/PROJECT-1/*/browse' 
-   }
-   // 
-   cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
-   cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
-   ```
+And also if you need to do something with test before it ends: 
+```javascript
+Cypress.Allure.on('test:ended', test => {
+    Cypress.Allure.label('tag', 'ended');
+    Cypress.Allure.step('before end step');
+  });
 
+```
+You can put this into your `support/index.ts` file.
 
 ## Allure Interface
 The following commands available from tests with `cy.allure()` or through `Cypress.Allure` interface: 
@@ -345,6 +374,11 @@ The following commands available from tests with `cy.allure()` or through `Cypre
 To see debug log run cypress with DEBUG env variable like: `DEBUG=cypress-allure* npm run cy:open`
 
 ## Change log
+
+### 0.5.0
+ - fixes to attach videos by Allure TestOps
+ - setting to attach videos only for unsuccessfull results
+ - setting to attach requests
 
 ### 0.0.2 
 Initial version

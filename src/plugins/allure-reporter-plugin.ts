@@ -41,6 +41,7 @@ const writeTestFile = (testFile: string, content: string, callBack: () => void) 
 export class AllureReporter {
   // todo config
   private allureResults: string;
+  private allureAddVideoOnPass: boolean;
   private videos: string;
   private screenshots: string;
   groups: AllureGroup[] = [];
@@ -59,7 +60,8 @@ export class AllureReporter {
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
   constructor(opts: ReporterOptions) {
-    this.allureResults = opts.techAllureResults;
+    this.allureResults = opts.allureResults;
+    this.allureAddVideoOnPass = opts.allureAddVideoOnPass;
     this.videos = opts.videos;
     this.screenshots = opts.screenshots;
 
@@ -366,11 +368,13 @@ export class AllureReporter {
     log(specname);
     const res = parseAllure(this.allureResults);
 
-    const tests = res.map(t => ({
-      path: t.labels.find(l => l.name === 'path')?.value,
-      id: t.uuid,
-      fullName: t.fullName,
-    }));
+    const tests = res
+      .filter(t => (this.allureAddVideoOnPass ? true : t.status !== 'passed' && t.status !== 'skipped'))
+      .map(t => ({
+        path: t.labels.find(l => l.name === 'path')?.value,
+        id: t.uuid,
+        fullName: t.fullName,
+      }));
 
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
 
