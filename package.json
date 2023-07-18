@@ -1,7 +1,7 @@
 {
   "name": "@mmisty/cypress-allure-adapter",
   "version": "0.0.0",
-  "description": "cypress allure adapter to generate allure results during tests execution",
+  "description": "cypress allure adapter to generate allure results during tests execution (Allure TestOps compatible)",
   "main": "index.js",
   "repository": "git@github.com:mmisty/cypress-allure-adapter.git",
   "homepage": "https://github.com/mmisty/cypress-allure-adapter#readme",
@@ -13,8 +13,13 @@
     "e2e",
     "tests",
     "typescript",
-    "template"
+    "allure",
+    "plugins",
+    "cypress-allure-adapter"
   ],
+  "peerDependencies": {
+    "cypress": ">= 11.x"
+  },
   "author": "Taisia Pitko (mmisty) <minydas@yandex.ru>",
   "scripts": {
     "husky:install": "husky install",

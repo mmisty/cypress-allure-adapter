@@ -3,20 +3,19 @@
 This is allure adapter for cypress providing realtime results.
 It is useful when using Allure TestOps - so you can watch tests execution.
 
+This is development readme, see [package readme](./README.pack.md) for usage documentation 
+
+This is under construction.
 
 ## TODO
  - [ ] Readme, setup and installation
  - [ ] proper tests
- - [ ] rename setup method
- - [ ] before each hook failure case (show error for all skipped)
 
 ## Contribution
 todo
 
 ## Tests
 todo
-
-Create repository using this template if you need to create cypress library.
 
 ### Project structure
 

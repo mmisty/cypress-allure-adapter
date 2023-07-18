@@ -1,6 +1,6 @@
 # cypress-allure-adapter
 
-This is allure adapter for cypress providing realtime results. 
+This is allure adapter for Cypress providing realtime results. 
 It is useful when using Allure TestOps - so you can watch tests execution.
 It adds tests, steps, suites and screenshots during tests execution.
 

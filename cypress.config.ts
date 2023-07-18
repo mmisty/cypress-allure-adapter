@@ -19,7 +19,7 @@ export default defineConfig({
       REDIRECT_BROWSER_LOG: true,
       allure: 'true',
       allureCleanResults: 'true',
-      allureAttachRequests: false,
+      allureAttachRequests: true,
       allureResults: 'allure-results', // for test results to write
       allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
       allureSkipCommands: 'wrap', // separated comma
