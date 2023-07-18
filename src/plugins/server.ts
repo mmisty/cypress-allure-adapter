@@ -15,60 +15,11 @@ const messageGot = (...args: unknown[]) => {
   logMessage(`${args}`);
 };
 
-function getPort(existingPort?: number): number {
-  if (existingPort) {
-    log(`existing port: ${existingPort}`);
-
-    return existingPort;
-  }
-
-  const port = 40000 + Math.round(Math.random() * 25000);
-  log(`new port: ${port}`);
-
-  return port;
+function getRandomPortNumber(): number {
+  return 40000 + Math.round(Math.random() * 25000);
 }
 
-const startWsServerRetry = (configOptions: PluginConfigOptions): WebSocketServer | undefined => {
-  for (let i = 0; i < 20; i++) {
-    try {
-      const wsPort = getPort();
-      // todo fix for port is in use
-      const sockserver = new WebSocketServer({ port: wsPort, path: wsPath });
-
-      configOptions.env[ENV_WS] = wsPort;
-
-      return sockserver;
-    } catch (err) {
-      log(`Could not create ws server: ${(err as Error).message}`);
-    }
-  }
-};
-
-const executeTask = (tasks: AllureTasks, data: { task: any; arg: any }) => {
-  if (!data || !data.task) {
-    log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
-
-    return;
-  }
-
-  try {
-    if (Object.keys(tasks).indexOf(data.task) !== -1) {
-      const task = data.task as RequestTask; // todo check
-      log(task);
-      tasks[task](data.arg);
-    } else {
-      const msg = data.task ? `No such task: ${data.task}` : 'No task property in message';
-      log(msg);
-    }
-  } catch (err) {
-    console.error(`${packageLog} Error running task: '${data.task}': ${(err as Error).message}`);
-    console.log((err as Error).stack);
-  }
-};
-
-export function startReporterServer(configOptions: PluginConfigOptions, tasks: AllureTasks) {
-  const sockserver = startWsServerRetry(configOptions);
-
+const socketLogic = (port: number, sockserver: WebSocketServer | undefined, tasks: AllureTasks) => {
   if (!sockserver) {
     log('Could not start reporting server');
 
@@ -110,23 +61,52 @@ export function startReporterServer(configOptions: PluginConfigOptions, tasks: A
     ws.onerror = function () {
       console.log('websocket error');
     };
+  });
+};
 
-    /*setInterval(() => {
-      const videos = 'integration/videos';
-      const files = readdirSync(videos);
-      files.forEach(f => {
-        const fileVideo = path.join(videos, f);
-        console.log(fileVideo);
+export const startReporterServer = (configOptions: PluginConfigOptions, tasks: AllureTasks, attempt = 0) => {
+  const wsPort = getRandomPortNumber();
 
-        if (attached.indexOf(fileVideo) === -1) {
-          // ws.send(JSON.stringify({ event: 'video', path: fileVideo }));
-          tasks['attachVideoToTests']({ path: fileVideo });
-          // ws.send(JSON.stringify({ event: 'attachVideoToTests', path: fileVideo }));
-          attached.push(fileVideo);
-        }
-      });
-    }, 1000);*/
+  const sockserver: WebSocketServer | undefined = new WebSocketServer({ port: wsPort, path: wsPath }, () => {
+    configOptions.env[ENV_WS] = wsPort;
+    const attemptMessage = attempt > 0 ? ` from ${attempt} attempt` : '';
+    console.log(`${packageLog} running on ${wsPort} port${attemptMessage}`);
+    socketLogic(wsPort, sockserver, tasks);
   });
 
-  return undefined;
-}
+  sockserver.on('error', err => {
+    if (err.message.indexOf('address already in use') !== -1) {
+      if (attempt < 30) {
+        startReporterServer(configOptions, tasks, attempt + 1);
+      } else {
+        console.error(`${packageLog} Could not find free port, will not report: ${err.message}`);
+      }
+
+      return;
+    }
+
+    console.error(`${packageLog} Error on ws server: ${(err as Error).message}`);
+  });
+};
+
+const executeTask = (tasks: AllureTasks, data: { task: any; arg: any }) => {
+  if (!data || !data.task) {
+    log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
+
+    return;
+  }
+
+  try {
+    if (Object.keys(tasks).indexOf(data.task) !== -1) {
+      const task = data.task as RequestTask; // todo check
+      log(task);
+      tasks[task](data.arg);
+    } else {
+      const msg = data.task ? `No such task: ${data.task}` : 'No task property in message';
+      log(msg);
+    }
+  } catch (err) {
+    console.error(`${packageLog} Error running task: '${data.task}': ${(err as Error).message}`);
+    console.log((err as Error).stack);
+  }
+};
