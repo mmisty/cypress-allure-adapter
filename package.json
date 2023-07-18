@@ -70,7 +70,6 @@
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
     "allure-commandline": "^2.22.4",
-    "allure-js-parser": "^0.0.6",
     "cypress": "^12.17.0",
     "cypress-redirect-browser-log": "^1.1.0",
     "eslint": "^8.28.0",
@@ -95,6 +94,7 @@
   },
   "dependencies": {
     "allure-js-commons": "^2.4.0",
+    "allure-js-parser": "^0.0.7",
     "debug": "^4.3.4",
     "fast-glob": "^3.2.12",
     "uuid": "^9.0.0",
