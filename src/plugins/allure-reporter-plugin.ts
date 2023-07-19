@@ -603,7 +603,7 @@ export class AllureReporter {
 
   applyDescriptionHtml() {
     if (this.currentTest) {
-      this.currentTest.descriptionHtml = this.descriptionHtml.join('</br>');
+      this.currentTest.descriptionHtml = this.descriptionHtml.join('');
     }
   }
 
