@@ -160,19 +160,14 @@ const isBeforeEachHook = (test: Mocha.Test) => {
 const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
   test.parent?.eachTest(ts => {
-    index++;
-
     ts.err = test.err;
 
-    if (ts) {
+    index++;
+
+    if (index !== 1 && ts) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
-
-      if (index !== 1) {
-        // end all except first
-        // first test will be ended in cy event with proper message
-        runner.emit(CUSTOM_EVENTS.TEST_END, ts);
-      }
+      runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
   });
 };
@@ -277,7 +272,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(MOCHA_EVENTS.TEST_BEGIN, (test: Mocha.Test) => {
       debug(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
       debug(`${JSON.stringify(tests)}`);
-      // ignore
+
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
     })
 
     .on(MOCHA_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
@@ -288,6 +284,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
         // hook end not fired when hook fails
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+        runner.emit(CUSTOM_EVENTS.TEST_END, test);
 
         // when before each fails all tests are skipped in current suite
         createTests(runner, test);
@@ -444,18 +441,22 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     });
 
-  Cypress.on('test:before:run', async (_t, test) => {
+  /*Cypress.on('test:before:run', async (_t, test) => {
     const started = Date.now();
 
     // cypress test:before:run event fires for first test in suite along with
     // before hook event, need to wait until suite starts
-    while (startedSuites.length === 0 && !runEnded && Date.now() - started < Cypress.config('defaultCommandTimeout')) {
+    while (startedSuites.length === 0 && !runEnded) {
+      if (Date.now() - started >= Cypress.config('defaultCommandTimeout')) {
+        debug('timeout waiting suite starts');
+        break;
+      }
       await delay(1);
     }
 
     runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
-  });
+  });*/
 
   Cypress.on('test:after:run', (_t, test) => {
     runner.emit(CUSTOM_EVENTS.TEST_END, test);
