@@ -8,6 +8,21 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 jest.setTimeout(120000);
 
 // eslint-disable-next-line jest/no-export
+export const mapSteps = (steps: ExecutableItem[]): any => {
+  if (steps?.length === 0) {
+    return [];
+  }
+
+  return steps.map(s => {
+    return { name: s.name, steps: mapSteps(s.steps) };
+  });
+};
+// res:
+// [
+//  {name: 'step', steps:  }
+// ]
+
+// eslint-disable-next-line jest/no-export
 export const fixResult = (results: AllureTest[]): AllureTest[] => {
   const date = Date.parse('10 Dec 2011');
 
@@ -178,6 +193,7 @@ export const createResTest2 = (
       console.log(env);
       await cy.run({
         spec,
+        specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
         port,
         browser: 'chrome',
         trashAssetsBeforeRuns: true,

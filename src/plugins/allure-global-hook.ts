@@ -151,7 +151,7 @@ export class GlobalHooks {
           });
         }
       });
-
+      this.reporter.endAllSteps({ status: hook.status || UNKNOWN });
       this.reporter.hookEnded({
         title: hook.title,
         result: hook.status || UNKNOWN,

@@ -65,7 +65,19 @@ describe('mocha events', () => {
                 start: 1323460800000,
                 status: 'passed',
                 statusDetails: undefined,
-                steps: [], // before global step should be
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: before global',
+                    parameters: [],
+                    stage: 'finished',
+                    start: 1323460800000,
+                    status: 'passed',
+                    statusDetails: {},
+                    steps: [],
+                    stop: 1323460800011,
+                  },
+                ],
                 stop: 1323460800010,
               },
             ],
