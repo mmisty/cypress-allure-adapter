@@ -429,7 +429,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, hook => {
       debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
-      const i = 0;
+      // const i = 0;
 
       for (const sui of hook.parent?.suites) {
         createTestsCallb = () => createTestsForSuite(runner, hook, sui);
