@@ -61,7 +61,7 @@ describe('run one test', () => {
                   stop: 1323475200011,
                 },
               ],
-              stop: 1323460800010,
+              stop: 1323475200010,
             },
           ],
           name: 'suite with one test',
@@ -174,7 +174,7 @@ describe('run one test', () => {
             stop: 1323475200011,
           },
         ],
-        stop: 1323460800010,
+        stop: 1323475200010,
         uuid: 'no',
       },
     ]);

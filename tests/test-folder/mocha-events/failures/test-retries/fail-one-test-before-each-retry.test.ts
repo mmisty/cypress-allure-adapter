@@ -96,6 +96,7 @@ describe('hello suite', { retries: 1 }, () => {
     });
 
     it('check attachments', async () => {
+      // fail
       expect(sortAttachments(resFixed)).toEqual([
         [
           {

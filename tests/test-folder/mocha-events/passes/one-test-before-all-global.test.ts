@@ -78,7 +78,7 @@ describe('mocha events', () => {
                     stop: 1323475200011,
                   },
                 ],
-                stop: 1323460800010,
+                stop: 1323475200010,
               },
             ],
             name: 'hello suite',
