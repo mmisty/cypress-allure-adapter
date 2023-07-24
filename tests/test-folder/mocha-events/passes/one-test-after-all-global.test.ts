@@ -1,7 +1,7 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
-describe('mocha events', () => {
+describe('one simple passed test with global after all hook', () => {
   const res = createResTest2([
     `
     after(() => {
@@ -26,13 +26,23 @@ describe('mocha events', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello test',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
       'plugin test:started',
-      'cypress: test:before:run: hello test',
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
       'mocha: pass: hello test',
       'mocha: test end: hello test',
+      ...whenCoverage('mocha: hook: "after each" hook'),
+      ...whenCoverage('mocha: hook end: "after each" hook'),
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'mocha: hook: "after all" hook',
       'mocha: hook end: "after all" hook',
       'cypress: test:after:run: hello test',

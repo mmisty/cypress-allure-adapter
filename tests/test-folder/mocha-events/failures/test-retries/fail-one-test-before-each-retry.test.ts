@@ -1,6 +1,5 @@
 import {
   coverageAfterEachEvent,
-  coverageBeforeEachEvent,
   covergeAfterAll,
   covergeAfterAllEvent,
   covergeBeforeAll,

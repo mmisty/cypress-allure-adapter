@@ -1,7 +1,7 @@
 import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
-describe('mocha events', () => {
+describe('two passed tests with before each in suite', () => {
   const res = createResTest2([
     `
     describe('hello suite', () => {

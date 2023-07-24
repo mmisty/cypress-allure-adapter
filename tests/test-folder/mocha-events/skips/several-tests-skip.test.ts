@@ -1,8 +1,15 @@
-import { createResTest2, fixResult, sortAttachments } from '../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  fixResult,
+  sortAttachments,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
-describe('mocha events', () => {
+describe('several tests skipped by .skip', () => {
   const res = createResTest2(
     [
       `
@@ -38,10 +45,15 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello test 1',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
       'mocha: pending: hello test 1',
 
-      'cypress: test:before:run: hello test 1',
+      ...whenNoCoverage('cypress: test:before:run: hello test 1'),
       'mocha: test: hello test 1',
       'plugin test:started',
       'cypress: test:after:run: hello test 1',
@@ -74,6 +86,7 @@ describe('hello suite', () => {
       'mocha: test end: hello test 4',
 
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test 4',
       'plugin test:ended',
 

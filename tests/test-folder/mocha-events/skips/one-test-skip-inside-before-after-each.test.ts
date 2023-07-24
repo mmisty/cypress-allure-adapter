@@ -1,8 +1,14 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
-describe('mocha events', () => {
+describe('skipped test by this.skip with before each and after each hooks', () => {
   const res = createResTest2(
     [
       `
@@ -33,21 +39,31 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello test',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
 
       'plugin test:started',
       'mocha: hook: "before each" hook',
-      'cypress: test:before:run: hello test',
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: hook end: "before each" hook',
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
 
       'mocha: pending: hello test',
       'mocha: test: hello test',
       'plugin test:started',
       'mocha: test end: hello test',
+      ...whenCoverage('mocha: hook: "after each" hook'),
+      ...whenCoverage('mocha: hook end: "after each" hook'),
       'mocha: hook: "after each" hook',
       'mocha: hook end: "after each" hook',
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
 

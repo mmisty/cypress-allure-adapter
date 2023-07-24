@@ -25,7 +25,7 @@
     "husky:install": "husky install",
     "lint": "eslint --fix '**/*.{ts,tsx,js}'",
     "test": "jest --runInBand",
-    "test:cov": "COVERAGE=true jest --runInBand --coverage --coverageDirectory reports/coverage-jest",
+    "test:cov": "CI=true COVERAGE=true jest --runInBand --coverage --coverageDirectory reports/coverage-jest",
     "cy": "cypress",
     "cy:open": "npm run cy -- open",
     "cy:run": "npm run cy -- run --browser chrome --headless",

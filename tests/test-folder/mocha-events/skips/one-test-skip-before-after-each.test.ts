@@ -8,7 +8,7 @@ import {
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
-describe('mocha events', () => {
+describe('skipped test by .skip with before each and after each hooks', () => {
   const res = createResTest2(
     [
       `

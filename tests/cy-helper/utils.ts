@@ -199,6 +199,7 @@ export const createResTest2 = (
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
         env,
+        quiet: process.env.CI === 'true',
       });
     } catch (e) {
       err = e as Error;

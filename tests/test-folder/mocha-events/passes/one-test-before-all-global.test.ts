@@ -9,7 +9,7 @@ import {
 import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
-describe('mocha events', () => {
+describe('one passed test with global before hook', () => {
   const res = createResTest2([
     `
     before(() => {

@@ -1,7 +1,7 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
-describe('mocha events', () => {
+describe('one passed test with retried before each hook', () => {
   const res = createResTest2([
     `
 describe('hello suite', { retries: 2 }, () => {
@@ -30,14 +30,23 @@ describe('hello suite', { retries: 2 }, () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello retry test',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
 
       'mocha: test: hello retry test',
       'plugin test:started',
       'mocha: hook: "before each" hook',
-      'cypress: test:before:run: hello retry test',
+      ...whenNoCoverage('cypress: test:before:run: hello retry test'),
       'mocha: hook end: "before each" hook',
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
       'mocha: retry: hello retry test',
+      ...whenCoverage('mocha: hook: "after each" hook'),
+      ...whenCoverage('mocha: hook end: "after each" hook'),
       'cypress: test:after:run: hello retry test',
       'plugin test:ended',
 
@@ -46,10 +55,15 @@ describe('hello suite', { retries: 2 }, () => {
       'mocha: hook: "before each" hook',
       'cypress: test:before:run: hello retry test',
       'mocha: hook end: "before each" hook',
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
       'mocha: pass: hello retry test',
       'mocha: test end: hello retry test',
+      ...whenCoverage('mocha: hook: "after each" hook'),
+      ...whenCoverage('mocha: hook end: "after each" hook'),
 
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
 
       'cypress: test:after:run: hello retry test',
       'plugin test:ended',
