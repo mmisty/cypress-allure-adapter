@@ -25,7 +25,7 @@ jobs:
     - name: Install
       run: npm ci
         
-    - name: Built
+    - name: Build
       run: npm run pre
 
     - name: Monitor coverage
