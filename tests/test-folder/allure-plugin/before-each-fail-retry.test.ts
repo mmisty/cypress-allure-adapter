@@ -3,9 +3,9 @@ import { createResTest, fixResult } from '../../cy-helper/utils';
 
 describe('run before-each-fail-retry', () => {
   // todo create test right in code
-  const storeResDir = createResTest('before-each-fail-retry');
+  const storeResDir = createResTest('before-each-fail-retry-pass');
 
-  describe(`${storeResDir}: before-each-fail-retry`, () => {
+  describe(`${storeResDir}: before-each-fail-retry-pass`, () => {
     let resFixed: AllureTest[];
     const TESTS_COUNT = 30;
     const retries = 2;
@@ -45,7 +45,7 @@ describe('run before-each-fail-retry', () => {
             'passed',
             [
               {
-                name: 'before-each-fail-retry.cy.ts.mp4',
+                name: 'before-each-fail-retry-pass.cy.ts.mp4',
                 source: 'source.mp4',
                 type: 'video/mp4',
               },
@@ -62,7 +62,7 @@ describe('run before-each-fail-retry', () => {
               },
 
               {
-                name: 'before-each-fail-retry.cy.ts.mp4',
+                name: 'before-each-fail-retry-pass.cy.ts.mp4',
                 source: 'source.mp4',
                 type: 'video/mp4',
               },
@@ -82,7 +82,7 @@ describe('run before-each-fail-retry', () => {
         Array.from('x'.repeat(TESTS_COUNT * retries)).map((_v, _i) => [
           {
             name: 'path',
-            value: 'integration/e2e/hooks/before-each-fail-retry.cy.ts',
+            value: 'integration/e2e/hooks/before-each-fail-retry-pass.cy.ts',
           },
         ]),
       );
@@ -98,7 +98,7 @@ describe('run before-each-fail-retry', () => {
         Array.from('x'.repeat(TESTS_COUNT * retries)).map((_v, _i) => [
           {
             name: 'package',
-            value: 'integration.e2e.hooks.before-each-fail-retry.cy.ts',
+            value: 'integration.e2e.hooks.before-each-fail-retry-pass.cy.ts',
           },
         ]),
       );

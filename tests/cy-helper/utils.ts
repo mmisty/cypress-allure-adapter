@@ -3,6 +3,7 @@ import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 jest.setTimeout(120000);
 
@@ -99,4 +100,75 @@ export const createResTest = (fileName: string, envConfig?: Record<string, strin
   });
 
   return storeResDir;
+};
+
+// eslint-disable-next-line jest/no-export
+export const sortAttachments = (res: AllureTest[]) => {
+  return res
+    .map(t => t.attachments.sort((a, b) => (a.name < b.name ? -1 : 1)))
+    .sort((a, b) => {
+      return b[0].name < a[0].name ? -1 : 1;
+    });
+};
+
+// eslint-disable-next-line jest/no-export
+export const createResTest2 = (specTexts: string[], envConfig?: Record<string, string | undefined>): string => {
+  const testsPath = `${process.cwd()}/integration/e2e/temp`;
+  const specPaths: string[] = [];
+
+  if (!existsSync(testsPath)) {
+    mkdirSync(testsPath);
+  }
+
+  specTexts.forEach((content, i) => {
+    const specPath = `${testsPath}/test${i}.cy.ts`;
+    writeFileSync(specPath, content);
+    specPaths.push(specPath);
+  });
+
+  const name = basename(specPaths[0], '.test.ts');
+  const testname = `${name}.cy.ts`;
+  const storeResDir = `allure-results/${testname}`;
+
+  const env = {
+    allure: 'true',
+    allureResults: storeResDir,
+    allureResultsWatchPath: `${storeResDir}/watch`,
+    allureCleanResults: 'true',
+    allureSkipCommands: 'intercept',
+    COVERAGE_REPORT_DIR: 'reports/coverage-cypress',
+    COVERAGE: 'false',
+    JEST_TEST: 'true',
+    ...(envConfig || {}),
+  };
+
+  it('create results jest', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const cy = require('cypress');
+
+    const port = 40000 + Math.round(Math.random() * 25000);
+    let err: Error | undefined;
+    const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
+
+    try {
+      process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
+      console.log(env);
+      await cy.run({
+        spec,
+        port,
+        browser: 'chrome',
+        trashAssetsBeforeRuns: true,
+        env,
+      });
+    } catch (e) {
+      err = e as Error;
+    }
+
+    await delay(2000);
+    // console.log(res);
+
+    expect(err).toBeUndefined();
+  });
+
+  return env.allureResultsWatchPath;
 };

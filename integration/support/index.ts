@@ -14,14 +14,9 @@ const setupCoverage = () => {
   }
 };
 
-if (Cypress.env('allure') === 'true' || Cypress.env('allure') === true) {
-  beforeEach('Register allure test', () => {
-    cy.log('log', 'Registered allureAdapterSetup');
-  });
-}
-
 allureAdapterSetup();
 
+/*
 Cypress.Allure.on('test:started', test => {
   console.log(`AFTER TEST STARTED: ${test.title}`);
   Cypress.Allure.label('event', 'started');
@@ -30,12 +25,16 @@ Cypress.Allure.on('test:started', test => {
   Cypress.Allure.addDescriptionHtml(Cypress.spec.relative);
 });
 
+Cypress.Allure.on('test:started', () => {
+  Cypress.Allure.step('after start2');
+});
+
 Cypress.Allure.on('test:ended', test => {
   console.log(`BEFORE ENDING TEST: ${test.title}`);
   Cypress.Allure.label('event', 'ended');
   Cypress.Allure.label('tag', 'ended');
   Cypress.Allure.step('before end');
-});
+});*/
 
 redirectTestLogs({
   isLogCommandDetails: false,

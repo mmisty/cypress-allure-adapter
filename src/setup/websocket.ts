@@ -37,8 +37,13 @@ export const startWsClient = (): WebSocket | undefined => {
 };
 
 const messageQueue = new MessageQueue();
+export type MessageManager = {
+  stop: () => void;
+  process: () => void;
+  message: <T extends RequestTask>(data: AllureTransfer<T> | string) => void;
+};
 
-export const createMessage = (ws: WebSocket) => {
+export const createMessage = (ws: WebSocket): MessageManager => {
   let idInterval: NodeJS.Timer;
 
   const process = () => {

@@ -49,6 +49,7 @@ export const configureAllureAdapterPlugins = (
     techAllureResults: watchResultsPath ?? results,
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
+    isTest: config.env['JEST_TEST'] === 'true' || config.env['JEST_TEST'] === true,
   };
 
   debug('OPTIONS:');

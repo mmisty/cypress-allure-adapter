@@ -1,7 +1,7 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
+import { appendFileSync, copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
 import glob, { sync } from 'fast-glob';
 import { basename } from 'path';
@@ -19,6 +19,7 @@ export type ReporterOptions = {
   videos: string;
   screenshots: string;
   showDuplicateWarn: boolean;
+  isTest: boolean;
 };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
@@ -26,6 +27,12 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   let allureReporter = new AllureReporter(opts);
   const allureResults = opts.allureResults;
   const allureResultsWatch = opts.techAllureResults;
+
+  if (opts.isTest) {
+    if (existsSync('reports/test.log')) {
+      rmSync('reports/test.log');
+    }
+  }
 
   return {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
@@ -200,9 +207,21 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endAll();
       log('endAll');
     },
+
     message: (arg: AllureTaskArgs<'message'>) => {
       log(`message ${JSON.stringify(arg)}`);
+
+      if (!opts.isTest) {
+        return;
+      }
+
+      if (!existsSync('reports')) {
+        mkdirSync('reports');
+        writeFileSync('reports/test.log', '');
+      }
+      appendFileSync('reports/test.log', `${arg.name}\n`);
     },
+
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {
       log(`screenshotOne ${JSON.stringify(arg)}`);
       allureReporter.screenshotOne(arg);
