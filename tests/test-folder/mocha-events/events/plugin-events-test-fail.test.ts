@@ -1,8 +1,18 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  coverageAfterEachEvent,
+  coverageBeforeEachEvent,
+  covergeAfterAll,
+  covergeAfterAllEvent,
+  covergeBeforeAll,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
-describe('mocha events', () => {
+describe('plugin events', () => {
   const res = createResTest2([
     `
 describe('hello suite', () => {
@@ -33,16 +43,21 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage('mocha: hook: "before all" hook'),
+      ...whenCoverage('cypress: test:before:run: hello test'),
+      ...whenCoverage('mocha: hook end: "before all" hook'),
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
       'plugin test:started',
-      'cypress: test:before:run: hello test',
+      ...whenCoverage(...coverageBeforeEachEvent),
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: fail: hello test',
       'mocha: test end: hello test',
+      ...whenCoverage(...coverageAfterEachEvent),
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
-
       'mocha: suite end: ',
       'mocha: end',
     ]);
@@ -68,8 +83,8 @@ describe('hello suite', () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [],
-            befores: [],
+            afters: [...whenCoverage(...covergeAfterAll)],
+            befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
           },
@@ -79,7 +94,13 @@ describe('hello suite', () => {
 
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
-        ['step right after start', 'wrap: null', 'step right before test end'],
+        [
+          'step right after start',
+          ...whenCoverage('"before each" hook'),
+          'wrap: null',
+          ...whenCoverage('"after each" hook'),
+          'step right before test end',
+        ],
       ]);
     });
 

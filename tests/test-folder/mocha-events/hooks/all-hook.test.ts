@@ -1,4 +1,13 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  coverageAfterEachEvent,
+  coverageBeforeEachEvent,
+  covergeAfterAll,
+  covergeAfterAllEvent,
+  covergeBeforeAll,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
@@ -50,23 +59,28 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
-      'mocha: hook: "before all" hook',
+      ...whenCoverage('mocha: hook: "before all" hook'),
       'cypress: test:before:run: hello test',
+      ...whenCoverage('mocha: hook end: "before all" hook'),
+      'mocha: hook: "before all" hook',
       'mocha: hook end: "before all" hook',
       'mocha: suite: hello suite, hello suite',
       'mocha: hook: "before all" hook: Named Hook',
       'mocha: hook end: "before all" hook: Named Hook',
       'mocha: test: hello test',
       'plugin test:started',
+      ...whenCoverage(...coverageBeforeEachEvent),
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: pass: hello test',
       'mocha: test end: hello test',
+      ...whenCoverage(...coverageAfterEachEvent),
       'mocha: hook: "after each" hook',
       'mocha: hook end: "after each" hook',
       'mocha: hook: "after all" hook: Named Hook After',
       'mocha: hook end: "after all" hook: Named Hook After',
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'mocha: hook: "after all" hook',
       'mocha: hook end: "after all" hook',
       'cypress: test:after:run: hello test',
@@ -156,6 +170,7 @@ describe('hello suite', () => {
                 ],
                 stop: 1323475200010,
               },
+              ...whenCoverage(...covergeAfterAll),
               {
                 attachments: [],
                 name: '"after all" hook',
@@ -180,6 +195,7 @@ describe('hello suite', () => {
               },
             ],
             befores: [
+              ...whenCoverage(...covergeBeforeAll),
               {
                 attachments: [],
                 name: '"before all" hook',
@@ -234,7 +250,13 @@ describe('hello suite', () => {
 
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
-        ['"before each" hook', 'log: message', '"after each" hook'],
+        [
+          ...whenCoverage('"before each" hook'),
+          '"before each" hook',
+          'log: message',
+          '"after each" hook',
+          ...whenCoverage('"after each" hook'),
+        ],
       ]);
     });
   });

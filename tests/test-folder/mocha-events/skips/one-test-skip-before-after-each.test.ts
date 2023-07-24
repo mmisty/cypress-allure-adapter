@@ -1,4 +1,10 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
@@ -32,14 +38,20 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello test',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
       'mocha: pending: hello test',
-      'cypress: test:before:run: hello test',
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
 
       'mocha: test: hello test',
       'plugin test:started',
       'mocha: test end: hello test',
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
 

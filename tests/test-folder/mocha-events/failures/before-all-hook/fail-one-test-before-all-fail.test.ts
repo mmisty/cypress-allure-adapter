@@ -1,4 +1,4 @@
-import { createResTest2 } from '../../../../cy-helper/utils';
+import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('mocha events - check failures', () => {
@@ -36,11 +36,15 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage('mocha: hook: "before all" hook'),
+      ...whenCoverage('cypress: test:before:run: hello test'),
+      ...whenCoverage('mocha: hook end: "before all" hook'),
       'mocha: suite: hello suite, hello suite',
       'mocha: hook: "before all" hook',
-      'cypress: test:before:run: hello test',
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: fail: "before all" hook for "hello test"',
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended', // doesn't do anything
 

@@ -1,4 +1,4 @@
-import { createResTest2 } from '../../../../cy-helper/utils';
+import { covergeAfterAllEvent, createResTest2, whenCoverage } from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('mocha events - check failures', () => {
@@ -38,7 +38,10 @@ describe('hello suite', () => {
       'mocha: suite: , ',
       'mocha: hook: "before all" hook',
       'cypress: test:before:run: hello test',
+      ...whenCoverage('mocha: hook end: "before all" hook'),
+      ...whenCoverage('mocha: hook: "before all" hook'),
       'mocha: fail: "before all" hook for "hello test"',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
       'mocha: suite: hello suite, hello suite',

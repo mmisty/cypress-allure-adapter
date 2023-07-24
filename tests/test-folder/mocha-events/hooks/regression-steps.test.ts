@@ -1,4 +1,11 @@
-import { createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  fixResult,
+  mapSteps,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
@@ -77,11 +84,17 @@ describe('hooks test - failed global hook step', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: test 1',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: hook: "before all" hook: Global Setup Pass',
-      'cypress: test:before:run: test 1',
+      ...whenNoCoverage('cypress: test:before:run: test 1'),
       'mocha: hook end: "before all" hook: Global Setup Pass',
       'mocha: hook: "before all" hook: Global Setup',
       'mocha: fail: "before all" hook: Global Setup for "test 1"',
+      ...whenCoverage(...covergeAfterAllEvent),
       'mocha: hook: "after all" hook: Global teardown',
       'mocha: hook end: "after all" hook: Global teardown',
       'cypress: test:after:run: test 1',
@@ -190,6 +203,12 @@ describe('hooks test - failed global hook step', () => {
       const parents = resFixed.map(t => getParentsArray(t));
       expect(parents[0].map(t => t.befores?.map(x => mapSteps(x.steps)))).toEqual([
         [
+          ...whenCoverage([
+            {
+              name: 'Coverage: Reset [@cypress/code-coverage]',
+              steps: [],
+            },
+          ]),
           [
             {
               name: 'global setup',
@@ -215,6 +234,12 @@ describe('hooks test - failed global hook step', () => {
       const parents = resFixed.map(t => getParentsArray(t));
       expect(parents[1].map(t => t.befores?.map(x => mapSteps(x.steps)))).toEqual([
         [
+          ...whenCoverage([
+            {
+              name: 'Coverage: Reset [@cypress/code-coverage]',
+              steps: [],
+            },
+          ]),
           [
             {
               name: 'global setup',
@@ -240,6 +265,21 @@ describe('hooks test - failed global hook step', () => {
       const parents = resFixed.map(t => getParentsArray(t));
       expect(parents[0].map(t => t.afters?.map(x => mapSteps(x.steps)))).toEqual([
         [
+          ...whenCoverage(
+            [],
+            [
+              {
+                name: 'log: Saving code coverage for **unit** `[@cypress/code-coverage]`',
+                steps: [],
+              },
+            ],
+            [
+              {
+                name: 'Coverage: Generating report [@cypress/code-coverage]',
+                steps: [],
+              },
+            ],
+          ),
           [
             {
               name: 'global teardown',

@@ -1,4 +1,15 @@
-import { createResTest2, fixResult, sortAttachments } from '../../../../cy-helper/utils';
+import {
+  coverageAfterEachEvent,
+  coverageBeforeEachEvent,
+  covergeAfterAll,
+  covergeAfterAllEvent,
+  covergeBeforeAll,
+  createResTest2,
+  fixResult,
+  sortAttachments,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
@@ -29,23 +40,41 @@ describe('hello suite', { retries: 1 }, () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello test',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
 
       'mocha: test: hello test',
       'plugin test:started',
+
       'mocha: hook: "before each" hook',
-      'cypress: test:before:run: hello test',
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: hook end: "before each" hook',
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
+
       'mocha: retry: hello test',
+      ...whenCoverage(...coverageAfterEachEvent),
+
       'cypress: test:after:run: hello test',
       'plugin test:ended',
 
       'mocha: test: hello test',
       'plugin test:started',
       'mocha: hook: "before each" hook',
-      'cypress: test:before:run: hello test',
+      ...whenCoverage('cypress: test:before:run: hello test'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: fail: "before each" hook for "hello test"',
+
+      ...whenCoverage(...coverageAfterEachEvent),
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
 
@@ -74,16 +103,16 @@ describe('hello suite', { retries: 1 }, () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [],
-            befores: [],
+            afters: [...whenCoverage(...covergeAfterAll)],
+            befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
           },
         ],
         [
           {
-            afters: [],
-            befores: [],
+            afters: [...whenCoverage(...covergeAfterAll)],
+            befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
           },
@@ -92,7 +121,10 @@ describe('hello suite', { retries: 1 }, () => {
     });
 
     it('check tests parent steps', async () => {
-      expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([['"before each" hook'], ['"before each" hook']]);
+      expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
+        ['"before each" hook', ...whenCoverage('"before each" hook', '"after each" hook')],
+        ['"before each" hook', ...whenCoverage('"before each" hook', '"after each" hook')],
+      ]);
     });
 
     it('check attachments', async () => {

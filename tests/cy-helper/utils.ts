@@ -174,8 +174,7 @@ export const createResTest2 = (
     allureResultsWatchPath: `${storeResDir}/watch`,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
-    COVERAGE_REPORT_DIR: 'reports/coverage-cypress',
-    COVERAGE: 'false',
+    COVERAGE: process.env.COVERAGE === 'true' ? 'true' : 'false',
     JEST_TEST: 'true',
     ...(envConfig || {}),
   };
@@ -190,6 +189,8 @@ export const createResTest2 = (
 
     try {
       process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
+      process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
+
       console.log(env);
       await cy.run({
         spec,
@@ -214,3 +215,106 @@ export const createResTest2 = (
     specs: specPaths.map(t => `${process.cwd()}/reports/${basename(t)}.log`),
   };
 };
+
+// eslint-disable-next-line jest/no-export
+export const whenCoverage = <T>(...res: T[]): T[] => (process.env.COVERAGE === 'true' ? res : []);
+// eslint-disable-next-line jest/no-export
+export const whenNoCoverage = <T>(...res: T[]): T[] => (process.env.COVERAGE !== 'true' ? res : []);
+// eslint-disable-next-line jest/no-export
+export const covergeAfterAllEvent = [
+  'mocha: hook: "after all" hook: collectBackendCoverage',
+  'mocha: hook end: "after all" hook: collectBackendCoverage',
+  'mocha: hook: "after all" hook: mergeUnitTestCoverage',
+  'mocha: hook end: "after all" hook: mergeUnitTestCoverage',
+  'mocha: hook: "after all" hook: generateReport',
+  'mocha: hook end: "after all" hook: generateReport',
+];
+// eslint-disable-next-line jest/no-export
+export const coverageAfterEachEvent = ['mocha: hook: "after each" hook', 'mocha: hook end: "after each" hook'];
+// eslint-disable-next-line jest/no-export
+export const coverageBeforeAll = ['mocha: hook: "before all" hook', 'mocha: hook end: "before all" hook'];
+
+// eslint-disable-next-line jest/no-export
+export const coverageBeforeEachEvent = ['mocha: hook: "before each" hook', 'mocha: hook end: "before each" hook'];
+// eslint-disable-next-line jest/no-export
+export const covergeAfterAll = [
+  {
+    attachments: [],
+    name: '"after all" hook: collectBackendCoverage',
+    parameters: [],
+    stage: 'finished',
+    start: 1323475200000,
+    status: 'passed',
+    steps: [],
+    stop: 1323475200010,
+  },
+  {
+    attachments: [],
+    name: '"after all" hook: mergeUnitTestCoverage',
+    parameters: [],
+    stage: 'finished',
+    start: 1323475200000,
+    status: 'passed',
+    steps: [
+      {
+        attachments: [],
+        name: 'log: Saving code coverage for **unit** `[@cypress/code-coverage]`',
+        parameters: [],
+        stage: 'finished',
+        start: 1323475200000,
+        status: 'passed',
+        statusDetails: {},
+        steps: [],
+        stop: 1323475200011,
+      },
+    ],
+    stop: 1323475200010,
+  },
+  {
+    attachments: [],
+    name: '"after all" hook: generateReport',
+    parameters: [],
+    stage: 'finished',
+    start: 1323475200000,
+    status: 'passed',
+    steps: [
+      {
+        attachments: [],
+        name: 'Coverage: Generating report [@cypress/code-coverage]',
+        parameters: [],
+        stage: 'finished',
+        start: 1323475200000,
+        status: 'passed',
+        statusDetails: {},
+        steps: [],
+        stop: 1323475200011,
+      },
+    ],
+    stop: 1323475200010,
+  },
+];
+// eslint-disable-next-line jest/no-export
+export const covergeBeforeAll = [
+  {
+    attachments: [],
+    name: '"before all" hook',
+    parameters: [],
+    stage: 'finished',
+    start: 1323475200000,
+    status: 'passed',
+    steps: [
+      {
+        attachments: [],
+        name: 'Coverage: Reset [@cypress/code-coverage]',
+        parameters: [],
+        stage: 'finished',
+        start: 1323475200000,
+        status: 'passed',
+        statusDetails: {},
+        steps: [],
+        stop: 1323475200011,
+      },
+    ],
+    stop: 1323475200010,
+  },
+];

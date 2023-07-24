@@ -1,4 +1,4 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('mocha events', () => {
@@ -30,15 +30,22 @@ describe('mocha events', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      ...whenCoverage(
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: hello test1',
+        'mocha: hook end: "before all" hook',
+      ),
       'mocha: suite: hello suite, hello suite',
 
       'mocha: test: hello test1',
       'plugin test:started',
       'mocha: hook: "before each" hook',
-      'cypress: test:before:run: hello test1',
+      ...whenNoCoverage('cypress: test:before:run: hello test1'),
       'mocha: hook end: "before each" hook',
+      ...whenCoverage('mocha: hook: "before each" hook', 'mocha: hook end: "before each" hook'),
       'mocha: pass: hello test1',
       'mocha: test end: hello test1',
+      ...whenCoverage('mocha: hook: "after each" hook', 'mocha: hook end: "after each" hook'),
       'cypress: test:after:run: hello test1',
       'plugin test:ended',
 
@@ -46,10 +53,13 @@ describe('mocha events', () => {
       'plugin test:started',
       'mocha: hook: "before each" hook',
       'cypress: test:before:run: hello test2',
+      ...whenCoverage('mocha: hook end: "before each" hook', 'mocha: hook: "before each" hook'),
       'mocha: hook end: "before each" hook',
       'mocha: pass: hello test2',
       'mocha: test end: hello test2',
+      ...whenCoverage('mocha: hook: "after each" hook', 'mocha: hook end: "after each" hook'),
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test2',
       'plugin test:ended',
 

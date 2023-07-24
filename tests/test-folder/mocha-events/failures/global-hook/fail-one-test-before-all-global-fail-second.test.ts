@@ -1,4 +1,11 @@
-import { createResTest2, fixResult } from '../../../../cy-helper/utils';
+import {
+  covergeAfterAll,
+  covergeAfterAllEvent,
+  covergeBeforeAll,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+} from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
@@ -46,7 +53,10 @@ describe('hello suite', () => {
       'cypress: test:before:run: hello test',
       'mocha: hook end: "before all" hook',
       'mocha: hook: "before all" hook',
+      ...whenCoverage('mocha: hook end: "before all" hook'),
+      ...whenCoverage('mocha: hook: "before all" hook'),
       'mocha: fail: "before all" hook for "hello test"',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
       'mocha: suite: hello suite, hello suite',
@@ -69,8 +79,9 @@ describe('hello suite', () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [],
+            afters: [...whenCoverage(...covergeAfterAll)],
             befores: [
+              ...whenCoverage(...covergeBeforeAll),
               {
                 attachments: [],
                 name: '"before all" hook',

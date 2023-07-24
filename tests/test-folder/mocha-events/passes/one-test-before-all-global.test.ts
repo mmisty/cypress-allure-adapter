@@ -1,4 +1,11 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  covergeAfterAll,
+  covergeAfterAllEvent,
+  covergeBeforeAll,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
@@ -30,12 +37,19 @@ describe('mocha events', () => {
       'mocha: hook: "before all" hook',
       'cypress: test:before:run: hello test',
       'mocha: hook end: "before all" hook',
+      ...whenCoverage('mocha: hook: "before all" hook'),
+      ...whenCoverage('mocha: hook end: "before all" hook'),
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
       'plugin test:started',
+      ...whenCoverage('mocha: hook: "before each" hook'),
+      ...whenCoverage('mocha: hook end: "before each" hook'),
       'mocha: pass: hello test',
       'mocha: test end: hello test',
+      ...whenCoverage('mocha: hook: "after each" hook'),
+      ...whenCoverage('mocha: hook end: "after each" hook'),
       'mocha: suite end: hello suite',
+      ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended',
 
@@ -55,8 +69,9 @@ describe('mocha events', () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [],
+            afters: [...whenCoverage(...covergeAfterAll)],
             befores: [
+              ...whenCoverage(...covergeBeforeAll),
               {
                 attachments: [],
                 name: '"before all" hook',
@@ -89,7 +104,9 @@ describe('mocha events', () => {
     });
 
     it('check tests parent steps', async () => {
-      expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([['log: message']]);
+      expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
+        [...whenCoverage('"before each" hook'), 'log: message', ...whenCoverage('"after each" hook')],
+      ]);
     });
   });
 });
