@@ -164,7 +164,10 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
 
     index++;
 
-    if (index !== 1 && ts) {
+    if (ts) {
+      if (index === 1) {
+        ts.state = 'failed';
+      }
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);

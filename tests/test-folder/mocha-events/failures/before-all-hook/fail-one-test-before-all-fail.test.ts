@@ -42,6 +42,7 @@ describe('hello suite', () => {
       'mocha: fail: "before all" hook for "hello test"',
       'mocha: suite end: hello suite',
       'cypress: test:after:run: hello test',
+      'plugin test:ended', // doesn't do anything
 
       'plugin test:started',
       'plugin test:ended',
