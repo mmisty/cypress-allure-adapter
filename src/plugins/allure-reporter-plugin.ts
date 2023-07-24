@@ -574,13 +574,13 @@ export class AllureReporter {
     allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
     this.tests.push(test);
 
-    this.currentTest.fullName = fullTitle;
+    test.fullName = fullTitle;
 
-    this.currentTest.historyId = getUuid(fullTitle);
+    test.historyId = getUuid(fullTitle);
     this.applyGroupLabels();
 
     if (this.currentSpec?.relative) {
-      this.currentTest.addLabel('path', this.currentSpec.relative);
+      test.addLabel('path', this.currentSpec.relative);
     }
     this.globalHooks.processForTest();
   }
