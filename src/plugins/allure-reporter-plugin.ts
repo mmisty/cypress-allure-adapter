@@ -458,6 +458,7 @@ export class AllureReporter {
   }
 
   endGroup() {
+    // why >= 1?
     if (this.groups.length >= 1) {
       this.addGlobalHooks();
     }

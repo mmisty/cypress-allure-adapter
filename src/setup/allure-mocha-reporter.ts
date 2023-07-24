@@ -172,6 +172,26 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   });
 };
 
+const createTestsForSuite = (runner: Mocha.Runner, testOrHook: Mocha.Test, suite: Mocha.Suite) => {
+  // let index = 0;
+
+  runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
+  runner.emit(MOCHA_EVENTS.SUITE_BEGIN, suite);
+
+  suite?.eachTest(ts => {
+    ts.err = testOrHook.err;
+
+    // index++;
+
+    if (ts) {
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_END, ts);
+    }
+  });
+  runner.emit(MOCHA_EVENTS.SUITE_END, suite);
+};
+
 const sendMessageTestCreator = (messageManager: MessageManager, specPathLog: string) => (msg: string) => {
   if (isJestTest()) {
     messageManager.message({ task: 'testMessage', arg: { path: specPathLog, message: msg } });
@@ -307,6 +327,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.TEST_BEGIN, (test: Mocha.Test) => {
+      // no event when global hook fails
       debug(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
       debug(`${JSON.stringify(tests)}`);
@@ -323,7 +344,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
         // hook end not fired when hook fails
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
-        // runner.emit(CUSTOM_EVENTS.TEST_END, test);
 
         // when before each fails all tests are skipped in current suite
         // will create synthetic tests after test ends in cypress event
@@ -342,7 +362,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
           return;
         }
-        createTests(runner, test);
+
+        createTestsCallb = () => createTests(runner, test);
 
         return;
       }
@@ -408,14 +429,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, hook => {
       debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
-      let i = 0;
-
-      message({ task: 'endAll', arg: {} });
+      const i = 0;
 
       for (const sui of hook.parent?.suites) {
-        runner.emit(MOCHA_EVENTS.SUITE_BEGIN, sui);
+        createTestsCallb = () => createTestsForSuite(runner, hook, sui);
 
-        sui.eachTest((test: Mocha.Test) => {
+        /*sui.eachTest((test: Mocha.Test) => {
           i++;
 
           if (test) {
@@ -423,9 +442,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
             runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
             runner.emit(CUSTOM_EVENTS.TEST_END, i === 1 ? hook : { ...test, err: hook.err });
           }
-        });
+        });*/
 
-        runner.emit(MOCHA_EVENTS.SUITE_END, sui);
+        //runner.emit(MOCHA_EVENTS.SUITE_END, sui);
       }
     })
 

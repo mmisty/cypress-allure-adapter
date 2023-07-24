@@ -1,5 +1,6 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { createResTest2, fixResult } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
+import { getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('mocha events', () => {
   const res = createResTest2([
@@ -41,5 +42,42 @@ describe('mocha events', () => {
       'mocha: suite end: ',
       'mocha: end',
     ]);
+  });
+  describe('check results', () => {
+    let resFixed;
+
+    beforeAll(() => {
+      const results = parseAllure(res.watch);
+      resFixed = fixResult(results);
+    });
+
+    it('check tests parents', async () => {
+      expect(resFixed.map(t => getParentsArray(t))).toEqual([
+        [
+          {
+            afters: [],
+            befores: [
+              {
+                attachments: [],
+                name: '"before all" hook',
+                parameters: [],
+                stage: 'finished',
+                start: 1323460800000,
+                status: 'passed',
+                statusDetails: undefined,
+                steps: [], // before global step should be
+                stop: 1323460800010,
+              },
+            ],
+            name: 'hello suite',
+            uuid: 'no',
+          },
+        ],
+      ]);
+    });
+
+    it('check tests parent steps', async () => {
+      expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([['log: message']]);
+    });
   });
 });

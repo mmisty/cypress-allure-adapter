@@ -10,11 +10,11 @@ after('Global teardown', () => {
 
 describe('hooks test', () => {
   before(() => {
-    cy.log('before');
+    cy.log('before 1');
   });
 
   before('named hook before', () => {
-    cy.log('before');
+    cy.log('before 2');
   });
 
   beforeEach('Named hook', () => {

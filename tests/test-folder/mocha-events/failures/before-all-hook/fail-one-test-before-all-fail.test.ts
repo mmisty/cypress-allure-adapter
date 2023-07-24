@@ -4,13 +4,13 @@ import { readFileSync } from 'fs';
 describe('mocha events - check failures', () => {
   const res = createResTest2([
     `
-before(() => {
-  cy.wrap(null).then(() => {
-    throw new Error('Test FAIL on purpose');
-  });
-});
-
 describe('hello suite', () => {
+  before(() => {
+    cy.wrap(null).then(() => {
+      throw new Error('Test FAIL on purpose');
+    });
+  });
+  
   beforeEach(() => {
       cy.log('before');
   });
@@ -36,15 +36,15 @@ describe('hello suite', () => {
     ).toEqual([
       'mocha: start',
       'mocha: suite: , ',
+      'mocha: suite: hello suite, hello suite',
       'mocha: hook: "before all" hook',
       'cypress: test:before:run: hello test',
       'mocha: fail: "before all" hook for "hello test"',
+      'mocha: suite end: hello suite',
       'cypress: test:after:run: hello test',
-      'plugin test:ended',
-      'mocha: suite: hello suite, hello suite',
+
       'plugin test:started',
       'plugin test:ended',
-      'mocha: suite end: hello suite',
       'mocha: suite end: ',
       'mocha: end',
     ]);

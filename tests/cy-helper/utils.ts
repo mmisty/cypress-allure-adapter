@@ -34,12 +34,24 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
           steps: replaceSteps(b.steps),
           start: date,
           stop: date + 10,
+          statusDetails: b.statusDetails?.message
+            ? {
+                message: b.statusDetails.message,
+                trace: b.statusDetails.trace ? 'trace' : undefined,
+              }
+            : undefined,
         })),
         afters: r.parent?.afters?.map(b => ({
           ...b,
           steps: replaceSteps(b.steps),
           start: date,
           stop: date + 10,
+          statusDetails: b.statusDetails?.message
+            ? {
+                message: b.statusDetails.message,
+                trace: b.statusDetails.trace ? 'trace' : undefined,
+              }
+            : undefined,
         })),
       },
       labels: r.labels.map(l => ({

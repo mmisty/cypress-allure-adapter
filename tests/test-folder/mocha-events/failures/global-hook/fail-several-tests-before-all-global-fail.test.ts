@@ -51,6 +51,8 @@ describe('hello suite', () => {
       'mocha: hook: "before all" hook',
       'cypress: test:before:run: hello test 1',
       'mocha: fail: "before all" hook for "hello test 1"',
+      'cypress: test:after:run: hello test 1',
+      'plugin test:ended', // should not be here
       'mocha: suite: hello suite, hello suite',
 
       'plugin test:started',
@@ -66,8 +68,6 @@ describe('hello suite', () => {
       'plugin test:ended',
 
       'mocha: suite end: hello suite',
-      'cypress: test:after:run: hello test 1',
-      'plugin test:ended', // should not be here
 
       'mocha: suite end: ',
       'mocha: end',
