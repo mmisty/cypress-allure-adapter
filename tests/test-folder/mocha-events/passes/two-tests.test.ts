@@ -2,7 +2,7 @@ import { createResTest2 } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('mocha events', () => {
-  createResTest2([
+  const res = createResTest2([
     `
 describe('hello suite', () => {
   it('hello test1', () => {
@@ -17,7 +17,7 @@ describe('hello suite', () => {
   ]);
 
   it('should have correct events for two passed tests', async () => {
-    const testt = readFileSync(`${process.cwd()}/reports/test.log`);
+    const testt = readFileSync(res.specs[0]);
     expect(
       testt
         .toString()
@@ -34,19 +34,17 @@ describe('hello suite', () => {
       'mocha: test end: hello test1',
       'cypress: test:after:run: hello test1',
       'plugin test:ended',
-      '******** test:after:run=hello test1',
 
       'mocha: test: hello test2',
       'plugin test:started',
       'cypress: test:before:run: hello test2',
       'mocha: pass: hello test2',
       'mocha: test end: hello test2',
-      'mocha: suite end: hello suite null',
+      'mocha: suite end: hello suite',
       'cypress: test:after:run: hello test2',
       'plugin test:ended',
-      '******** test:after:run=hello test2',
 
-      'mocha: suite end:  integration/e2e/temp/test0.cy.ts',
+      'mocha: suite end: ',
       'mocha: end',
     ]);
   });

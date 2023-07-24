@@ -2,7 +2,7 @@ import { createResTest2 } from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('mocha events - check failures', () => {
-  createResTest2([
+  const res = createResTest2([
     `
 before(() => {
   cy.wrap(null).then(() => {
@@ -39,7 +39,7 @@ describe('hello suite', () => {
   ]);
 
   it('should have correct events for one test failed with global hook failure', async () => {
-    const testt = readFileSync(`${process.cwd()}/reports/test.log`);
+    const testt = readFileSync(res.specs[0]);
     expect(
       testt
         .toString()
@@ -65,11 +65,11 @@ describe('hello suite', () => {
       'plugin test:started',
       'plugin test:ended',
 
-      'mocha: suite end: hello suite null',
+      'mocha: suite end: hello suite',
       'cypress: test:after:run: hello test 1',
       'plugin test:ended', // should not be here
-      '******** test:after:run=hello test 1',
-      'mocha: suite end:  integration/e2e/temp/test0.cy.ts',
+
+      'mocha: suite end: ',
       'mocha: end',
     ]);
   });

@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
 describe('mocha events', () => {
-  const allureResults = createResTest2(
+  const res = createResTest2(
     [
       `
 describe('hello suite', () => {
@@ -29,7 +29,7 @@ describe('hello suite', () => {
   );
 
   it('should have correct events for one skipped test', async () => {
-    const testt = readFileSync(`${process.cwd()}/reports/test.log`);
+    const testt = readFileSync(res.specs[0]);
     expect(
       testt
         .toString()
@@ -46,7 +46,7 @@ describe('hello suite', () => {
       'plugin test:started',
       'cypress: test:after:run: hello test 1',
       'plugin test:ended',
-      '******** test:after:run=hello test 1',
+
       'mocha: test end: hello test 1',
 
       'mocha: pending: hello test 2',
@@ -55,7 +55,7 @@ describe('hello suite', () => {
       'plugin test:started',
       'cypress: test:after:run: hello test 2',
       'plugin test:ended',
-      '******** test:after:run=hello test 2',
+
       'mocha: test end: hello test 2',
 
       'mocha: pending: hello test 3',
@@ -64,7 +64,7 @@ describe('hello suite', () => {
       'plugin test:started',
       'cypress: test:after:run: hello test 3',
       'plugin test:ended',
-      '******** test:after:run=hello test 3',
+
       'mocha: test end: hello test 3',
 
       'mocha: pending: hello test 4',
@@ -73,11 +73,11 @@ describe('hello suite', () => {
       'plugin test:started',
       'mocha: test end: hello test 4',
 
-      'mocha: suite end: hello suite null',
+      'mocha: suite end: hello suite',
       'cypress: test:after:run: hello test 4',
       'plugin test:ended',
-      '******** test:after:run=hello test 4',
-      'mocha: suite end:  integration/e2e/temp/test0.cy.ts',
+
+      'mocha: suite end: ',
       'mocha: end',
     ]);
   });
@@ -86,7 +86,7 @@ describe('hello suite', () => {
     let resFixed;
 
     beforeAll(() => {
-      const results = parseAllure(allureResults);
+      const results = parseAllure(res.watch);
       resFixed = fixResult(results);
     });
 
@@ -107,28 +107,28 @@ describe('hello suite', () => {
       expect(sortAttachments(resFixed)).toEqual([
         [
           {
-            name: 'test0.cy.ts.mp4',
+            name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
         ],
         [
           {
-            name: 'test0.cy.ts.mp4',
+            name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
         ],
         [
           {
-            name: 'test0.cy.ts.mp4',
+            name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
         ],
         [
           {
-            name: 'test0.cy.ts.mp4',
+            name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
@@ -143,10 +143,10 @@ describe('hello suite', () => {
           .sort()
           .map(t => t.filter(x => x.name === 'path')),
       ).toEqual([
-        [{ name: 'path', value: 'integration/e2e/temp/test0.cy.ts' }],
-        [{ name: 'path', value: 'integration/e2e/temp/test0.cy.ts' }],
-        [{ name: 'path', value: 'integration/e2e/temp/test0.cy.ts' }],
-        [{ name: 'path', value: 'integration/e2e/temp/test0.cy.ts' }],
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
       ]);
     });
 
@@ -160,25 +160,25 @@ describe('hello suite', () => {
         [
           {
             name: 'package',
-            value: 'integration.e2e.temp.test0.cy.ts',
+            value: 'integration.e2e.temp.test_0_number.cy.ts',
           },
         ],
         [
           {
             name: 'package',
-            value: 'integration.e2e.temp.test0.cy.ts',
+            value: 'integration.e2e.temp.test_0_number.cy.ts',
           },
         ],
         [
           {
             name: 'package',
-            value: 'integration.e2e.temp.test0.cy.ts',
+            value: 'integration.e2e.temp.test_0_number.cy.ts',
           },
         ],
         [
           {
             name: 'package',
-            value: 'integration.e2e.temp.test0.cy.ts',
+            value: 'integration.e2e.temp.test_0_number.cy.ts',
           },
         ],
       ]);

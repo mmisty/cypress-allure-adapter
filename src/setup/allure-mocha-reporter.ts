@@ -172,18 +172,25 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   });
 };
 
+const sendMessageTestCreator = (messageManager: MessageManager, specPathLog: string) => (msg: string) => {
+  if (isJestTest()) {
+    messageManager.message({ task: 'testMessage', arg: { path: specPathLog, message: msg } });
+  }
+};
+
 const isJestTest = () => {
   return Cypress.env('JEST_TEST') === 'true' || Cypress.env('JEST_TEST') === true;
 };
 
-const registerTestEvents = (messageManager: MessageManager) => {
+const registerTestEvents = (messageManager: MessageManager, specPathLog: string) => {
   if (isJestTest()) {
+    const msg = sendMessageTestCreator(messageManager, specPathLog);
     Cypress.Allure.on('test:started', () => {
-      messageManager.message({ task: 'message', arg: { name: 'plugin test:started' } });
+      msg('plugin test:started');
     });
 
     Cypress.Allure.on('test:ended', () => {
-      messageManager.message({ task: 'message', arg: { name: 'plugin test:ended' } });
+      msg('plugin test:ended');
     });
   }
 };
@@ -201,14 +208,16 @@ export const registerMochaReporter = (ws: WebSocket) => {
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
   const startedSuites: Mocha.Suite[] = [];
+  const specPathLog = `reports/${Cypress.spec.name}.log`;
 
-  const sendMessageTest = (msg: string) => {
-    if (Cypress.env('JEST_TEST') === 'true' || Cypress.env('JEST_TEST') === true) {
-      messageManager.message({ task: 'message', arg: { name: msg } });
-    }
-  };
+  if (isJestTest()) {
+    messageManager.message({ task: 'delete', arg: { path: specPathLog } });
+  }
+
+  const sendMessageTest = sendMessageTestCreator(messageManager, specPathLog);
+
   let createTestsCallb: (() => void) | undefined = undefined;
-  registerTestEvents(messageManager);
+  registerTestEvents(messageManager, specPathLog);
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, () => {
@@ -238,7 +247,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.SUITE_END, suite => {
       debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
-      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
 
       if (startedSuites.length === 1) {
         // will end later with run end

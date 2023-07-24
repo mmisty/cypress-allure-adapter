@@ -3,7 +3,7 @@ import { readFileSync } from 'fs';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('mocha events - check failures @oneInconsistency', () => {
-  const allureResults = createResTest2([
+  const res = createResTest2([
     `
 describe('hello suite', { retries: 1 }, () => {
   beforeEach(()=> {
@@ -20,7 +20,7 @@ describe('hello suite', { retries: 1 }, () => {
   ]);
 
   it('should have correct events for one test failed with retry', async () => {
-    const testt = readFileSync(`${process.cwd()}/reports/test.log`);
+    const testt = readFileSync(res.specs[0]);
     expect(
       testt
         .toString()
@@ -39,19 +39,17 @@ describe('hello suite', { retries: 1 }, () => {
       'mocha: retry: hello test',
       'cypress: test:after:run: hello test',
       'plugin test:ended',
-      '******** test:after:run=hello test',
 
       'mocha: test: hello test',
       'plugin test:started',
       'mocha: hook: "before each" hook',
       'cypress: test:before:run: hello test',
       'mocha: fail: "before each" hook for "hello test"',
-      'mocha: suite end: hello suite null',
+      'mocha: suite end: hello suite',
       'cypress: test:after:run: hello test',
       'plugin test:ended',
-      '******** test:after:run=hello test',
 
-      'mocha: suite end:  integration/e2e/temp/test0.cy.ts',
+      'mocha: suite end: ',
       'mocha: end',
     ]);
   });
@@ -60,7 +58,7 @@ describe('hello suite', { retries: 1 }, () => {
     let resFixed: AllureTest[];
 
     beforeAll(() => {
-      const results = parseAllure(allureResults);
+      const results = parseAllure(res.watch);
       resFixed = fixResult(results);
     });
 
@@ -106,7 +104,7 @@ describe('hello suite', { retries: 1 }, () => {
             type: 'image/png',
           },
           {
-            name: 'test0.cy.ts.mp4',
+            name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
@@ -118,7 +116,7 @@ describe('hello suite', { retries: 1 }, () => {
             type: 'image/png',
           },
           {
-            name: 'test0.cy.ts.mp4',
+            name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',
           },
@@ -133,8 +131,8 @@ describe('hello suite', { retries: 1 }, () => {
           .sort()
           .map(t => t.filter(x => x.name === 'path')),
       ).toEqual([
-        [{ name: 'path', value: 'integration/e2e/temp/test0.cy.ts' }],
-        [{ name: 'path', value: 'integration/e2e/temp/test0.cy.ts' }],
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
       ]);
     });
 
@@ -148,13 +146,13 @@ describe('hello suite', { retries: 1 }, () => {
         [
           {
             name: 'package',
-            value: 'integration.e2e.temp.test0.cy.ts',
+            value: 'integration.e2e.temp.test_0_number.cy.ts',
           },
         ],
         [
           {
             name: 'package',
-            value: 'integration.e2e.temp.test0.cy.ts',
+            value: 'integration.e2e.temp.test_0_number.cy.ts',
           },
         ],
       ]);

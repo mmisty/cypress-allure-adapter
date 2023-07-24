@@ -4,7 +4,7 @@ import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
 import glob, { sync } from 'fast-glob';
-import { basename } from 'path';
+import { basename, dirname } from 'path';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -27,12 +27,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   let allureReporter = new AllureReporter(opts);
   const allureResults = opts.allureResults;
   const allureResultsWatch = opts.techAllureResults;
-
-  if (opts.isTest) {
-    if (existsSync('reports/test.log')) {
-      rmSync('reports/test.log');
-    }
-  }
 
   return {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
@@ -108,6 +102,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
       allureReporter.allureRuntime.writer.writeCategoriesDefinitions(arg.categories);
+    },
+
+    delete(arg: AllureTaskArgs<'delete'>) {
+      try {
+        if (existsSync(arg.path)) {
+          rmSync(arg.path, { recursive: true });
+        }
+      } catch (err) {
+        log(`Could not delete: ${(err as Error).message}`);
+      }
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
@@ -210,16 +214,20 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     message: (arg: AllureTaskArgs<'message'>) => {
       log(`message ${JSON.stringify(arg)}`);
+    },
+
+    testMessage: (arg: AllureTaskArgs<'testMessage'>) => {
+      log(`testMessage ${JSON.stringify(arg)}`);
 
       if (!opts.isTest) {
         return;
       }
 
-      if (!existsSync('reports')) {
-        mkdirSync('reports');
-        writeFileSync('reports/test.log', '');
+      if (!existsSync(dirname(arg.path))) {
+        mkdirSync(dirname(arg.path), { recursive: true });
+        writeFileSync(arg.path, '');
       }
-      appendFileSync('reports/test.log', `${arg.name}\n`);
+      appendFileSync(arg.path, `${arg.message}\n`);
     },
 
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {

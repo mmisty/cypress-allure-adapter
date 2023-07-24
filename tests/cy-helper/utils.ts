@@ -42,8 +42,16 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
           stop: date + 10,
         })),
       },
+      labels: r.labels.map(l => ({
+        name: l.name,
+        value: l.value.replace(/\d{5,}/g, 'number'),
+      })),
       steps: replaceSteps(r.steps),
-      attachments: r.attachments.map(t => ({ ...t, source: `source${path.extname(t.source)}` })),
+      attachments: r.attachments.map(t => ({
+        ...t,
+        name: t.name.replace(/\d{5,}/g, 'number'), // todo check name in one test
+        source: `source${path.extname(t.source)}`,
+      })),
     };
   }) as AllureTest[];
 };
@@ -112,7 +120,10 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const createResTest2 = (specTexts: string[], envConfig?: Record<string, string | undefined>): string => {
+export const createResTest2 = (
+  specTexts: string[],
+  envConfig?: Record<string, string | undefined>,
+): { watch: string; specs: string[] } => {
   const testsPath = `${process.cwd()}/integration/e2e/temp`;
   const specPaths: string[] = [];
 
@@ -121,7 +132,7 @@ export const createResTest2 = (specTexts: string[], envConfig?: Record<string, s
   }
 
   specTexts.forEach((content, i) => {
-    const specPath = `${testsPath}/test${i}.cy.ts`;
+    const specPath = `${testsPath}/test_${i}_${Date.now()}.cy.ts`;
     writeFileSync(specPath, content);
     specPaths.push(specPath);
   });
@@ -170,5 +181,8 @@ export const createResTest2 = (specTexts: string[], envConfig?: Record<string, s
     expect(err).toBeUndefined();
   });
 
-  return env.allureResultsWatchPath;
+  return {
+    watch: env.allureResultsWatchPath,
+    specs: specPaths.map(t => `${process.cwd()}/reports/${basename(t)}.log`),
+  };
 };
