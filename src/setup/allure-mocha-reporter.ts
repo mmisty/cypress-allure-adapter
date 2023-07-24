@@ -201,19 +201,17 @@ export const registerMochaReporter = (ws: WebSocket) => {
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
   const startedSuites: Mocha.Suite[] = [];
-  let runEnded = true;
 
   const sendMessageTest = (msg: string) => {
     if (Cypress.env('JEST_TEST') === 'true' || Cypress.env('JEST_TEST') === true) {
       messageManager.message({ task: 'message', arg: { name: msg } });
     }
   };
-
+  let createTestsCallb: (() => void) | undefined = undefined;
   registerTestEvents(messageManager);
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, () => {
-      runEnded = false;
       debug(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_BEGIN}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
@@ -316,10 +314,11 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
         // hook end not fired when hook fails
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
-        runner.emit(CUSTOM_EVENTS.TEST_END, test);
+        // runner.emit(CUSTOM_EVENTS.TEST_END, test);
 
         // when before each fails all tests are skipped in current suite
-        createTests(runner, test);
+        // will create synthetic tests after test ends in cypress event
+        createTestsCallb = () => createTests(runner, test);
 
         return;
       }
@@ -374,8 +373,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(MOCHA_EVENTS.RUN_END, () => {
       debug(`event ${MOCHA_EVENTS.RUN_END}: tests length ${tests.length}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_END}`);
-
-      runEnded = true;
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
 
@@ -503,6 +500,11 @@ export const registerMochaReporter = (ws: WebSocket) => {
   Cypress.on('test:after:run', (_t, test) => {
     sendMessageTest(`cypress: test:after:run: ${test.title}`);
     runner.emit(CUSTOM_EVENTS.TEST_END, test);
+
+    if (createTestsCallb) {
+      createTestsCallb();
+      createTestsCallb = undefined;
+    }
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
   });
 

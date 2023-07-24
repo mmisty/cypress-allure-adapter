@@ -46,10 +46,9 @@ describe('hello suite', { retries: 1 }, () => {
       'mocha: hook: "before each" hook',
       'cypress: test:before:run: hello test',
       'mocha: fail: "before each" hook for "hello test"',
-      'plugin test:ended',
       'mocha: suite end: hello suite null',
       'cypress: test:after:run: hello test',
-      'plugin test:ended', // actual, but this is not expected
+      'plugin test:ended',
       '******** test:after:run=hello test',
 
       'mocha: suite end:  integration/e2e/temp/test0.cy.ts',
