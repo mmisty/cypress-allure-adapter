@@ -175,6 +175,21 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   });
 };
 
+const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
+  let index = 0;
+  test.parent?.eachTest(ts => {
+    ts.err = test.err;
+
+    index++;
+
+    if (index !== 1 && ts) {
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_END, ts);
+    }
+  });
+};
+
 const createTestsForSuite = (runner: Mocha.Runner, testOrHook: Mocha.Test, suite: Mocha.Suite) => {
   // let index = 0;
 
@@ -350,7 +365,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
         // when before each fails all tests are skipped in current suite
         // will create synthetic tests after test ends in cypress event
-        createTestsCallb = () => createTests(runner, test);
+        createTestsCallb = () => createTestsBeforeEach(runner, test);
 
         return;
       }
