@@ -116,7 +116,7 @@ export const createResTest = (fileName: string, envConfig?: Record<string, strin
 
     try {
       process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
-      console.log(env);
+
       await cy.run({
         spec,
         port,
@@ -129,7 +129,6 @@ export const createResTest = (fileName: string, envConfig?: Record<string, strin
     }
 
     await delay(2000);
-    // console.log(res);
 
     expect(err).toBeUndefined();
   });
@@ -198,8 +197,6 @@ export const createResTest2 = (
       process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
       process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
-      console.log(env);
-
       result.res = await cy.run({
         spec,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
@@ -214,7 +211,6 @@ export const createResTest2 = (
     }
 
     await delay(2000);
-    // console.log(res);
 
     expect(err).toBeUndefined();
   });
