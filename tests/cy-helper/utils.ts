@@ -150,7 +150,14 @@ export const sortAttachments = (res: AllureTest[]) => {
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
-): { watch: string; specs: string[] } => {
+): {
+  watch: string;
+  specs: string[];
+  result: { res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined };
+} => {
+  const result: { res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined } = {
+    res: undefined,
+  };
   const testsPath = `${process.cwd()}/integration/e2e/temp`;
   const specPaths: string[] = [];
 
@@ -192,7 +199,8 @@ export const createResTest2 = (
       process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
       console.log(env);
-      await cy.run({
+
+      result.res = await cy.run({
         spec,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
         port,
@@ -214,6 +222,7 @@ export const createResTest2 = (
   return {
     watch: env.allureResultsWatchPath,
     specs: specPaths.map(t => `${process.cwd()}/reports/${basename(t)}.log`),
+    result: result,
   };
 };
 
