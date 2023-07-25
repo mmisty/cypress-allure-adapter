@@ -61,6 +61,7 @@ export class GlobalHooks {
       this.currentHook.steps = [];
     }
     this.currentHook.steps.push({ name, event: 'start', date: Date.now() });
+    log(`this.currentHook.steps: ${JSON.stringify(this.currentHook.steps.map(t => t.name))}`);
   }
 
   endStep(status?: Status, details?: StatusDetails) {
@@ -78,6 +79,8 @@ export class GlobalHooks {
     this.currentHook.steps.push({ name: '', event: 'stop', date: Date.now() });
     this.currentStep.status = status;
     this.currentStep.details = details;
+
+    log(`this.currentHook.steps: ${JSON.stringify(this.currentHook.steps.map(t => t.name))}`);
   }
 
   end(status: StatusType, details?: StatusDetails) {
@@ -105,7 +108,7 @@ export class GlobalHooks {
     log(`added attachement: ${name}`);
   }
 
-  // proces attachements
+  // proces attachments
   processForTest() {
     log('process global hooks for test');
     const res = this.hooks;
@@ -124,6 +127,8 @@ export class GlobalHooks {
   process() {
     log('process global hooks');
     const res = this.hooks;
+    this.hooks = [];
+    log(res.map(t => t.title));
 
     res.forEach(hook => {
       this.reporter.hookStarted({
@@ -132,6 +137,7 @@ export class GlobalHooks {
         date: hook.start,
       });
 
+      log(`hook steps: ${hook.steps?.length}` ?? 'undef');
       hook.steps?.forEach(step => {
         if (step.event === 'start') {
           this.reporter.startStep({ name: step.name, date: step.date });
@@ -145,7 +151,7 @@ export class GlobalHooks {
           });
         }
       });
-
+      this.reporter.endAllSteps({ status: hook.status || UNKNOWN });
       this.reporter.hookEnded({
         title: hook.title,
         result: hook.status || UNKNOWN,
@@ -153,6 +159,5 @@ export class GlobalHooks {
         date: hook.stop,
       });
     });
-    this.hooks = [];
   }
 }

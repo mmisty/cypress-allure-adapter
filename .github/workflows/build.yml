@@ -25,12 +25,25 @@ jobs:
     - name: Install
       run: npm ci
         
-    - name: Built
-      run: npm run pre
+    - name: Lint
+      run: npm run lint
+
+    - name: Build
+      run: npm run build:all
+
+    - name: Test
+      run: npm run test:cov
+
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage-report
+        path: ./reports/coverage-cypress/
 
     - name: Monitor coverage
-      uses: slavcodev/coverage-monitor-action@v1
+      uses: danhunsaker/clover-reporter-action@v0.2.17-clover
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        coverage_path: "reports/coverage-full/clover.xml"
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        clover-file: ./reports/coverage-cypress/clover.xml
+
 

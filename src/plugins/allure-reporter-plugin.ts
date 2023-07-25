@@ -52,6 +52,7 @@ export class AllureReporter {
   steps: AllureStep[] = [];
   globalHooks = new GlobalHooks(this);
 
+  // this is variable for global hooks only
   hooks: { id?: string; hook: ExecutableItemWrapper }[] = [];
   allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
@@ -81,7 +82,7 @@ export class AllureReporter {
     return this.groups[this.groups.length - 1];
   }
 
-  get currentTest() {
+  get currentTest(): AllureTest | undefined {
     if (this.tests.length === 0) {
       log('No current test!');
 
@@ -162,7 +163,12 @@ export class AllureReporter {
       return;
     }
 
-    if (title && (title.indexOf('before each') !== -1 || title.indexOf('after each') !== -1)) {
+    if (!title) {
+      return;
+    }
+
+    // when before each or after each we create just step inside current test
+    if ((this.currentTest && title.indexOf('before each') !== -1) || title.indexOf('after each') !== -1) {
       log(`${title} will not be added to suite:${hookId} ${title}`);
       // need to end all steps before logging hook - it should be logged as parent
       this.endAllSteps({ status: UNKNOWN });
@@ -171,15 +177,12 @@ export class AllureReporter {
 
       return;
     }
+    const currentHook = title.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
 
-    if (title) {
-      const currentHook = title.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
-
-      currentHook.name = title;
-      currentHook.wrappedItem.start = date ?? Date.now();
-      this.hooks.push({ id: hookId, hook: currentHook });
-      this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
-    }
+    currentHook.name = title;
+    currentHook.wrappedItem.start = date ?? Date.now();
+    this.hooks.push({ id: hookId, hook: currentHook });
+    this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
   }
 
   setExecutableStatus(executable: ExecutableItemWrapper | undefined, res: Status, dtls?: StatusDetails) {
@@ -455,6 +458,7 @@ export class AllureReporter {
   }
 
   endGroup() {
+    // why >= 1?
     if (this.groups.length >= 1) {
       this.addGlobalHooks();
     }
@@ -542,6 +546,13 @@ export class AllureReporter {
 
   startTest(arg: AllureTaskArgs<'testStarted'>) {
     const { title, fullTitle, id, currentRetry } = arg;
+
+    if (this.currentTest) {
+      // temp fix of defect with wrong event sequence
+      log(`will not start already started test: ${fullTitle}`);
+
+      return;
+    }
     const duplicates = allTests.filter(t => t.fullTitle === fullTitle);
 
     const warn =
@@ -564,17 +575,15 @@ export class AllureReporter {
     allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
     this.tests.push(test);
 
-    if (this.currentTest) {
-      this.currentTest.fullName = fullTitle;
+    test.fullName = fullTitle;
 
-      this.currentTest.historyId = getUuid(fullTitle);
-      this.applyGroupLabels();
+    test.historyId = getUuid(fullTitle);
+    this.applyGroupLabels();
 
-      if (this.currentSpec?.relative) {
-        this.currentTest.addLabel('path', this.currentSpec.relative);
-      }
-      this.globalHooks.processForTest();
+    if (this.currentSpec?.relative) {
+      test.addLabel('path', this.currentSpec.relative);
     }
+    this.globalHooks.processForTest();
   }
 
   endTests() {
@@ -603,7 +612,7 @@ export class AllureReporter {
 
   applyDescriptionHtml() {
     if (this.currentTest) {
-      this.currentTest.descriptionHtml = this.descriptionHtml.join('</br>');
+      this.currentTest.descriptionHtml = this.descriptionHtml.join('');
     }
   }
 

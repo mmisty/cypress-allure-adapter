@@ -12,6 +12,7 @@
 /integration/videos
 /integration/downloads
 /integration/screenshots
+/integration/e2e/temp/
 
 # coverage and test reports
 /reports

@@ -7,6 +7,7 @@ declare namespace Cypress {
      * @param message - message
      */
 
-    myLog(message: string): Chainable<void>; // todo remove
+    myLog(message: string): Chainable<void>;
+    otherCmd(message: string): Chainable<void>;
   }
 }

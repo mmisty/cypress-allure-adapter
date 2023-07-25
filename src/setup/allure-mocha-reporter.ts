@@ -1,5 +1,5 @@
 import Debug from 'debug';
-import { createMessage } from './websocket';
+import { createMessage, MessageManager } from './websocket';
 import { handleCyLogEvents } from './cypress-events';
 import {
   AllureTransfer,
@@ -12,7 +12,7 @@ import {
 } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
-import { logClient, delay } from './helper';
+import { logClient } from './helper';
 import { tmsIssueUrl } from '../common';
 import { EventEmitter } from 'events';
 import AllureEvents = Cypress.AllureEvents;
@@ -160,21 +160,77 @@ const isBeforeEachHook = (test: Mocha.Test) => {
 const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
   test.parent?.eachTest(ts => {
+    ts.err = test.err;
+
     index++;
 
+    if (ts) {
+      if (index === 1) {
+        ts.state = 'failed';
+      }
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_END, ts);
+    }
+  });
+};
+
+const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
+  let index = 0;
+  test.parent?.eachTest(ts => {
     ts.err = test.err;
+
+    index++;
+
+    if (index !== 1 && ts) {
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_END, ts);
+    }
+  });
+};
+
+const createTestsForSuite = (runner: Mocha.Runner, testOrHook: Mocha.Test, suite: Mocha.Suite) => {
+  // let index = 0;
+
+  runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
+  runner.emit(MOCHA_EVENTS.SUITE_BEGIN, suite);
+
+  suite?.eachTest(ts => {
+    ts.err = testOrHook.err;
+
+    // index++;
 
     if (ts) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
-
-      if (index !== 1) {
-        // end all except first
-        // first test will be ended in cy event with proper message
-        runner.emit(CUSTOM_EVENTS.TEST_END, ts);
-      }
+      runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
   });
+  runner.emit(MOCHA_EVENTS.SUITE_END, suite);
+};
+
+const sendMessageTestCreator = (messageManager: MessageManager, specPathLog: string) => (msg: string) => {
+  if (isJestTest()) {
+    messageManager.message({ task: 'testMessage', arg: { path: specPathLog, message: msg } });
+  }
+};
+
+const isJestTest = () => {
+  return Cypress.env('JEST_TEST') === 'true' || Cypress.env('JEST_TEST') === true;
+};
+
+const registerTestEvents = (messageManager: MessageManager, specPathLog: string) => {
+  if (isJestTest()) {
+    const msg = sendMessageTestCreator(messageManager, specPathLog);
+    Cypress.Allure.on('test:started', () => {
+      msg('plugin test:started');
+    });
+
+    Cypress.Allure.on('test:ended', () => {
+      msg('plugin test:ended');
+    });
+  }
 };
 
 export const registerMochaReporter = (ws: WebSocket) => {
@@ -190,19 +246,29 @@ export const registerMochaReporter = (ws: WebSocket) => {
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
   const startedSuites: Mocha.Suite[] = [];
-  let runEnded = true;
+  const specPathLog = `reports/${Cypress.spec.name}.log`;
+
+  if (isJestTest()) {
+    messageManager.message({ task: 'delete', arg: { path: specPathLog } });
+  }
+
+  const sendMessageTest = sendMessageTestCreator(messageManager, specPathLog);
+
+  let createTestsCallb: (() => void) | undefined = undefined;
+  registerTestEvents(messageManager, specPathLog);
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, () => {
-      runEnded = false;
       debug(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_BEGIN}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'specStarted', arg: { spec: Cypress.spec } });
       messageManager.process();
     })
 
     .on(MOCHA_EVENTS.SUITE_BEGIN, suite => {
-      debug(`event ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title} + ${suite.fullTitle()}`);
+      debug(`event ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title}, ${suite.fullTitle()}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_BEGIN}: ${suite.title}, ${suite.fullTitle()}`);
 
       if (isRootSuite(suite)) {
         runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
@@ -219,6 +285,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.SUITE_END, suite => {
       debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
 
       if (startedSuites.length === 1) {
         // will end later with run end
@@ -236,6 +303,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.HOOK_START, hook => {
       debug(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
 
       if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
         debug('GLOBAL BEFORE ALL - end all existing');
@@ -250,6 +318,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.HOOK_END, hook => {
       debug(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
 
       if (isBeforeAllHook(hook) && isRootSuiteTest(hook)) {
         debug('GLOBAL BEFORE ALL - end all existing ');
@@ -271,17 +340,22 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.TEST_PENDING, test => {
       debug(`event ${MOCHA_EVENTS.TEST_PENDING}: ${test.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_PENDING}: ${test.title}`);
       // ignore
     })
 
     .on(MOCHA_EVENTS.TEST_BEGIN, (test: Mocha.Test) => {
+      // no event when global hook fails
       debug(`event ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_BEGIN}: ${test.title}`);
       debug(`${JSON.stringify(tests)}`);
-      // ignore
+
+      runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
     })
 
     .on(MOCHA_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
       debug(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
       if (isBeforeEachHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
@@ -290,7 +364,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
 
         // when before each fails all tests are skipped in current suite
-        createTests(runner, test);
+        // will create synthetic tests after test ends in cypress event
+        createTestsCallb = () => createTestsBeforeEach(runner, test);
 
         return;
       }
@@ -305,7 +380,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
           return;
         }
-        createTests(runner, test);
+
+        createTestsCallb = () => createTests(runner, test);
 
         return;
       }
@@ -320,11 +396,13 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .on(MOCHA_EVENTS.TEST_RETRY, test => {
       debug(`event ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_RETRY}: ${test.title}`);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
     })
 
     .on(MOCHA_EVENTS.TEST_PASS, test => {
       debug(`event ${MOCHA_EVENTS.TEST_PASS}: ${test.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_PASS}: ${test.title}`);
 
       runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'testResult',
@@ -337,12 +415,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
     .on(MOCHA_EVENTS.TEST_END, test => {
       debug(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
     })
 
     .on(MOCHA_EVENTS.RUN_END, () => {
       debug(`event ${MOCHA_EVENTS.RUN_END}: tests length ${tests.length}`);
-
-      runEnded = true;
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_END}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
 
@@ -369,14 +447,12 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, hook => {
       debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
-      let i = 0;
-
-      message({ task: 'endAll', arg: {} });
+      // const i = 0;
 
       for (const sui of hook.parent?.suites) {
-        runner.emit(MOCHA_EVENTS.SUITE_BEGIN, sui);
+        createTestsCallb = () => createTestsForSuite(runner, hook, sui);
 
-        sui.eachTest((test: Mocha.Test) => {
+        /*sui.eachTest((test: Mocha.Test) => {
           i++;
 
           if (test) {
@@ -384,9 +460,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
             runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
             runner.emit(CUSTOM_EVENTS.TEST_END, i === 1 ? hook : { ...test, err: hook.err });
           }
-        });
+        });*/
 
-        runner.emit(MOCHA_EVENTS.SUITE_END, sui);
+        //runner.emit(MOCHA_EVENTS.SUITE_END, sui);
       }
     })
 
@@ -444,25 +520,46 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     });
 
-  Cypress.on('test:before:run', async (_t, test) => {
+  /*Cypress.on('test:before:run', async (_t, test) => {
     const started = Date.now();
 
     // cypress test:before:run event fires for first test in suite along with
     // before hook event, need to wait until suite starts
-    while (startedSuites.length === 0 && !runEnded && Date.now() - started < Cypress.config('defaultCommandTimeout')) {
+    while (startedSuites.length === 0 && !runEnded) {
+      if (Date.now() - started >= Cypress.config('defaultCommandTimeout')) {
+        debug('timeout waiting suite starts');
+        break;
+      }
       await delay(1);
     }
 
     runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
-  });
+    });*/
+
+  if (isJestTest()) {
+    Cypress.on('test:before:run', (_t, test) => {
+      sendMessageTest(`cypress: test:before:run: ${test.title}`);
+    });
+  }
 
   Cypress.on('test:after:run', (_t, test) => {
+    sendMessageTest(`cypress: test:after:run: ${test.title}`);
     runner.emit(CUSTOM_EVENTS.TEST_END, test);
+
+    if (createTestsCallb) {
+      createTestsCallb();
+      createTestsCallb = undefined;
+    }
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
   });
 
   const ignoreMoreCommands = (Cypress.env('allureSkipCommands') ?? '').split(',');
 
-  handleCyLogEvents(runner, { ignoreCommands: [...ignoreCommands, ...ignoreMoreCommands] });
+  handleCyLogEvents(runner, {
+    ignoreCommands: [...ignoreCommands, ...ignoreMoreCommands],
+    wrapCustomCommands:
+      Cypress.env('allureWrapCustomCommandsExperimental') === 'true' ||
+      Cypress.env('allureWrapCustomCommandsExperimental') === true,
+  });
 };

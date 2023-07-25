@@ -40,10 +40,20 @@ const convertEmptyObj = (obj: Record<string, unknown>): string => {
   return '';
 };
 
-const stringify = (args: any) => {
-  return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean'
-    ? `${args}`
-    : convertEmptyObj(args);
+const stringify = (args: any): string => {
+  const getArr = () => {
+    try {
+      if (Array.isArray(args)) {
+        return args.map(a => stringify(a)).join(',');
+      } else {
+        return convertEmptyObj(args);
+      }
+    } catch (err) {
+      return 'could not stringify';
+    }
+  };
+
+  return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean' ? `${args}` : getArr();
 };
 
 const attachRequests = (
@@ -176,8 +186,11 @@ const createEmitEvent =
     runner.emit('task', args);
   };
 
-export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands: string[] }) => {
-  const { ignoreCommands } = config;
+export const handleCyLogEvents = (
+  runner: Mocha.Runner,
+  config: { wrapCustomCommands: boolean; ignoreCommands: string[] },
+) => {
+  const { ignoreCommands, wrapCustomCommands } = config;
   const commands: string[] = [];
   const logCommands: string[] = [];
   const emit = createEmitEvent(runner);
@@ -189,6 +202,46 @@ export const handleCyLogEvents = (runner: Mocha.Runner, config: { ignoreCommands
   const isLogCommand = (isLog: boolean, name: string) => {
     return isLog && !ignoreCommands.includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
+
+  if (wrapCustomCommands) {
+    const origAdd = Cypress.Commands.add;
+
+    Cypress.Commands.add = (...args: any[]) => {
+      const name = args[0];
+      const fn = args[1];
+      const other = args.slice(1);
+
+      if (typeof name === 'string') {
+        try {
+          origAdd(
+            name,
+            (...fnargs: any[]) => {
+              const params = stringify(fnargs);
+              const cmdMess = stepMessage(name, params);
+              console.log(`HERE ${cmdMess}`);
+              Cypress.Allure.startStep(cmdMess);
+              const res = fn(...fnargs);
+              cy.allure().endStep();
+
+              return res;
+            },
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            ...other,
+          );
+        } catch (err) {
+          console.log(`${packageLog} error: ${(err as Error).message}`);
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          origAdd(...args);
+        }
+      } else {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        origAdd(...args);
+      }
+    };
+  }
 
   Cypress.on('log:added', async log => {
     withTry('report log:added', () => {

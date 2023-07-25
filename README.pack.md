@@ -100,9 +100,9 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       const reporter = configureAllureAdapterPlugins(on, config);
       
-      on('after:spec', (spec, results) => {
+      on('after:spec', async (spec, results) => {
         // your code in after spec
-        reporter.afterSpec({ results });
+        await reporter.afterSpec({ results });
       })
       
       return config;

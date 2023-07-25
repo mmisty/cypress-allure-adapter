@@ -43,6 +43,8 @@ type AllureTask = {
   addDescriptionHtml: { value: string };
   label: { name: string; value: string };
   message: { name: string };
+  testMessage: { path: string; message: string };
+  delete: { path: string };
   attachScreenshots: { screenshots: AutoScreen[] };
   screenshotOne: { name: string; forStep?: boolean };
   attachVideoToTests: { path: string };

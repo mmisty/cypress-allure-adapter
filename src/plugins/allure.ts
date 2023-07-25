@@ -1,10 +1,10 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
+import { appendFileSync, copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
 import glob, { sync } from 'fast-glob';
-import { basename } from 'path';
+import { basename, dirname } from 'path';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -19,6 +19,7 @@ export type ReporterOptions = {
   videos: string;
   screenshots: string;
   showDuplicateWarn: boolean;
+  isTest: boolean;
 };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
@@ -101,6 +102,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
       allureReporter.allureRuntime.writer.writeCategoriesDefinitions(arg.categories);
+    },
+
+    delete(arg: AllureTaskArgs<'delete'>) {
+      try {
+        if (existsSync(arg.path)) {
+          rmSync(arg.path, { recursive: true });
+        }
+      } catch (err) {
+        log(`Could not delete: ${(err as Error).message}`);
+      }
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
@@ -200,9 +211,25 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endAll();
       log('endAll');
     },
+
     message: (arg: AllureTaskArgs<'message'>) => {
       log(`message ${JSON.stringify(arg)}`);
     },
+
+    testMessage: (arg: AllureTaskArgs<'testMessage'>) => {
+      log(`testMessage ${JSON.stringify(arg)}`);
+
+      if (!opts.isTest) {
+        return;
+      }
+
+      if (!existsSync(dirname(arg.path))) {
+        mkdirSync(dirname(arg.path), { recursive: true });
+        writeFileSync(arg.path, '');
+      }
+      appendFileSync(arg.path, `${arg.message}\n`);
+    },
+
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {
       log(`screenshotOne ${JSON.stringify(arg)}`);
       allureReporter.screenshotOne(arg);
