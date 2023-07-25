@@ -8,19 +8,17 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 jest.setTimeout(120000);
 
 // eslint-disable-next-line jest/no-export
-export const mapSteps = (steps: ExecutableItem[]): any => {
+export const mapSteps = <T>(steps: ExecutableItem[], map?: (m: ExecutableItem) => T): (T & any)[] => {
   if (steps?.length === 0) {
     return [];
   }
 
   return steps.map(s => {
-    return { name: s.name, steps: mapSteps(s.steps) };
+    const obj = map ? map(s) : { name: s.name };
+
+    return { ...obj, steps: mapSteps(s.steps) };
   });
 };
-// res:
-// [
-//  {name: 'step', steps:  }
-// ]
 
 // eslint-disable-next-line jest/no-export
 export const fixResult = (results: AllureTest[]): AllureTest[] => {

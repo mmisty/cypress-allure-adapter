@@ -25,6 +25,7 @@ export default defineConfig({
       allureSkipCommands: 'wrap', // separated comma
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
+      allureWrapCustomCommandsExperimental: 'true',
 
       tmsPrefix: 'http://jira',
       issuePrefix: 'http://jira/*',

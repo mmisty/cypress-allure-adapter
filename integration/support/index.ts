@@ -54,6 +54,11 @@ Cypress.Commands.add('myLog', (message: string) => {
   cy.task('log', message);
 });
 
+Cypress.Commands.add('otherCmd', (message: string) => {
+  cy.task('log', message);
+  cy.get('div:eq(100)').should('not.exist');
+});
+
 if (Cypress.config('isInteractive')) {
   console.log('DELETE');
   Cypress.Allure.deleteResults();
