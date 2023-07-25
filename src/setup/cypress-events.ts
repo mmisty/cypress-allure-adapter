@@ -40,7 +40,7 @@ const convertEmptyObj = (obj: Record<string, unknown>): string => {
   return '';
 };
 
-const stringify = (args: any) => {
+const stringify = (args: any): string => {
   const getArr = () => {
     try {
       if (Array.isArray(args)) {
@@ -206,7 +206,7 @@ export const handleCyLogEvents = (
   if (wrapCustomCommands) {
     const origAdd = Cypress.Commands.add;
 
-    Cypress.Commands.add = (...args) => {
+    Cypress.Commands.add = (...args: any[]) => {
       const name = args[0];
       const fn = args[1];
       const other = args.slice(1);
@@ -215,7 +215,7 @@ export const handleCyLogEvents = (
         try {
           origAdd(
             name,
-            (...fnargs) => {
+            (...fnargs: any[]) => {
               const params = stringify(fnargs);
               const cmdMess = stepMessage(name, params);
               console.log(`HERE ${cmdMess}`);
