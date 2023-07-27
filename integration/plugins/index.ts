@@ -57,6 +57,9 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
 
       return null;
     },
+    fileExists: (filePath: string) => {
+      return existsSync(filePath);
+    },
   });
 
   on('after:screenshot', details => {

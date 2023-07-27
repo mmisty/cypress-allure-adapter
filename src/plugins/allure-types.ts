@@ -27,6 +27,7 @@ type AllureTask = {
   deleteResults: undefined;
   globalHook: undefined;
   stepEnded: { status: Status; date?: number; details?: StatusDetails };
+  mergeStepMaybe: { name: string };
   // stepEndedAll: { status: string; date?: number; details?: StatusDetails };
   stepStarted: { name: string; date?: number };
   step: { name: string; status?: string; date?: number };

@@ -59,6 +59,31 @@ Cypress.Commands.add('otherCmd', (message: string) => {
   cy.get('div:eq(100)').should('not.exist');
 });
 
+Cypress.Commands.add('returnGet', { prevSubject: true }, (subj, message: string) => {
+  cy.task('log', message);
+
+  return cy.wrap(subj).get('div:eq(100)');
+});
+
+Cypress.Commands.add('fileExists', (filePath: string) => {
+  cy.wait(1000);
+  cy.wait(200);
+
+  return cy.task<boolean>('fileExists', filePath);
+});
+
+Cypress.Commands.add('fileExistsWithL', (filePath: string) => {
+  Cypress.log({ name: 'fileExistsWithL', message: 'ss' });
+  cy.wait(1000);
+  cy.wait(200);
+
+  return cy.task<boolean>('fileExists', filePath);
+});
+
+Cypress.Commands.add('nested', (filePath: string) => {
+  return cy.fileExistsWithL(filePath);
+});
+
 if (Cypress.config('isInteractive')) {
   console.log('DELETE');
   Cypress.Allure.deleteResults();

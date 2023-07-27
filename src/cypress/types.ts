@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-namespace
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
+  export type CommandT = { state?: string; attributes?: { name?: string; args?: any } };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../plugins/allure-types').ContentType;
@@ -42,6 +43,14 @@ declare namespace Cypress {
      * });
      */
     on(event: 'test:ended', handler: (test: Mocha.Test) => void): void;
+
+    /**
+     * Fired when command is really finished (mostly applicable for custom commands)
+     * @param event
+     * @param handler
+     */
+    on(event: 'cmd:ended', handler: (cmd: CommandT, isCustom?: boolean) => void): void;
+    on(event: 'cmd:started', handler: (cmd: CommandT, isCustom?: boolean) => void): void;
   }
 
   interface Cypress {
@@ -76,7 +85,8 @@ declare namespace Cypress {
      * @example
      * cy.allure().endStep();
      */
-    endStep(): T;
+    endStep(): T; // todo status
+    mergeStepMaybe(name: string): T;
 
     /**
      * Created finished step

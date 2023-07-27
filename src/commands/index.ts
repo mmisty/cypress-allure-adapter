@@ -52,6 +52,7 @@ export const registerCommands = () => {
     startStep: (allure, name) => allure.startStep(name),
     step: (allure, name) => allure.step(name),
     endStep: allure => allure.endStep(),
+    mergeStepMaybe: (allure, name) => allure.mergeStepMaybe(name),
     label: (allure, name, value) => allure.label(name, value),
     // issue: (allure, name, url) => {
     //  const issuePrefix = Cypress.env('issuePrefix');
