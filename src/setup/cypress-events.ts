@@ -319,7 +319,7 @@ export const handleCyLogEvents = (
     events.emit('cmd:started', command, isCustom);
   });
 
-  Cypress.Allure.on('cmd:started', (command: CommandT, isCustom, isCmdFromLog) => {
+  Cypress.Allure.on('cmd:started', (command: CommandT, isCustom) => {
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
 
     if (name === 'screenshot') {
@@ -334,10 +334,8 @@ export const handleCyLogEvents = (
     debug(`started ${isCustom ? 'CUSTOM' : ''}:${cmdMessage}`);
     debug(`started: ${cmdMessage}`);
 
-    if (!isCmdFromLog) {
-      emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
-      commands.push(cmdMessage);
-    }
+    emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
+    commands.push(cmdMessage);
 
     withTry('report command:attachment', () => {
       const longArgs = args.filter(t => t.length >= ARGS_TRIM_AT);
@@ -351,19 +349,6 @@ export const handleCyLogEvents = (
         });
       }
     });
-
-    /*if (isCmdFromLog) {
-      const logs = command?.attributes?.logs;
-
-      if (!logs) {
-        return;
-      }
-      const lastLog = logs[logs.length - 1];
-      /// const name = lastLog?.attributes?;
-      console.log(cmdMessage);
-      console.log(logs);
-      emit({ task: 'step', arg: { name: name } });
-    }*/
   });
 
   events.on('cmd:ended:tech', (command: CommandT, isCustom) => {
@@ -371,7 +356,7 @@ export const handleCyLogEvents = (
 
     const last = customCommands[customCommands.length - 1];
 
-    if (last === cmdMessage) {
+    if (last && last === cmdMessage) {
       customCommands.pop();
 
       // cypress ends custom commands right away
