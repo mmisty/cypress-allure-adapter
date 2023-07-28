@@ -52,4 +52,17 @@ describe('should pass', () => {
     cy.nested('file').should('eq', false);
     cy.allure().tag('123');
   });
+
+  it('test event', () => {
+    Cypress.Allure.on('cmd:ended', (cmd, isCustom) => {
+      console.log(`sasasa${isCustom}`);
+      console.log(cmd);
+      console.log(cmd?.attributes?.name);
+
+      if (isCustom) {
+        Cypress.Allure.tag(cmd?.attributes?.name);
+      }
+    });
+    cy.nested('file').should('eq', false);
+  });
 });

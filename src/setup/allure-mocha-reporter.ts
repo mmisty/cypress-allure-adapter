@@ -563,7 +563,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
   handleCyLogEvents(runner, allureEventsEmitter, {
     ignoreCommands: (Cypress.env('allureSkipCommands') ?? '').split(','),
     wrapCustomCommands:
-      Cypress.env('allureWrapCustomCommandsExperimental') === 'true' ||
-      Cypress.env('allureWrapCustomCommandsExperimental') === true,
+      Cypress.env('allureWrapCustomCommands') === undefined ||
+      Cypress.env('allureWrapCustomCommands') === 'true' ||
+      Cypress.env('allureWrapCustomCommands') === true,
   });
 };

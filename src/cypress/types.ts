@@ -50,7 +50,12 @@ declare namespace Cypress {
      * @param handler
      */
     on(event: 'cmd:ended', handler: (cmd: CommandT, isCustom?: boolean) => void): void;
-    on(event: 'cmd:started', handler: (cmd: CommandT, isCustom?: boolean) => void): void;
+    /**
+     * Fired when command is started (mostly applicable for custom commands)
+     * @param event
+     * @param handler
+     */
+    on(event: 'cmd:started', handler: (cmd: CommandT) => void): void;
   }
 
   interface Cypress {

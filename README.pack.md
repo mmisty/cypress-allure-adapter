@@ -4,7 +4,6 @@ This is allure adapter for Cypress providing realtime results.
 It is useful when using Allure TestOps - so you can watch tests execution.
 It adds tests, steps, suites and screenshots during tests execution.
 
-Note: Video uploads doesn't work well yet since video is being generated after all tests in spec are finished.
 
 
 Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.com/package/@shelex/cypress-allure-plugin)
@@ -53,6 +52,7 @@ Setup:
     - `allureAttachRequests` => `true` - attach request/response body and status
     - `allureAddVideoOnPass` => `true` - attach video for all tests (including passed), otherwise attach only for failed, broken, unknown
     - `allureShowDuplicateWarn` => `true` - show console warnings about test duplicates, default false
+    - `allureWrapCustomCommands` => `true` - (default true) - will wrap custom commands, so custom command will have child steps in report
     - `tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this.
       Also link can be specified with `*` - it will be replced with id.
      ```javascript

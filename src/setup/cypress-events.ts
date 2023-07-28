@@ -282,9 +282,6 @@ export const handleCyLogEvents = (
         logCommands.push(cmdMessage);
         debug(`step: ${cmdMessage}`);
 
-        ///  events.emit('cmd:started', { ...Cypress.state().current, state: 'passed' }, false, true);
-
-        // return;
         emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
 
         if (cmdMessage.length > ARGS_TRIM_AT) {
@@ -316,10 +313,10 @@ export const handleCyLogEvents = (
       return;
     }
 
-    events.emit('cmd:started', command, isCustom);
+    events.emit('cmd:started', command);
   });
 
-  Cypress.Allure.on('cmd:started', (command: CommandT, isCustom) => {
+  Cypress.Allure.on('cmd:started', (command: CommandT) => {
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
 
     if (name === 'screenshot') {
@@ -331,7 +328,6 @@ export const handleCyLogEvents = (
       return;
     }
 
-    debug(`started ${isCustom ? 'CUSTOM' : ''}:${cmdMessage}`);
     debug(`started: ${cmdMessage}`);
 
     emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
