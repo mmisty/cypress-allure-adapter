@@ -64,6 +64,26 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endStep({ ...arg, status: (arg.status as Status) ?? Status.PASSED });
       log('step');
     },
+    mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
+      log(`mergePrevStep ${JSON.stringify(arg)}`);
+      console.log('mergePrevStep');
+      console.log(arg);
+      const steps = allureReporter.currentTest?.wrappedItem.steps ?? [];
+      const last = steps[steps?.length - 1];
+
+      if (arg.name === last.name) {
+        steps.splice(steps?.length - 1, 1);
+
+        allureReporter.startStep({ name: arg.name, date: last.start });
+        last.steps.forEach(s => {
+          allureReporter.currentStep?.addStep(s);
+        });
+      } else {
+        allureReporter.startStep({ name: arg.name, date: Date.now() });
+      }
+
+      log('mergePrevStep');
+    },
 
     stepEnded: (arg: AllureTaskArgs<'stepEnded'>) => {
       log(`stepEnded ${JSON.stringify(arg)}`);

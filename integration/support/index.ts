@@ -16,26 +16,6 @@ const setupCoverage = () => {
 
 allureAdapterSetup();
 
-/*
-Cypress.Allure.on('test:started', test => {
-  console.log(`AFTER TEST STARTED: ${test.title}`);
-  Cypress.Allure.label('event', 'started');
-  Cypress.Allure.label('tag', 'started');
-  Cypress.Allure.step('after start');
-  Cypress.Allure.addDescriptionHtml(Cypress.spec.relative);
-});
-
-Cypress.Allure.on('test:started', () => {
-  Cypress.Allure.step('after start2');
-});
-
-Cypress.Allure.on('test:ended', test => {
-  console.log(`BEFORE ENDING TEST: ${test.title}`);
-  Cypress.Allure.label('event', 'ended');
-  Cypress.Allure.label('tag', 'ended');
-  Cypress.Allure.step('before end');
-});*/
-
 redirectTestLogs({
   isLogCommandDetails: false,
 });
@@ -57,6 +37,13 @@ Cypress.Commands.add('myLog', (message: string) => {
 Cypress.Commands.add('otherCmd', (message: string) => {
   cy.task('log', message);
   cy.get('div:eq(100)').should('not.exist');
+});
+
+Cypress.Commands.add('fileExists', (filePath: string) => {
+  cy.wait(1000);
+  cy.wait(200);
+
+  return cy.task<boolean>('fileExists', filePath);
 });
 
 if (Cypress.config('isInteractive')) {

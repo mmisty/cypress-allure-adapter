@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-namespace
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
+  export type CommandT = { state?: string; attributes?: { name?: string; args?: any } };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../plugins/allure-types').ContentType;
@@ -42,6 +43,19 @@ declare namespace Cypress {
      * });
      */
     on(event: 'test:ended', handler: (test: Mocha.Test) => void): void;
+
+    /**
+     * Fired when command is really finished (mostly applicable for custom commands)
+     * @param event
+     * @param handler
+     */
+    on(event: 'cmd:ended', handler: (cmd: CommandT, isCustom?: boolean) => void): void;
+    /**
+     * Fired when command is started (mostly applicable for custom commands)
+     * @param event
+     * @param handler
+     */
+    on(event: 'cmd:started', handler: (cmd: CommandT) => void): void;
   }
 
   interface Cypress {
@@ -76,7 +90,8 @@ declare namespace Cypress {
      * @example
      * cy.allure().endStep();
      */
-    endStep(): T;
+    endStep(): T; // todo status
+    mergeStepMaybe(name: string): T;
 
     /**
      * Created finished step
@@ -174,9 +189,36 @@ declare namespace Cypress {
     os(value: string): T;
 
     epic(value: string): T;
+
+    /**
+     * Adds link with type tms or issue
+     * @param url = full url
+     * @param name = display text for URL in report
+     * @example
+     *  cy.allure().link('http://my.jira.com/ABD-123', 'ABD-123 description', 'issue');
+     *  cy.allure().link('http://my.jira.com/ABD-123', 'ABD-123 description', 'tms');
+     */
     link(url: string, name?: string, type?: LinkType): T;
-    tms(url: string, name?: string): T;
-    issue(url: string, name?: string): T;
+
+    /**
+     * Adds link to tms = has icon tms
+     * @param urlOrId = full url or ID of item
+     * @param name = display text for URL in report
+     * @example
+     *  cy.allure().tms('ABD-123');
+     *  cy.allure().tms('http://my.jira.com/ABD-123', 'ABD-123 description');
+     */
+    tms(urlOrId: string, name?: string): T;
+
+    /**
+     * Adds link to defect = has icon BUG
+     * @param urlOrId = full url or ID of item
+     * @param name = display text for URL in report
+     * @example
+     *  cy.allure().issue('ABD-123');
+     *  cy.allure().issue('http://my.jira.com/ABD-123', 'ABD-123 description');
+     */
+    issue(urlOrId: string, name?: string): T;
 
     feature(value: string): T;
     story(value: string): T;

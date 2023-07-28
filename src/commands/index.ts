@@ -52,17 +52,8 @@ export const registerCommands = () => {
     startStep: (allure, name) => allure.startStep(name),
     step: (allure, name) => allure.step(name),
     endStep: allure => allure.endStep(),
+    mergeStepMaybe: (allure, name) => allure.mergeStepMaybe(name),
     label: (allure, name, value) => allure.label(name, value),
-    // issue: (allure, name, url) => {
-    //  const issuePrefix = Cypress.env('issuePrefix');
-    //   allure.issue(name, issuePrefix ? `${issuePrefix}${url}` : url);
-    // },
-    // tms: (allure, name, url) => {
-    //  const tmsPrefix = Cypress.env('tmsPrefix');
-
-    //  const pattern = tmsPrefix && tmsPrefix.includes('*') ? tmsPrefix : `${tmsPrefix}*`;
-    //  allure.tms(name, tmsPrefix ? pattern.replace(/\*/g, url) : url);
-    //},
     //description: (allure, markdown) => allure.description(markdown),
     tag: (allure, ...tags) => allure.tag(...tags),
     writeEnvironmentInfo: (allure, info) => allure.writeEnvironmentInfo(info),

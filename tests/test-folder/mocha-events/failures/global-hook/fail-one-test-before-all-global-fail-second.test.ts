@@ -130,7 +130,7 @@ describe('hello suite', () => {
                   },
                   {
                     attachments: [],
-                    name: 'wrap: null',
+                    name: 'wrap',
                     parameters: [],
                     stage: 'finished',
                     start: 1323475200000,

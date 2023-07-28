@@ -19,7 +19,6 @@ import AllureEvents = Cypress.AllureEvents;
 
 const debug = logClient(Debug('cypress-allure:mocha-reporter'));
 // this is running in Browser
-const ignoreCommands = ['allure', 'then'];
 const TEST_PENDING_DETAILS = 'Test ignored';
 
 const MOCHA_EVENTS = {
@@ -50,6 +49,8 @@ const CUSTOM_EVENTS = {
 const USER_EVENTS = {
   TEST_START: 'test:started',
   TEST_END: 'test:ended',
+  CMD_END: 'cmd:ended',
+  CMD_START: 'cmd:started',
 };
 
 const convertState = (state: string): Status => {
@@ -72,7 +73,10 @@ const allureEventsEmitter = new EventEmitter();
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
-    if (isStub && ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END].includes(event)) {
+    if (
+      isStub &&
+      ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START].includes(event)
+    ) {
       return;
     }
 
@@ -92,6 +96,8 @@ export const allureInterface = (
     writeCategoriesDefinitions: (categories: Category[]) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
+    // remove from interface
+    mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
     endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
     step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
@@ -554,12 +560,11 @@ export const registerMochaReporter = (ws: WebSocket) => {
     runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:after:run=${test.title}` } });
   });
 
-  const ignoreMoreCommands = (Cypress.env('allureSkipCommands') ?? '').split(',');
-
-  handleCyLogEvents(runner, {
-    ignoreCommands: [...ignoreCommands, ...ignoreMoreCommands],
+  handleCyLogEvents(runner, allureEventsEmitter, {
+    ignoreCommands: (Cypress.env('allureSkipCommands') ?? '').split(','),
     wrapCustomCommands:
-      Cypress.env('allureWrapCustomCommandsExperimental') === 'true' ||
-      Cypress.env('allureWrapCustomCommandsExperimental') === true,
+      Cypress.env('allureWrapCustomCommands') === undefined ||
+      Cypress.env('allureWrapCustomCommands') === 'true' ||
+      Cypress.env('allureWrapCustomCommands') === true,
   });
 };

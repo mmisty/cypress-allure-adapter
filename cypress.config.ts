@@ -22,10 +22,9 @@ export default defineConfig({
       allureAttachRequests: true,
       allureResults: 'allure-results', // for test results to write
       allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
-      allureSkipCommands: 'wrap', // separated comma
+      allureSkipCommands: '', // separated comma
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
-      allureWrapCustomCommandsExperimental: 'true',
 
       tmsPrefix: 'http://jira',
       issuePrefix: 'http://jira/*',
