@@ -1,10 +1,4 @@
-import {
-  covergeAfterAllEvent,
-  createResTest2,
-  fixResult,
-  whenCoverage,
-  whenNoCoverage,
-} from '../../../cy-helper/utils';
+import { covergeAfterAllEvent, createResTest2, fixResult, whenCoverage } from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
