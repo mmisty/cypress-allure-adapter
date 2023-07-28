@@ -97,7 +97,7 @@ describe('hello suite', () => {
         [
           'step right after start',
           ...whenCoverage('"before each" hook'),
-          'wrap: null',
+          'wrap',
           ...whenCoverage('"after each" hook'),
           'step right before test end',
         ],

@@ -48,10 +48,10 @@ describe('custom commands', () => {
     });
     
     it('returnTaskValue', () => {
-      cy.returnTaskValue('nonexistingd').should('be', false);
+      cy.returnTaskValue('nonexistingd').should('eq', false);
     });
     it('nestedCommand', () => {
-      cy.nestedCommand('nonexistingd2').should('be', false);
+      cy.nestedCommand('nonexistingd2').should('eq', false);
     });
   });
 `,
@@ -136,18 +136,13 @@ describe('custom commands', () => {
           name: 'returnGet: hello',
           steps: [
             { name: 'task: log, hello', steps: [] },
-            { name: 'wrap', steps: [{ name: 'wrap: null', steps: [] }] },
+            { name: 'wrap', steps: [] },
             { name: 'get: div:eq(100)', steps: [] },
           ],
         },
         {
           name: 'get: div',
-          steps: [
-            {
-              name: 'assert: expected **<div.inner-container>** to exist in the DOM',
-              steps: [],
-            },
-          ],
+          steps: [],
         },
       ]);
     });
@@ -168,6 +163,10 @@ describe('custom commands', () => {
             { name: 'wait: 2', steps: [] },
             { name: 'task: fileExists, nonexistingd', steps: [] },
           ],
+        },
+        {
+          name: 'assert: expected **false** to equal **false**',
+          steps: [],
         },
       ]);
     });

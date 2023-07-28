@@ -220,7 +220,7 @@ describe('hooks test - failed global hook step', () => {
               name: 'global setup2',
               steps: [
                 {
-                  name: 'wrap: null',
+                  name: 'wrap',
                   steps: [],
                 },
               ],
@@ -251,7 +251,7 @@ describe('hooks test - failed global hook step', () => {
               name: 'global setup2',
               steps: [
                 {
-                  name: 'wrap: null',
+                  name: 'wrap',
                   steps: [],
                 },
               ],

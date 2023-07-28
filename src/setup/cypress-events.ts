@@ -266,7 +266,7 @@ export const handleCyLogEvents = (
 
   Cypress.on('log:added', async log => {
     withTry('report log:added', () => {
-      const cmdMessage = stepMessage(log.name, log.message);
+      const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
       const logName = log.name;
       const lastCommand = commands[commands.length - 1];
       const lastLogCommand = logCommands[logCommands.length - 1];
