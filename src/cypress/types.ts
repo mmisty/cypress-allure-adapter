@@ -189,9 +189,36 @@ declare namespace Cypress {
     os(value: string): T;
 
     epic(value: string): T;
+
+    /**
+     * Adds link with type tms or issue
+     * @param url = full url
+     * @param name = display text for URL in report
+     * @example
+     *  cy.allure().link('http://my.jira.com/ABD-123', 'ABD-123 description', 'issue');
+     *  cy.allure().link('http://my.jira.com/ABD-123', 'ABD-123 description', 'tms');
+     */
     link(url: string, name?: string, type?: LinkType): T;
-    tms(url: string, name?: string): T;
-    issue(url: string, name?: string): T;
+
+    /**
+     * Adds link to tms = has icon tms
+     * @param urlOrId = full url or ID of item
+     * @param name = display text for URL in report
+     * @example
+     *  cy.allure().tms('ABD-123');
+     *  cy.allure().tms('http://my.jira.com/ABD-123', 'ABD-123 description');
+     */
+    tms(urlOrId: string, name?: string): T;
+
+    /**
+     * Adds link to defect = has icon BUG
+     * @param urlOrId = full url or ID of item
+     * @param name = display text for URL in report
+     * @example
+     *  cy.allure().issue('ABD-123');
+     *  cy.allure().issue('http://my.jira.com/ABD-123', 'ABD-123 description');
+     */
+    issue(urlOrId: string, name?: string): T;
 
     feature(value: string): T;
     story(value: string): T;
