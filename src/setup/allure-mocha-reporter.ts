@@ -305,6 +305,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.HOOK_END, hook => {
+      // this event is not fired when hook fails
       debug(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
 
@@ -315,14 +316,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
       runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'hookEnded',
-        arg: {
-          title: hook.title,
-          result: hook.err ? Status.FAILED : Status.PASSED,
-          details: {
-            message: hook.err?.message,
-            trace: hook.err?.stack,
-          },
-        },
+        // since event is not fired when hook fails always passed here
+        arg: { title: hook.title, result: Status.PASSED },
       });
     })
 
@@ -411,6 +406,14 @@ export const registerMochaReporter = (ws: WebSocket) => {
       debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
 
+      if (isRootSuite(suite)) {
+        //end run
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
+
+        return;
+      }
+
       if (startedSuites.length === 1) {
         // startedSuites doesn't include root suite
         // will end later with run end since there are more
@@ -426,8 +429,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
     .on(MOCHA_EVENTS.RUN_END, () => {
       debug(`event ${MOCHA_EVENTS.RUN_END}: tests length ${tests.length}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_END}`);
-      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
-      runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
       messageManager.stop();
     });
 

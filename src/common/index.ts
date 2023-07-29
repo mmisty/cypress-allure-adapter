@@ -18,7 +18,7 @@ export class MessageQueue {
   }
 
   dequeueAll(): Message[] | undefined {
-    return this.messages.splice(0, this.messages.length - 1);
+    return this.messages.splice(0, this.messages.length);
   }
 }
 

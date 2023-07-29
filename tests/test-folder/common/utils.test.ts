@@ -75,6 +75,7 @@ describe('utils', () => {
       { data: 'added 6', id: 7 },
       { data: 'added 7', id: 8 },
       { data: 'added 8', id: 9 },
+      { data: 'added 9', id: 10 },
     ]);
   });
 });
