@@ -249,8 +249,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   const allureEvents = eventsInterfaceInstance(false);
-  registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
+  registerScreenshotHandler();
   const startedSuites: Mocha.Suite[] = [];
   const specPathLog = `reports/test-events/${Cypress.spec.name}.log`;
 

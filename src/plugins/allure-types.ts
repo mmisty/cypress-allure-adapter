@@ -1,5 +1,4 @@
-import { StatusDetails } from 'allure-js-commons';
-import LinkType = Cypress.LinkType;
+import type { StatusDetails } from 'allure-js-commons';
 
 export interface AutoScreen {
   screenshotId: string;
@@ -10,6 +9,8 @@ export interface AutoScreen {
   height: number;
   width: number;
 }
+
+export type LinkType = 'issue' | 'tms';
 
 type AllureTask = {
   specStarted: { spec: Cypress.Spec };
@@ -65,7 +66,6 @@ export type AllureTaskArgs<T extends RequestTask> = AllureTask[T] extends undefi
       // ign
     }
   : AllureTask[T];
-
 export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> };
 export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
 export enum ContentType {

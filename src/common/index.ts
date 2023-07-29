@@ -1,3 +1,5 @@
+import { ContentType } from '../../src/plugins/allure-types';
+
 export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
 export const packageLog = '[cypress-allure-adapter]';
@@ -63,3 +65,64 @@ export const basename = (path: string): string => {
 export async function delay(ms: number) {
   await new Promise(resolve => setTimeout(resolve, ms));
 }
+
+export const getContentType = (file: string): ContentType => {
+  const ext = extname(file).toLowerCase();
+
+  switch (ext) {
+    case '.png': {
+      return ContentType.PNG;
+    }
+    case '.log':
+
+    case '.txt': {
+      return ContentType.TEXT;
+    }
+
+    case '.json': {
+      return ContentType.JSON;
+    }
+
+    case '.htm':
+
+    case '.html': {
+      return ContentType.HTML;
+    }
+
+    case '.csv': {
+      return ContentType.CSV;
+    }
+
+    case '.xml': {
+      return ContentType.XML;
+    }
+
+    case '.jpeg':
+
+    case '.jpg': {
+      return ContentType.JPEG;
+    }
+
+    case '.mp4': {
+      return ContentType.MP4;
+    }
+
+    case '.svg': {
+      return ContentType.SVG;
+    }
+
+    case '.zip':
+
+    case '.pdf': {
+      return ContentType.ZIP;
+    }
+
+    case '.css': {
+      return ContentType.CSS;
+    }
+
+    default: {
+      return ContentType.ZIP;
+    }
+  }
+};

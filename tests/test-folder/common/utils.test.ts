@@ -1,5 +1,4 @@
-import { extname, delay, MessageQueue, basename } from '../../../src/common';
-import { getContentType } from '../../../src/setup/screenshots';
+import { extname, delay, MessageQueue, basename, getContentType } from '../../../src/common';
 
 describe('utils', () => {
   it('extname should get ext name', () => {

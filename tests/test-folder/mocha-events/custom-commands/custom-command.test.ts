@@ -32,7 +32,7 @@ describe('custom commands', () => {
   });
   
   Cypress.Commands.add('specialIgnoredCommand', (filePath: string) => {
-    return cy.task('nestedCommand', filePath);
+    return cy.nestedCommand(filePath);
   });
   
   describe('should pass', () => {
@@ -60,7 +60,7 @@ describe('custom commands', () => {
     });
     
     it('not log command', () => {
-      cy.get('div', { log: false }).should('eq', false);
+      cy.get('div', { log: false }).should('exist');
     });
     
     it('ignore custom command', () => {
@@ -219,7 +219,7 @@ describe('custom commands', () => {
 
       expect(steps).toEqual([
         {
-          name: 'assert: expected **<div.inner-container>** to equal **false**',
+          name: 'assert: expected **<div.inner-container>** to exist in the DOM',
           steps: [],
         },
       ]);
@@ -235,10 +235,34 @@ describe('custom commands', () => {
 
       expect(steps).toEqual([
         {
-          name: 'task: nestedCommand, nonexistingd2',
-          steps: [],
+          name: 'nestedCommand: nonexistingd2',
+          steps: [
+            {
+              name: 'returnTaskValue: nonexistingd2',
+              steps: [
+                { name: 'wait: 1', steps: [] },
+                { name: 'wait: 2', steps: [] },
+                { name: 'task: fileExists, nonexistingd2', steps: [] },
+              ],
+            },
+          ],
         },
       ]);
+    });
+
+    it('should have results', () => {
+      // should not fail run
+      expect(res.result.res).toEqual(
+        expect.objectContaining({
+          status: 'finished',
+          totalPassed: 7,
+          totalFailed: 0,
+          totalPending: 0,
+          totalSkipped: 0,
+          totalSuites: 1,
+          totalTests: 7,
+        }),
+      );
     });
   });
 });
