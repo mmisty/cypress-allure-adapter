@@ -69,7 +69,7 @@ describe.skip('startReporterServer', () => {
     ws.close();
 
     await new Promise(res => {
-      serv.serv!.close(err => {
+      serv.serv!.close(() => {
         res(true);
       });
     });
