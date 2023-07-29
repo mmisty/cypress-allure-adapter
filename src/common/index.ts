@@ -49,6 +49,17 @@ export const extname = (path: string): string => {
   return path.match(/(\.[^.\\/]+)$/)?.[0] ?? '.unknown';
 };
 
+// needed to work in browser
+export const basename = (path: string): string => {
+  const slashIndex = path.lastIndexOf('/');
+
+  if (slashIndex > 0) {
+    return path.slice(slashIndex + 1);
+  }
+
+  return path;
+};
+
 export async function delay(ms: number) {
   await new Promise(resolve => setTimeout(resolve, ms));
 }

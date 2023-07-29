@@ -1,19 +1,9 @@
 import { ContentType } from './../plugins/allure-types';
 import Debug from 'debug';
 import { logClient } from './helper';
-import { extname } from '../common';
+import { basename, extname } from '../common';
 
-const debug = logClient(Debug('cypress-allure:screenshots'));
-
-const basename = (path: string): string => {
-  const slashIndex = path.lastIndexOf('/');
-
-  if (slashIndex > 0) {
-    return path.slice(slashIndex + 1);
-  }
-
-  return path;
-};
+const deb = Debug('cypress-allure:screenshots');
 
 export const getContentType = (file: string): ContentType => {
   const ext = extname(file).toLowerCase();
@@ -78,6 +68,7 @@ export const getContentType = (file: string): ContentType => {
 
 export const registerScreenshotHandler = (allureReporter: Cypress.AllureReporter<void>) => {
   const originalHandler = (Cypress.Screenshot as any).onAfterScreenshot;
+  const debug = logClient(deb);
 
   (Cypress.Screenshot as any).onAfterScreenshot = (_$el: unknown, ...args: { path: string }[]) => {
     debug('Screenshot handler');

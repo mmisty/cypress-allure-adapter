@@ -4,7 +4,7 @@ import { registerMochaReporter, registerStubReporter } from './allure-mocha-repo
 import { startWsClient } from './websocket';
 import { packageLog } from '../common';
 
-const debug = Debug('cypress-allure:plugins');
+const debug = Debug('cypress-allure:setup');
 
 export const allureAdapterSetup = () => {
   registerCommands();
