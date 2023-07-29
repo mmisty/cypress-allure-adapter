@@ -1,7 +1,10 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-namespace
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
-  export type CommandT = { state?: string; attributes?: { name?: string; args?: any } };
+  export type CommandT = {
+    state?: string;
+    attributes?: { name?: string; args?: any; logs?: { attributes?: { consoleProps?: () => any } }[] };
+  };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../plugins/allure-types').ContentType;
@@ -90,7 +93,7 @@ declare namespace Cypress {
      * @example
      * cy.allure().endStep();
      */
-    endStep(): T; // todo status
+    endStep(status?: Status): T;
     mergeStepMaybe(name: string): T;
 
     /**

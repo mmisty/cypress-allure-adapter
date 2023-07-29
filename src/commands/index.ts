@@ -51,7 +51,7 @@ export const registerCommands = () => {
     os: (allure, name) => allure.os(name),
     startStep: (allure, name) => allure.startStep(name),
     step: (allure, name) => allure.step(name),
-    endStep: allure => allure.endStep(),
+    endStep: (allure, status) => allure.endStep(status),
     mergeStepMaybe: (allure, name) => allure.mergeStepMaybe(name),
     label: (allure, name, value) => allure.label(name, value),
     //description: (allure, markdown) => allure.description(markdown),

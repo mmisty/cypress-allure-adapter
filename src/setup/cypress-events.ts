@@ -1,4 +1,4 @@
-import type { AllureTasks, AllureTransfer, RequestTask } from '../plugins/allure-types';
+import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import Debug from 'debug';
 import { logClient } from './helper';
 import { ContentType, Status } from '../plugins/allure-types';
@@ -8,7 +8,7 @@ import { EventEmitter } from 'events';
 import CommandT = Cypress.CommandT;
 
 const debug = logClient(Debug('cypress-allure:cy-events'));
-const ARGS_TRIM_AT = 100;
+const ARGS_TRIM_AT = 80;
 
 const withTry = (message: string, callback: () => void) => {
   try {
@@ -26,14 +26,14 @@ const stepMessage = (name: string, args: string | undefined) => {
   return `${name}${argsLine}`;
 };
 
-const convertEmptyObj = (obj: Record<string, unknown>): string => {
+const convertEmptyObj = (obj: Record<string, unknown>, indent?: string): string => {
   if (obj == null) {
     return '';
   }
 
   if (Object.keys(obj).length > 0) {
     try {
-      JSON.stringify(obj);
+      return !indent ? JSON.stringify(obj) : JSON.stringify(obj, null, indent);
     } catch (e) {
       return 'could not stringify';
     }
@@ -42,42 +42,55 @@ const convertEmptyObj = (obj: Record<string, unknown>): string => {
   return '';
 };
 
-const stringify = (args: any): string => {
+const stringify = (args: any, indent?: string): string => {
   const getArr = () => {
     try {
       if (Array.isArray(args)) {
-        return args.map(a => stringify(a)).join(',');
+        return args.map(a => stringify(a, indent)).join(',');
       } else {
-        return convertEmptyObj(args);
+        return convertEmptyObj(args, indent);
       }
     } catch (err) {
       return 'could not stringify';
     }
   };
 
+  if (typeof args === 'string') {
+    try {
+      return stringify(JSON.parse(args), indent);
+    } catch (err) {
+      return `${args}`;
+    }
+  }
+
   return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean' ? `${args}` : getArr();
 };
 
-const attachRequests = (
-  emit: <T extends keyof AllureTasks>(args: AllureTransfer<T>) => void,
-  command: any,
-  state: Status,
-) => {
+const requestName = (url: string, method: string) => {
+  return `${method}, ${url}`;
+};
+
+type OneRequestConsoleProp = {
+  'Request Body': any;
+  'Request Headers': any;
+  'Request URL': string;
+  'Response Body'?: any;
+  'Response Headers'?: any;
+  'Response Status'?: number;
+};
+const COMMAND_REQUEST = 'request';
+
+const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: { compactAttachments: boolean }) => {
+  const maxParamLength = 70;
+  const compact = opts.compactAttachments ?? true;
+  const indent = compact ? undefined : ' ';
   debug(command);
+  const logsAttr = command.attributes?.logs ?? [];
+  const consoleProps = logsAttr.map(t => t.attributes?.consoleProps?.());
   debug('consoleProps:');
-  const logsAttr = command.attributes.logs as any[];
-  debug(logsAttr.map(t => t.attributes.consoleProps()));
+  debug(consoleProps);
 
-  type OneRequestConsoleProp = {
-    'Request Body': any;
-    'Request Headers': any;
-    'Request URL': string;
-    'Response Body'?: any;
-    'Response Headers'?: any;
-    'Response Status'?: number;
-  };
-
-  const logs = logsAttr.map(t => t.attributes.consoleProps()).filter(t => t.Command === 'request');
+  const logs = consoleProps.filter(t => t.Command === COMMAND_REQUEST);
 
   const getRequests = (): OneRequestConsoleProp[] | undefined => {
     if (logs.every(t => !!t.Requests)) {
@@ -97,49 +110,38 @@ const attachRequests = (
     return;
   }
 
-  requests.forEach(t => {
-    if (!t) {
-      return;
-    }
+  requests
+    .filter(r => !!r)
+    .forEach(req => {
+      const reqHeaders = { obj: req['Request Headers'], name: 'Request Headers' };
+      const reqBody = { obj: req['Request Body'], name: 'Request Body' };
+      const resHeaders = { obj: req['Response Headers'], name: 'Response Headers' };
+      const resBody = { obj: req['Response Body'], name: 'Response Body' };
+      const resStatusParam = { name: 'Response Status', value: `${req['Response Status'] ?? ''}` };
+      const reqUrlParam = { name: 'Request URL', value: `${req['Request URL'] ?? ''}` };
 
-    emit({
-      task: 'stepStarted',
-      arg: { name: `${t['Response Status'] ?? ''} ${t['Request URL'] ?? ''}`, date: Date.now() },
+      const attaches = [reqBody, reqHeaders, resBody, resHeaders].map(t => ({
+        ...t,
+        stringified: stringify(t.obj, indent),
+      }));
+
+      const shortAttaches = attaches.filter(a => a.stringified.length < maxParamLength);
+      const longAttaches = attaches.filter(a => a.stringified.length >= maxParamLength);
+
+      Cypress.Allure.parameters(
+        resStatusParam,
+        reqUrlParam,
+        ...shortAttaches.map(a => ({ name: a.name, value: a.stringified })),
+      );
+
+      if (allureAttachRequests) {
+        longAttaches
+          .filter(t => !!t.obj)
+          .forEach(attach => {
+            Cypress.Allure.attachment(attach.name, attach.stringified, ContentType.JSON);
+          });
+      }
     });
-
-    if (t['Request Body']) {
-      emit({
-        task: 'attachment',
-        arg: { name: 'Request body', content: stringify(t['Request Body']), type: ContentType.JSON },
-      });
-    }
-
-    if (t['Request Headers']) {
-      emit({
-        task: 'attachment',
-        arg: { name: 'Request headers', content: stringify(t['Request Headers']), type: ContentType.JSON },
-      });
-    }
-
-    if (t['Response Body']) {
-      emit({
-        task: 'attachment',
-        arg: { name: 'Response body', content: stringify(t['Response Body']), type: ContentType.JSON },
-      });
-    }
-
-    if (t['Response Headers']) {
-      emit({
-        task: 'attachment',
-        arg: {
-          name: 'Response Headers',
-          content: stringify(t['Response Headers']),
-          type: ContentType.JSON,
-        },
-      });
-    }
-    emit({ task: 'stepEnded', arg: { status: state, date: Date.now() } });
-  });
 };
 
 const commandParams = (command: CommandT) => {
@@ -163,7 +165,15 @@ const commandParams = (command: CommandT) => {
   const getArgs = (): string[] => {
     try {
       if (Array.isArray(commandArgs)) {
-        return commandArgs.map(t => stringify(t)).filter(x => x.trim() !== '');
+        return commandArgs
+          .map(arg => {
+            if (name === COMMAND_REQUEST && typeof arg === 'object' && arg.method && arg.url) {
+              return requestName(arg.url, arg.method);
+            }
+
+            return stringify(arg);
+          })
+          .filter(x => x.trim() !== '');
       }
 
       return [convertEmptyObj(commandArgs)];
@@ -203,6 +213,10 @@ export const handleCyLogEvents = (
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
     : false;
+
+  const allureCompactAttachmentsRequests = Cypress.env('allureCompactAttachments')
+    ? Cypress.env('allureCompactAttachments') === 'true' || Cypress.env('allureCompactAttachments') === true
+    : true;
 
   const isLogCommand = (isLog: boolean, name: string) => {
     return isLog && !ingoreAllCommands.includes(name) && !Object.keys(Cypress.Allure).includes(name);
@@ -277,17 +291,17 @@ export const handleCyLogEvents = (
         cmdMessage !== lastCommand &&
         cmdMessage !== lastLogCommand &&
         !ingoreAllCommands.includes(logName) &&
-        logName !== 'request'
+        logName !== COMMAND_REQUEST
       ) {
         logCommands.push(cmdMessage);
         debug(`step: ${cmdMessage}`);
 
-        emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
+        Cypress.Allure.startStep(cmdMessage);
 
-        if (cmdMessage.length > ARGS_TRIM_AT) {
-          emit({ task: 'attachment', arg: { name: cmdMessage, content: cmdMessage, type: ContentType.JSON } });
+        if (log.message > ARGS_TRIM_AT) {
+          Cypress.Allure.attachment(cmdMessage, log.message, ContentType.JSON);
         }
-        emit({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } });
+        Cypress.Allure.endStep(Status.PASSED);
       }
     });
   });
@@ -320,6 +334,7 @@ export const handleCyLogEvents = (
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
 
     if (name === 'screenshot') {
+      // add screenshot to report
       const screenName = command.attributes?.args[0] ?? 'anyName';
       emit({ task: 'screenshotOne', arg: { forStep: true, name: screenName } });
     }
@@ -329,20 +344,17 @@ export const handleCyLogEvents = (
     }
 
     debug(`started: ${cmdMessage}`);
+    Cypress.Allure.startStep(cmdMessage);
 
-    emit({ task: 'stepStarted', arg: { name: cmdMessage, date: Date.now() } });
     commands.push(cmdMessage);
 
     withTry('report command:attachment', () => {
-      const longArgs = args.filter(t => t.length >= ARGS_TRIM_AT);
+      const requestAndLogRequests = allureAttachRequests && name === COMMAND_REQUEST;
 
-      if (!allureAttachRequests && name !== 'request' && longArgs.length > 0) {
-        const content = longArgs.map(a => stringify(a)).join('\n');
+      if (!requestAndLogRequests && args.join(',').length > ARGS_TRIM_AT) {
+        const content = args.join('\n');
 
-        emit({
-          task: 'attachment',
-          arg: { name: cmdMessage, content, type: ContentType.JSON },
-        });
+        Cypress.Allure.attachment(cmdMessage, content, ContentType.JSON);
       }
     });
   });
@@ -371,13 +383,13 @@ export const handleCyLogEvents = (
 
     commands.pop();
 
-    if (allureAttachRequests && name === 'request') {
+    if (name === COMMAND_REQUEST) {
       withTry('report attach:requests', () => {
-        attachRequests(emit, command, state);
+        attachRequests(allureAttachRequests, command, { compactAttachments: allureCompactAttachmentsRequests });
       });
     }
 
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
-    emit({ task: 'stepEnded', arg: { status: state, date: Date.now() } });
+    Cypress.Allure.endStep(state);
   });
 };

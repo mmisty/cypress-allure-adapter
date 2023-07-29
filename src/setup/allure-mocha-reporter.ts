@@ -98,7 +98,7 @@ export const allureInterface = (
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
     // remove from interface
     mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
-    endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
+    endStep: (status?: Status) => fn({ task: 'stepEnded', arg: { status: status ?? Status.PASSED, date: Date.now() } }),
     step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
