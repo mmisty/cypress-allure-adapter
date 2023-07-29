@@ -427,6 +427,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.RUN_END, () => {
+      // note that Coverage tasks doesn't work here anymore
+      // since they use after and afterEach hooks
       debug(`event ${MOCHA_EVENTS.RUN_END}: tests length ${tests.length}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_END}`);
       messageManager.stop();
