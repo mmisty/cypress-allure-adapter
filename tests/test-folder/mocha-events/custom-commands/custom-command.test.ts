@@ -31,6 +31,10 @@ describe('custom commands', () => {
     return cy.returnTaskValue(filePath);
   });
   
+  Cypress.Commands.add('specialIgnoredCommand', (filePath: string) => {
+    return cy.task('nestedCommand', filePath);
+  });
+  
   describe('should pass', () => {
     it('tasklog', () => {
       cy.tasklog('hello');
@@ -50,13 +54,22 @@ describe('custom commands', () => {
     it('returnTaskValue', () => {
       cy.returnTaskValue('nonexistingd').should('eq', false);
     });
+    
     it('nestedCommand', () => {
       cy.nestedCommand('nonexistingd2').should('eq', false);
+    });
+    
+    it('not log command', () => {
+      cy.get('div', { log: false }).should('eq', false);
+    });
+    
+    it('ignore custom command', () => {
+      cy.specialIgnoredCommand('nonexistingd2');
     });
   });
 `,
     ],
-    { allureWrapCustomCommands: 'true' },
+    { allureWrapCustomCommands: 'true', allureSkipCommands: 'specialIgnoredCommand' },
   );
 
   describe('check results', () => {
@@ -192,6 +205,38 @@ describe('custom commands', () => {
               ],
             },
           ],
+        },
+      ]);
+    });
+
+    it('should have not have steps with log false', () => {
+      const tests = resFixed.filter(t => t.name === 'not log command');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'assert: expected **<div.inner-container>** to equal **false**',
+          steps: [],
+        },
+      ]);
+    });
+
+    it('should ignore custom command skipped with allureSkipCommands', () => {
+      const tests = resFixed.filter(t => t.name === 'ignore custom command');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'task: nestedCommand, nonexistingd2',
+          steps: [],
         },
       ]);
     });

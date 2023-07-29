@@ -1,10 +1,9 @@
 import Debug from 'debug';
 import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
-import { logClient, delay } from './helper';
+import { logClient } from './helper';
 
 const debug = logClient(Debug('cypress-allure:ws-client'));
-const CONNECTION_TIMEOUT_MS = 10000;
 const PROCESS_INTERVAL_MS = 10;
 
 export const startWsClient = (): WebSocket | undefined => {
@@ -18,7 +17,6 @@ export const startWsClient = (): WebSocket | undefined => {
     return undefined;
   }
 
-  const started = Date.now();
   const wsPathFixed = `${port}/${wsPath}`.replace(/\/\//g, '/');
   const ws = new WebSocket(`ws://localhost:${wsPathFixed}`);
 
@@ -26,12 +24,6 @@ export const startWsClient = (): WebSocket | undefined => {
     ws.send('WS opened');
     debug(`${packageLog} Opened ws connection`);
   };
-
-  Cypress.on('window:load', async () => {
-    while (ws.readyState !== ws.OPEN && Date.now() - started < CONNECTION_TIMEOUT_MS) {
-      await delay(1);
-    }
-  });
 
   return ws;
 };
