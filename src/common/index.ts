@@ -7,9 +7,6 @@ type Message = { data: any; id: number };
 export class MessageQueue {
   private id = 0;
   private messages: Message[] = [];
-  length() {
-    return this.messages.length;
-  }
 
   enqueue(data: any) {
     this.id++;
