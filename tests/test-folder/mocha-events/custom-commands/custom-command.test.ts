@@ -1,4 +1,4 @@
-import { createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import { checkCyResults, createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands', () => {
@@ -252,17 +252,15 @@ describe('custom commands', () => {
 
     it('should have results', () => {
       // should not fail run
-      expect(res.result.res).toEqual(
-        expect.objectContaining({
-          status: 'finished',
-          totalPassed: 7,
-          totalFailed: 0,
-          totalPending: 0,
-          totalSkipped: 0,
-          totalSuites: 1,
-          totalTests: 7,
-        }),
-      );
+      checkCyResults(res?.result?.res, {
+        status: 'finished',
+        totalPassed: 7,
+        totalFailed: 0,
+        totalPending: 0,
+        totalSkipped: 0,
+        totalSuites: 1,
+        totalTests: 7,
+      });
     });
   });
 });

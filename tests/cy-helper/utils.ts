@@ -144,6 +144,14 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
+export const checkCyResults = (
+  res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined,
+  expected: Partial<CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult>,
+) => {
+  expect(res).toEqual(expect.objectContaining(expected));
+};
+
+// eslint-disable-next-line jest/no-export
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,

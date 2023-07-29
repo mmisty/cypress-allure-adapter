@@ -1,4 +1,4 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { checkCyResults, createResTest2 } from '../../../cy-helper/utils';
 import { existsSync } from 'fs';
 
 describe('plugin events when no allure', () => {
@@ -25,17 +25,15 @@ describe('hello suite', () => {
     { allure: 'false' },
   );
   it('should be ok', () => {
-    expect(res.result.res).toEqual(
-      expect.objectContaining({
-        status: 'finished',
-        totalPassed: 0,
-        totalFailed: 1,
-        totalPending: 0,
-        totalSkipped: 0,
-        totalSuites: 1,
-        totalTests: 1,
-      }),
-    );
+    checkCyResults(res?.result?.res, {
+      status: 'finished',
+      totalPassed: 0,
+      totalFailed: 1,
+      totalPending: 0,
+      totalSkipped: 0,
+      totalSuites: 1,
+      totalTests: 1,
+    });
   });
 
   it('should not have events registered', async () => {
