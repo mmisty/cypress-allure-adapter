@@ -96,11 +96,12 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endGroup();
       log('suiteEnded');
     },
-    globalHook: (arg: AllureTaskArgs<'globalHook'>) => {
+
+    /* globalHook: (arg: AllureTaskArgs<'globalHook'>) => {
       log(`globalHook ${JSON.stringify(arg)}`);
       allureReporter.addGlobalHooks();
       log('globalHook');
-    },
+    },*/
 
     testStarted(arg: AllureTaskArgs<'testStarted'>) {
       log(`testStarted ${JSON.stringify(arg)}`);
@@ -320,7 +321,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('afterSpec');
     },
 
-    flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
+    /*flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
       const allFiles = sync(`${allureResults}/*`);
       debug('FLUSH spec');
       let doneFiles = 0;
@@ -358,6 +359,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         }
         await delay(100);
       }
-    },
+    },*/
   };
 };

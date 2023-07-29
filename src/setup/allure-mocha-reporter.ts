@@ -252,7 +252,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
   const startedSuites: Mocha.Suite[] = [];
-  const specPathLog = `reports/${Cypress.spec.name}.log`;
+  const specPathLog = `reports/test-events/${Cypress.spec.name}.log`;
 
   if (isJestTest()) {
     messageManager.message({ task: 'delete', arg: { path: specPathLog } });
@@ -287,24 +287,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
         task: 'suiteStarted',
         arg: { title: suite.title, fullTitle: suite.fullTitle(), file: suite.file },
       });
-    })
-
-    .on(MOCHA_EVENTS.SUITE_END, suite => {
-      debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
-      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
-
-      if (startedSuites.length === 1) {
-        // will end later with run end
-        return;
-      }
-
-      if (isRootSuite(suite)) {
-        runner.emit(CUSTOM_EVENTS.TASK, { task: 'globalHook', arg: {} });
-
-        return;
-      }
-      startedSuites.pop();
-      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
     })
 
     .on(MOCHA_EVENTS.HOOK_START, hook => {
@@ -419,9 +401,26 @@ export const registerMochaReporter = (ws: WebSocket) => {
         },
       });
     })
+
     .on(MOCHA_EVENTS.TEST_END, test => {
       debug(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
+    })
+
+    .on(MOCHA_EVENTS.SUITE_END, suite => {
+      debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
+
+      if (startedSuites.length === 1) {
+        // startedSuites doesn't include root suite
+        // will end later with run end since there are more
+        // events after suite finished
+
+        return;
+      }
+
+      startedSuites.pop();
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
     })
 
     .on(MOCHA_EVENTS.RUN_END, () => {
@@ -429,7 +428,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_END}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
-
       messageManager.stop();
     });
 
@@ -453,22 +451,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, hook => {
       debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
-      // const i = 0;
 
       for (const sui of hook.parent?.suites) {
         createTestsCallb = () => createTestsForSuite(runner, hook, sui);
-
-        /*sui.eachTest((test: Mocha.Test) => {
-          i++;
-
-          if (test) {
-            runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-            runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
-            runner.emit(CUSTOM_EVENTS.TEST_END, i === 1 ? hook : { ...test, err: hook.err });
-          }
-        });*/
-
-        //runner.emit(MOCHA_EVENTS.SUITE_END, sui);
       }
     })
 
@@ -525,23 +510,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
         },
       });
     });
-
-  /*Cypress.on('test:before:run', async (_t, test) => {
-    const started = Date.now();
-
-    // cypress test:before:run event fires for first test in suite along with
-    // before hook event, need to wait until suite starts
-    while (startedSuites.length === 0 && !runEnded) {
-      if (Date.now() - started >= Cypress.config('defaultCommandTimeout')) {
-        debug('timeout waiting suite starts');
-        break;
-      }
-      await delay(1);
-    }
-
-    runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-    runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
-    });*/
 
   if (isJestTest()) {
     Cypress.on('test:before:run', (_t, test) => {

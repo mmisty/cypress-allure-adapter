@@ -23,9 +23,9 @@ type AllureTask = {
   hookEnded: { title: string; date?: number; result: Status; details?: StatusDetails };
   // currentSpec: { spec: Cypress.Spec };
   suiteEnded: undefined;
-  flushWatcher: undefined;
+  // flushWatcher: undefined;
   deleteResults: undefined;
-  globalHook: undefined;
+  // globalHook: undefined;
   stepEnded: { status: Status; date?: number; details?: StatusDetails };
   mergeStepMaybe: { name: string };
   // stepEndedAll: { status: string; date?: number; details?: StatusDetails };

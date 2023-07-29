@@ -215,7 +215,7 @@ export const createResTest2 = (
 
   return {
     watch: env.allureResultsWatchPath,
-    specs: specPaths.map(t => `${process.cwd()}/reports/${basename(t)}.log`),
+    specs: specPaths.map(t => `${process.cwd()}/reports/test-events/${basename(t)}.log`),
     result: result,
   };
 };
