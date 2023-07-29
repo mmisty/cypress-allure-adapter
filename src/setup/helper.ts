@@ -1,4 +1,4 @@
-import Debug, { Debugger } from 'debug';
+import { Debugger } from 'debug';
 
 export const logClient = (debug: Debugger) => {
   if (!Cypress.env('DEBUG')) {
@@ -22,10 +22,3 @@ export const logClient = (debug: Debugger) => {
     }
   };
 };
-
-const log = logClient(Debug('cypress-allure:delay'));
-
-export async function delay(ms: number, ...messages: string[]) {
-  log([...messages, messages.length > 0 ? ':' : '', `DELAY ${ms.toString()} ms`]);
-  await new Promise(resolve => setTimeout(resolve, ms));
-}
