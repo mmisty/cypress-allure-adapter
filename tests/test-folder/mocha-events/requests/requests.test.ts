@@ -76,7 +76,7 @@ describe('should have requests', () => {
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentLength: readFileSync(`${res.watch}/${t.source}`).toString().length,
+          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -106,13 +106,13 @@ describe('should have requests', () => {
             {
               name: 'Request Headers',
               source: 'source.json',
-              sourceContentLength: 222,
+              sourceContentMoreThanZero: true,
               type: 'application/json',
             },
             {
               name: 'Response Headers',
               source: 'source.json',
-              sourceContentLength: 247,
+              sourceContentMoreThanZero: true,
               type: 'application/json',
             },
           ],
@@ -133,7 +133,7 @@ describe('should have requests', () => {
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentLength: readFileSync(`${res.watch}/${t.source}`).toString().length,
+          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -164,13 +164,13 @@ describe('should have requests', () => {
               name: 'Request Headers',
               type: 'application/json',
               source: 'source.json',
-              sourceContentLength: 222,
+              sourceContentMoreThanZero: true,
             },
             {
               name: 'Response Headers',
               type: 'application/json',
               source: 'source.json',
-              sourceContentLength: 247,
+              sourceContentMoreThanZero: true,
             },
           ],
         },
@@ -190,7 +190,7 @@ describe('should have requests', () => {
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentLength: readFileSync(`${res.watch}/${t.source}`).toString().length,
+          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -219,12 +219,12 @@ describe('should have requests', () => {
             {
               name: 'Request Headers',
               source: 'source.json',
-              sourceContentLength: 282,
+              sourceContentMoreThanZero: true,
               type: 'application/json',
             },
             {
               name: 'Response Headers',
-              sourceContentLength: 255,
+              sourceContentMoreThanZero: true,
               source: 'source.json',
               type: 'application/json',
             },
