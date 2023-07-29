@@ -1,9 +1,9 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFileSync, copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
+import { appendFileSync, copyFile, existsSync, mkdirSync, rm, rmSync, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
-import glob, { sync } from 'fast-glob';
+import glob from 'fast-glob';
 import { basename, dirname } from 'path';
 
 const debug = Debug('cypress-allure:proxy');
