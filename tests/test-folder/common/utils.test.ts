@@ -1,14 +1,23 @@
 import { extname, delay, MessageQueue } from '../../../src/common';
 
 describe('utils', () => {
-  it('extname', () => {
+  it('extname should get ext name', () => {
     expect(extname('ssds.tct')).toEqual('.tct');
+  });
+  it('extname - should get when folder', () => {
+    expect(extname('folder/ssds.tct')).toEqual('.tct');
+  });
+  it('extname - should return unknown when no dots', () => {
+    expect(extname('tct')).toEqual('.unknown');
+  });
+  it('extname - should return unknown when no dots with folder', () => {
+    expect(extname('hello.world/tct')).toEqual('.unknown');
   });
 
   it('delay', async () => {
     const started = Date.now();
     await delay(100);
-    expect(Date.now() - started).toBeGreaterThan(100);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(100);
   });
 
   it('messages should be dequeued in the same order as added', async () => {
