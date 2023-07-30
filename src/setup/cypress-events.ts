@@ -1,5 +1,4 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
-import Debug from 'debug';
 import { logClient } from './helper';
 import { ContentType, Status } from '../plugins/allure-types';
 import { packageLog } from '../common';

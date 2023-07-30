@@ -1,4 +1,3 @@
-import Debug from 'debug';
 import { logClient } from './helper';
 import { basename, getContentType } from '../common';
 
