@@ -186,7 +186,7 @@ export const createResTest2 = (
     allureResultsWatchPath: `${storeResDir}/watch`,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
-    COVERAGE: process.env.COVERAGE === 'true' ? 'true' : 'false',
+    COVERAGE: `${process.env.COVERAGE === 'true'}`,
     JEST_TEST: 'true',
     ...(envConfig || {}),
   };

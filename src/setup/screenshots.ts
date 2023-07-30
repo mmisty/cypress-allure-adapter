@@ -2,7 +2,7 @@ import Debug from 'debug';
 import { logClient } from './helper';
 import { basename, getContentType } from '../common';
 
-const deb = Debug('cypress-allure:screenshots');
+const deb = 'cypress-allure:screenshots';
 
 export const registerScreenshotHandler = () => {
   const originalHandler = (Cypress.Screenshot as any).onAfterScreenshot;

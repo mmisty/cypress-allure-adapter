@@ -1,12 +1,12 @@
-import Debug from 'debug';
 import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 
-const debug = logClient(Debug('cypress-allure:ws-client'));
+const dbg = 'cypress-allure:ws-client';
 const PROCESS_INTERVAL_MS = 10;
 
 export const startWsClient = (): WebSocket | undefined => {
+  const debug = logClient(dbg);
   const port = Cypress.env(ENV_WS);
 
   if (!port) {
@@ -39,6 +39,8 @@ export const createMessage = (ws: WebSocket): MessageManager => {
   let idInterval: NodeJS.Timer;
 
   const process = () => {
+    const debug = logClient(dbg);
+
     if (ws.readyState !== ws.OPEN) {
       debug('ws connection is not opened yet');
 

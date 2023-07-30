@@ -1,4 +1,3 @@
-import Debug from 'debug';
 import { createMessage, MessageManager } from './websocket';
 import { handleCyLogEvents } from './cypress-events';
 import {
@@ -17,7 +16,7 @@ import { tmsIssueUrl } from '../common';
 import { EventEmitter } from 'events';
 import AllureEvents = Cypress.AllureEvents;
 
-const debug = logClient(Debug('cypress-allure:mocha-reporter'));
+const dbg = 'cypress-allure:mocha-reporter';
 // this is running in Browser
 const TEST_PENDING_DETAILS = 'Test ignored';
 
@@ -73,6 +72,8 @@ const allureEventsEmitter = new EventEmitter();
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
+    const debug = logClient(dbg);
+
     if (
       isStub &&
       ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START].includes(event)
@@ -253,6 +254,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   registerScreenshotHandler();
   const startedSuites: Mocha.Suite[] = [];
   const specPathLog = `reports/test-events/${Cypress.spec.name}.log`;
+  const debug = logClient(dbg);
 
   if (isJestTest()) {
     messageManager.message({ task: 'delete', arg: { path: specPathLog } });

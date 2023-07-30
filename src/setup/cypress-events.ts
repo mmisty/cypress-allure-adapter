@@ -7,7 +7,7 @@ import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
 import CommandT = Cypress.CommandT;
 
-const debug = logClient(Debug('cypress-allure:cy-events'));
+const dbg = 'cypress-allure:cy-events';
 const ARGS_TRIM_AT = 80;
 
 const withTry = (message: string, callback: () => void) => {
@@ -81,6 +81,7 @@ type OneRequestConsoleProp = {
 const COMMAND_REQUEST = 'request';
 
 const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: { compactAttachments: boolean }) => {
+  const debug = logClient(dbg);
   const maxParamLength = 70;
   const compact = opts.compactAttachments ?? true;
   const indent = compact ? undefined : ' ';
@@ -203,6 +204,7 @@ export const handleCyLogEvents = (
   events: EventEmitter,
   config: { wrapCustomCommands: boolean; ignoreCommands: string[] },
 ) => {
+  const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands } = config;
   const ingoreAllCommands = [...ignoreCommands, 'should', 'then', 'allure'];
   const customCommands: string[] = [];
