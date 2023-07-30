@@ -300,7 +300,7 @@ export const handleCyLogEvents = (
         Cypress.Allure.startStep(cmdMessage);
 
         if (log.message > ARGS_TRIM_AT) {
-          Cypress.Allure.attachment(cmdMessage, log.message, ContentType.JSON);
+          Cypress.Allure.attachment(`${cmdMessage} args`, log.message, ContentType.JSON);
         }
         Cypress.Allure.endStep(Status.PASSED);
       }
@@ -355,7 +355,7 @@ export const handleCyLogEvents = (
       if (!requestAndLogRequests && args.join(',').length > ARGS_TRIM_AT) {
         const content = args.join('\n');
 
-        Cypress.Allure.attachment(cmdMessage, content, ContentType.JSON);
+        Cypress.Allure.attachment(`${cmdMessage} args`, content, ContentType.JSON);
       }
     });
   });
