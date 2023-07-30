@@ -52,7 +52,7 @@ export const createMessage = (ws: WebSocket): MessageManager => {
       return;
     }
 
-    debug(`processing events ${messages?.length}:`);
+    debug(`processing events ${messages.length}:`);
     messages.forEach(msg => {
       debug(`${msg.data?.task} : ${msg.data?.arg?.title ?? msg.data?.arg?.name}`);
     });
