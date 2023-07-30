@@ -9,6 +9,7 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     'jest/no-standalone-expect': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
+    'jest/expect-expect': 'off',
     'no-restricted-imports': [
       'error',
       {
