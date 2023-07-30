@@ -287,7 +287,18 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         const results = glob.sync(`${allureResults}/*.*`);
 
         if (!existsSync(allureResultsWatch)) {
-          mkdirSync(allureResultsWatch);
+          const mkdirSyncSithTry = (dir: string) => {
+            for (let i = 0; i < 5; i++) {
+              try {
+                mkdirSync(dir);
+
+                return;
+              } catch (err) {
+                // ignore
+              }
+            }
+          };
+          mkdirSyncSithTry(allureResultsWatch);
         }
         log(`allureResults: ${allureResults}`);
         log(`allureResultsWatch: ${allureResultsWatch}`);
