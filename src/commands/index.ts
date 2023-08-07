@@ -62,8 +62,10 @@ export const registerCommands = () => {
   };
 
   for (const command in childCommands) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cmd = command as keyof Chainable<any>;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Cypress.Commands.add(cmd, { prevSubject: true }, (...args: any[]) => {
       const [allure, ...params] = args;
 

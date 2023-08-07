@@ -41,6 +41,7 @@ const convertEmptyObj = (obj: Record<string, unknown>, indent?: string): string 
   return '';
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const stringify = (args: any, indent?: string): string => {
   const getArr = () => {
     try {
@@ -70,11 +71,11 @@ const requestName = (url: string, method: string) => {
 };
 
 type OneRequestConsoleProp = {
-  'Request Body': any;
-  'Request Headers': any;
+  'Request Body': unknown;
+  'Request Headers': unknown;
   'Request URL': string;
-  'Response Body'?: any;
-  'Response Headers'?: any;
+  'Response Body'?: unknown;
+  'Response Headers'?: unknown;
   'Response Status'?: number;
 };
 const COMMAND_REQUEST = 'request';
@@ -146,6 +147,7 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
 
 const commandParams = (command: CommandT) => {
   const name = command.attributes?.name ?? 'no name';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const commandArgs = command.attributes?.args as any;
   const state = (command.state ?? Status.PASSED) as Status;
 
@@ -226,6 +228,7 @@ export const handleCyLogEvents = (
   const wrapCustomCommandsFn = () => {
     const origAdd = Cypress.Commands.add;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Cypress.Commands.add = (...args: any[]) => {
       const fnName = args[0];
       const fn = typeof args[1] === 'function' ? args[1] : args[2];
@@ -239,7 +242,9 @@ export const handleCyLogEvents = (
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newFn = (...fnargs: any[]) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const currentCmd = (Cypress as any).state?.().current;
         events.emit('cmd:started:tech', currentCmd, true);
 
@@ -247,6 +252,7 @@ export const handleCyLogEvents = (
 
         if (res?.should) {
           // cannot use cy.allure().endStep() as it will change the subject
+          // should command does not change subject
           res.should(() => {
             events.emit('cmd:ended:tech', currentCmd, true);
           });

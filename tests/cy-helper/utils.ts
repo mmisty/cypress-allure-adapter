@@ -103,6 +103,7 @@ export const createResTest = (fileName: string, envConfig?: Record<string, strin
   };
 
   it('create results', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const g = require('fast-glob');
     const file = g.sync(`${cwd}/integration/e2e/**/${testname}`);
     // eslint-disable-next-line @typescript-eslint/no-var-requires

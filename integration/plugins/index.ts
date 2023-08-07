@@ -55,6 +55,7 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   let server: Server;
 
   on('task', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log: (...args: any[]) => {
       console.log(...args);
 

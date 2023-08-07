@@ -9,7 +9,9 @@ describe.skip('startReporterServer', () => {
   const start = async (debug: boolean, env: any): Promise<{ serv: undefined | WebSocketServer }> => {
     process.env.DEBUG = debug ? 'cypress-allure*' : undefined;
     // require to enable DEBUG logging
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const startReporterServer = require('../../../src/plugins/server').startReporterServer;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const allureTasks = require('../../../src/plugins/allure').allureTasks;
 
     const reporter = allureTasks({

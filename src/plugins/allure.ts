@@ -178,8 +178,8 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       if (allureReporter.currentTest) {
         allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
-        allureReporter.currentTest.status = arg.result as any;
-        allureReporter.currentTest.detailsMessage = arg.details?.message as any;
+        allureReporter.currentTest.status = arg.result;
+        allureReporter.currentTest.detailsMessage = arg.details?.message;
       }
       log('testResult');
     },

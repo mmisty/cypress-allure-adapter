@@ -3,6 +3,7 @@ declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type CommandT = {
     state?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     attributes?: { name?: string; args?: any; logs?: { attributes?: { consoleProps?: () => any } }[] };
   };
   export type StatusDetails = import('allure-js-commons').StatusDetails;

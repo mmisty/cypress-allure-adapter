@@ -39,6 +39,7 @@ const socketLogic = (port: number, sockserver: WebSocketServer | undefined, task
 
       const parseData = (data: RawData) => {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return JSON.parse(data.toString()) as any;
         } catch (e) {
           // console.log((e as Error).message);
@@ -95,6 +96,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boolean => {
   if (!data || !data.task) {
     log(`Will not run task - not data or task field:${JSON.stringify(data)}`);

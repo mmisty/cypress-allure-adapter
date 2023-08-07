@@ -4,3 +4,4 @@
 /node_modules
 /allure-results
 /allure-report
+/integration/e2e/temp

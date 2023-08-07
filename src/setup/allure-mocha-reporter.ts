@@ -94,7 +94,7 @@ export const allureInterface = (
   return {
     writeEnvironmentInfo: (info: EnvironmentInfo) => fn({ task: 'writeEnvironmentInfo', arg: { info } }),
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
-    writeCategoriesDefinitions: (categories: Category[]) =>
+    writeCategoriesDefinitions: (categories: Category[] | string) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
     // remove from interface
@@ -157,10 +157,12 @@ export const registerStubReporter = () => {
 };
 
 const isBeforeAllHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook' && (test as any).hookName === 'before all';
 };
 
 const isBeforeEachHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook' && (test as any).hookName === 'before each';
 };
 
@@ -242,6 +244,7 @@ const registerTestEvents = (messageManager: MessageManager, specPathLog: string)
 
 export const registerMochaReporter = (ws: WebSocket) => {
   const tests: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   runner.setMaxListeners(20);
   const messageManager = createMessage(ws);
@@ -488,6 +491,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
         task: 'testResult',
         arg: {
           title: test?.title,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           id: (test as any)?.id,
           result: convertState('failed'),
           details: { message: test?.err?.message, trace: test?.err?.stack },

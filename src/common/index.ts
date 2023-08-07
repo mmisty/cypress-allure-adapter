@@ -4,12 +4,14 @@ export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
 export const packageLog = '[cypress-allure-adapter]';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Message = { data: any; id: number };
 
 export class MessageQueue {
   private id = 0;
   private messages: Message[] = [];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enqueue(data: any) {
     this.id++;
     const message: Message = { data, id: this.id };
