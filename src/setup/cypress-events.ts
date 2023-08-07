@@ -203,11 +203,11 @@ const createEmitEvent =
 export const handleCyLogEvents = (
   runner: Mocha.Runner,
   events: EventEmitter,
-  config: { wrapCustomCommands: boolean; ignoreCommands: string[] },
+  config: { wrapCustomCommands: boolean; ignoreCommands: () => string[] },
 ) => {
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands } = config;
-  const ingoreAllCommands = [...ignoreCommands, 'should', 'then', 'allure'];
+  const ingoreAllCommands = () => [...ignoreCommands(), 'should', 'then', 'allure'];
   const customCommands: string[] = [];
   const commands: string[] = [];
   const logCommands: string[] = [];
@@ -222,7 +222,7 @@ export const handleCyLogEvents = (
     : true;
 
   const isLogCommand = (isLog: boolean, name: string) => {
-    return isLog && !ingoreAllCommands.includes(name) && !Object.keys(Cypress.Allure).includes(name);
+    return isLog && !ingoreAllCommands().includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
 
   const wrapCustomCommandsFn = () => {
@@ -234,7 +234,7 @@ export const handleCyLogEvents = (
       const fn = typeof args[1] === 'function' ? args[1] : args[2];
       const opts = typeof args[1] === 'object' ? args[1] : undefined;
 
-      if (!fnName || typeof fnName !== 'string' || ingoreAllCommands.includes(fnName)) {
+      if (!fnName || typeof fnName !== 'string' || ingoreAllCommands().includes(fnName)) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         origAdd(...args);
@@ -297,7 +297,7 @@ export const handleCyLogEvents = (
       if (
         cmdMessage !== lastCommand &&
         cmdMessage !== lastLogCommand &&
-        !ingoreAllCommands.includes(logName) &&
+        !ingoreAllCommands().includes(logName) &&
         logName !== COMMAND_REQUEST
       ) {
         logCommands.push(cmdMessage);

@@ -125,9 +125,9 @@ export const allureInterface = (
 
     link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
     tms: (url: string, name?: string) =>
-      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'tms'), name, type: 'tms' } }),
+      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'tms'), name: name ?? url, type: 'tms' } }),
     issue: (url: string, name?: string) =>
-      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name, type: 'issue' } }),
+      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name: name ?? url, type: 'issue' } }),
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
     tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: LabelName.TAG, value: tag } })),
     severity: (value: Cypress.Severity) => fn({ task: 'label', arg: { name: LabelName.SEVERITY, value } }),
@@ -164,6 +164,11 @@ const isBeforeAllHook = (test: Mocha.Test) => {
 const isBeforeEachHook = (test: Mocha.Test) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook' && (test as any).hookName === 'before each';
+};
+
+const isHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (test as any).type === 'hook';
 };
 
 const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
@@ -377,7 +382,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
       // hook end not fired when hook fails
-      runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+      if (isHook(test)) {
+        runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+      }
 
       return;
     })
@@ -538,7 +545,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   });
 
   handleCyLogEvents(runner, allureEventsEmitter, {
-    ignoreCommands: (Cypress.env('allureSkipCommands') ?? '').split(','),
+    ignoreCommands: () => (Cypress.env('allureSkipCommands') ?? '').split(','),
     wrapCustomCommands:
       Cypress.env('allureWrapCustomCommands') === undefined ||
       Cypress.env('allureWrapCustomCommands') === 'true' ||

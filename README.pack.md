@@ -1,95 +1,611 @@
 # cypress-allure-adapter
 
 This is allure adapter for Cypress providing realtime results. 
-It is useful when using Allure TestOps - so you can watch tests execution.
-It adds tests, steps, suites and screenshots during tests execution.
+It is useful when using Allure TestOps - so you can watch tests execution. It adds tests, steps, suites and screenshots during tests execution.
 
+In the same time you can generate [Allure Report](https://github.com/allure-framework/allure2) from these results and it will have all necessary fields.
 
 
 Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.com/package/@shelex/cypress-allure-plugin)
 
+## Table of Contents
+
+1. [Installation](#installation)
+1. [Environment variables](#environment-variables)
+2. [To see allure report](#to-see-report)
+3. [Allure Interface](#allure-interface)
+4. [Advanced](#advanced)
+    - [after:spec event](#afterspec-event)
+    - [Before run](#before-run)
+    - [Start/End test events](#startend-test-events)
+5. [Troubleshooting](#troubleshooting)
+6. [Change log](#change-log)
 
 ## Installation
 
 Install adapter by `npm i -D @mmisty/cypress-allure-adapter`
 
-Setup: 
+**Setup**: 
 
-1. **Update support**: add `allureAdapterSetup(); ` in your `support/index.ts` file (or `e2e.ts` file)
+### 1. Update support
+
+Add `allureAdapterSetup(); ` in your `support/index.ts` file (or `e2e.ts` file)
    ```javascript
    import { allureAdapterSetup } from '@mmisty/cypress-allure-adapter';
    
    allureAdapterSetup();
    ```
-   
-2. **Update plugins**: add `configureAllureAdapterPlugins(on, config);` into your plugins file:
 
-   ```javascript
-   // cypress.config.ts
-   import { configureAllureAdapterPlugins } from '@mmisty/cypress-allure-adapter/plugins';
-   
-   export default defineConfig({
-     e2e: {
-       setupNodeEvents(on, config) {
-         configureAllureAdapterPlugins(on, config);
-         
-         return config;
-       },
-       // ...
-     }
-   });
-   ```
-3. **Update environment variables**: in `cypress.config.ts` or in your env files: 
-    - `allure` => `true` - will enable reporting
-    - `allureResults` => `allure-results` - path to allure-results (default 'allure-results')
-    - `allureResultsWatchPath` => path to folder where results will be moved after spec is 
-   done (if you use Allure TestOps specify this path to watch), but default this is not specified
-   When you use this path tests will start to appear in Allure TestOps only after spec is finished. If not use this with Allure 
-   TestOps then some videos may not be uploaded. Will be uploaded only for 1 test from spec.
+### 2. Update plugins (setupNodeEvents)
+Add `configureAllureAdapterPlugins(on, config);` into your plugins file:
 
-    - `allureCleanResults` => `true` - will remove allure results on cypress start
-    - `allureSkipCommands` => `wrapNoLog,sync` - commands that will not be logged, separated with comma
-    - `allureAttachRequests` => `true` - attach request/response body and status
-    - `allureAddVideoOnPass` => `true` - attach video for all tests (including passed), otherwise attach only for failed, broken, unknown
-    - `allureShowDuplicateWarn` => `true` - show console warnings about test duplicates, default false
-    - `allureWrapCustomCommands` => `true` - (default true) - will wrap custom commands, so custom command will have child steps in report
-    - `tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this.
-      Also link can be specified with `*` - it will be replced with id.
-     ```javascript
-        // cypress.config.ts 
-        env: {
-          tmsPrefix: 'http://jira.com' 
-          issuePrefix: 'http://jira.com/PROJECT-1/*/browse' 
-        }  
-    ```
-    ```javascript
-        // test.spec.ts
-        cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
-        cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
-     ```
-   EXAMPLE: 
-      ```
-      env: {
-         allure: 'true',
-         allureResults: 'allure-results',
-         allureCleanResults: 'true',
-         allureSkipCommands: 'wrapNoLog,sync', // separated comma
-         // ... other env varialbles
-      }
-      ```
+```javascript
+// cypress.config.ts
+import { configureAllureAdapterPlugins } from '@mmisty/cypress-allure-adapter/plugins';
 
-4. no need to setup types - should be done automatically
+export default defineConfig({
+  e2e: {
+    setupNodeEvents(on, config) {
+      configureAllureAdapterPlugins(on, config);
+      
+      return config;
+    },
+    // ...
+  }
+});
+```
+
+### 3. Update environment variables
+In `cypress.config.ts` or in your environment files set `allure` env var to `true`.
+
+See other [environment variables](#environment-variables)
+
+### 4. Types
+No need to setup types - should be done automatically
+
+That's it! :tada:
+
+## Environment variables
+
+| Variable                  | Value / Example                                                    | Default          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|---------------------------|--------------------------------------------------------------------|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allure                    | boolean: true/false                                                | false            | Enables reporting                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| allureResults             | string: `allure-results`                                           | `allure-results` | Path to allure results                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| allureResultsWatchPath    | string: `allure-results/watch`                                     | undefined        | This is needed when using Allure TestOps: <br/>path to folder where results will be moved after all tests from spec are executed. <br/>This path is what you need to watch when using Allure TestOps, but default this is not specified. When you use this path test results will start to appear in Allure TestOps only after spec is finished. <br/>If do not use this with Allure TestOps some videos may not be uploaded - videos will be uploaded only for 1 test from spec file. |
+| allureCleanResults        | boolean: true/false                                                | false            | Will remove allure results on cypress start (it will be done once, after plugins are loaded)                                                                                                                                                                                                                                                                                                                                                                                           |
+| allureSkipCommands        | string - command separated with comma: `screenshot,wait`           | undefined        | Will not log specified commands as steps in allure report                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| allureAttachRequests      | boolean: true/false                                                | false            | Attach request/response body and status as files to request step                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| allureCompactAttachments  | boolean: true/false                                                | true             | Stringify requests attachments with spaces or not                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| allureAddVideoOnPass      | boolean: true/false                                                | false            | When true - will attach video for all tests (including passed), otherwise will attach videos only for failed, broken, unknown                                                                                                                                                                                                                                                                                                                                                          |
+| allureWrapCustomCommands  | boolean: true/false                                                | true             | will wrap custom commands, so custom command will have child steps in report                                                                                                                                                                                                                                                                                                                                                                                                           |
+| tmsPrefix                 | string: `http://jira.com` or `http://jira.com/PROJECT-1/*/browse`  | undefined        | You can specify prefix to tms using this.  <br/>Also link can be specified with `*` - it will be replced with id.                                                                                                                                                                                                                                                                                                                                                                      |
+| issuePrefix               | string: `http://jira.com` or `http://jira.com/PROJECT-1/*/browse`  | undefined        | The same as tmsPrefix - for issue                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| allureShowDuplicateWarn   | boolean: true/false                                                | false            | Show console warnings about test duplicates.                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+
+### tmsPrefix and issuePrefix
+`tmsPrefix` and  `issuePrefix`  - you can specify prefix to tms using this.
+  Also link can be specified with `*` - it will be replced with id.
+  ```javascript
+     // cypress.config.ts 
+     env: {
+       tmsPrefix: 'http://jira.com' 
+       issuePrefix: 'http://jira.com/PROJECT-1/*/browse' 
+     }  
+ ```
+ ```javascript
+     // test.spec.ts
+     cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
+     cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
+  ```
+  
 
 ### To see report
-To see Allure report locally after tests were executed install `allure-commandline`: `npm i -D allure-commandline`
+In order to see Allure Report you need to install the [CLI](https://github.com/allure-framework/allure2#download).
 
-and run command `allure serve`
+For nodejs you can use [allure-commandline](https://www.npmjs.com/package/allure-commandline):
+
+`npm i -D allure-commandline`
+
+After installed `allure` command will be available.
+To see a report in browser, run in console
+
+```
+allure serve
+```
+
+If you want to generate html version, run in console
+
+```
+allure generate
+```
+
+## Allure Interface
+The following commands available from tests with `cy.allure()` or through `Cypress.Allure` interface: 
+
+### label
+**label(name: string, value: string)**
+
+Adds label to test result, accepts label name and label value
+
+```javascript
+cy.allure().label('tag', '@P1');
+```
+
+### startStep
+**startStep(name: string)**
+
+Starts allure step
+
+```javascript
+cy.allure().startStep('should login');
+```
+
+### endStep
+**endStep(status?: Status)**
+
+Ends current step with 'passed' (when status not specified) or specified status
+
+```javascript
+cy.allure().endStep();
+```
+```javascript
+cy.allure().endStep('failed');
+```
+
+### step
+**step(name: string)**
+
+Adds finished step with passed status.
+
+```javascript
+cy.allure().step('should login');
+```
+
+### tag
+**tag(...tags: string[])**
+
+Adds tags to test
+
+```javascript
+cy.allure().tag('@regression', '@P1');
+```
+
+### severity
+**severity(level: 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial')**
+
+Adds test severity
+
+```javascript
+cy.allure().severity('blocker');
+```
+
+### thread
+**thread(value: string)**
+
+Adds thread label to test.
+
+Thread label is being used in timeline
+
+**todo: screen**
+
+```javascript
+cy.allure().thread('01');
+```
+
+### fullName
+**fullName(value: string)**
+
+Sets test full name 
+
+Full name is being used for history id
+
+```javascript
+cy.allure().fullName('authentication: should login');
+```
+
+### owner
+**owner(value: string)**
+
+Sets label 'owner' 
+
+Will be shown in allure report as Owner field
+
+```javascript
+cy.allure().owner('TP');
+```
+
+
+### lead
+**lead(value: string)**
+
+Sets label 'lead' 
+
+Not shown in report, analytics label
+
+```javascript
+cy.allure().lead('TP');
+```
+
+
+### host
+**host(value: string)**
+
+Sets label 'host'
+
+Will be shown in report on timeline tab
+
+```javascript
+cy.allure().host('MAC-01');
+```
+
+### layer
+**layer(value: string)**
+
+Sets label 'layer'
+
+```javascript
+cy.allure().layer('UI');
+```
+
+### browser
+**browser(value: string)**
+
+Sets label 'browser'
+
+Not shown in report - analytics label
+
+```javascript
+cy.allure().browser('chrome');
+```
+
+
+### device
+**device(value: string)**
+
+Sets label 'device'
+
+Not shown in report - analytics label
+
+```javascript
+cy.allure().device('Comp');
+```
+
+### os
+**os(value: string)**
+
+Sets label 'os'
+
+Not shown in report - analytics label
+
+```javascript
+cy.allure().os('ubuntu');
+```
+
+### language
+**language(value: string)**
+
+Sets label 'language'
+
+Not shown in report - analytics label
+
+```javascript
+cy.allure().language('javascript');
+```
+### allureId
+**allureId(value: string)**
+
+Sets label 'ALLURE_ID'
+
+todo: what is it for in report?
+
+Not shown in report - analytics label
+
+```javascript
+cy.allure().allureId('123');
+```
+
+### epic
+**epic(value: string)**
+
+Sets epic to test
+
+Will be shown on Behaviors tab in Report (grouped by epic -> feature -> story)
+
+```javascript
+cy.allure().epic('Epic Feature');
+```
+
+
+### story
+**story(value: string)**
+
+Sets story to test
+
+Will be shown on Behaviors tab in Report (grouped by epic -> feature -> story)
+
+```javascript
+cy.allure().story('User Story');
+```
+
+
+### feature
+**feature(value: string)**
+
+Sets feature to test
+
+Will be shown on Behaviors tab in Report (grouped by epic -> feature -> story)
+
+```javascript
+cy.allure().feature('Feature');
+```
+
+
+### link
+**link(url: string, name?: string, type?: 'issue' | 'tms')**
+
+Adds link to test.
+
+Will be shown in Links field for test
+
+```javascript
+cy.allure().link('http://bbb.com/1', 'issue-1', 'issue');
+```
+
+### tms
+**tms(url: string, name?: string)**
+
+Adds link to test of type 'tms' ('tms' will have specific icon )
+
+When `tmsPrefix` environment variable added no need to input the whole URL
+
+Will be shown in Links field for test
+
+```javascript
+cy.allure().tms('1', 'tms-1');
+```
+
+### issue
+**issue(url: string, name?: string)**
+
+Adds link to test of type 'issue' ('issue' will have specific icon - bug icon )
+
+When `issuePrefix` environment variable added no need to input the whole URL
+
+Will be shown in Links field for test
+
+```javascript
+cy.allure().issue('1', 'issue-1');
+```
+
+
+### parameter
+**parameter(name: string, value: string)**
+
+Adds parameter to current step or test (when no current step)
+
+Will be shown in report: 
+ - for step : as table below step
+ - for test : in Parameters section for test and in overview
+
+```javascript
+cy.allure().parameter('varA', 'bus');
+```
+
+### testParameter
+**testParameter(name: string, value: string)**
+
+Adds parameter to current test
+
+Will be shown in report in Parameters section for test and in overview
+
+```javascript
+cy.allure().parameter('varA', 'bus');
+```
+
+### parameters
+**parameters(...params: { name: string, value: string } [])**
+
+Adds several parameters to current step or test (when no current step)
+
+see [parameter](#parameter)
+
+```javascript
+cy.allure().parameters( {name: 'varA', value: 'bus'}, {name: 'varB', value: 'car'} );
+```
+
+
+
+### testStatus
+**testStatus(result: 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown', details?: StatusDetails)**
+details is optional: 
+- details.message - message that is shown in report for test
+- details.trace  - stack trace
+
+Sets test status. In some cases you may need to change test status (testing purposes, or depending on tags)
+
+```javascript
+cy.allure().testStatus('broken', { message: 'review test' });
+```
+
+### testStatus
+**testDetails(details: StatusDetails)**
+
+- details.message - message that is shown in report for test
+- details.trace  - stack trace
+
+Sets test details but keeps test status as is 
+
+In some cases you may need to change test details message (for example skip reason depending on tag)
+
+
+```javascript
+cy.allure().testDetails({ message: 'ignored - not implemented' });
+```
+
+
+### attachment
+**attachment(name: string, content: Buffer | string, type: ContentType)**
+
+- content - contents of attachment
+- type - content type
+ 
+Adds attachment to current step or test (when no current step)
+
+```javascript
+cy.allure().attachment('text.json', 'attachment body', 'text/plain');
+```
+
+### testAttachment
+**testAttachment(name: string, content: Buffer | string, type: ContentType)**
+
+- content - contents of attachment
+- type - content type
+
+Adds attachment to current test
+
+```javascript
+cy.allure().testAttachment('text.json', 'attachment body', 'text/plain');
+```
+
+### fileAttachment
+**fileAttachment(name: string, file: string, type: ContentType)**
+
+ - name attachment name
+ - file -  path to file
+ - type - content type
+
+Adds file attachment to current step or test (when no current step)
+
+```javascript
+cy.allure().fileAttachment('text.json', 'reports/text.json', 'text/plain');
+```
+
+### testFileAttachment
+**testFileAttachment(name: string, file: string, type: ContentType)**
+
+ - name attachment name
+ - file -  path to file
+ - type - content type
+
+Adds file attachment to current test
+
+```javascript
+cy.allure().testFileAttachment('text.json', 'reports/text.json', 'text/plain');
+```
+
+
+### addDescriptionHtml
+**addDescriptionHtml(value: string)**
+
+Adds HTML description. Will be shown in report in Description section for test.
+
+Will concatenate all descriptions
+
+```javascript
+cy.allure().addDescriptionHtml('<b>description1</b>');
+cy.allure().addDescriptionHtml('<b>description2</b>');
+```
+as result wil have description: 
+```html
+<b>description1</b>
+<b>description2</b>
+```
+
+
+### writeEnvironmentInfo
+**writeEnvironmentInfo(info: EnvironmentInfo)**
+- info - dictionary with environment variables
+
+Writes environment info file (environment.properties) into allure results path
+
+Environment info will be shown in report on overview tab in Environment widget
+
+```javascript
+cy.allure().writeEnvironmentInfo({
+    OS: 'ubuntu',
+    commit: 'fix of defect 1'
+ })
+```
+
+### writeExecutorInfo
+**writeExecutorInfo(info: ExecutorInfo)**
+- info -  executor info object
+
+Writes executor info file (executor.json) into allure results path
+
+```javascript
+cy.allure().writeExecutorInfo({
+  name: '1',
+  type: 'wwew',
+  url: 'http://build',
+  buildOrder: 1,
+  buildName: 'build name',
+  buildUrl: 'http://build.url',
+  reportUrl: 'http://report/1',
+  reportName: 'report 1',
+});
+```
+
+
+### writeCategoriesDefinitions
+Writes categories definitions file (categories.json) into allure results path.
+
+**writeCategoriesDefinitions(categories: Category[])**
+- categories -  array oif categories
+
+
+**writeCategoriesDefinitions(file: string)**
+- file -  path to json file with categories
+
+
+Categories will be shown in overview tab in Categories widget and on Categories tab in Report. 
+
+Note that `messageRegex` and `traceRegex` are strings containing regular expressions, 
+do not forget to escape the string properly.
+
+It is better to write categories once for run, so use that in plugins:
+
+```javascript
+// plugins file
+const reporter = configureAllureAdapterPlugins(on, config);
+on('before:run', () => {
+  reporter?.writeCategoriesDefinitions({ categories: [
+      {
+         name: 'exception with number',
+         matchedStatuses: ['failed'],
+         messageRegex: '.*\\d+.*',
+         traceRegex: '.*',
+      },
+ ]});
+});
+```
+
+or
+
+```javascript
+// plugins file
+const reporter = configureAllureAdapterPlugins(on, config);
+on('before:run', () => {
+  // 'categories.json' file is in the root (where package.json located)
+  reporter?.writeCategoriesDefinitions({ categories: 'categories.json' });
+});
+```
+
+
+### deleteResults
+**deleteResults()**
+
+Delete allure-results
+
+```javascript
+cy.allure().deleteResults();
+```
 
 ### Advanced
 
-#### after:spec
-If you are using Cypress action `after:spec` in plugins you 
-can use the following configuration to have video attached to tests: 
+#### after:spec event
+If you use Cypress action `after:spec` in plugins you
+can use the following configuration to have video attached to tests:
 
 ```javascript
 // cypress.config.ts
@@ -114,10 +630,10 @@ export default defineConfig({
 ```
 #### Before run
 
-Some operations like writing environment information, execution info or categories definitions 
+Some operations like writing environment information, execution info or categories definitions
 should be done once for a run.
 
-To do that you need to modify your setupNodeEvents function : 
+To do that you need to modify your setupNodeEvents function:
  ```javascript
    // cypress.config.ts
    import { configureAllureAdapterPlugins } from '@mmisty/cypress-allure-adapter/plugins';
@@ -125,12 +641,12 @@ To do that you need to modify your setupNodeEvents function :
    export default defineConfig({
      e2e: {
        setupNodeEvents(on, config) {
-          const allure = configureAllureAdapterPlugins(on, config);
+          const reporter = configureAllureAdapterPlugins(on, config);
           
           // after that you can use allure to make operations on cypress start,
-          // or on test run start
+          // or on before run start
           on('before:run', details => {
-             allure?.writeEnvironmentInfo({
+             reporter?.writeEnvironmentInfo({
                 info: {
                    os: details.system.osName,
                    osVersion: details.system.osVersion,
@@ -147,9 +663,9 @@ To do that you need to modify your setupNodeEvents function :
 
 
 #### Start/End test events
-If you need to add labels, tags or other meta info for tests you can use the following events: 
- - `test:started` is fired after tests started but before all "before each" hooks
- - `test:ended` is fired after all "after each" hooks
+If you need to add labels, tags or other meta info for tests you can use the following additional events for Cypress.Allure interface:
+- `test:started` is fired after tests started but before all "before each" hooks
+- `test:ended` is fired after all "after each" hooks
 
 ```javascript
 Cypress.Allure.on('test:started', test => {
@@ -157,7 +673,7 @@ Cypress.Allure.on('test:started', test => {
   });
 ```
 
-And also if you need to do something with test before it ends: 
+And also if you need to do something with test before it ends:
 ```javascript
 Cypress.Allure.on('test:ended', test => {
     Cypress.Allure.label('tag', 'ended');
@@ -166,250 +682,6 @@ Cypress.Allure.on('test:ended', test => {
 
 ```
 You can put this into your `support/index.ts` file.
-
-## Allure Interface
-The following commands available from tests with `cy.allure()` or through `Cypress.Allure` interface: 
-```javascript
-/**
-     * Adds label to test result
-     * @param name - label name
-     * @param value - label value
-     * @example
-     * cy.allure().label('tag', '@P1');
-     */
-    label(name: string, value: string): T;
-
-    /**
-     * Starts step
-     * @param name - step name
-     * @example
-     * cy.allure().startStep('should login');
-     */
-    startStep(name: string): T;
-
-    /**
-     * Ends current step
-     * @example
-     * cy.allure().endStep();
-     * cy.allure().endStep('failed');
-     */
-    endStep(status?: Status): T;
-
-    /**
-     * Created finished step
-     * @example
-     * cy.allure().step('should login');
-     */
-    step(name: string): T;
-
-    /**
-     * Adds tags to test
-     * @param tags
-     * @example
-     * cy.allure().tag('@regression', '@P1');
-     */
-    tag(...tags: string[]): T;
-
-    /**
-     * Adds severity to test
-     * @param level 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
-     * @example
-     * cy.allure().severity('blocker');
-     */
-    severity(level: Severity): T;
-
-    /**
-     * Adds thread to test
-     * @param value string to group in timeline
-     * @example
-     * cy.allure().thread('01');
-     */
-    thread(value: string): T;
-
-    /**
-     * Sets test full name
-     * @param value string to group in timeline
-     * @example
-     * cy.allure().fullName('authentication: should login');
-     */
-    fullName(value: string): T;
-
-    /**
-     * Sets label 'owner' - will be shown in allure report as Owner field
-     * @param value owner name
-     * @example
-     * cy.allure().owner('TP');
-     */
-    owner(value: string): T;
-
-    /**
-     * Sets label 'lead'
-     * @param value lead name
-     * @example
-     * cy.allure().lead('TP');
-     */
-    lead(value: string): T;
-
-    /**
-     * Sets label 'host'
-     * @param value host name
-     * @example
-     * cy.allure().host('MAC-01');
-     */
-    host(value: string): T;
-
-    /**
-     * Sets label 'layer'
-     * @param value layer name
-     * @example
-     * cy.allure().host('MAC-01');
-     */
-    layer(value: string): T;
-
-    /**
-     * Sets label 'browser'
-     * @param value layer name
-     * @example
-     * cy.allure().browser('chrome');
-     */
-    browser(value: string): T;
-
-    /**
-     * Sets label 'device'
-     * @param value layer name
-     * @example
-     * cy.allure().device('MAC-01');
-     */
-    device(value: string): T;
-
-    /**
-     * Sets label 'os'
-     * @param value os name
-     * @example
-     * cy.allure().os('ubuntu');
-     */
-    os(value: string): T;
-
-    epic(value: string): T;
-    link(url: string, name?: string, type?: LinkType): T;
-    tms(url: string, name?: string): T;
-    issue(url: string, name?: string): T;
-
-    feature(value: string): T;
-    story(value: string): T;
-    allureId(value: string): T;
-    language(value: string): T;
-    parameter(name: string, value: string): T;
-    parameters(...params: Parameter[]): T;
-    testParameter(name: string, value: string): T;
-
-    /**
-     * Sets test status. In some cases you may need to change test status
-     * @param result - 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
-     * @param details - status details - optional
-     * @param details.message - message that is shown in report for test
-     * @param details.trace  - stack trace
-     * @example
-     * cy.allure().testStatus('broken', { message: 'review test' });
-     */
-    testStatus(result: Status, details?: StatusDetails): T;
-
-    /**
-     * Sets test details - In some cases you may need to change test details message
-     * @param details - status details
-     * @param details.message - message that is shown in report for test
-     * @param details.trace  - stack trace
-     * @example
-     * cy.allure().testDetails({ message: 'review test' });
-     */
-    testDetails(details: StatusDetails): T;
-
-    /**
-     * Adds attachment to current test
-     * @param name attachment name
-     * @param content - contents of attachmnet
-     * @param type - content type
-     */
-    testAttachment(name: string, content: Buffer | string, type: ContentType): T;
-
-    /**
-     * Adds file attachment to current test
-     * @param name attachment name
-     * @param file - path to file
-     * @param type - content type
-     */
-    testFileAttachment(name: string, file: string, type: ContentType): T;
-
-    /**
-     * Adds attachment to current executable (step, hook or test)
-     * @param name attachment name
-     * @param content - contents of attachmnet
-     * @param type - content type
-     */
-    attachment(name: string, content: Buffer | string, type: ContentType): T;
-
-    /**
-     * Adds file attachment to current executable (step, hook or test)
-     * @param name attachment name
-     * @param file - path to file
-     * @param type - content type
-     */
-    fileAttachment(name: string, file: string, type: ContentType): T;
-
-    /**
-     * Add description HTML
-     * Will concatenate all descriptions
-     * @param value - html string
-     * @example
-     * cy.allure().addDescriptionHtml('<b>description</b>')
-     */
-    addDescriptionHtml(value: string): T;
-
-    /**
-     * Writes environment info file into allure results path
-     * @param info - dictionary
-     * @example
-     * cy.allure().writeEnvironmentInfo({
-     *    OS: 'ubuntu',
-     *    commit: 'fix of defect 1'
-     * })
-     */
-    writeEnvironmentInfo(info: EnvironmentInfo): T;
-
-    /**
-     * Writes executor info file into allure results path
-     * @param info - dictionary
-     * @example
-     *  cy.allure().writeExecutorInfo({
-     *       name: '1',
-     *       type: 'wwew',
-     *       url: 'http://build',
-     *       buildOrder: 1,
-     *       buildName: 'build name',
-     *       buildUrl: 'http://build.url',
-     *       reportUrl: 'http://report/1',
-     *       reportName: 'report 1',
-     *     });
-     */
-    writeExecutorInfo(info: ExecutorInfo): T;
-
-    /**
-     * Writes categories definitions file into allure results path
-     * @param categories - Categories to write
-     */
-    writeCategoriesDefinitions(categories: Category[]): T;
-    
-   /**
-    * Copies categories file into allure results path 
-    * @param filePath - file with categories
-    */
-    writeCategoriesDefinitions(filePath: string): T;
-
-    /**
-     * Delete allure-results
-     */
-    deleteResults(): T;
-```
 
 ## Troubleshooting
 

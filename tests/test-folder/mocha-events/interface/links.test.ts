@@ -91,7 +91,7 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ type: 'tms', url: 'http://jira/ABC-1' }]]);
+      expect(labels).toEqual([[{ name: 'ABC-1', type: 'tms', url: 'http://jira/ABC-1' }]]);
     });
 
     it('should have issue with id', () => {
@@ -99,7 +99,7 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ type: 'issue', url: 'http://my.jira.com/ABC-1' }]]);
+      expect(labels).toEqual([[{ name: 'ABC-1', type: 'issue', url: 'http://my.jira.com/ABC-1' }]]);
     });
 
     it('should have issue with id asterisk', () => {
@@ -107,7 +107,7 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ type: 'issue', url: 'http://my.jira.com/ABC-1/browse/' }]]);
+      expect(labels).toEqual([[{ name: 'ABC-1', type: 'issue', url: 'http://my.jira.com/ABC-1/browse/' }]]);
     });
 
     it('should have issue with no env', () => {
@@ -115,7 +115,7 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ type: 'issue', url: 'ABC-1' }]]);
+      expect(labels).toEqual([[{ name: 'ABC-1', type: 'issue', url: 'ABC-1' }]]);
     });
 
     it('should have tms with no env', () => {
@@ -123,7 +123,7 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ type: 'tms', url: 'ABC-1' }]]);
+      expect(labels).toEqual([[{ name: 'ABC-1', type: 'tms', url: 'ABC-1' }]]);
     });
   });
 });
