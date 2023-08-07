@@ -43,7 +43,15 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     return browserHandler(browser, opts);
   });
 
-  configureAllureAdapterPlugins(on, config);
+  const allure = configureAllureAdapterPlugins(on, config);
+  on('before:run', details => {
+    allure?.writeEnvironmentInfo({
+      info: {
+        os: details.system.osName,
+        osVersion: details.system.osVersion,
+      },
+    });
+  });
 
   on('file:preprocessor', preprocessor(isCov));
 

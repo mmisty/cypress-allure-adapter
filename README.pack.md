@@ -112,6 +112,40 @@ export default defineConfig({
 });
 
 ```
+#### Before run
+
+Some operations like writing environment information, execution info or categories definitions 
+should be done once for a run.
+
+To do that you need to modify your setupNodeEvents function : 
+ ```javascript
+   // cypress.config.ts
+   import { configureAllureAdapterPlugins } from '@mmisty/cypress-allure-adapter/plugins';
+   
+   export default defineConfig({
+     e2e: {
+       setupNodeEvents(on, config) {
+          const allure = configureAllureAdapterPlugins(on, config);
+          
+          // after that you can use allure to make operations on cypress start,
+          // or on test run start
+          on('before:run', details => {
+             allure?.writeEnvironmentInfo({
+                info: {
+                   os: details.system.osName,
+                   osVersion: details.system.osVersion,
+                },
+             });
+          });
+          
+         return config;
+       },
+       // ...
+     }
+   });
+   ```
+
+
 #### Start/End test events
 If you need to add labels, tags or other meta info for tests you can use the following events: 
  - `test:started` is fired after tests started but before all "before each" hooks
@@ -157,8 +191,9 @@ The following commands available from tests with `cy.allure()` or through `Cypre
      * Ends current step
      * @example
      * cy.allure().endStep();
+     * cy.allure().endStep('failed');
      */
-    endStep(): T;
+    endStep(status?: Status): T;
 
     /**
      * Created finished step
@@ -363,6 +398,12 @@ The following commands available from tests with `cy.allure()` or through `Cypre
      * @param categories - Categories to write
      */
     writeCategoriesDefinitions(categories: Category[]): T;
+    
+   /**
+    * Copies categories file into allure results path 
+    * @param filePath - file with categories
+    */
+    writeCategoriesDefinitions(filePath: string): T;
 
     /**
      * Delete allure-results
@@ -375,6 +416,14 @@ The following commands available from tests with `cy.allure()` or through `Cypre
 To see debug log run cypress with DEBUG env variable like: `DEBUG=cypress-allure* npm run cy:open`
 
 ## Change log
+### 0.8.0 
+ - fixes with attaching requests files
+ - writeCategoriesDefinitions interface improved to allow file path instead of categories array as argument
+ - ability to endStep with status
+
+### 0.7.3
+- custom commands logging (child commands will be grouped)
+
 ### 0.6.0
  - setting to disable warning about duplicates
 
