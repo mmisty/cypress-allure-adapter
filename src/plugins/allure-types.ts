@@ -16,7 +16,7 @@ type AllureTask = {
   specStarted: { spec: Cypress.Spec };
   writeEnvironmentInfo: { info: EnvironmentInfo };
   writeExecutorInfo: { info: ExecutorInfo };
-  writeCategoriesDefinitions: { categories: Category[] };
+  writeCategoriesDefinitions: { categories: Category[] | string };
   testEnded: { result: Status; details?: StatusDetails };
   testStarted: { title: string; fullTitle: string; id: string; currentRetry?: number };
   suiteStarted: { title: string; fullTitle: string; file?: string };
@@ -149,8 +149,8 @@ export interface Category {
   name?: string;
   description?: string;
   descriptionHtml?: string;
-  messageRegex?: string | RegExp;
-  traceRegex?: string | RegExp;
+  messageRegex?: string;
+  traceRegex?: string;
   matchedStatuses?: Status[];
   flaky?: boolean;
 }

@@ -1,7 +1,7 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFileSync, copyFile, existsSync, mkdirSync, rm, rmSync, writeFileSync } from 'fs';
+import { appendFileSync, copyFile, existsSync, mkdirSync, readFileSync, rm, rmSync, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
 import glob from 'fast-glob';
 import { basename, dirname } from 'path';
@@ -122,7 +122,33 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
-      allureReporter.allureRuntime.writer.writeCategoriesDefinitions(arg.categories);
+      try {
+        const getCategoriesContent = (): string | undefined => {
+          if (typeof arg.categories !== 'string') {
+            return JSON.stringify(arg.categories, null, '  ');
+          }
+
+          const file = arg.categories;
+
+          if (!existsSync(file)) {
+            console.error(`${packageLog} Categories file doesn't exist '${file}'`);
+
+            return undefined;
+          }
+
+          return readFileSync(file).toString();
+        };
+
+        const contents = getCategoriesContent();
+
+        if (!contents) {
+          return;
+        }
+
+        writeFileSync(`${allureResults}/categories.json`, contents);
+      } catch (err) {
+        console.error(`${packageLog} Could not write categories definitions info`);
+      }
     },
 
     delete(arg: AllureTaskArgs<'delete'>) {

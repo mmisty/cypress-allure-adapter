@@ -324,8 +324,51 @@ declare namespace Cypress {
     /**
      * Writes categories definitions file into allure results path
      * @param categories - Categories to write
+     * Note that messageRegex and traceRegex are strings containing regular expressions,
+     * do not forget to escape the string properly
+     *
+     * It is better to write categories once for run, so use that in plugins:
+     * @example
+     *   // plugins file
+     *   const allure = configureAllureAdapterPlugins(on, config);
+     *   on('before:run', () => {
+     *     allure?.writeCategoriesDefinitions({categories: [
+     *       // your categories
+     *     ]});
+     *   });
+     *
+     * @example
+     * cy.allure().writeCategoriesDefinitions([
+     *       {
+     *         name: 'failed message containing 123',
+     *         description: 'message containing 123 description',
+     *         matchedStatuses: ['failed'],
+     *         messageRegex: '.*123.*',
+     *       },
+     *       {
+     *         name: 'other',
+     *         matchedStatuses: ['failed'],
+     *         messageRegex: '.*\\d+.*',
+     *         traceRegex: '.*',
+     *       },
+     *     ]);
+     *
+     *
+     *
      */
     writeCategoriesDefinitions(categories: Category[]): T;
+
+    /**
+     * Writes categories definitions file into allure results path
+     * @param filePath - path to json file with categories
+     * @example
+     * //'categories.json' file is in the root (where package.json located)
+     * cy.allure().writeCategoriesDefinitions('categories.json');
+     *
+     * // absolute path to file
+     * cy.allure().writeCategoriesDefinitions('/users/user/my-project/categories.json');
+     */
+    writeCategoriesDefinitions(filePath: string): T;
 
     /**
      * Delete allure-results

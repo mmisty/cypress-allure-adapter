@@ -11,8 +11,17 @@ describe('should be able to write env info and other', () => {
       cy.allure().writeEnvironmentInfo({endVar: '123', ALLURE: 5});
     });
     
-    it('01 status details', () => {
-      cy.allure().testDetails({ message: 'details from test'});
+    it('03 writeExecutorInfo', () => {
+      cy.allure().writeExecutorInfo({
+        name: 'Jenkins',
+        type: 'CI',
+        url: 'http://je.com',
+        buildOrder: 1,
+        buildName: '1',
+        buildUrl: 'http://je.com/1',
+        reportUrl: 'http://je.com/1/allure',
+        reportName: 'allure 1',
+      });
     });
     
   });
@@ -33,6 +42,26 @@ describe('should be able to write env info and other', () => {
       expect(tests[0].status).toEqual('passed');
       expect(existsSync(`${res.watch}/environment.properties`)).toEqual(true);
       expect(readFileSync(`${res.watch}/environment.properties`).toString()).toEqual('endVar = 123\nALLURE = 5');
+    });
+
+    it('should be able to write executor info from test', () => {
+      const tests = resAllure.filter(t => t.name === '03 writeExecutorInfo');
+      expect(tests.length).toEqual(1);
+      expect(tests[0].status).toEqual('passed');
+      const file = `${res.watch}/executor.json`;
+      expect(existsSync(file)).toEqual(true);
+
+      const contents = readFileSync(file).toString();
+      expect(JSON.parse(contents)).toEqual({
+        name: 'Jenkins',
+        type: 'CI',
+        url: 'http://je.com',
+        buildOrder: 1,
+        buildName: '1',
+        buildUrl: 'http://je.com/1',
+        reportUrl: 'http://je.com/1/allure',
+        reportName: 'allure 1',
+      });
     });
   });
 });
