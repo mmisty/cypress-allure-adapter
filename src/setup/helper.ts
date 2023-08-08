@@ -1,16 +1,16 @@
-import Debug, { Debugger } from 'debug';
+import Debug from 'debug';
 
-export const logClient = (debug: Debugger) => {
-  if (!Cypress.env('DEBUG')) {
-    return () => {
-      // noop
-    };
-  }
+export const logClient = (namespace: string) => {
+  const debug = Debug(namespace);
 
-  debug.enabled = true;
+  debug.enabled =
+    Cypress.env('DEBUG') &&
+    (Cypress.env('DEBUG').indexOf('*') !== -1
+      ? namespace.startsWith(Cypress.env('DEBUG').replace('*', ''))
+      : namespace === Cypress.env('DEBUG'));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (...args: any[]) => {
-    // todo log namespace
     try {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
@@ -22,10 +22,3 @@ export const logClient = (debug: Debugger) => {
     }
   };
 };
-
-const log = logClient(Debug('cypress-allure:delay'));
-
-export async function delay(ms: number, ...messages: string[]) {
-  log([...messages, messages.length > 0 ? ':' : '', `DELAY ${ms.toString()} ms`]);
-  await new Promise(resolve => setTimeout(resolve, ms));
-}

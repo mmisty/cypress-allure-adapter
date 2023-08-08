@@ -7,6 +7,8 @@ import { COVERAGE } from '../common/constants';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
 import { configureAllureAdapterPlugins } from '@src/plugins';
+import { startTestServer } from './test-server';
+import { Server } from 'http';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -41,7 +43,15 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     return browserHandler(browser, opts);
   });
 
-  configureAllureAdapterPlugins(on, config);
+  const allure = configureAllureAdapterPlugins(on, config);
+  on('before:run', details => {
+    allure?.writeEnvironmentInfo({
+      info: {
+        os: details.system.osName,
+        osVersion: details.system.osVersion,
+      },
+    });
+  });
 
   on('file:preprocessor', preprocessor(isCov));
 
@@ -50,8 +60,10 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
 
   // register grep plugin
   pluginGrep(on, config);
+  let server: Server;
 
   on('task', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log: (...args: any[]) => {
       console.log(...args);
 
@@ -59,6 +71,32 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     },
     fileExists: (filePath: string) => {
       return existsSync(filePath);
+    },
+    startTestServer(port?: number) {
+      const port2 = 40000 + Math.round(Math.random() * 25000);
+
+      for (let i = 0; i < 10; i++) {
+        try {
+          server = startTestServer(port ?? port2);
+
+          return port ?? port2;
+        } catch (err) {
+          // ignore
+        }
+      }
+
+      return port ?? port2;
+    },
+    shutDownTestServer() {
+      try {
+        server?.close(() => {
+          console.log('Shutdown');
+        });
+      } catch (err) {
+        // ignore
+      }
+
+      return null;
     },
   });
 

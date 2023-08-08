@@ -1,4 +1,4 @@
-import { createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import { checkCyResults, createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands', () => {
@@ -31,6 +31,10 @@ describe('custom commands', () => {
     return cy.returnTaskValue(filePath);
   });
   
+  Cypress.Commands.add('specialIgnoredCommand', (filePath: string) => {
+    return cy.nestedCommand(filePath);
+  });
+  
   describe('should pass', () => {
     it('tasklog', () => {
       cy.tasklog('hello');
@@ -50,13 +54,22 @@ describe('custom commands', () => {
     it('returnTaskValue', () => {
       cy.returnTaskValue('nonexistingd').should('eq', false);
     });
+    
     it('nestedCommand', () => {
       cy.nestedCommand('nonexistingd2').should('eq', false);
+    });
+    
+    it('not log command', () => {
+      cy.get('div', { log: false }).should('exist');
+    });
+    
+    it('ignore custom command', () => {
+      cy.specialIgnoredCommand('nonexistingd2');
     });
   });
 `,
     ],
-    { allureWrapCustomCommands: 'true' },
+    { allureWrapCustomCommands: 'true', allureSkipCommands: 'specialIgnoredCommand' },
   );
 
   describe('check results', () => {
@@ -142,7 +155,12 @@ describe('custom commands', () => {
         },
         {
           name: 'get: div',
-          steps: [],
+          steps: [
+            {
+              name: 'assert: expected **<div.inner-container>** to exist in the DOM',
+              steps: [],
+            },
+          ],
         },
       ]);
     });
@@ -193,7 +211,65 @@ describe('custom commands', () => {
             },
           ],
         },
+        {
+          name: 'assert: expected **false** to equal **false**',
+          steps: [],
+        },
       ]);
+    });
+
+    it('should have not have steps with log false', () => {
+      const tests = resFixed.filter(t => t.name === 'not log command');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'assert: expected **<div.inner-container>** to exist in the DOM',
+          steps: [],
+        },
+      ]);
+    });
+
+    it('should ignore custom command skipped with allureSkipCommands', () => {
+      const tests = resFixed.filter(t => t.name === 'ignore custom command');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'nestedCommand: nonexistingd2',
+          steps: [
+            {
+              name: 'returnTaskValue: nonexistingd2',
+              steps: [
+                { name: 'wait: 1', steps: [] },
+                { name: 'wait: 2', steps: [] },
+                { name: 'task: fileExists, nonexistingd2', steps: [] },
+              ],
+            },
+          ],
+        },
+      ]);
+    });
+
+    it('should have results', () => {
+      // should not fail run
+      checkCyResults(res?.result?.res, {
+        status: 'finished',
+        totalPassed: 7,
+        totalFailed: 0,
+        totalPending: 0,
+        totalSkipped: 0,
+        totalSuites: 1,
+        totalTests: 7,
+      });
     });
   });
 });

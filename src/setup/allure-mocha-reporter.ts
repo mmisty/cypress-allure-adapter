@@ -1,4 +1,3 @@
-import Debug from 'debug';
 import { createMessage, MessageManager } from './websocket';
 import { handleCyLogEvents } from './cypress-events';
 import {
@@ -17,7 +16,7 @@ import { tmsIssueUrl } from '../common';
 import { EventEmitter } from 'events';
 import AllureEvents = Cypress.AllureEvents;
 
-const debug = logClient(Debug('cypress-allure:mocha-reporter'));
+const dbg = 'cypress-allure:mocha-reporter';
 // this is running in Browser
 const TEST_PENDING_DETAILS = 'Test ignored';
 
@@ -73,6 +72,8 @@ const allureEventsEmitter = new EventEmitter();
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
+    const debug = logClient(dbg);
+
     if (
       isStub &&
       ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START].includes(event)
@@ -93,12 +94,12 @@ export const allureInterface = (
   return {
     writeEnvironmentInfo: (info: EnvironmentInfo) => fn({ task: 'writeEnvironmentInfo', arg: { info } }),
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
-    writeCategoriesDefinitions: (categories: Category[]) =>
+    writeCategoriesDefinitions: (categories: Category[] | string) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
     startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
     // remove from interface
     mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
-    endStep: () => fn({ task: 'stepEnded', arg: { status: Status.PASSED, date: Date.now() } }),
+    endStep: (status?: Status) => fn({ task: 'stepEnded', arg: { status: status ?? Status.PASSED, date: Date.now() } }),
     step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
@@ -124,9 +125,9 @@ export const allureInterface = (
 
     link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
     tms: (url: string, name?: string) =>
-      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'tms'), name, type: 'tms' } }),
+      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'tms'), name: name ?? url, type: 'tms' } }),
     issue: (url: string, name?: string) =>
-      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name, type: 'issue' } }),
+      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name: name ?? url, type: 'issue' } }),
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
     tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: LabelName.TAG, value: tag } })),
     severity: (value: Cypress.Severity) => fn({ task: 'label', arg: { name: LabelName.SEVERITY, value } }),
@@ -156,11 +157,18 @@ export const registerStubReporter = () => {
 };
 
 const isBeforeAllHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook' && (test as any).hookName === 'before all';
 };
 
 const isBeforeEachHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook' && (test as any).hookName === 'before each';
+};
+
+const isHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (test as any).type === 'hook';
 };
 
 const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
@@ -241,6 +249,7 @@ const registerTestEvents = (messageManager: MessageManager, specPathLog: string)
 
 export const registerMochaReporter = (ws: WebSocket) => {
   const tests: string[] = [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const runner = (Cypress as any).mocha.getRunner() as Mocha.Runner;
   runner.setMaxListeners(20);
   const messageManager = createMessage(ws);
@@ -249,10 +258,11 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   const allureEvents = eventsInterfaceInstance(false);
-  registerScreenshotHandler(allureInterfaceInstance);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
+  registerScreenshotHandler();
   const startedSuites: Mocha.Suite[] = [];
-  const specPathLog = `reports/${Cypress.spec.name}.log`;
+  const specPathLog = `reports/test-events/${Cypress.spec.name}.log`;
+  const debug = logClient(dbg);
 
   if (isJestTest()) {
     messageManager.message({ task: 'delete', arg: { path: specPathLog } });
@@ -289,24 +299,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     })
 
-    .on(MOCHA_EVENTS.SUITE_END, suite => {
-      debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
-      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
-
-      if (startedSuites.length === 1) {
-        // will end later with run end
-        return;
-      }
-
-      if (isRootSuite(suite)) {
-        runner.emit(CUSTOM_EVENTS.TASK, { task: 'globalHook', arg: {} });
-
-        return;
-      }
-      startedSuites.pop();
-      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
-    })
-
     .on(MOCHA_EVENTS.HOOK_START, hook => {
       debug(`event ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.HOOK_START}: ${hook.title}`);
@@ -323,6 +315,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
     })
 
     .on(MOCHA_EVENTS.HOOK_END, hook => {
+      // this event is not fired when hook fails
       debug(`event ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.HOOK_END}: ${hook.title}`);
 
@@ -333,14 +326,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
       runner.emit(CUSTOM_EVENTS.TASK, {
         task: 'hookEnded',
-        arg: {
-          title: hook.title,
-          result: hook.err ? Status.FAILED : Status.PASSED,
-          details: {
-            message: hook.err?.message,
-            trace: hook.err?.stack,
-          },
-        },
+        // since event is not fired when hook fails always passed here
+        arg: { title: hook.title, result: Status.PASSED },
       });
     })
 
@@ -395,7 +382,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
       // hook end not fired when hook fails
-      runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+      if (isHook(test)) {
+        runner.emit(CUSTOM_EVENTS.HOOK_END, test);
+      }
 
       return;
     })
@@ -419,17 +408,41 @@ export const registerMochaReporter = (ws: WebSocket) => {
         },
       });
     })
+
     .on(MOCHA_EVENTS.TEST_END, test => {
       debug(`event ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_END}: ${test.title}`);
     })
 
+    .on(MOCHA_EVENTS.SUITE_END, suite => {
+      debug(`event ${MOCHA_EVENTS.SUITE_END}: ${suite.title} ${suite.file}`);
+      sendMessageTest(`mocha: ${MOCHA_EVENTS.SUITE_END}: ${suite.title}`);
+
+      if (isRootSuite(suite)) {
+        //end run
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
+        runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
+
+        return;
+      }
+
+      if (startedSuites.length === 1) {
+        // startedSuites doesn't include root suite
+        // will end later with run end since there are more
+        // events after suite finished
+
+        return;
+      }
+
+      startedSuites.pop();
+      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
+    })
+
     .on(MOCHA_EVENTS.RUN_END, () => {
+      // note that Coverage tasks doesn't work here anymore
+      // since they use after and afterEach hooks
       debug(`event ${MOCHA_EVENTS.RUN_END}: tests length ${tests.length}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_END}`);
-      runner.emit(CUSTOM_EVENTS.TASK, { task: 'suiteEnded', arg: {} });
-      runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: 'RUN_END' } });
-
       messageManager.stop();
     });
 
@@ -453,22 +466,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
     .once(CUSTOM_EVENTS.GLOBAL_HOOK_FAIL, hook => {
       debug(`event ${CUSTOM_EVENTS.GLOBAL_HOOK_FAIL}: ${hook.title}`);
-      // const i = 0;
 
       for (const sui of hook.parent?.suites) {
         createTestsCallb = () => createTestsForSuite(runner, hook, sui);
-
-        /*sui.eachTest((test: Mocha.Test) => {
-          i++;
-
-          if (test) {
-            runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-            runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
-            runner.emit(CUSTOM_EVENTS.TEST_END, i === 1 ? hook : { ...test, err: hook.err });
-          }
-        });*/
-
-        //runner.emit(MOCHA_EVENTS.SUITE_END, sui);
       }
     })
 
@@ -498,6 +498,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
         task: 'testResult',
         arg: {
           title: test?.title,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           id: (test as any)?.id,
           result: convertState('failed'),
           details: { message: test?.err?.message, trace: test?.err?.stack },
@@ -526,23 +527,6 @@ export const registerMochaReporter = (ws: WebSocket) => {
       });
     });
 
-  /*Cypress.on('test:before:run', async (_t, test) => {
-    const started = Date.now();
-
-    // cypress test:before:run event fires for first test in suite along with
-    // before hook event, need to wait until suite starts
-    while (startedSuites.length === 0 && !runEnded) {
-      if (Date.now() - started >= Cypress.config('defaultCommandTimeout')) {
-        debug('timeout waiting suite starts');
-        break;
-      }
-      await delay(1);
-    }
-
-    runner.emit(CUSTOM_EVENTS.TEST_BEGIN, test);
-    runner.emit(CUSTOM_EVENTS.TASK, { task: 'message', arg: { name: `******** test:before:run=${test.title}` } });
-    });*/
-
   if (isJestTest()) {
     Cypress.on('test:before:run', (_t, test) => {
       sendMessageTest(`cypress: test:before:run: ${test.title}`);
@@ -561,7 +545,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   });
 
   handleCyLogEvents(runner, allureEventsEmitter, {
-    ignoreCommands: (Cypress.env('allureSkipCommands') ?? '').split(','),
+    ignoreCommands: () => (Cypress.env('allureSkipCommands') ?? '').split(','),
     wrapCustomCommands:
       Cypress.env('allureWrapCustomCommands') === undefined ||
       Cypress.env('allureWrapCustomCommands') === 'true' ||

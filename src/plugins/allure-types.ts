@@ -1,5 +1,4 @@
-import { StatusDetails } from 'allure-js-commons';
-import LinkType = Cypress.LinkType;
+import type { StatusDetails } from 'allure-js-commons';
 
 export interface AutoScreen {
   screenshotId: string;
@@ -11,11 +10,13 @@ export interface AutoScreen {
   width: number;
 }
 
+export type LinkType = 'issue' | 'tms';
+
 type AllureTask = {
   specStarted: { spec: Cypress.Spec };
   writeEnvironmentInfo: { info: EnvironmentInfo };
   writeExecutorInfo: { info: ExecutorInfo };
-  writeCategoriesDefinitions: { categories: Category[] };
+  writeCategoriesDefinitions: { categories: Category[] | string };
   testEnded: { result: Status; details?: StatusDetails };
   testStarted: { title: string; fullTitle: string; id: string; currentRetry?: number };
   suiteStarted: { title: string; fullTitle: string; file?: string };
@@ -23,9 +24,9 @@ type AllureTask = {
   hookEnded: { title: string; date?: number; result: Status; details?: StatusDetails };
   // currentSpec: { spec: Cypress.Spec };
   suiteEnded: undefined;
-  flushWatcher: undefined;
+  // flushWatcher: undefined;
   deleteResults: undefined;
-  globalHook: undefined;
+  // globalHook: undefined;
   stepEnded: { status: Status; date?: number; details?: StatusDetails };
   mergeStepMaybe: { name: string };
   // stepEndedAll: { status: string; date?: number; details?: StatusDetails };
@@ -65,7 +66,6 @@ export type AllureTaskArgs<T extends RequestTask> = AllureTask[T] extends undefi
       // ign
     }
   : AllureTask[T];
-
 export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> };
 export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
 export enum ContentType {
@@ -149,8 +149,8 @@ export interface Category {
   name?: string;
   description?: string;
   descriptionHtml?: string;
-  messageRegex?: string | RegExp;
-  traceRegex?: string | RegExp;
+  messageRegex?: string;
+  traceRegex?: string;
   matchedStatuses?: Status[];
   flaky?: boolean;
 }

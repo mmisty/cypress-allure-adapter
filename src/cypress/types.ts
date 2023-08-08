@@ -1,7 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-namespace
 declare namespace Cypress {
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
-  export type CommandT = { state?: string; attributes?: { name?: string; args?: any } };
+  export type CommandT = {
+    state?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    attributes?: { name?: string; args?: any; logs?: { attributes?: { consoleProps?: () => any } }[] };
+  };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../plugins/allure-types').ContentType;
@@ -90,7 +94,7 @@ declare namespace Cypress {
      * @example
      * cy.allure().endStep();
      */
-    endStep(): T; // todo status
+    endStep(status?: Status): T;
     mergeStepMaybe(name: string): T;
 
     /**
@@ -321,8 +325,51 @@ declare namespace Cypress {
     /**
      * Writes categories definitions file into allure results path
      * @param categories - Categories to write
+     * Note that messageRegex and traceRegex are strings containing regular expressions,
+     * do not forget to escape the string properly
+     *
+     * It is better to write categories once for run, so use that in plugins:
+     * @example
+     *   // plugins file
+     *   const allure = configureAllureAdapterPlugins(on, config);
+     *   on('before:run', () => {
+     *     allure?.writeCategoriesDefinitions({categories: [
+     *       // your categories
+     *     ]});
+     *   });
+     *
+     * @example
+     * cy.allure().writeCategoriesDefinitions([
+     *       {
+     *         name: 'failed message containing 123',
+     *         description: 'message containing 123 description',
+     *         matchedStatuses: ['failed'],
+     *         messageRegex: '.*123.*',
+     *       },
+     *       {
+     *         name: 'other',
+     *         matchedStatuses: ['failed'],
+     *         messageRegex: '.*\\d+.*',
+     *         traceRegex: '.*',
+     *       },
+     *     ]);
+     *
+     *
+     *
      */
     writeCategoriesDefinitions(categories: Category[]): T;
+
+    /**
+     * Writes categories definitions file into allure results path
+     * @param filePath - path to json file with categories
+     * @example
+     * //'categories.json' file is in the root (where package.json located)
+     * cy.allure().writeCategoriesDefinitions('categories.json');
+     *
+     * // absolute path to file
+     * cy.allure().writeCategoriesDefinitions('/users/user/my-project/categories.json');
+     */
+    writeCategoriesDefinitions(filePath: string): T;
 
     /**
      * Delete allure-results

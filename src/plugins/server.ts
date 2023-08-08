@@ -39,6 +39,7 @@ const socketLogic = (port: number, sockserver: WebSocketServer | undefined, task
 
       const parseData = (data: RawData) => {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return JSON.parse(data.toString()) as any;
         } catch (e) {
           // console.log((e as Error).message);
@@ -50,16 +51,22 @@ const socketLogic = (port: number, sockserver: WebSocketServer | undefined, task
       const payload = requestData.data;
 
       if (requestData.id) {
-        executeTask(tasks, payload);
+        const result = executeTask(tasks, payload);
+
+        sockserver.clients.forEach(client => {
+          log(`sending back: ${JSON.stringify(requestData)}`);
+          client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
+        });
+      } else {
+        sockserver.clients.forEach(client => {
+          log(`sending back: ${JSON.stringify(requestData)}`);
+          client.send(JSON.stringify({ payload, status: 'done' }));
+        });
       }
-      sockserver.clients.forEach(client => {
-        log(`sending back: ${payload?.task}`);
-        client.send(JSON.stringify({ task: payload?.task, status: 'done' }));
-      });
     });
 
     ws.onerror = function () {
-      console.log('websocket error');
+      console.log(`${packageLog} websocket error`);
     };
   });
 };
@@ -89,11 +96,12 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
   });
 };
 
-const executeTask = (tasks: AllureTasks, data: { task: any; arg: any }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boolean => {
   if (!data || !data.task) {
     log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
 
-    return;
+    return false;
   }
 
   try {
@@ -101,12 +109,15 @@ const executeTask = (tasks: AllureTasks, data: { task: any; arg: any }) => {
       const task = data.task as RequestTask; // todo check
       log(task);
       tasks[task](data.arg);
+
+      return true;
     } else {
-      const msg = data.task ? `No such task: ${data.task}` : 'No task property in message';
-      log(msg);
+      log(`No such task: ${data.task}`);
     }
   } catch (err) {
     console.error(`${packageLog} Error running task: '${data.task}': ${(err as Error).message}`);
     console.log((err as Error).stack);
   }
+
+  return false;
 };

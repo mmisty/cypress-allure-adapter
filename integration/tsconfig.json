@@ -13,5 +13,6 @@
       "@src/*": ["./*"]
     }
   },
-  "include": ["./"]
+  "include": ["./"],
+  "exclude": ["./e2e/temp"]
 }

@@ -51,7 +51,7 @@ export const registerCommands = () => {
     os: (allure, name) => allure.os(name),
     startStep: (allure, name) => allure.startStep(name),
     step: (allure, name) => allure.step(name),
-    endStep: allure => allure.endStep(),
+    endStep: (allure, status) => allure.endStep(status),
     mergeStepMaybe: (allure, name) => allure.mergeStepMaybe(name),
     label: (allure, name, value) => allure.label(name, value),
     //description: (allure, markdown) => allure.description(markdown),
@@ -62,8 +62,10 @@ export const registerCommands = () => {
   };
 
   for (const command in childCommands) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const cmd = command as keyof Chainable<any>;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Cypress.Commands.add(cmd, { prevSubject: true }, (...args: any[]) => {
       const [allure, ...params] = args;
 

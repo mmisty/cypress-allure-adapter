@@ -1,13 +1,12 @@
-import Debug from 'debug';
 import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
-import { logClient, delay } from './helper';
+import { logClient } from './helper';
 
-const debug = logClient(Debug('cypress-allure:ws-client'));
-const CONNECTION_TIMEOUT_MS = 10000;
+const dbg = 'cypress-allure:ws-client';
 const PROCESS_INTERVAL_MS = 10;
 
 export const startWsClient = (): WebSocket | undefined => {
+  const debug = logClient(dbg);
   const port = Cypress.env(ENV_WS);
 
   if (!port) {
@@ -18,7 +17,6 @@ export const startWsClient = (): WebSocket | undefined => {
     return undefined;
   }
 
-  const started = Date.now();
   const wsPathFixed = `${port}/${wsPath}`.replace(/\/\//g, '/');
   const ws = new WebSocket(`ws://localhost:${wsPathFixed}`);
 
@@ -26,12 +24,6 @@ export const startWsClient = (): WebSocket | undefined => {
     ws.send('WS opened');
     debug(`${packageLog} Opened ws connection`);
   };
-
-  Cypress.on('window:load', async () => {
-    while (ws.readyState !== ws.OPEN && Date.now() - started < CONNECTION_TIMEOUT_MS) {
-      await delay(1);
-    }
-  });
 
   return ws;
 };
@@ -47,6 +39,8 @@ export const createMessage = (ws: WebSocket): MessageManager => {
   let idInterval: NodeJS.Timer;
 
   const process = () => {
+    const debug = logClient(dbg);
+
     if (ws.readyState !== ws.OPEN) {
       debug('ws connection is not opened yet');
 
@@ -58,7 +52,7 @@ export const createMessage = (ws: WebSocket): MessageManager => {
       return;
     }
 
-    debug(`processing events ${messages?.length}:`);
+    debug(`processing events ${messages.length}:`);
     messages.forEach(msg => {
       debug(`${msg.data?.task} : ${msg.data?.arg?.title ?? msg.data?.arg?.name}`);
     });

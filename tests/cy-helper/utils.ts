@@ -16,7 +16,7 @@ export const mapSteps = <T>(steps: ExecutableItem[], map?: (m: ExecutableItem) =
   return steps.map(s => {
     const obj = map ? map(s) : { name: s.name };
 
-    return { ...obj, steps: mapSteps(s.steps) };
+    return { ...obj, steps: mapSteps(s.steps, map) };
   });
 };
 
@@ -103,6 +103,7 @@ export const createResTest = (fileName: string, envConfig?: Record<string, strin
   };
 
   it('create results', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const g = require('fast-glob');
     const file = g.sync(`${cwd}/integration/e2e/**/${testname}`);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -144,6 +145,14 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
+export const checkCyResults = (
+  res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined,
+  expected: Partial<CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult>,
+) => {
+  expect(res).toEqual(expect.objectContaining(expected));
+};
+
+// eslint-disable-next-line jest/no-export
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
@@ -178,7 +187,7 @@ export const createResTest2 = (
     allureResultsWatchPath: `${storeResDir}/watch`,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
-    COVERAGE: process.env.COVERAGE === 'true' ? 'true' : 'false',
+    COVERAGE: `${process.env.COVERAGE === 'true'}`,
     JEST_TEST: 'true',
     ...(envConfig || {}),
   };
@@ -215,7 +224,7 @@ export const createResTest2 = (
 
   return {
     watch: env.allureResultsWatchPath,
-    specs: specPaths.map(t => `${process.cwd()}/reports/${basename(t)}.log`),
+    specs: specPaths.map(t => `${process.cwd()}/reports/test-events/${basename(t)}.log`),
     result: result,
   };
 };

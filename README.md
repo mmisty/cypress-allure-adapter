@@ -8,8 +8,9 @@ This is development readme, see [package readme](./README.pack.md) for usage doc
 This is under construction.
 
 ## TODO
- - [ ] Readme, setup and installation
- - [ ] proper tests
+ - [x] Readme, setup and installation
+ - [x] proper tests
+ - [ ] tests for plugins
 
 ## Contribution
 todo
@@ -51,9 +52,6 @@ Your library will contain only the code that located in this folder
 ### Code coverage
 Coverage is being gathered from cypress and from jest, after all tests finished coverages
 from both test packs will be merged
-
-![coverage-example](./docs-template/cov-example.jpg)
-
 
 To see individual coverage reports run:
 - `npm run cov:jest`  html report with coverage for jest tests

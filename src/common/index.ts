@@ -1,16 +1,17 @@
+import { ContentType } from '../../src/plugins/allure-types';
+
 export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
 export const packageLog = '[cypress-allure-adapter]';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Message = { data: any; id: number };
 
 export class MessageQueue {
   private id = 0;
   private messages: Message[] = [];
-  length() {
-    return this.messages.length;
-  }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   enqueue(data: any) {
     this.id++;
     const message: Message = { data, id: this.id };
@@ -19,7 +20,7 @@ export class MessageQueue {
   }
 
   dequeueAll(): Message[] | undefined {
-    return this.messages.splice(0, this.messages.length - 1);
+    return this.messages.splice(0, this.messages.length);
   }
 }
 
@@ -36,7 +37,7 @@ export const tmsIssueUrl = (env: Record<string, string>, value: string, type: 'i
     return value;
   }
 
-  const prefix = type === 'tms' ? env['tmsPrefix'] ?? '' : env['issuePrefix'] ?? '';
+  const prefix = type === 'tms' ? env['tmsPrefix'] : env['issuePrefix'];
 
   if (prefix.indexOf('*') !== -1) {
     return prefix.replace('*', value);
@@ -49,9 +50,81 @@ export const tmsIssueUrl = (env: Record<string, string>, value: string, type: 'i
 
 // needed to work in browser
 export const extname = (path: string): string => {
-  return path.match(/(\.[^.]+)$/)?.[0] ?? '.unknown';
+  return path.match(/(\.[^.\\/]+)$/)?.[0] ?? '.unknown';
+};
+
+// needed to work in browser
+export const basename = (path: string): string => {
+  const slashIndex = path.lastIndexOf('/');
+
+  if (slashIndex > 0) {
+    return path.slice(slashIndex + 1);
+  }
+
+  return path;
 };
 
 export async function delay(ms: number) {
   await new Promise(resolve => setTimeout(resolve, ms));
 }
+
+export const getContentType = (file: string): ContentType => {
+  const ext = extname(file).toLowerCase();
+
+  switch (ext) {
+    case '.png': {
+      return ContentType.PNG;
+    }
+    case '.log':
+
+    case '.txt': {
+      return ContentType.TEXT;
+    }
+
+    case '.json': {
+      return ContentType.JSON;
+    }
+
+    case '.htm':
+
+    case '.html': {
+      return ContentType.HTML;
+    }
+
+    case '.csv': {
+      return ContentType.CSV;
+    }
+
+    case '.xml': {
+      return ContentType.XML;
+    }
+
+    case '.jpeg':
+
+    case '.jpg': {
+      return ContentType.JPEG;
+    }
+
+    case '.mp4': {
+      return ContentType.MP4;
+    }
+
+    case '.svg': {
+      return ContentType.SVG;
+    }
+
+    case '.zip':
+
+    case '.pdf': {
+      return ContentType.ZIP;
+    }
+
+    case '.css': {
+      return ContentType.CSS;
+    }
+
+    default: {
+      return ContentType.ZIP;
+    }
+  }
+};

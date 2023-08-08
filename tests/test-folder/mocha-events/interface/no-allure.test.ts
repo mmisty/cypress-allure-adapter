@@ -1,4 +1,4 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { checkCyResults, createResTest2 } from '../../../cy-helper/utils';
 import { existsSync } from 'fs';
 
 describe('should be no results when allure:false', () => {
@@ -19,17 +19,15 @@ describe('should be no results when allure:false', () => {
   describe('check results', () => {
     it('should have no results', () => {
       // should not fail run
-      expect(res.result.res).toEqual(
-        expect.objectContaining({
-          status: 'finished',
-          totalPassed: 1,
-          totalFailed: 0,
-          totalPending: 0,
-          totalSkipped: 0,
-          totalSuites: 1,
-          totalTests: 1,
-        }),
-      );
+      checkCyResults(res?.result?.res, {
+        status: 'finished',
+        totalPassed: 1,
+        totalFailed: 0,
+        totalPending: 0,
+        totalSkipped: 0,
+        totalSuites: 1,
+        totalTests: 1,
+      });
     });
 
     expect(existsSync(res.watch)).toEqual(false);

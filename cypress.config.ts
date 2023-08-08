@@ -20,6 +20,7 @@ export default defineConfig({
       allure: 'true',
       allureCleanResults: 'true',
       allureAttachRequests: true,
+      allureCompactAttachments: 'false',
       allureResults: 'allure-results', // for test results to write
       allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
       allureSkipCommands: '', // separated comma

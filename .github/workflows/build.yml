@@ -38,13 +38,13 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: code-coverage-report
-        path: ./reports/coverage-cypress/
+        path: ./reports/coverage-full-total/
 
     - name: Monitor coverage
       continue-on-error: true
       uses: danhunsaker/clover-reporter-action@v0.2.17-clover
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        clover-file: ./reports/coverage-cypress/clover.xml
+        clover-file: ./reports/coverage-full-total/clover.xml
 
 

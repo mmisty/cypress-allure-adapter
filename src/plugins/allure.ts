@@ -1,9 +1,9 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFileSync, copyFile, existsSync, mkdirSync, readFile, rm, rmSync, writeFile, writeFileSync } from 'fs';
+import { appendFileSync, copyFile, existsSync, mkdirSync, readFileSync, rm, rmSync, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
-import glob, { sync } from 'fast-glob';
+import glob from 'fast-glob';
 import { basename, dirname } from 'path';
 
 const debug = Debug('cypress-allure:proxy');
@@ -19,6 +19,7 @@ export type ReporterOptions = {
   videos: string;
   screenshots: string;
   showDuplicateWarn: boolean;
+  // to test mocha events in jest
   isTest: boolean;
 };
 
@@ -96,11 +97,12 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endGroup();
       log('suiteEnded');
     },
-    globalHook: (arg: AllureTaskArgs<'globalHook'>) => {
+
+    /* globalHook: (arg: AllureTaskArgs<'globalHook'>) => {
       log(`globalHook ${JSON.stringify(arg)}`);
       allureReporter.addGlobalHooks();
       log('globalHook');
-    },
+    },*/
 
     testStarted(arg: AllureTaskArgs<'testStarted'>) {
       log(`testStarted ${JSON.stringify(arg)}`);
@@ -121,7 +123,33 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
-      allureReporter.allureRuntime.writer.writeCategoriesDefinitions(arg.categories);
+      try {
+        const getCategoriesContent = (): string | undefined => {
+          if (typeof arg.categories !== 'string') {
+            return JSON.stringify(arg.categories, null, '  ');
+          }
+
+          const file = arg.categories;
+
+          if (!existsSync(file)) {
+            console.error(`${packageLog} Categories file doesn't exist '${file}'`);
+
+            return undefined;
+          }
+
+          return readFileSync(file).toString();
+        };
+
+        const contents = getCategoriesContent();
+
+        if (!contents) {
+          return;
+        }
+
+        writeFileSync(`${allureResults}/categories.json`, contents);
+      } catch (err) {
+        console.error(`${packageLog} Could not write categories definitions info`);
+      }
     },
 
     delete(arg: AllureTaskArgs<'delete'>) {
@@ -151,8 +179,8 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       if (allureReporter.currentTest) {
         allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
-        allureReporter.currentTest.status = arg.result as any;
-        allureReporter.currentTest.detailsMessage = arg.details?.message as any;
+        allureReporter.currentTest.status = arg.result;
+        allureReporter.currentTest.detailsMessage = arg.details?.message;
       }
       log('testResult');
     },
@@ -286,7 +314,18 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         const results = glob.sync(`${allureResults}/*.*`);
 
         if (!existsSync(allureResultsWatch)) {
-          mkdirSync(allureResultsWatch);
+          const mkdirSyncSithTry = (dir: string) => {
+            for (let i = 0; i < 5; i++) {
+              try {
+                mkdirSync(dir);
+
+                return;
+              } catch (err) {
+                // ignore
+              }
+            }
+          };
+          mkdirSyncSithTry(allureResultsWatch);
         }
         log(`allureResults: ${allureResults}`);
         log(`allureResultsWatch: ${allureResultsWatch}`);
@@ -320,7 +359,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('afterSpec');
     },
 
-    flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
+    /*flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
       const allFiles = sync(`${allureResults}/*`);
       debug('FLUSH spec');
       let doneFiles = 0;
@@ -358,6 +397,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         }
         await delay(100);
       }
-    },
+    },*/
   };
 };
