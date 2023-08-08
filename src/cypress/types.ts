@@ -8,7 +8,7 @@ declare namespace Cypress {
   };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
-  export type ContentType = import('../plugins/allure-types').ContentType;
+  export type ContentType = import('../common/types').ContentType;
   export type EnvironmentInfo = import('../plugins/allure-types').EnvironmentInfo;
   export type ExecutorInfo = import('../plugins/allure-types').ExecutorInfo;
   type LinkType = 'issue' | 'tms';
