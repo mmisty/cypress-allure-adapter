@@ -685,9 +685,9 @@ export class AllureReporter {
   }
 
   endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
-    this.steps.forEach(() => {
+    while (this.steps.length !== 0) {
       this.endStep(arg);
-    });
+    }
   }
 
   // set status to last step recursively

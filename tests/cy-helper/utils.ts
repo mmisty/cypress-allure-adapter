@@ -16,7 +16,7 @@ export const mapSteps = <T>(steps: ExecutableItem[], map?: (m: ExecutableItem) =
   return steps.map(s => {
     const obj = map ? map(s) : { name: s.name };
 
-    return { ...obj, steps: mapSteps(s.steps) };
+    return { ...obj, steps: mapSteps(s.steps, map) };
   });
 };
 
