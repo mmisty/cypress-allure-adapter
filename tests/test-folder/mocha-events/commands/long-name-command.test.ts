@@ -55,9 +55,11 @@ describe('custom commands', () => {
           steps: [
             {
               name: 'task: log, hello',
+              attach: [],
               steps: [
                 {
                   name: 'task: log, "hello"',
+                  attach: [],
                   steps: [],
                 },
               ],
@@ -88,9 +90,18 @@ describe('custom commands', () => {
           steps: [
             {
               name: 'task: log',
+              attach: [
+                {
+                  name: 'task: log args',
+                  sourceContent:
+                    'log\n{"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+                  type: 'application/json',
+                },
+              ],
               steps: [
                 {
                   name: 'task',
+                  attach: [],
                   steps: [],
                 },
               ],

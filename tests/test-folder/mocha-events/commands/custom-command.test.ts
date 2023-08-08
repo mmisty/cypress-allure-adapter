@@ -155,7 +155,12 @@ describe('custom commands', () => {
         },
         {
           name: 'get: div',
-          steps: [],
+          steps: [
+            {
+              name: 'assert: expected **<div.inner-container>** to exist in the DOM',
+              steps: [],
+            },
+          ],
         },
       ]);
     });
@@ -205,6 +210,10 @@ describe('custom commands', () => {
               ],
             },
           ],
+        },
+        {
+          name: 'assert: expected **false** to equal **false**',
+          steps: [],
         },
       ]);
     });

@@ -68,12 +68,8 @@ describe('should have steps by using cy.allure() interface', () => {
       expect(steps.length).toEqual(1);
       expect(steps[0].name).toEqual('my step');
       expect(steps[0].duration).toBeGreaterThan(100);
-      expect(steps[0].steps).toEqual([
-        {
-          name: 'wait: 100',
-          steps: [],
-        },
-      ]);
+      expect(steps[0].steps.map(t => t.name)).toEqual(['wait: 100']);
+      expect(steps[0].steps.map(t => t.steps)).toEqual([[]]);
     });
 
     it('should have merged steps with start and end', () => {
@@ -87,12 +83,8 @@ describe('should have steps by using cy.allure() interface', () => {
 
       expect(steps[0].name).toEqual('my step');
       expect(steps[0].duration).toBeGreaterThan(100);
-      expect(steps[0].steps).toEqual([
-        {
-          name: 'wait: 100',
-          steps: [],
-        },
-      ]);
+      expect(steps[0].steps.map(t => t.name)).toEqual(['wait: 100']);
+      expect(steps[0].steps.map(t => t.steps)).toEqual([[]]);
     });
 
     it('should have not merged steps with diff names', () => {
@@ -106,12 +98,9 @@ describe('should have steps by using cy.allure() interface', () => {
 
       expect(steps[0].name).toEqual('my step');
       expect(steps[0].duration).toBeGreaterThan(100);
-      expect(steps[0].steps).toEqual([
-        {
-          name: 'wait: 100',
-          steps: [],
-        },
-      ]);
+
+      expect(steps[0].steps.map(t => t.name)).toEqual(['wait: 100']);
+      expect(steps[0].steps.map(t => t.steps)).toEqual([[]]);
 
       // second
       expect(steps[1].name).toEqual('my OTHER step');
