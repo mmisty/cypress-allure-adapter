@@ -8,6 +8,7 @@ import { mapSteps } from '../../cy-helper/utils';
  * Cause: steps were not ended correctly on testResult event
  */
 describe('reporter', () => {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
 
