@@ -1,7 +1,6 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import type { ContentType } from '../common/types';
 import { packageLog } from '../common';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
