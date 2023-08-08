@@ -1,4 +1,3 @@
-import { allureTasks } from '../../../src/plugins/allure';
 import { Status } from 'allure-js-commons';
 import { parseAllure } from 'allure-js-parser';
 import { existsSync, rmSync } from 'fs';
@@ -9,6 +8,7 @@ import { mapSteps } from '../../cy-helper/utils';
  * Cause: steps were not ended correctly on testResult event
  */
 describe('reporter', () => {
+  const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
 
   it('should correctly end all steps', () => {
