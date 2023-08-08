@@ -207,11 +207,16 @@ export const handleCyLogEvents = (
 ) => {
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands } = config;
-  const ingoreAllCommands = () => [...ignoreCommands(), 'should', 'then', 'allure'];
+  const ingoreAllCommands = () => [...ignoreCommands(), 'should', 'then', 'allure'].filter(t => t.trim() !== '');
   const customCommands: string[] = [];
   const commands: string[] = [];
   const logCommands: string[] = [];
   const emit = createEmitEvent(runner);
+
+  Cypress.Allure.on('test:started', () => {
+    commands.splice(0, commands.length);
+    logCommands.splice(0, logCommands.length);
+  });
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true

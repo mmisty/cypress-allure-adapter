@@ -691,7 +691,6 @@ export class AllureReporter {
   }
 
   // set status to last step recursively
-  // todo check
   setLastStepStatus(steps: ExecutableItem[], status: Status, details?: StatusDetails) {
     const stepsCount = steps.length;
 
