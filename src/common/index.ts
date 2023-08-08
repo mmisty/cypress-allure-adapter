@@ -37,7 +37,7 @@ export const tmsIssueUrl = (env: Record<string, string>, value: string, type: 'i
     return value;
   }
 
-  const prefix = type === 'tms' ? env['tmsPrefix'] ?? '' : env['issuePrefix'] ?? '';
+  const prefix = type === 'tms' ? env['tmsPrefix'] : env['issuePrefix'];
 
   if (prefix.indexOf('*') !== -1) {
     return prefix.replace('*', value);
