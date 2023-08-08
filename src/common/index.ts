@@ -1,4 +1,4 @@
-import { ContentType } from '../../src/plugins/allure-types';
+import { ContentType } from '../plugins/allure-types';
 
 export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
