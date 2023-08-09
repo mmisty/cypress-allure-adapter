@@ -109,10 +109,10 @@ export enum LabelName {
 }
 
 type KeysStage = keyof typeof Stage;
-export type StageType = typeof Stage[KeysStage];
+export type StageType = (typeof Stage)[KeysStage];
 
 type KeysStatus = keyof typeof Status;
-export type StatusType = typeof Status[KeysStatus];
+export type StatusType = (typeof Status)[KeysStatus];
 
 export const UNKNOWN = 'unknown' as Status;
 
