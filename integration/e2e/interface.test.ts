@@ -1,8 +1,6 @@
-import { ContentType } from '@src/plugins/allure-types';
-
 describe('suite', () => {
   beforeEach(() => {
-    cy.allure().epic('EPIC').attachment('sds', 'sd', ContentType.TEXT); //.thread('01');
+    cy.allure().epic('EPIC').attachment('sds', 'sd', 'text/plain'); //.thread('01');
   });
   it('test 1', () => {
     cy.allure().feature('Test labels').story('Test');
@@ -23,9 +21,9 @@ describe('suite', () => {
       .addDescriptionHtml('<div>ggg</div>')
       //.thread('P1')
       .fullName('#1')
-      .testAttachment('123.csv', 'sddssd', ContentType.TEXT)
-      .testFileAttachment('test.csv', 'integration/e2e/interface.test.ts', ContentType.TEXT)
-      .attachment('123.csv', 'sddssd', ContentType.TEXT)
+      .testAttachment('123.csv', 'sddssd', 'text/plain')
+      .testFileAttachment('test.csv', 'integration/e2e/interface.test.ts', 'text/plain')
+      .attachment('123.csv', 'sddssd', 'text/plain')
       .host('MY_MAC1')
       .thread('02')
       .language('javascript')

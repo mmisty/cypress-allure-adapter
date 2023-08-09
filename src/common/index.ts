@@ -1,4 +1,4 @@
-import { ContentType } from '../plugins/allure-types';
+import type { ContentType } from '../common/types';
 
 export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
@@ -73,58 +73,58 @@ export const getContentType = (file: string): ContentType => {
 
   switch (ext) {
     case '.png': {
-      return ContentType.PNG;
+      return 'image/png';
     }
     case '.log':
 
     case '.txt': {
-      return ContentType.TEXT;
+      return 'text/plain';
     }
 
     case '.json': {
-      return ContentType.JSON;
+      return 'application/json';
     }
 
     case '.htm':
 
     case '.html': {
-      return ContentType.HTML;
+      return 'text/html';
     }
 
     case '.csv': {
-      return ContentType.CSV;
+      return 'text/csv';
     }
 
     case '.xml': {
-      return ContentType.XML;
+      return 'application/xml';
     }
 
     case '.jpeg':
 
     case '.jpg': {
-      return ContentType.JPEG;
+      return 'image/jpeg';
     }
 
     case '.mp4': {
-      return ContentType.MP4;
+      return 'video/mp4';
     }
 
     case '.svg': {
-      return ContentType.SVG;
+      return 'image/svg+xml';
     }
 
     case '.zip':
 
     case '.pdf': {
-      return ContentType.ZIP;
+      return 'application/zip';
     }
 
     case '.css': {
-      return ContentType.CSS;
+      return 'text/css';
     }
 
     default: {
-      return ContentType.ZIP;
+      return 'application/zip';
     }
   }
 };

@@ -1,6 +1,6 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
-import { ContentType, Status } from '../plugins/allure-types';
+import { Status } from '../plugins/allure-types';
 import { packageLog } from '../common';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
@@ -139,7 +139,7 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
         longAttaches
           .filter(t => !!t.obj)
           .forEach(attach => {
-            Cypress.Allure.attachment(attach.name, attach.stringified, ContentType.JSON);
+            Cypress.Allure.attachment(attach.name, attach.stringified, 'application/json');
           });
       }
     });
@@ -311,7 +311,7 @@ export const handleCyLogEvents = (
         Cypress.Allure.startStep(cmdMessage);
 
         if (log.message > ARGS_TRIM_AT) {
-          Cypress.Allure.attachment(`${cmdMessage} args`, log.message, ContentType.JSON);
+          Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
         }
         Cypress.Allure.endStep(Status.PASSED);
       }
@@ -366,7 +366,7 @@ export const handleCyLogEvents = (
       if (!requestAndLogRequests && args.join(',').length > ARGS_TRIM_AT) {
         const content = args.join('\n');
 
-        Cypress.Allure.attachment(`${cmdMessage} args`, content, ContentType.JSON);
+        Cypress.Allure.attachment(`${cmdMessage} args`, content, 'application/json');
       }
     });
   });

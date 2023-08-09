@@ -15,9 +15,10 @@ import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
-import { AllureTaskArgs, ContentType, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
+import { AllureTaskArgs, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import StatusDetails = Cypress.StatusDetails;
 import { packageLog, extname, delay } from '../common';
+import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 
 const debug = Debug('cypress-allure:reporter');
@@ -320,7 +321,7 @@ export class AllureReporter {
 
         testCon.attachments.push({
           name: name,
-          type: ContentType.PNG,
+          type: 'image/png',
           source: nameAttAhc, // todo
         });
 
@@ -416,7 +417,7 @@ export class AllureReporter {
           }
           testCon.attachments.push({
             name: `${specname}${ext}`,
-            type: ContentType.MP4,
+            type: 'video/mp4',
             source: nameAttAhc,
           });
 

@@ -1,4 +1,5 @@
 import type { StatusDetails } from 'allure-js-commons';
+import type { ContentType } from '../common/types';
 
 export interface AutoScreen {
   screenshotId: string;
@@ -68,22 +69,6 @@ export type AllureTaskArgs<T extends RequestTask> = AllureTask[T] extends undefi
   : AllureTask[T];
 export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> };
 export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
-export enum ContentType {
-  TEXT = 'text/plain',
-  XML = 'application/xml',
-  HTML = 'text/html',
-  CSV = 'text/csv',
-  TSV = 'text/tab-separated-values',
-  CSS = 'text/css',
-  URI = 'text/uri-list',
-  SVG = 'image/svg+xml',
-  PNG = 'image/png',
-  JSON = 'application/json',
-  ZIP = 'application/zip',
-  WEBM = 'video/webm',
-  JPEG = 'image/jpeg',
-  MP4 = 'video/mp4',
-}
 
 export enum Status {
   PASSED = 'passed',
@@ -122,9 +107,6 @@ export enum LabelName {
   LANGUAGE = 'language',
   LAYER = 'layer',
 }
-
-type KeysContent = keyof typeof ContentType;
-export type ContentType2 = typeof ContentType[KeysContent];
 
 type KeysStage = keyof typeof Stage;
 export type StageType = typeof Stage[KeysStage];

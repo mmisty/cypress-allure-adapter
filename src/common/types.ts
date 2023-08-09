@@ -1,0 +1,15 @@
+export type ContentType =
+  | 'text/plain'
+  | 'application/xml'
+  | 'text/html'
+  | 'text/csv'
+  | 'text/tab-separated-values'
+  | 'text/css'
+  | 'text/uri-list'
+  | 'image/svg+xml'
+  | 'image/png'
+  | 'application/json'
+  | 'application/zip'
+  | 'video/webm'
+  | 'image/jpeg'
+  | 'video/mp4';

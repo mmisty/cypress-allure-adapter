@@ -1,7 +1,8 @@
 import { StatusDetails } from 'allure-js-commons';
 import { AllureReporter } from './allure-reporter-plugin';
 import Debug from 'debug';
-import { ContentType, Status, StatusType, UNKNOWN } from './allure-types';
+import { Status, StatusType, UNKNOWN } from './allure-types';
+import type { ContentType } from '../common/types';
 
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
