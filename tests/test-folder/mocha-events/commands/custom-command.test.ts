@@ -47,7 +47,7 @@ describe('custom commands', () => {
     });
     
     it('returnGet', () => {
-      cy.tasklog('hello').returnGet('hello');
+      cy.tasklog('hello').returnGet('hello').should('not.exist');
       cy.get('div').should('exist');
     });
     
@@ -150,7 +150,15 @@ describe('custom commands', () => {
           steps: [
             { name: 'task: log, hello', steps: [] },
             { name: 'wrap', steps: [] },
-            { name: 'get: div:eq(100)', steps: [] },
+            {
+              name: 'get: div:eq(100)',
+              steps: [
+                {
+                  name: 'assert: expected **div:eq(100)** not to exist in the DOM',
+                  steps: [],
+                },
+              ],
+            },
           ],
         },
         {
@@ -180,11 +188,11 @@ describe('custom commands', () => {
             { name: 'wait: 1', steps: [] },
             { name: 'wait: 2', steps: [] },
             { name: 'task: fileExists, nonexistingd', steps: [] },
+            {
+              name: 'assert: expected **false** to equal **false**',
+              steps: [],
+            },
           ],
-        },
-        {
-          name: 'assert: expected **false** to equal **false**',
-          steps: [],
         },
       ]);
     });
@@ -207,13 +215,13 @@ describe('custom commands', () => {
                 { name: 'wait: 1', steps: [] },
                 { name: 'wait: 2', steps: [] },
                 { name: 'task: fileExists, nonexistingd2', steps: [] },
+                {
+                  name: 'assert: expected **false** to equal **false**',
+                  steps: [],
+                },
               ],
             },
           ],
-        },
-        {
-          name: 'assert: expected **false** to equal **false**',
-          steps: [],
         },
       ]);
     });

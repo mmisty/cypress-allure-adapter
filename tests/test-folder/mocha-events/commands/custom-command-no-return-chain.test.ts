@@ -60,9 +60,19 @@ describe('custom commands', () => {
         {
           name: 'qaId: link-2',
           steps: [
-            { name: 'get: [data-qa-id=link-2]', steps: [] },
-            { name: 'click', steps: [] },
-            { name: 'new url: http://localhost:number/mytest.com#2', steps: [] },
+            {
+              name: 'get: [data-qa-id=link-2]',
+              steps: [],
+            },
+          ],
+        },
+        {
+          name: 'click',
+          steps: [
+            {
+              name: 'new url: http://localhost:number/mytest.com#2',
+              steps: [],
+            },
           ],
         },
       ]);
@@ -80,17 +90,37 @@ describe('custom commands', () => {
         {
           name: 'qaId: link-2',
           steps: [
-            { name: 'get: [data-qa-id=link-2]', steps: [] },
-            { name: 'click', steps: [] },
-            { name: 'new url: http://localhost:number/mytest.com#2', steps: [] },
+            {
+              name: 'get: [data-qa-id=link-2]',
+              steps: [],
+            },
+          ],
+        },
+        {
+          name: 'click',
+          steps: [
+            {
+              name: 'new url: http://localhost:number/mytest.com#2',
+              steps: [],
+            },
           ],
         },
         {
           name: 'qaId: link-3',
           steps: [
-            { name: 'get: [data-qa-id=link-3]', steps: [] },
-            { name: 'click', steps: [] },
-            { name: 'new url: http://localhost:number/mytest.com#3', steps: [] },
+            {
+              name: 'get: [data-qa-id=link-3]',
+              steps: [],
+            },
+          ],
+        },
+        {
+          name: 'click',
+          steps: [
+            {
+              name: 'new url: http://localhost:number/mytest.com#3',
+              steps: [],
+            },
           ],
         },
       ]);
