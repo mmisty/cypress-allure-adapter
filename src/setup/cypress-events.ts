@@ -275,7 +275,7 @@ export const handleCyLogEvents = (
       // should be done for all child commands ?
       const swapCmd = () => {
         const custId = queue().queueables.findIndex(
-          (t, i) => i >= queue().index && t.attributes.name === 'doSyncCommand',
+          (t: CommandT, i: number) => i >= queue().index && t.attributes?.name === 'doSyncCommand',
         );
         const next = custId + 1;
 
