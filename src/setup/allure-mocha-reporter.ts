@@ -546,9 +546,20 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   handleCyLogEvents(runner, allureEventsEmitter, {
     ignoreCommands: () => (Cypress.env('allureSkipCommands') ?? '').split(','),
-    wrapCustomCommands:
-      Cypress.env('allureWrapCustomCommands') === undefined ||
-      Cypress.env('allureWrapCustomCommands') === 'true' ||
-      Cypress.env('allureWrapCustomCommands') === true,
+    wrapCustomCommands: () => {
+      if (Cypress.env('allureWrapCustomCommands') === undefined) {
+        return true;
+      }
+
+      if (Cypress.env('allureWrapCustomCommands') === 'true' || Cypress.env('allureWrapCustomCommands') === true) {
+        return true;
+      }
+
+      if (Cypress.env('allureWrapCustomCommands') === 'false' || Cypress.env('allureWrapCustomCommands') === false) {
+        return false;
+      }
+
+      return Cypress.env('allureWrapCustomCommands').split(',');
+    },
   });
 };
