@@ -34,4 +34,10 @@ describe('should pass', () => {
     cy.get('div').eq(0).should('exist');
     expect(1).eq(1);
   });
+
+  it('cmd', () => {
+    cy.qaId('link-2').click();
+    cy.qaId('link-3').click();
+    cy.fileExists('nonexis1').should(t => expect(t).eq(false));
+  });
 });

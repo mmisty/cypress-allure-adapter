@@ -1,4 +1,4 @@
-import { extname, delay, MessageQueue, basename, getContentType } from '../../../src/common';
+import { extname, delay, MessageQueue, basename, getContentType, swapItems } from '../../../src/common';
 
 describe('utils', () => {
   it('extname should get ext name', () => {
@@ -77,5 +77,43 @@ describe('utils', () => {
       { data: 'added 8', id: 9 },
       { data: 'added 9', id: 10 },
     ]);
+  });
+
+  describe('swap', () => {
+    it('swap items 1', () => {
+      const arr = ['0', '1', '2'];
+      swapItems(arr, 0, 1);
+      expect(arr).toEqual(['1', '0', '2']);
+    });
+
+    it('swap items 2', () => {
+      const arr = ['0', '1', '2'];
+      swapItems(arr, 0, 2);
+      expect(arr).toEqual(['2', '1', '0']);
+    });
+
+    it('swap items - incorrect indeces > length 1', () => {
+      const arr = ['0', '1', '2'];
+      swapItems(arr, 0, 3);
+      expect(arr).toEqual(['0', '1', '2']);
+    });
+
+    it('swap items - incorrect indeces > length 2', () => {
+      const arr = ['0', '1', '2'];
+      swapItems(arr, 3, 0);
+      expect(arr).toEqual(['0', '1', '2']);
+    });
+
+    it('swap items - incorrect indeces < 0 (1)', () => {
+      const arr = ['0', '1', '2'];
+      swapItems(arr, -1, 2);
+      expect(arr).toEqual(['0', '1', '2']);
+    });
+
+    it('swap items - incorrect indeces < 0 (2)', () => {
+      const arr = ['0', '1', '2'];
+      swapItems(arr, 0, -3);
+      expect(arr).toEqual(['0', '1', '2']);
+    });
   });
 });

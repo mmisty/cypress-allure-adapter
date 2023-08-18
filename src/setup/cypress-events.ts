@@ -1,7 +1,7 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { packageLog } from '../common';
+import { packageLog, swapItems } from '../common';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
 import CommandT = Cypress.CommandT;
@@ -207,7 +207,9 @@ export const handleCyLogEvents = (
 ) => {
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands } = config;
-  const ingoreAllCommands = () => [...ignoreCommands(), 'should', 'then', 'allure'].filter(t => t.trim() !== '');
+
+  const ingoreAllCommands = () =>
+    [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand'].filter(t => t.trim() !== '');
   const customCommands: string[] = [];
   const commands: string[] = [];
   const logCommands: string[] = [];
@@ -233,6 +235,58 @@ export const handleCyLogEvents = (
   const wrapCustomCommandsFn = () => {
     const origAdd = Cypress.Commands.add;
 
+    const getPrevSubjects = (cmd: CommandT, arr: any[] = []): any[] => {
+      arr.unshift(cmd?.attributes?.subject);
+
+      if (cmd?.attributes?.prev) {
+        return getPrevSubjects(cmd.attributes.prev, arr);
+      }
+
+      return arr;
+    };
+
+    // not changing the subject
+    Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {
+      const queue = () => (cy as any).queue.queueables;
+      const commandsCount = queue().length;
+      const subjs = getPrevSubjects((cy as any).state()?.current);
+      let prevSubj = undefined;
+
+      if (subjs.length > 1) {
+        prevSubj = subjs[subjs.length - 2];
+      }
+      syncFn(prevSubj);
+
+      if (queue().length > commandsCount) {
+        console.warn(
+          'Using cypress async commands inside `cy.doSyncCommand` my change the subject ' +
+            'and retries will not be done for the chain. To avoid this warning ' +
+            'do not use cy.<command> here, instead you can use Cypress.<command>',
+        );
+      }
+
+      return prevSubj;
+    });
+
+    Cypress.on('command:enqueued', () => {
+      const queue = () => (cy as any).queue as any;
+
+      // swap if next chainer is 'should'
+      // should be done for all child commands ?
+      const swapCmd = () => {
+        const custId = queue().queueables.findIndex(
+          (t: CommandT, i: number) => i >= queue().index && t.attributes?.name === 'doSyncCommand',
+        );
+        const next = custId + 1;
+
+        if (queue().queueables.length > next && ['assertion'].includes(queue().queueables[next].attributes.type)) {
+          swapItems(queue().queueables, custId, next);
+          swapCmd();
+        }
+      };
+      swapCmd();
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Cypress.Commands.add = (...args: any[]) => {
       const fnName = args[0];
@@ -255,21 +309,9 @@ export const handleCyLogEvents = (
 
         const res = fn(...fnargs);
 
-        if (res?.should) {
-          // cannot use cy.allure().endStep() as it will change the subject
-          // should command does not change subject
-          res.should(() => {
-            events.emit('cmd:ended:tech', currentCmd, true);
-          });
-        } else if (!res) {
-          // when chain does not return anything
-          cy.wrap(null, { log: false }).then(() => {
-            events.emit('cmd:ended:tech', currentCmd, true);
-          });
-        } else {
-          // in all other cases end command safely
+        cy.doSyncCommand(() => {
           events.emit('cmd:ended:tech', currentCmd, true);
-        }
+        });
 
         return res;
       };
@@ -373,7 +415,6 @@ export const handleCyLogEvents = (
 
   events.on('cmd:ended:tech', (command: CommandT, isCustom) => {
     const { message: cmdMessage } = commandParams(command);
-
     const last = customCommands[customCommands.length - 1];
 
     if (last && last === cmdMessage) {

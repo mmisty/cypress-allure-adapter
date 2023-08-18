@@ -2,10 +2,10 @@ import { Status } from '@src/plugins/allure-types';
 import '@mmisty/cypress-grep/mocha';
 
 describe(
-  'calculator',
+  'calculator @example',
   {
     env: {
-      allureSkipCommands: 'wrap1',
+      allureSkipCommands: 'wrap',
     },
   },
   () => {
@@ -65,6 +65,10 @@ describe(
 
     after('Teardown for tests in file', () => {
       cy.log('Teardown for tests in file');
+    });
+
+    it('should start calc', () => {
+      cy.allure().severity('blocker').owner('Maria').lead('Ivan Ivanov').thread('02');
     });
 
     describe('Summ - substract', () => {

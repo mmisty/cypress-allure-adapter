@@ -157,6 +157,8 @@ const htmlStandard = (options?: HtmlOptions) => `
        <label>Some text here label 3</label>
        ${options?.body ?? ''}
        <a href="mylink.com">My link</a>
+       <a href="#2" data-qa-id="link-2">My link</a>
+       <a href="#3" data-qa-id="link-3">My link</a>
     </body>
     </html>
     <script>
