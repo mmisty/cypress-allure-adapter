@@ -4,7 +4,14 @@ declare namespace Cypress {
   export type CommandT = {
     state?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    attributes?: { name?: string; args?: any; logs?: { attributes?: { consoleProps?: () => any } }[] };
+    attributes?: {
+      name?: string;
+      args?: any;
+      logs?: { attributes?: { consoleProps?: () => any } }[];
+      subject?: any;
+      prev?: CommandT;
+      next?: CommandT;
+    };
   };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
@@ -16,8 +23,19 @@ declare namespace Cypress {
   type Parameter = { name: string; value: string };
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-  interface Chainable {
+  interface Chainable<Subject = any> {
     allure(): Allure;
+
+    /**
+     * executes function withing chain of commands and doesn't change the subject
+     * something like 'should' but without retries
+     * todo: move to lib
+     * When it is followed by assertions(should or and) the command will be executed after them
+     * @param fn
+     * @example
+     * cy.get('a').doSyncCommand((subj) => console.log(subj.text())).click();
+     */
+    doSyncCommand(fn: (subject: Subject) => any): Chainable<Subject>;
   }
   interface AllureEvents {
     /**

@@ -35,6 +35,14 @@ Add `allureAdapterSetup(); ` in your `support/index.ts` file (or `e2e.ts` file)
    
    allureAdapterSetup();
    ```
+If you want all custom commands to be correctly wrapped in report register adapter before adding custom commands: 
+
+ ```javascript
+   import { allureAdapterSetup } from '@mmisty/cypress-allure-adapter';
+   
+   allureAdapterSetup();
+   // register custom commands here
+   ```
 
 ### 2. Update plugins (setupNodeEvents)
 Add `configureAllureAdapterPlugins(on, config);` into your plugins file:
@@ -688,7 +696,10 @@ You can put this into your `support/index.ts` file.
 To see debug log run cypress with DEBUG env variable like: `DEBUG=cypress-allure* npm run cy:open`
 
 ## Change log
-### 0.8.0 
+### 0.8.2
+ - fix for wrapping custom commands that doesn't return anything but have subject
+
+### 0.8.1 
  - fixes with attaching requests files
  - writeCategoriesDefinitions interface improved to allow file path instead of categories array as argument
  - ability to endStep with status

@@ -128,3 +128,12 @@ export const getContentType = (file: string): ContentType => {
     }
   }
 };
+
+export const swapItems = (arr: unknown[], index1: number, index2: number) => {
+  if (index1 >= arr.length || index2 >= arr.length || index1 < 0 || index2 < 0) {
+    return;
+  }
+  const temp = arr[index1];
+  arr[index1] = arr[index2];
+  arr[index2] = temp;
+};
