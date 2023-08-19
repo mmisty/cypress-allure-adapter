@@ -75,13 +75,12 @@ describe('should pass', () => {
       Cypress.$('a:eq(0)').after('<a href="#123" data-qa-id="that-one">123</a>');
     }, 1000);
 
-    cy.get('[data-qa-id="that-one"]').doSyncCommand <
-      JQuery >
-      (subj => {
+    cy.get('[data-qa-id="that-one"]')
+      .doSyncCommand(subj => {
         Cypress.log({ name: 'sync', message: `message after get command resolved ${subj.text()}` });
       })
-        .click()
-        .should('have.text', '123');
+      .click()
+      .should('have.text', '123');
   });
 
   it('syncCmdNoSubj', () => {
