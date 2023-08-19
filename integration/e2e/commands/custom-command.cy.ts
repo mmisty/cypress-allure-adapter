@@ -48,19 +48,19 @@ describe('should pass', () => {
   });
 
   it('should should', () => {
-    Cypress.Commands.add('qa', (qaId, options = {}) => {
+    Cypress.Commands.add('qa', (qaId = {}) => {
       cy.qaId(qaId).should('exist');
     });
     cy.qa('link-2').should('be.visible');
   });
 
-  Cypress.Commands.add('qaIdNested', (qaId, options = {}) => {
+  Cypress.Commands.add('qaIdNested', (qaId = {}) => {
     cy.qaId(qaId).should('exist').click();
     cy.qaId(qaId).should('exist').click();
     // cy.qaId(qaId).should('exist');
   });
 
-  Cypress.Commands.add('qaIdNested2', (qaId, options = {}) => {
+  Cypress.Commands.add('qaIdNested2', (qaId = {}) => {
     cy.qaId(qaId);
     // cy.qaId(qaId).should('exist');
   });
@@ -147,7 +147,7 @@ describe('should pass', () => {
     cy.get('div:eq(100)');
   });
 
-  Cypress.Commands.add('wrapsub', { prevSubject: true }, (subj, message: string) => {
+  Cypress.Commands.add('wrapsub', { prevSubject: true }, subj => {
     cy.wrap(subj);
   });
 
@@ -190,28 +190,6 @@ describe('should pass', () => {
     it('returnGet2', () => {
       cy.tasklog('hello').returnGet2('hello').should('not.exist');
       cy.get('div').should('exist');
-    });
-
-    it('myt', () => {
-      cy.get('div');
-      cy.wrap('1').then(() => {
-        const getPrevSubject = cmd => {
-          return cmd.attributes.prev?.attributes.subject;
-        };
-
-        const getPrevSubjects = (cmd: any, arr: any[] = []): any[] => {
-          arr.unshift(cmd.attributes.subject);
-
-          if (cmd.attributes.prev) {
-            return getPrevSubjects(cmd.attributes.prev, arr);
-          }
-
-          return arr;
-        };
-        console.log('PREV');
-        console.log(getPrevSubjects(cy.state().current));
-        // console.log(getPrevSubject(cy.state().current.attributes.prev));
-      });
     });
 
     it('returnTaskValue', () => {

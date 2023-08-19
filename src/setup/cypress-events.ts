@@ -96,7 +96,8 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   const getRequests = (): OneRequestConsoleProp[] | undefined => {
     if (logs.every(t => !!t.Requests)) {
       // several requests if there are come redirects
-      return logs.flatMap(t => t.Requests.map(x => ({ ...x, duration: t.Yielded?.duration })));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return logs.flatMap(t => t.Requests.map((x: any) => ({ ...x, duration: t.Yielded?.duration })));
     }
 
     if (logs.every(t => !!t.Request)) {
@@ -259,6 +260,7 @@ export const handleCyLogEvents = (
     const origAdd = Cypress.Commands.add;
 
     Cypress.on('command:enqueued', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const queue = () => (cy as any).queue as any;
 
       // swap if next chainer is 'should'

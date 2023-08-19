@@ -77,6 +77,7 @@ export const registerCommands = () => {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getPrevSubjects = (cmd: any, arr: any[] = []): any[] => {
     arr.unshift(cmd?.attributes?.subject);
 
@@ -88,9 +89,12 @@ export const registerCommands = () => {
   };
 
   // not changing the subject
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const queue = () => (cy as any).queue.queueables;
     const commandsCount = queue().length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const subjs = getPrevSubjects((cy as any).state()?.current);
     let prevSubj = undefined;
 

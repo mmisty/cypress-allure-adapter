@@ -6,8 +6,12 @@ declare namespace Cypress {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     attributes?: {
       name?: string;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       args?: any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       logs?: { attributes?: { consoleProps?: () => any } }[];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       subject?: any;
       prev?: CommandT;
       next?: CommandT;
@@ -22,7 +26,7 @@ declare namespace Cypress {
   type Severity = 'blocker' | 'critical' | 'normal' | 'minor' | 'trivial';
   type Parameter = { name: string; value: string };
 
-  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
+  // eslint-disable-next-line @typescript-eslint/consistent-type-definitions,@typescript-eslint/no-explicit-any
   interface Chainable<Subject = any> {
     allure(): Allure;
 
@@ -35,7 +39,7 @@ declare namespace Cypress {
      * @example
      * cy.get('a').doSyncCommand((subj) => console.log(subj.text())).click();
      */
-    doSyncCommand(fn: (subject: Subject) => any): Chainable<Subject>;
+    doSyncCommand(fn: (subject: Subject) => void): Chainable<Subject>;
   }
   interface AllureEvents {
     /**

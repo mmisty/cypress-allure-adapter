@@ -5,6 +5,7 @@ import { existsSync, rmSync } from 'fs';
 jest.setTimeout(60000);
 const results = 'reports/allure-res';
 // need to fix process hanging in tests
+// eslint-disable-next-line jest/no-disabled-tests
 describe.skip('startReporterServer', () => {
   const start = async (debug: boolean, env: any): Promise<{ serv: undefined | WebSocketServer }> => {
     process.env.DEBUG = debug ? 'cypress-allure*' : undefined;
