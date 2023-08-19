@@ -82,13 +82,22 @@ describe('should have requests', () => {
 
       expect(steps).toEqual([
         {
-          name: 'request: http://localhost:number',
-          steps: [],
-          params: [
+          attach: [
             {
-              name: 'Response Status',
-              value: '200',
+              name: 'Request Headers',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
             },
+            {
+              name: 'Response Headers',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
+            },
+          ],
+          name: 'request: http://localhost:number',
+          params: [
             {
               name: 'Request URL',
               value: 'http://localhost:number/',
@@ -102,18 +111,12 @@ describe('should have requests', () => {
               value: 'Hello World!',
             },
           ],
-          attach: [
+          steps: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
+              attach: [],
+              name: 'request: number http://localhost:number/',
+              params: [],
+              steps: [],
             },
           ],
         },
@@ -139,13 +142,22 @@ describe('should have requests', () => {
 
       expect(steps).toEqual([
         {
-          name: 'request: GET, http://localhost:number',
-          steps: [],
-          params: [
+          attach: [
             {
-              name: 'Response Status',
-              value: '200',
+              name: 'Request Headers',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
             },
+            {
+              name: 'Response Headers',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
+            },
+          ],
+          name: 'request: GET, http://localhost:number',
+          params: [
             {
               name: 'Request URL',
               value: 'http://localhost:number/',
@@ -159,18 +171,12 @@ describe('should have requests', () => {
               value: 'Hello World!',
             },
           ],
-          attach: [
+          steps: [
             {
-              name: 'Request Headers',
-              type: 'application/json',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-            },
-            {
-              name: 'Response Headers',
-              type: 'application/json',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
+              attach: [],
+              name: 'request: number http://localhost:number/',
+              params: [],
+              steps: [],
             },
           ],
         },
@@ -196,12 +202,22 @@ describe('should have requests', () => {
 
       expect(steps).toEqual([
         {
+          attach: [
+            {
+              name: 'Request Headers',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
+            },
+            {
+              name: 'Response Headers',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
+            },
+          ],
           name: 'request: POST, http://localhost:number/hello, {"data":"should"}',
           params: [
-            {
-              name: 'Response Status',
-              value: '200',
-            },
             {
               name: 'Request URL',
               value: 'http://localhost:number/hello',
@@ -215,21 +231,14 @@ describe('should have requests', () => {
               value: '{\n "result": "hello world"\n}',
             },
           ],
-          attach: [
+          steps: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
-              sourceContentMoreThanZero: true,
-              source: 'source.json',
-              type: 'application/json',
+              attach: [],
+              name: 'request: number http://localhost:number/hello',
+              params: [],
+              steps: [],
             },
           ],
-          steps: [],
         },
       ]);
     });

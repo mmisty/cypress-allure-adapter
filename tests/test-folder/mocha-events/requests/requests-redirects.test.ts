@@ -26,12 +26,16 @@ describe('should have requests when redirects', () => {
   it('01 redirects test', () => {
     cy.request('/api/test');
   });
+  
+  it('02 its status', () => {
+    cy.wrap({status:200}).its('status').should('eq', 200);
+  });
  
 });
 
 `,
     ],
-    { allureLogCyCommands: 'false' },
+    { allureLogCyCommands: 'true' },
   );
   describe('check results', () => {
     let resAllure: AllureTest[];
@@ -60,72 +64,127 @@ describe('should have requests when redirects', () => {
 
       expect(steps).toEqual([
         {
-          attach: [
+          attach: [],
+          name: 'request: /api/test',
+          params: [],
+          status: 'passed',
+          steps: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
+              attach: [
+                {
+                  name: 'Request Headers',
+                  source: 'source.json',
+                  sourceContentMoreThanZero: true,
+                  type: 'application/json',
+                },
+                {
+                  name: 'Response Headers',
+                  source: 'source.json',
+                  sourceContentMoreThanZero: true,
+                  type: 'application/json',
+                },
+              ],
+              name: 'request: 302 api/test',
+              params: [
+                {
+                  name: 'Request URL',
+                  value: 'http://localhost:number/api/test',
+                },
+                {
+                  name: 'Request Body',
+                  value: '',
+                },
+                {
+                  name: 'Response Body',
+                  value: '',
+                },
+              ],
+              status: 'broken',
+              steps: [],
             },
             {
-              name: 'Response Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
+              attach: [
+                {
+                  name: 'Request Headers',
+                  source: 'source.json',
+                  sourceContentMoreThanZero: true,
+                  type: 'application/json',
+                },
+                {
+                  name: 'Response Body',
+                  source: 'source.json',
+                  sourceContentMoreThanZero: true,
+                  type: 'application/json',
+                },
+                {
+                  name: 'Response Headers',
+                  source: 'source.json',
+                  sourceContentMoreThanZero: true,
+                  type: 'application/json',
+                },
+              ],
+              name: 'request: 200 __/',
+              params: [
+                {
+                  name: 'Request URL',
+                  value: 'http://localhost:number/__/',
+                },
+                {
+                  name: 'Request Body',
+                  value: '',
+                },
+              ],
+              status: 'passed',
+              steps: [],
             },
           ],
-          name: 'request: 302 api/test',
-          params: [
+        },
+      ]);
+    });
+
+    it('should have its status', () => {
+      const tests = resAllure.filter(t => t.name === '02 its status');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({
+        status: t.status,
+        name: t.name?.replace(/\d{4,}/g, 'number'),
+        params: t.parameters,
+        attach: t.attachments,
+      }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          attach: [],
+          name: 'wrap: {"status":200}',
+          params: [],
+          status: 'passed',
+          steps: [
             {
-              name: 'Request URL',
-              value: 'http://localhost:number/api/test',
-            },
-            {
-              name: 'Request Body',
-              value: '',
-            },
-            {
-              name: 'Response Body',
-              value: '',
+              attach: [],
+              name: 'wrap: {status: 200}',
+              params: [],
+              status: 'passed',
+              steps: [],
             },
           ],
-          status: 'broken',
-          steps: [],
         },
         {
-          attach: [
-            {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Body',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-          ],
-          name: 'request: 200 __/',
-          params: [
-            {
-              name: 'Request URL',
-              value: 'http://localhost:number/__/',
-            },
-            {
-              name: 'Request Body',
-              value: '',
-            },
-          ],
+          attach: [],
+          name: 'its: status',
+          params: [],
           status: 'passed',
-          steps: [],
+          steps: [
+            {
+              attach: [],
+              name: 'assert: expected **200** to equal **200**',
+              params: [],
+              status: 'passed',
+              steps: [],
+            },
+          ],
         },
       ]);
     });
