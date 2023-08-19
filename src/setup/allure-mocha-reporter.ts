@@ -100,7 +100,8 @@ export const allureInterface = (
     // remove from interface
     mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
     endStep: (status?: Status) => fn({ task: 'stepEnded', arg: { status: status ?? Status.PASSED, date: Date.now() } }),
-    step: (name: string) => fn({ task: 'step', arg: { name, status: 'passed', date: Date.now() } }),
+    step: (name: string, status?: Status) =>
+      fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now() } }),
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
     testAttachment: (name: string, content: string | Buffer, type) =>
@@ -546,12 +547,16 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   handleCyLogEvents(runner, allureEventsEmitter, {
     ignoreCommands: () => (Cypress.env('allureSkipCommands') ?? '').split(','),
+    allureLogCyCommands: () =>
+      Cypress.env('allureLogCyCommands') === undefined ||
+      Cypress.env('allureLogCyCommands') === 'true' ||
+      Cypress.env('allureLogCyCommands') === true,
     wrapCustomCommands: () => {
-      if (Cypress.env('allureWrapCustomCommands') === undefined) {
-        return true;
-      }
-
-      if (Cypress.env('allureWrapCustomCommands') === 'true' || Cypress.env('allureWrapCustomCommands') === true) {
+      if (
+        Cypress.env('allureWrapCustomCommands') === undefined ||
+        Cypress.env('allureWrapCustomCommands') === 'true' ||
+        Cypress.env('allureWrapCustomCommands') === true
+      ) {
         return true;
       }
 

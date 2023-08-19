@@ -50,7 +50,7 @@ export const registerCommands = () => {
     device: (allure, name) => allure.device(name),
     os: (allure, name) => allure.os(name),
     startStep: (allure, name) => allure.startStep(name),
-    step: (allure, name) => allure.step(name),
+    step: (allure, name, status) => allure.step(name, status),
     endStep: (allure, status) => allure.endStep(status),
     mergeStepMaybe: (allure, name) => allure.mergeStepMaybe(name),
     label: (allure, name, value) => allure.label(name, value),

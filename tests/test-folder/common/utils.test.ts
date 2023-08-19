@@ -1,4 +1,4 @@
-import { extname, delay, MessageQueue, basename, getContentType, swapItems } from '../../../src/common';
+import { extname, delay, MessageQueue, basename, getContentType, swapItems, baseUrlFromUrl } from '../../../src/common';
 
 describe('utils', () => {
   it('extname should get ext name', () => {
@@ -114,6 +114,26 @@ describe('utils', () => {
       const arr = ['0', '1', '2'];
       swapItems(arr, 0, -3);
       expect(arr).toEqual(['0', '1', '2']);
+    });
+  });
+
+  describe('url', () => {
+    it('browserUrl with slashes', () => {
+      const browserUrl = 'http://localhost:52013/api/123';
+
+      expect(baseUrlFromUrl(browserUrl)).toEqual('http://localhost:52013/');
+    });
+
+    it('browserUrl no slashes', () => {
+      const browserUrl = 'http://localhost:52013/';
+
+      expect(baseUrlFromUrl(browserUrl)).toEqual('http://localhost:52013/');
+    });
+
+    it('browserUrl no slashes 2', () => {
+      const browserUrl = 'http://localhost:52013';
+
+      expect(baseUrlFromUrl(browserUrl)).toEqual('http://localhost:52013/');
     });
   });
 });

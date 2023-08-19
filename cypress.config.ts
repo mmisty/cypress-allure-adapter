@@ -28,6 +28,7 @@ export default defineConfig({
       allureShowDuplicateWarn: 'true',
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
+      // allureLogCyCommands: 'false',
 
       tmsPrefix: 'http://jira',
       issuePrefix: 'http://jira/*',
