@@ -76,4 +76,37 @@ export const registerCommands = () => {
       cy.wrap(allure, { log: false });
     });
   }
+
+  const getPrevSubjects = (cmd: any, arr: any[] = []): any[] => {
+    arr.unshift(cmd?.attributes?.subject);
+
+    if (cmd?.attributes?.prev) {
+      return getPrevSubjects(cmd.attributes.prev, arr);
+    }
+
+    return arr;
+  };
+
+  // not changing the subject
+  Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {
+    const queue = () => (cy as any).queue.queueables;
+    const commandsCount = queue().length;
+    const subjs = getPrevSubjects((cy as any).state()?.current);
+    let prevSubj = undefined;
+
+    if (subjs.length > 1) {
+      prevSubj = subjs[subjs.length - 2];
+    }
+    syncFn(prevSubj);
+
+    if (queue().length > commandsCount) {
+      console.warn(
+        'Using cypress async commands inside `cy.doSyncCommand` my change the subject ' +
+          'and retries will not be done for the chain. To avoid this warning ' +
+          'do not use cy.<command> here, instead you can use Cypress.<command>',
+      );
+    }
+
+    return prevSubj;
+  });
 };

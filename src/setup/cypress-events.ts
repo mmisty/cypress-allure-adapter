@@ -203,7 +203,7 @@ const createEmitEvent =
 export const handleCyLogEvents = (
   runner: Mocha.Runner,
   events: EventEmitter,
-  config: { wrapCustomCommands: boolean; ignoreCommands: () => string[] },
+  config: { wrapCustomCommands: () => boolean | string[]; ignoreCommands: () => string[] },
 ) => {
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands } = config;
@@ -232,41 +232,8 @@ export const handleCyLogEvents = (
     return isLog && !ingoreAllCommands().includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
 
-  const wrapCustomCommandsFn = () => {
+  const wrapCustomCommandsFn = (commands: string[], isExclude: boolean) => {
     const origAdd = Cypress.Commands.add;
-
-    const getPrevSubjects = (cmd: CommandT, arr: any[] = []): any[] => {
-      arr.unshift(cmd?.attributes?.subject);
-
-      if (cmd?.attributes?.prev) {
-        return getPrevSubjects(cmd.attributes.prev, arr);
-      }
-
-      return arr;
-    };
-
-    // not changing the subject
-    Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {
-      const queue = () => (cy as any).queue.queueables;
-      const commandsCount = queue().length;
-      const subjs = getPrevSubjects((cy as any).state()?.current);
-      let prevSubj = undefined;
-
-      if (subjs.length > 1) {
-        prevSubj = subjs[subjs.length - 2];
-      }
-      syncFn(prevSubj);
-
-      if (queue().length > commandsCount) {
-        console.warn(
-          'Using cypress async commands inside `cy.doSyncCommand` my change the subject ' +
-            'and retries will not be done for the chain. To avoid this warning ' +
-            'do not use cy.<command> here, instead you can use Cypress.<command>',
-        );
-      }
-
-      return prevSubj;
-    });
 
     Cypress.on('command:enqueued', () => {
       const queue = () => (cy as any).queue as any;
@@ -293,7 +260,14 @@ export const handleCyLogEvents = (
       const fn = typeof args[1] === 'function' ? args[1] : args[2];
       const opts = typeof args[1] === 'object' ? args[1] : undefined;
 
-      if (!fnName || typeof fnName !== 'string' || ingoreAllCommands().includes(fnName)) {
+      if (
+        !fnName ||
+        typeof fnName !== 'string' ||
+        ingoreAllCommands().includes(fnName) ||
+        // wrap only specified commands
+        (commands.length > 0 && commands.includes(fnName) && isExclude) ||
+        (commands.length > 0 && !commands.includes(fnName) && !isExclude)
+      ) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         origAdd(...args);
@@ -328,8 +302,23 @@ export const handleCyLogEvents = (
     };
   };
 
-  if (wrapCustomCommands) {
-    wrapCustomCommandsFn();
+  const wrapCustomCommandsRes = wrapCustomCommands();
+
+  if (wrapCustomCommandsRes) {
+    const commands = Array.isArray(wrapCustomCommandsRes) ? wrapCustomCommandsRes : [];
+    let isExclude = false;
+    let commadsFixed = commands;
+
+    if (!commands?.every(c => c.startsWith('!')) || !commands?.every(c => !c.startsWith('!'))) {
+      console.warn('wrapCustomCommands env var - should either all start from "!" or not');
+    }
+
+    if (commands?.every(c => c.startsWith('!'))) {
+      isExclude = true;
+      commadsFixed = commands?.map(t => t.slice(1));
+    }
+
+    wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
   Cypress.on('log:added', async log => {
