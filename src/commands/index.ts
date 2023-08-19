@@ -50,7 +50,7 @@ export const registerCommands = () => {
     device: (allure, name) => allure.device(name),
     os: (allure, name) => allure.os(name),
     startStep: (allure, name) => allure.startStep(name),
-    step: (allure, name) => allure.step(name),
+    step: (allure, name, status) => allure.step(name, status),
     endStep: (allure, status) => allure.endStep(status),
     mergeStepMaybe: (allure, name) => allure.mergeStepMaybe(name),
     label: (allure, name, value) => allure.label(name, value),
@@ -77,6 +77,7 @@ export const registerCommands = () => {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getPrevSubjects = (cmd: any, arr: any[] = []): any[] => {
     arr.unshift(cmd?.attributes?.subject);
 
@@ -88,9 +89,12 @@ export const registerCommands = () => {
   };
 
   // not changing the subject
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const queue = () => (cy as any).queue.queueables;
     const commandsCount = queue().length;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const subjs = getPrevSubjects((cy as any).state()?.current);
     let prevSubj = undefined;
 

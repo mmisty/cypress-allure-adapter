@@ -5,7 +5,7 @@ const cypressFolder = 'integration';
 
 export default defineConfig({
   e2e: {
-    specPattern: `${cypressFolder}/e2e/**/*.(cy|test|spec).ts`,
+    specPattern: `${cypressFolder}/e2e/**/*.(cy|test|spec).(j|t)s`,
     supportFile: `${cypressFolder}/support/index.ts`,
     downloadsFolder: `${cypressFolder}/downloads`,
     videosFolder: `${cypressFolder}/videos`,
@@ -28,6 +28,7 @@ export default defineConfig({
       allureShowDuplicateWarn: 'true',
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
+      // allureLogCyCommands: 'false',
 
       tmsPrefix: 'http://jira',
       issuePrefix: 'http://jira/*',

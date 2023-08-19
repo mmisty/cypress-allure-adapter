@@ -1,7 +1,7 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { packageLog, swapItems } from '../common';
+import { baseUrlFromUrl, packageLog, swapItems } from '../common';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
 import CommandT = Cypress.CommandT;
@@ -95,11 +95,13 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
 
   const getRequests = (): OneRequestConsoleProp[] | undefined => {
     if (logs.every(t => !!t.Requests)) {
-      return logs.flatMap(t => t.Requests);
+      // several requests if there are come redirects
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return logs.flatMap(t => t.Requests.map((x: any) => ({ ...x, duration: t.Yielded?.duration })));
     }
 
     if (logs.every(t => !!t.Request)) {
-      return logs.map(t => t.Request);
+      return logs.map(t => ({ ...t.Request, duration: t.Yielded?.duration }));
     }
 
     return undefined;
@@ -110,39 +112,57 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   if (!requests) {
     return;
   }
+  const allRequests = requests.filter(r => !!r);
+  allRequests.forEach((req: OneRequestConsoleProp) => {
+    const reqHeaders = { obj: req['Request Headers'], name: 'Request Headers' };
+    const reqBody = { obj: req['Request Body'], name: 'Request Body' };
+    const resHeaders = { obj: req['Response Headers'], name: 'Response Headers' };
+    const resBody = { obj: req['Response Body'], name: 'Response Body' };
+    const resStatusParam = { name: 'Response Status', value: `${req['Response Status'] ?? ''}` };
+    const reqUrlParam = { name: 'Request URL', value: `${req['Request URL'] ?? ''}` };
 
-  requests
-    .filter(r => !!r)
-    .forEach(req => {
-      const reqHeaders = { obj: req['Request Headers'], name: 'Request Headers' };
-      const reqBody = { obj: req['Request Body'], name: 'Request Body' };
-      const resHeaders = { obj: req['Response Headers'], name: 'Response Headers' };
-      const resBody = { obj: req['Response Body'], name: 'Response Body' };
-      const resStatusParam = { name: 'Response Status', value: `${req['Response Status'] ?? ''}` };
-      const reqUrlParam = { name: 'Request URL', value: `${req['Request URL'] ?? ''}` };
+    const stepUrl = reqUrlParam.value.replace(
+      Cypress.config('baseUrl') ?? baseUrlFromUrl(Cypress.config('browserUrl') ?? '') ?? '',
+      '',
+    );
+    const stepStatus = resStatusParam.value !== '200' ? 'broken' : 'passed';
 
-      const attaches = [reqBody, reqHeaders, resBody, resHeaders].map(t => ({
-        ...t,
-        stringified: stringify(t.obj, indent),
-      }));
+    /*if (reqNumber === 0) {
+      Cypress.Allure.parameters({ name: 'duration', value: req.duration });
+    }*/
 
-      const shortAttaches = attaches.filter(a => a.stringified.length < maxParamLength);
-      const longAttaches = attaches.filter(a => a.stringified.length >= maxParamLength);
+    if (allRequests.length > 1) {
+      Cypress.Allure.startStep(`request: ${resStatusParam.value} ${stepUrl}`);
+    } else {
+      Cypress.Allure.step(`request: ${resStatusParam.value} ${stepUrl}`, stepStatus);
+    }
 
-      Cypress.Allure.parameters(
-        resStatusParam,
-        reqUrlParam,
-        ...shortAttaches.map(a => ({ name: a.name, value: a.stringified })),
-      );
+    const attaches = [reqBody, reqHeaders, resBody, resHeaders].map(t => ({
+      ...t,
+      stringified: stringify(t.obj, indent),
+    }));
 
-      if (allureAttachRequests) {
-        longAttaches
-          .filter(t => !!t.obj)
-          .forEach(attach => {
-            Cypress.Allure.attachment(attach.name, attach.stringified, 'application/json');
-          });
-      }
-    });
+    const shortAttaches = attaches.filter(a => a.stringified.length < maxParamLength);
+    const longAttaches = attaches.filter(a => a.stringified.length >= maxParamLength);
+
+    Cypress.Allure.parameters(
+      // resStatusParam,
+      reqUrlParam,
+      ...shortAttaches.map(a => ({ name: a.name, value: a.stringified })),
+    );
+
+    if (allureAttachRequests) {
+      longAttaches
+        .filter(t => !!t.obj)
+        .forEach(attach => {
+          Cypress.Allure.attachment(attach.name, attach.stringified, 'application/json');
+        });
+    }
+
+    if (allRequests.length > 1) {
+      Cypress.Allure.endStep(stepStatus);
+    }
+  });
 };
 
 const commandParams = (command: CommandT) => {
@@ -203,10 +223,14 @@ const createEmitEvent =
 export const handleCyLogEvents = (
   runner: Mocha.Runner,
   events: EventEmitter,
-  config: { wrapCustomCommands: () => boolean | string[]; ignoreCommands: () => string[] },
+  config: {
+    wrapCustomCommands: () => boolean | string[];
+    ignoreCommands: () => string[];
+    allureLogCyCommands: () => boolean;
+  },
 ) => {
   const debug = logClient(dbg);
-  const { ignoreCommands, wrapCustomCommands } = config;
+  const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
   const ingoreAllCommands = () =>
     [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand'].filter(t => t.trim() !== '');
@@ -236,6 +260,7 @@ export const handleCyLogEvents = (
     const origAdd = Cypress.Commands.add;
 
     Cypress.on('command:enqueued', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const queue = () => (cy as any).queue as any;
 
       // swap if next chainer is 'should'
@@ -304,7 +329,7 @@ export const handleCyLogEvents = (
 
   const wrapCustomCommandsRes = wrapCustomCommands();
 
-  if (wrapCustomCommandsRes) {
+  if (allureLogCyCommands() && wrapCustomCommandsRes) {
     const commands = Array.isArray(wrapCustomCommandsRes) ? wrapCustomCommandsRes : [];
     let isExclude = false;
     let commadsFixed = commands;
@@ -322,6 +347,10 @@ export const handleCyLogEvents = (
   }
 
   Cypress.on('log:added', async log => {
+    if (!allureLogCyCommands()) {
+      return;
+    }
+
     withTry('report log:added', () => {
       const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
       const logName = log.name;
@@ -333,6 +362,7 @@ export const handleCyLogEvents = (
       if (
         cmdMessage !== lastCommand &&
         cmdMessage !== lastLogCommand &&
+        !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
         !ingoreAllCommands().includes(logName) &&
         logName !== COMMAND_REQUEST
       ) {
@@ -382,7 +412,7 @@ export const handleCyLogEvents = (
       emit({ task: 'screenshotOne', arg: { forStep: true, name: screenName } });
     }
 
-    if (!isLogCommand(isLog, name)) {
+    if (!isLogCommand(isLog, name) || !allureLogCyCommands()) {
       return;
     }
 
@@ -431,6 +461,9 @@ export const handleCyLogEvents = (
       });
     }
 
+    if (!allureLogCyCommands()) {
+      return;
+    }
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
     Cypress.Allure.endStep(state);
   });
