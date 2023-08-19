@@ -1,12 +1,12 @@
 import { visitHtml } from '../../common/helper';
 
 describe('should pass', () => {
-  Cypress.Allure.on('cmd:started', cmd => {
-    console.log(`Started ${cmd.attributes.name} ${cmd.attributes.isCustom}`);
-  });
-  Cypress.Allure.on('cmd:ended', cmd => {
-    console.log(`ENDED${cmd.attributes.name}`);
-  });
+  // Cypress.Allure.on('cmd:started', cmd => {
+  //   console.log(`Started ${cmd.attributes.name} ${cmd.attributes.isCustom}`);
+  // });
+  // Cypress.Allure.on('cmd:ended', cmd => {
+  //   console.log(`ENDED${cmd.attributes.name}`);
+  // });
   beforeEach(() => {
     visitHtml();
   });
@@ -48,7 +48,7 @@ describe('should pass', () => {
   });
 
   it('should should', () => {
-    Cypress.Commands.add('qa', (qaId = {}) => {
+    Cypress.Commands.add('qa', qaId => {
       cy.qaId(qaId).should('exist');
     });
     cy.qa('link-2').should('be.visible');
@@ -75,12 +75,13 @@ describe('should pass', () => {
       Cypress.$('a:eq(0)').after('<a href="#123" data-qa-id="that-one">123</a>');
     }, 1000);
 
-    cy.get('[data-qa-id="that-one"]')
-      .doSyncCommand<JQuery>(subj => {
+    cy.get('[data-qa-id="that-one"]').doSyncCommand <
+      JQuery >
+      (subj => {
         Cypress.log({ name: 'sync', message: `message after get command resolved ${subj.text()}` });
       })
-      .click()
-      .should('have.text', '123');
+        .click()
+        .should('have.text', '123');
   });
 
   it('syncCmdNoSubj', () => {
@@ -125,22 +126,22 @@ describe('should pass', () => {
     //cy.allure().endStep();
   });
 
-  Cypress.Commands.add('tasklog', (message: string) => {
+  Cypress.Commands.add('tasklog', message => {
     cy.task('log', message);
   });
 
-  Cypress.Commands.add('tasklogWithCypressLog', (message: string) => {
+  Cypress.Commands.add('tasklogWithCypressLog', message => {
     Cypress.log({ name: 'tasklogWithCypressLog', message: 'something' });
     cy.task('log', message);
   });
 
-  Cypress.Commands.add('returnGet', { prevSubject: true }, (subj, message: string) => {
+  Cypress.Commands.add('returnGet', { prevSubject: true }, (subj, message) => {
     cy.task('log', message);
 
     return cy.wrap(subj).get('div:eq(100)');
   });
 
-  Cypress.Commands.add('returnGet2', { prevSubject: true }, (subj, message: string) => {
+  Cypress.Commands.add('returnGet2', { prevSubject: true }, (subj, message) => {
     cy.task('log', message);
 
     //cy.wrap(subj).get('div:eq(100)');
@@ -151,18 +152,18 @@ describe('should pass', () => {
     cy.wrap(subj);
   });
 
-  Cypress.Commands.add('returnTaskValue', (filePath: string) => {
+  Cypress.Commands.add('returnTaskValue', filePath => {
     cy.wait(1);
     cy.wait(2);
 
     return cy.task('fileExists', filePath);
   });
 
-  Cypress.Commands.add('nestedCommand', (filePath: string) => {
+  Cypress.Commands.add('nestedCommand', filePath => {
     return cy.returnTaskValue(filePath);
   });
 
-  Cypress.Commands.add('specialIgnoredCommand', (filePath: string) => {
+  Cypress.Commands.add('specialIgnoredCommand', filePath => {
     return cy.nestedCommand(filePath);
   });
 
