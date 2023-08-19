@@ -362,6 +362,7 @@ export const handleCyLogEvents = (
       if (
         cmdMessage !== lastCommand &&
         cmdMessage !== lastLogCommand &&
+        !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
         !ingoreAllCommands().includes(logName) &&
         logName !== COMMAND_REQUEST
       ) {
