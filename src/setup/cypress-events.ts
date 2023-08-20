@@ -404,12 +404,6 @@ export const handleCyLogEvents = (
   Cypress.Allure.on('cmd:started', (command: CommandT) => {
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
 
-    if (name === 'screenshot') {
-      // add screenshot to report
-      const screenName = command.attributes?.args[0] ?? 'anyName';
-      emit({ task: 'screenshotOne', arg: { forStep: true, name: screenName } });
-    }
-
     if (!isLogCommand(isLog, name) || !allureLogCyCommands()) {
       return;
     }

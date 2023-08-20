@@ -4,7 +4,8 @@ import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import { existsSync, mkdirSync, rmSync } from 'fs';
-import type { AllureTasks } from './allure-types';
+import type { AllureTasks, AutoScreen } from './allure-types';
+import { AfterSpecScreenshots } from './allure-types';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -95,27 +96,9 @@ export const configureAllureAdapterPlugins = (
     url: config.reporterUrl,
   };
 
-  // process.on('message', (message: any) => {
-  //   const [event, , args] = message.args;
-  //   /*console.log('message');
-  //   console.log(message);
-  //   console.log(message.args);*/
-  //
-  //   if (message.event !== 'preprocessor:close') {
-  //     return;
-  //   }
-  //   console.log(message);
-  //   const [spec] = message.args;
-  //   console.log(spec);
-  //   //const [spec, results] = args;
-  //   reporter.suiteStarted({ fullTitle: 'd', title: 'video' });
-  //   reporter.testStarted({ fullTitle: spec, title: spec, id: spec });
-  //   reporter.video({ path: 'd' });
-  //   reporter.testEnded({ result: 'passed' });
-  //   reporter.suiteEnded({});
-  // });
-
-  on('after:spec', async (spec, results) => {
+  on('after:spec', async (spec, res: unknown) => {
+    const results: CypressCommandLine.RunResult & AfterSpecScreenshots = res as CypressCommandLine.RunResult &
+      AfterSpecScreenshots;
     await reporter.afterSpec({ results });
   });
 

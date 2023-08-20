@@ -7,7 +7,6 @@ import {
   ExecutableItemWrapper,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
-import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFile, copyFileSync, existsSync, mkdirSync, readFile, readFileSync, writeFile, writeFileSync } from 'fs';
 import path, { basename } from 'path';
@@ -16,10 +15,10 @@ import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
-import StatusDetails = Cypress.StatusDetails;
-import { packageLog, extname, delay } from '../common';
+import { delay, extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
+import StatusDetails = Cypress.StatusDetails;
 
 const debug = Debug('cypress-allure:reporter');
 
@@ -38,8 +37,15 @@ const writeTestFile = (testFile: string, content: string, callBack: () => void) 
     callBack();
   });
 };
+
 // all tests for session
-const allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
+const allTests: {
+  specRelative: string | undefined;
+  fullTitle: string;
+  uuid: string;
+  mochaId: string;
+  status?: Status;
+}[] = [];
 
 export class AllureReporter {
   // todo config
@@ -48,18 +54,19 @@ export class AllureReporter {
   private allureAddVideoOnPass: boolean;
   private videos: string;
   private screenshots: string;
+  // testId -> test attempt index -> screenshots
+  private screenshotsTest: { [key: string]: { [key: string]: string[] } } = {};
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
   steps: AllureStep[] = [];
   globalHooks = new GlobalHooks(this);
 
-  // this is variable for global hooks only
-  hooks: { id?: string; hook: ExecutableItemWrapper }[] = [];
+  // this is variable for hooks when suite started
+  beforeAfterHooksSuite: { id?: string; hook: ExecutableItemWrapper }[] = [];
   allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
-  attached: string[] = [];
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
@@ -96,13 +103,13 @@ export class AllureReporter {
   }
 
   get currentHook() {
-    if (this.hooks.length === 0) {
+    if (this.beforeAfterHooksSuite.length === 0) {
       return undefined;
     }
 
     log('current hook');
 
-    return this.hooks[this.hooks.length - 1].hook;
+    return this.beforeAfterHooksSuite[this.beforeAfterHooksSuite.length - 1].hook;
   }
 
   get currentStep() {
@@ -178,11 +185,12 @@ export class AllureReporter {
 
       return;
     }
-    const currentHook = title.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+    // issue #7 - add to parent suite for test to show them
+    const currentHook = title.indexOf('before') !== -1 ? this.groups[0].addBefore() : this.groups[0].addAfter();
 
     currentHook.name = title;
     currentHook.wrappedItem.start = date ?? Date.now();
-    this.hooks.push({ id: hookId, hook: currentHook });
+    this.beforeAfterHooksSuite.push({ id: hookId, hook: currentHook });
     this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
   }
 
@@ -271,34 +279,66 @@ export class AllureReporter {
       this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.setExecutableStatus(this.currentHook, result, details);
 
-      this.hooks.pop();
+      this.beforeAfterHooksSuite.pop();
 
       return;
     }
   }
 
+  // for attachments on test start
+  processBeforeAfterHooksSuite() {
+    // attach failures
+  }
+
   endHooks(status: StatusType = Status.PASSED) {
-    this.hooks.forEach(h => {
+    this.beforeAfterHooksSuite.forEach(h => {
       this.hookEnded({ title: h.hook.name, result: status });
     });
   }
 
   attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+    // attach auto screenshots for fails
     const { screenshots } = arg;
     log('attachScreenshots:');
 
-    screenshots?.forEach(x => {
-      const screenshotContent = readFileSync(x.path);
-      const guidScreenshot = getUuidByString(screenshotContent.toString());
+    if (!screenshots) {
+      // no screenshots
+      return;
+    }
+    log('screenshotsTest:');
+    log(JSON.stringify(this.screenshotsTest));
 
-      if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
-        log(`Already attached: ${x.path}`);
+    screenshots.forEach(x => {
+      console.log(x);
+
+      if (
+        !this.screenshotsTest[this.keyWhenNoTest(x.testId)]?.[x.testAttemptIndex ?? 0] ||
+        this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0].length === 0
+      ) {
+        log('no screenshots');
+
+        // no screenshots
+        return;
+      }
+
+      const screenshotsForTest = this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0];
+      const lastScreen = screenshotsForTest[screenshotsForTest.length - 1];
+
+      log(`attachScreenshots:${x.path}`);
+      const uuids = allTests.filter(t => t.mochaId == x.testId && t.status !== Status.PASSED).map(t => t.uuid);
+
+      if (lastScreen !== x.path && uuids.length === 0) {
+        log(`no attach, only ${lastScreen} for failed tests`);
 
         return;
       }
 
-      log(`attachScreenshots:${x.path}`);
-      const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
+      if (!uuids[x.testAttemptIndex ?? 0]) {
+        log(`no attach, cuurenct attampt ${x.testAttemptIndex}`);
+
+        // test passed or no
+        return;
+      }
 
       uuids.forEach(uuid => {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
@@ -330,8 +370,32 @@ export class AllureReporter {
     });
   }
 
+  keyWhenNoTest(testId: string | undefined) {
+    return testId ?? 'NoTestId';
+  }
+
+  screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
+    const { testId, path, testAttemptIndex } = arg;
+    console.log(arg);
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
+    }
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
+    }
+    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
+  }
+
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
     const { name, forStep } = arg;
+
+    if (!name) {
+      log('No name specified for screenshot, will not attach');
+
+      return;
+    }
 
     const pattern = `${this.screenshots}/**/${name}*.png`;
     const files = glob.sync(pattern);
@@ -343,8 +407,8 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      const executable = this.currentStep ?? this.currentTest;
-      const attachTo = forStep ? executable : this.currentTest;
+      const executable = this.currentExecutable; // currentStep ?? this.currentHook ?? this.currentTest; // todo check
+      const attachTo = forStep && this.currentStep ? this.currentStep : executable;
       // to have it in allure-results directory
 
       const newUuid = randomUUID();
@@ -362,8 +426,25 @@ export class AllureReporter {
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
       attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      this.attached.push(fileNew);
     });
+  }
+
+  private testsToAttachBySpec(
+    specPath: string,
+    excludeStatuses: Status[],
+  ): { path: string | undefined; id: string; fullName: string | undefined }[] {
+    const res = parseAllure(this.allureResults);
+
+    const tests = res
+      .filter(t => (this.allureAddVideoOnPass ? true : excludeStatuses.every(s => s !== t.status)))
+      // )t.status !== 'passed' && t.status !== 'skipped'
+      .map(t => ({
+        path: t.labels.find(l => l.name === 'path')?.value,
+        id: t.uuid,
+        fullName: t.fullName,
+      }));
+
+    return tests.filter(t => t.path && t.path.indexOf(specPath) !== -1);
   }
 
   async attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
@@ -373,17 +454,8 @@ export class AllureReporter {
     const ext = '.mp4';
     const specname = basename(videoPath, ext);
     log(specname);
-    const res = parseAllure(this.allureResults);
 
-    const tests = res
-      .filter(t => (this.allureAddVideoOnPass ? true : t.status !== 'passed' && t.status !== 'skipped'))
-      .map(t => ({
-        path: t.labels.find(l => l.name === 'path')?.value,
-        id: t.uuid,
-        fullName: t.fullName,
-      }));
-
-    const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
+    const testsAttach = this.testsToAttachBySpec(specname, [Status.PASSED, Status.SKIPPED]);
 
     let doneFiles = 0;
 
@@ -474,8 +546,11 @@ export class AllureReporter {
     this.groups.forEach(g => {
       g.endGroup();
     });
-    this.attached = [];
     this.allHooks = [];
+  }
+
+  end() {
+    // ignore
   }
 
   label(arg: AllureTaskArgs<'label'>) {
@@ -547,6 +622,7 @@ export class AllureReporter {
 
   startTest(arg: AllureTaskArgs<'testStarted'>) {
     const { title, fullTitle, id, currentRetry } = arg;
+    log(`start test: ${fullTitle}`);
 
     if (this.currentTest) {
       // temp fix of defect with wrong event sequence
@@ -573,7 +649,9 @@ export class AllureReporter {
     const group = this.currentGroup;
     const test = group!.startTest(title);
 
-    allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
+    // to show warning
+    allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid });
+
     this.tests.push(test);
 
     test.fullName = fullTitle;
@@ -633,6 +711,7 @@ export class AllureReporter {
 
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
+    log(`end test: ${result}`);
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
 
@@ -652,7 +731,7 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
-
+    allTests[allTests.length - 1].status = result;
     this.setExecutableStatus(this.currentTest, result, details);
 
     if (storedDetails) {
@@ -734,7 +813,10 @@ export class AllureReporter {
     exec.addAttachment(arg.name, arg.type, file);
   }
 
-  private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
+  private executableFileAttachment(
+    execToAttach: ExecutableItemWrapper | undefined,
+    arg: AllureTaskArgs<'fileAttachment'>,
+  ) {
     if (!this.currentExecutable && this.globalHooks.currentHook) {
       log('No current executable, test or hook - add to global hook');
       this.globalHooks.attachment(arg.name, arg.file, arg.type);
@@ -742,7 +824,7 @@ export class AllureReporter {
       return;
     }
 
-    if (!exec) {
+    if (!execToAttach && !this.currentExecutable) {
       return;
     }
 
@@ -762,8 +844,13 @@ export class AllureReporter {
         mkdirSync(this.allureResults, { recursive: true });
       }
 
-      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-      exec.addAttachment(arg.name, arg.type, fileNew);
+      // how to understand where to attach
+
+      if (execToAttach ?? this.currentExecutable) {
+        copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+        (execToAttach ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        log(`added attachment: ${fileNew} ${arg.file}`);
+      }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
     }

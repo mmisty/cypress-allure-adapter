@@ -3,18 +3,22 @@ import type { ContentType } from '../common/types';
 
 export interface AutoScreen {
   screenshotId: string;
-  testId: string;
+  specName?: string;
+  testId: string | undefined;
   testAttemptIndex: number;
   takenAt: string; // date
   path: string; // abs path
   height: number;
   width: number;
 }
-
+export type AfterSpecScreenshots = {
+  screenshots: AutoScreen[];
+};
 export type LinkType = 'issue' | 'tms';
 
 type AllureTask = {
   specStarted: { spec: Cypress.Spec };
+  runEnd: undefined;
   writeEnvironmentInfo: { info: EnvironmentInfo };
   writeExecutorInfo: { info: ExecutorInfo };
   writeCategoriesDefinitions: { categories: Category[] | string };
@@ -39,6 +43,7 @@ type AllureTask = {
   testParameter: { name: string; value: string };
   testStatus: { result: Status; details?: StatusDetails };
   testDetails: { details?: StatusDetails };
+  screenshotAttachment: AutoScreen;
   testAttachment: { name: string; content: string | Buffer; type: string };
   testFileAttachment: { name: string; file: string; type: ContentType };
   fileAttachment: { name: string; file: string; type: ContentType };
@@ -48,8 +53,8 @@ type AllureTask = {
   message: { name: string };
   testMessage: { path: string; message: string };
   delete: { path: string };
-  attachScreenshots: { screenshots: AutoScreen[] };
-  screenshotOne: { name: string; forStep?: boolean };
+  attachScreenshots: AfterSpecScreenshots;
+  screenshotOne: { name: string | undefined; forStep?: boolean };
   attachVideoToTests: { path: string };
   testResult: {
     title: string;
@@ -58,7 +63,7 @@ type AllureTask = {
     details?: StatusDetails;
   };
   endAll: undefined;
-  afterSpec: { results: CypressCommandLine.RunResult };
+  afterSpec: { results: CypressCommandLine.RunResult & AfterSpecScreenshots };
 };
 
 export type RequestTask = keyof AllureTask;

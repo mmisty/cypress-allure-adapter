@@ -19,7 +19,9 @@ export type ReporterOptions = {
   videos: string;
   screenshots: string;
   showDuplicateWarn: boolean;
-  // to test mocha events in jest
+  /**
+   *  to test mocha events in jest
+   */
   isTest: boolean;
 };
 
@@ -36,6 +38,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter = new AllureReporter(opts);
       allureReporter.specStarted(arg);
       log('specStarted');
+    },
+    runEnd: (_args: AllureTaskArgs<'runEnd'>) => {
+      // nothing
     },
     hookStarted: (arg: AllureTaskArgs<'hookStarted'>) => {
       log(`hookStart: ${JSON.stringify(arg)}`);
@@ -64,6 +69,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.startStep(arg);
       allureReporter.endStep({ ...arg, status: (arg.status as Status) ?? Status.PASSED });
       log('step');
+    },
+    screenshotAttachment: (arg: AllureTaskArgs<'screenshotAttachment'>) => {
+      log(`screenshotAttachment ${JSON.stringify(arg)}`);
+      allureReporter.screenshotAttachment(arg);
+      log('screenshotAttachment');
     },
     mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
       log(`mergePrevStep ${JSON.stringify(arg)}`);
@@ -300,8 +310,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
-      const { video } = arg.results;
+      const { video, screenshots } = arg.results;
       log(`afterSpec video path: ${video}`);
+      log(`afterSpec screenshots: ${screenshots}`);
+
+      // attach missing screenshots
+      try {
+        allureReporter.attachScreenshots(arg.results);
+      } catch (err) {
+        console.log(`Could not attach screenshots to spec: ${arg.results.spec.relative}:\n${(err as Error).message}`);
+      }
 
       if (!video) {
         console.error(`${packageLog} No video path in afterSpec result`);

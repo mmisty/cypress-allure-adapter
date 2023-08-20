@@ -7,8 +7,11 @@ import type { ContentType } from '../common/types';
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
 
+/**
+ * Global hook - is before or after hook when no suite started
+ */
 export class GlobalHooks {
-  hooks: {
+  beforeAfterHooks: {
     title: string;
     status?: Status;
     details?: StatusDetails;
@@ -22,17 +25,17 @@ export class GlobalHooks {
   constructor(private reporter: AllureReporter) {}
 
   hasHooks() {
-    return this.hooks.length > 0;
+    return this.beforeAfterHooks.length > 0;
   }
 
   get currentHook() {
-    if (this.hooks.length === 0) {
+    if (this.beforeAfterHooks.length === 0) {
       log('No current global hook!');
 
       return undefined;
     }
 
-    return this.hooks[this.hooks.length - 1];
+    return this.beforeAfterHooks[this.beforeAfterHooks.length - 1];
   }
 
   get currentStep() {
@@ -50,7 +53,7 @@ export class GlobalHooks {
   }
 
   start(title: string, id?: string) {
-    this.hooks.push({ title, hookId: id, start: Date.now() });
+    this.beforeAfterHooks.push({ title, hookId: id, start: Date.now() });
   }
 
   startStep(name: string) {
@@ -112,13 +115,13 @@ export class GlobalHooks {
   // proces attachments
   processForTest() {
     log('process global hooks for test');
-    const res = this.hooks;
+    const res = this.beforeAfterHooks;
     res.forEach(hook => {
       if (!hook.attachments || hook.attachments.length == 0) {
         log('no attachments');
       }
       hook.attachments?.forEach(attach => {
-        log('process attach');
+        log('process attachments for global hook');
         this.reporter.testFileAttachment({ name: attach.name, file: attach?.file, type: attach.type });
       });
     });
@@ -127,8 +130,8 @@ export class GlobalHooks {
   // when suite created
   process() {
     log('process global hooks');
-    const res = this.hooks;
-    this.hooks = [];
+    const res = this.beforeAfterHooks;
+    this.beforeAfterHooks = [];
     log(res.map(t => t.title));
 
     res.forEach(hook => {
