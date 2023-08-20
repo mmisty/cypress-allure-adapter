@@ -105,6 +105,10 @@ describe('should have requests', () => {
           name: 'request: http://localhost:number',
           params: [
             {
+              name: 'Response Status',
+              value: '200',
+            },
+            {
               name: 'Request URL',
               value: 'http://localhost:number/',
             },
@@ -117,14 +121,7 @@ describe('should have requests', () => {
               value: 'Hello World!',
             },
           ],
-          steps: [
-            {
-              attach: [],
-              name: 'request: number http://localhost:number/',
-              params: [],
-              steps: [],
-            },
-          ],
+          steps: [],
         },
       ]);
     });
@@ -171,6 +168,10 @@ describe('should have requests', () => {
           name: 'request: GET, http://localhost:number',
           params: [
             {
+              name: 'Response Status',
+              value: '200',
+            },
+            {
               name: 'Request URL',
               value: 'http://localhost:number/',
             },
@@ -183,14 +184,7 @@ describe('should have requests', () => {
               value: 'Hello World!',
             },
           ],
-          steps: [
-            {
-              attach: [],
-              name: 'request: number http://localhost:number/',
-              params: [],
-              steps: [],
-            },
-          ],
+          steps: [],
         },
       ]);
     });
@@ -237,6 +231,10 @@ describe('should have requests', () => {
           name: 'request: POST, http://localhost:number/hello, {"data":"should"}',
           params: [
             {
+              name: 'Response Status',
+              value: '200',
+            },
+            {
               name: 'Request URL',
               value: 'http://localhost:number/hello',
             },
@@ -249,14 +247,7 @@ describe('should have requests', () => {
               value: '{\n "result": "hello world"\n}',
             },
           ],
-          steps: [
-            {
-              attach: [],
-              name: 'request: number http://localhost:number/hello',
-              params: [],
-              steps: [],
-            },
-          ],
+          steps: [],
         },
       ]);
     });

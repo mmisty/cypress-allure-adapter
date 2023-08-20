@@ -1,4 +1,4 @@
-describe('suite', () => {
+describe('interface', () => {
   beforeEach(() => {
     cy.allure().epic('EPIC').attachment('sds', 'sd', 'text/plain'); //.thread('01');
   });
@@ -33,5 +33,13 @@ describe('suite', () => {
       .owner('Ta Pi')
       .allureId('##111i')
       .endStep();
+  });
+
+  it('links', () => {
+    cy.allure().tag('links');
+    cy.allure().tms('PROJ-01', 'PROJ-01: Description of user story');
+    cy.allure().tms('PROJ-03');
+    cy.allure().issue('PROJ-02', 'Description of issue');
+    cy.allure().issue('PROJ-04');
   });
 });
