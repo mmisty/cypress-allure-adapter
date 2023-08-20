@@ -133,8 +133,6 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
 
     if (allRequests.length > 1) {
       Cypress.Allure.startStep(`request: ${resStatusParam.value} ${stepUrl}`);
-    } else {
-      Cypress.Allure.step(`request: ${resStatusParam.value} ${stepUrl}`, stepStatus);
     }
 
     const attaches = [reqBody, reqHeaders, resBody, resHeaders].map(t => ({
@@ -145,11 +143,11 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
     const shortAttaches = attaches.filter(a => a.stringified.length < maxParamLength);
     const longAttaches = attaches.filter(a => a.stringified.length >= maxParamLength);
 
-    Cypress.Allure.parameters(
-      // resStatusParam,
-      reqUrlParam,
-      ...shortAttaches.map(a => ({ name: a.name, value: a.stringified })),
-    );
+    if (allRequests.length === 1) {
+      Cypress.Allure.parameters(resStatusParam);
+    }
+
+    Cypress.Allure.parameters(reqUrlParam, ...shortAttaches.map(a => ({ name: a.name, value: a.stringified })));
 
     if (allureAttachRequests) {
       longAttaches
