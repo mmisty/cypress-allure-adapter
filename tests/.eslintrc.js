@@ -16,5 +16,17 @@ module.exports = {
         patterns: ['!**/src/**', '**/@src', '**/@src/*'],
       },
     ],
+    'prettier/prettier': [
+      'error',
+      {
+        trailingComma: 'all',
+        semi: true,
+        singleQuote: true,
+        printWidth: 80,
+        tabWidth: 2,
+        useTabs: false,
+        arrowParens: 'avoid',
+      },
+    ],
   },
 };

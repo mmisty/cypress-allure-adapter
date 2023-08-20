@@ -34,7 +34,10 @@ describe('reporter', () => {
         relative: 'path',
       },
     });
-    reporter.suiteStarted({ title: 'mult - divide', fullTitle: 'calculator mult - divide' });
+    reporter.suiteStarted({
+      title: 'mult - divide',
+      fullTitle: 'calculator mult - divide',
+    });
     reporter.testStarted({
       title: 'should multiply values',
       fullTitle: 'calculator mult - divide should multiply values',
@@ -53,19 +56,33 @@ describe('reporter', () => {
         trace: 'AssertionError: Timed out retrying after 1000ms)',
       },
     });
-    reporter.hookStarted({ title: "'after each' hook: Test teardown", hookId: 'h1' });
-    reporter.stepStarted({ name: 'log: Some teardown step', date: 1691492869572 });
+    reporter.hookStarted({
+      title: "'after each' hook: Test teardown",
+      hookId: 'h1',
+    });
+    reporter.stepStarted({
+      name: 'log: Some teardown step',
+      date: 1691492869572,
+    });
     reporter.stepEnded({ status: 'passed' as Status, date: 1691492869574 });
-    reporter.hookEnded({ title: 'after each hook: Test teardown', result: 'passed' as Status });
+    reporter.hookEnded({
+      title: 'after each hook: Test teardown',
+      result: 'passed' as Status,
+    });
 
     reporter.testEnded({
       result: 'failed' as Status,
-      details: { message: 'Timed out retrying after 1000ms: expected 1 to equal 3', trace: 'AssertionErro' },
+      details: {
+        message: 'Timed out retrying after 1000ms: expected 1 to equal 3',
+        trace: 'AssertionErro',
+      },
     });
     reporter.suiteEnded({});
 
     const results = parseAllure(resultsPath);
-    expect(mapSteps(results[0].steps, t => ({ name: t.name, status: t.status }))).toEqual([
+    expect(
+      mapSteps(results[0].steps, t => ({ name: t.name, status: t.status })),
+    ).toEqual([
       {
         name: 'subtract',
         status: 'failed',

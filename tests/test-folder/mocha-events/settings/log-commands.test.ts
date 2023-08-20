@@ -58,12 +58,16 @@ describe('should not log when allureLogCyCommands setting is false', () => {
         name: t.name?.replace(/\d{4,}/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
-          value: t.name === 'Request URL' ? t.value?.replace(/\d{4,}/g, 'number') : t.value,
+          value:
+            t.name === 'Request URL'
+              ? t.value?.replace(/\d{4,}/g, 'number')
+              : t.value,
         })),
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          sourceContentMoreThanZero:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
@@ -81,12 +85,16 @@ describe('should not log when allureLogCyCommands setting is false', () => {
         name: t.name?.replace(/\d{4,}/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
-          value: t.name === 'Request URL' ? t.value?.replace(/\d{4,}/g, 'number') : t.value,
+          value:
+            t.name === 'Request URL'
+              ? t.value?.replace(/\d{4,}/g, 'number')
+              : t.value,
         })),
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          sourceContentMoreThanZero:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
@@ -112,12 +120,16 @@ describe('should not log when allureLogCyCommands setting is false', () => {
         name: t.name?.replace(/\d{4,}/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
-          value: t.name === 'Request URL' ? t.value?.replace(/\d{4,}/g, 'number') : t.value,
+          value:
+            t.name === 'Request URL'
+              ? t.value?.replace(/\d{4,}/g, 'number')
+              : t.value,
         })),
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          sourceContentMoreThanZero:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)

@@ -1,4 +1,9 @@
-import { checkCyResults, createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import {
+  checkCyResults,
+  createResTest2,
+  fixResult,
+  mapSteps,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { readFileSync } from 'fs';
 
@@ -44,7 +49,10 @@ describe('custom commands', () => {
       const tests = resFixed.filter(t => t.name === 'tasklog1');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, attach: t.attachments }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        attach: t.attachments,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 

@@ -59,7 +59,9 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'example', type: 'issue', url: 'http://example.com' }]]);
+      expect(labels).toEqual([
+        [{ name: 'example', type: 'issue', url: 'http://example.com' }],
+      ]);
     });
 
     it('should have link tms', () => {
@@ -67,7 +69,9 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'example', type: 'tms', url: 'http://example.com' }]]);
+      expect(labels).toEqual([
+        [{ name: 'example', type: 'tms', url: 'http://example.com' }],
+      ]);
     });
 
     it('should have tms with link', () => {
@@ -75,7 +79,9 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'example', type: 'tms', url: 'http://example.com' }]]);
+      expect(labels).toEqual([
+        [{ name: 'example', type: 'tms', url: 'http://example.com' }],
+      ]);
     });
 
     it('should have tms with id', () => {
@@ -83,31 +89,51 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'example', type: 'tms', url: 'http://jira/ABC-1' }]]);
+      expect(labels).toEqual([
+        [{ name: 'example', type: 'tms', url: 'http://jira/ABC-1' }],
+      ]);
     });
 
     it('should have tms with id and no desc', () => {
-      const tests = resFixed.filter(t => t.name === 'tms test with id and no description');
+      const tests = resFixed.filter(
+        t => t.name === 'tms test with id and no description',
+      );
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'ABC-1', type: 'tms', url: 'http://jira/ABC-1' }]]);
+      expect(labels).toEqual([
+        [{ name: 'ABC-1', type: 'tms', url: 'http://jira/ABC-1' }],
+      ]);
     });
 
     it('should have issue with id', () => {
-      const tests = resFixed.filter(t => t.name === 'issue test with id and no description');
+      const tests = resFixed.filter(
+        t => t.name === 'issue test with id and no description',
+      );
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'ABC-1', type: 'issue', url: 'http://my.jira.com/ABC-1' }]]);
+      expect(labels).toEqual([
+        [{ name: 'ABC-1', type: 'issue', url: 'http://my.jira.com/ABC-1' }],
+      ]);
     });
 
     it('should have issue with id asterisk', () => {
-      const tests = resFixed.filter(t => t.name === 'issue test with id asterisk');
+      const tests = resFixed.filter(
+        t => t.name === 'issue test with id asterisk',
+      );
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'ABC-1', type: 'issue', url: 'http://my.jira.com/ABC-1/browse/' }]]);
+      expect(labels).toEqual([
+        [
+          {
+            name: 'ABC-1',
+            type: 'issue',
+            url: 'http://my.jira.com/ABC-1/browse/',
+          },
+        ],
+      ]);
     });
 
     it('should have issue with no env', () => {
@@ -115,7 +141,9 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([[{ name: 'ABC-1', type: 'issue', url: 'ABC-1' }]]);
+      expect(labels).toEqual([
+        [{ name: 'ABC-1', type: 'issue', url: 'ABC-1' }],
+      ]);
     });
 
     it('should have tms with no env', () => {

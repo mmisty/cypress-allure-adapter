@@ -1,4 +1,9 @@
-import { covergeAfterAllEvent, createResTest2, fixResult, whenCoverage } from '../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  fixResult,
+  whenCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
@@ -91,7 +96,14 @@ describe('hello suite', () => {
         resFixed
           .map(t => t.labels)
           .sort()
-          .map(t => t.filter(x => x.name === 'suite' || x.name === 'parentSuite' || x.name === 'childSuite')),
+          .map(t =>
+            t.filter(
+              x =>
+                x.name === 'suite' ||
+                x.name === 'parentSuite' ||
+                x.name === 'childSuite',
+            ),
+          ),
       ).toEqual([
         [
           {

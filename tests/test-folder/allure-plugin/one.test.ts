@@ -206,7 +206,8 @@ describe('run one test', () => {
                 attachments: [
                   {
                     name: 'afterScreen.png',
-                    source: '4305ae20-70b7-57d3-b7b1-0f0659af2f9e-attachment.png',
+                    source:
+                      '4305ae20-70b7-57d3-b7b1-0f0659af2f9e-attachment.png',
                     type: 'image/png',
                   },
                 ],
@@ -451,7 +452,8 @@ describe('run one test', () => {
         start: 1323475200000,
         status: 'failed',
         statusDetails: {
-          message: 'Timed out retrying after 4000ms: Expected to find element: `div:eq(2)`, but never found it.',
+          message:
+            'Timed out retrying after 4000ms: Expected to find element: `div:eq(2)`, but never found it.',
           trace:
             'AssertionError: Timed out retrying after 4000ms: Expected to find element: `div:eq(2)`, but never found it.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/one.cy.ts:24:44)',
         },

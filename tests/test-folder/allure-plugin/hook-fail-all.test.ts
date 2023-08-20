@@ -8,7 +8,11 @@ describe('run one test', () => {
     const results = parseAllure(storeResDir);
     const resFixed = fixResult(results);
 
-    expect(resFixed.map(t => t.name).sort()).toEqual(['test 1', 'test 2', 'test 3']);
+    expect(resFixed.map(t => t.name).sort()).toEqual([
+      'test 1',
+      'test 2',
+      'test 3',
+    ]);
     expect(resFixed.filter(t => t.name === 'test 1')).toEqual([
       {
         attachments: [

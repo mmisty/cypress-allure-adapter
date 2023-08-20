@@ -1,4 +1,8 @@
-import { covergeAfterAllEvent, createResTest2, whenCoverage } from '../../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  whenCoverage,
+} from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('mocha events - check failures', () => {

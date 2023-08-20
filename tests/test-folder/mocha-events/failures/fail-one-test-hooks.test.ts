@@ -82,7 +82,9 @@ describe('hello suite', () => {
     });
 
     it('check tests names', async () => {
-      expect(resFixed.map(t => t.fullName).sort()).toEqual(['hello suite hello test']);
+      expect(resFixed.map(t => t.fullName).sort()).toEqual([
+        'hello suite hello test',
+      ]);
     });
 
     it('check attachments', async () => {
@@ -108,7 +110,9 @@ describe('hello suite', () => {
           .map(t => t.labels)
           .sort()
           .map(t => t.filter(x => x.name === 'path')),
-      ).toEqual([[{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }]]);
+      ).toEqual([
+        [{ name: 'path', value: 'integration/e2e/temp/test_0_number.cy.ts' }],
+      ]);
     });
 
     it('check package label', async () => {

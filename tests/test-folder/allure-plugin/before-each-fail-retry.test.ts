@@ -23,10 +23,12 @@ describe('run before-each-fail-retry', () => {
       expect(resFixed.map(t => t.fullName).sort()).toEqual(
         [
           ...Array.from('x'.repeat(TESTS_COUNT)).map(
-            (v, i) => `before each fail with retry test ${`0${i + 1}`.slice(-2)}`,
+            (v, i) =>
+              `before each fail with retry test ${`0${i + 1}`.slice(-2)}`,
           ),
           ...Array.from('x'.repeat(TESTS_COUNT)).map(
-            (v, i) => `before each fail with retry test ${`0${i + 1}`.slice(-2)}`,
+            (v, i) =>
+              `before each fail with retry test ${`0${i + 1}`.slice(-2)}`,
           ),
         ].sort(),
       );
@@ -56,7 +58,9 @@ describe('run before-each-fail-retry', () => {
             'failed',
             [
               {
-                name: `before each fail with retry -- test ${`0${i + 1}`.slice(-2)} (failed).png`,
+                name: `before each fail with retry -- test ${`0${i + 1}`.slice(
+                  -2,
+                )} (failed).png`,
                 source: 'source.png',
                 type: 'image/png',
               },

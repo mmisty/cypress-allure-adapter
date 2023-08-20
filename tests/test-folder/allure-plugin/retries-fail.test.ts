@@ -91,7 +91,8 @@ describe('run retries test - fails', () => {
         start: 1323475200000,
         status: 'failed',
         statusDetails: {
-          message: 'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
+          message:
+            'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
           trace:
             'AssertionError: Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/retries/retries-fail.cy.ts:8:7)',
         },
@@ -272,7 +273,8 @@ describe('run retries test - fails', () => {
         start: 1323475200000,
         status: 'failed',
         statusDetails: {
-          message: 'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
+          message:
+            'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
           trace:
             'AssertionError: Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/retries/retries-fail.cy.ts:8:7)',
         },
@@ -453,7 +455,8 @@ describe('run retries test - fails', () => {
         start: 1323475200000,
         status: 'failed',
         statusDetails: {
-          message: 'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
+          message:
+            'Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.',
           trace:
             'AssertionError: Expected [ <div>, 1 more... ] not to exist in the DOM, but it was continuously found.\n    at Context.eval (webpack://@mmisty/cypress-allure-adapter/./integration/e2e/retries/retries-fail.cy.ts:8:7)',
         },

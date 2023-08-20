@@ -21,7 +21,9 @@ describe('run before-each-fail', () => {
 
     it('check tests names', async () => {
       expect(resFixed.map(t => t.fullName).sort()).toEqual([
-        ...Array.from('x'.repeat(TESTS_COUNT)).map((v, i) => `before each fail test ${`0${i + 1}`.slice(-2)}`),
+        ...Array.from('x'.repeat(TESTS_COUNT)).map(
+          (v, i) => `before each fail test ${`0${i + 1}`.slice(-2)}`,
+        ),
         // last test twice because retried (todo)
         `before each fail test ${`0${TESTS_COUNT}`.slice(-2)}`,
       ]);
@@ -106,7 +108,9 @@ describe('run before-each-fail', () => {
     it('check descriptionHtml - should be added path', async () => {
       expect(resFixed.map(t => t.descriptionHtml).sort()).toEqual([
         // last test twice because retried (todo)
-        ...Array.from('x'.repeat(TESTS_COUNT - 1)).map((_v, _i) => 'integration/e2e/hooks/before-each-fail.cy.ts'),
+        ...Array.from('x'.repeat(TESTS_COUNT - 1)).map(
+          (_v, _i) => 'integration/e2e/hooks/before-each-fail.cy.ts',
+        ),
 
         // todo
         'integration/e2e/hooks/before-each-fail.cy.ts</br>integration/e2e/hooks/before-each-fail.cy.ts',
