@@ -174,18 +174,18 @@ const isHook = (test: Mocha.Test) => {
 
 const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
-  let firstId;
+  let firstId: () => string | undefined;
   test.parent?.eachTest(ts => {
     ts.err = test.err;
 
     if (ts) {
       if (index === 0) {
         ts.state = 'failed';
-        firstId = () => (ts as any).id;
+        firstId = (): string => (ts as any).id;
       }
 
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId() : undefined);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId?.() : undefined);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
     index++;
@@ -194,17 +194,17 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
 
 const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
-  let firstId;
+  let firstId: () => string | undefined;
   test.parent?.eachTest(ts => {
     ts.err = test.err;
 
     if (index === 0) {
-      firstId = () => (ts as any).id;
+      firstId = (): string => (ts as any).id;
     }
 
     if (index !== 0 && ts) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId() : undefined);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId?.() : undefined);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
     index++;
@@ -217,17 +217,17 @@ const createTestsForSuite = (runner: Mocha.Runner, testOrHook: Mocha.Test, suite
   runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
   runner.emit(MOCHA_EVENTS.SUITE_BEGIN, suite);
   let index = 0;
-  let firstId;
+  let firstId: () => string | undefined;
   suite?.eachTest(ts => {
     ts.err = testOrHook.err;
 
     if (index === 0) {
-      firstId = () => (ts as any).id;
+      firstId = (): string => (ts as any).id;
     }
 
     if (ts) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId() : undefined);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId?.() : undefined);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
     index++;

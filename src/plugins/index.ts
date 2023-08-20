@@ -4,7 +4,7 @@ import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import { existsSync, mkdirSync, rmSync } from 'fs';
-import type { AllureTasks, AutoScreen } from './allure-types';
+import type { AllureTasks } from './allure-types';
 import { AfterSpecScreenshots } from './allure-types';
 
 const debug = Debug('cypress-allure:plugins');

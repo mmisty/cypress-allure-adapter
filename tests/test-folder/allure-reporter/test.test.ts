@@ -1,7 +1,6 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import type { AllureTasks } from '../../../src/plugins/allure-types';
 import { Status } from '../../../src/plugins/allure-types';
-import { basename } from 'path';
 import { parseAllure } from 'allure-js-parser';
 import { mapSteps } from '../../cy-helper/utils';
 
@@ -21,7 +20,6 @@ describe('screenshot regression', () => {
     const screenPath = `${screenshots}/test.png`;
     const screenPath2 = `${screenshots}/test1.png`;
     const screenFailed = `${screenshots}/test-failure.png`;
-    const screenname = basename(screenPath, 'png');
     writeFileSync(screenPath, 'png content');
     writeFileSync(screenPath2, 'png content2');
     writeFileSync(screenFailed, 'png content failed');

@@ -1,9 +1,5 @@
-import {
-  checkCyResults,
-  createResTest2,
-  mapSteps,
-} from '../../../cy-helper/utils';
-import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
+import { checkCyResults, createResTest2 } from '../../../cy-helper/utils';
+import { AllureTest, parseAllure } from 'allure-js-parser';
 import { readFileSync } from 'fs';
 import { extname } from '../../../../src/common';
 import {

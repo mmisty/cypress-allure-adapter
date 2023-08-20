@@ -1,4 +1,3 @@
-import { beforeStr, suiteStr, testStr, visitHtmlStr } from '../../../tests/cy-helper/test-compose';
 import { visitHtml } from '../../common/helper';
 
 describe('screenshot when before hook fails @screen', () => {
