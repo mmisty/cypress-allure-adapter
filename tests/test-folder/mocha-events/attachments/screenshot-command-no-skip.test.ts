@@ -7,7 +7,7 @@ import { AllureTest, parseAllure } from 'allure-js-parser';
 import { readFileSync } from 'fs';
 import { extname } from '../../../../src/common';
 
-describe('test screenshot event', () => {
+describe('test screenshot event - when no skip screenshot event', () => {
   const res = createResTest2(
     [
       `
@@ -24,7 +24,7 @@ describe('test screenshot', () => {
 });
 `,
     ],
-    { allureAddVideoOnPass: 'false', allureSkipCommands: 'screenshot' },
+    { allureAddVideoOnPass: 'false', allureSkipCommands: '' },
   );
 
   describe('check results', () => {
@@ -75,6 +75,11 @@ describe('test screenshot', () => {
             name: 'task: log, message',
             steps: [],
           },
+          {
+            attach: [],
+            name: 'screenshot: my-test',
+            steps: [],
+          },
         ],
       });
     });
@@ -112,6 +117,11 @@ describe('test screenshot', () => {
         steps: [
           {
             name: 'task: log, message',
+            steps: [],
+            attach: [],
+          },
+          {
+            name: 'screenshot',
             steps: [],
             attach: [],
           },

@@ -199,7 +199,7 @@ const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
     ts.err = test.err;
 
     if (index === 0) {
-      firstId = (): string => (ts as any).id;
+      firstId = (): string => (test as any).id;
     }
 
     if (index !== 0 && ts) {
@@ -212,8 +212,6 @@ const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
 };
 
 const createTestsForSuite = (runner: Mocha.Runner, testOrHook: Mocha.Test, suite: Mocha.Suite) => {
-  // let index = 0;
-
   runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
   runner.emit(MOCHA_EVENTS.SUITE_BEGIN, suite);
   let index = 0;

@@ -44,6 +44,7 @@ const allTests: {
   fullTitle: string;
   uuid: string;
   mochaId: string;
+  retryIndex: number | undefined;
   status?: Status;
 }[] = [];
 
@@ -59,6 +60,7 @@ export class AllureReporter {
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
   steps: AllureStep[] = [];
+  attached: { testMochaId?: string; file: string; retryIndex: number | undefined }[] = [];
   globalHooks = new GlobalHooks(this);
 
   // this is variable for hooks when suite started
@@ -334,7 +336,18 @@ export class AllureReporter {
 
       log(`attachScreenshots:${x.path}`);
       console.log(allTests);
-      const uuids = allTests.filter(t => t.mochaId == x.testId && t.status !== Status.PASSED).map(t => t.uuid);
+
+      const uuids = allTests
+        .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
+        .map(t => t.uuid);
+
+      const alreadyAttached = []; //this.attached.filter(t => t.file === x.path).filter(t => t.testMochaId === x.testId);
+
+      if (alreadyAttached.length > 0) {
+        log('already attached');
+
+        return;
+      }
 
       if (uuids.length === 0) {
         log('no attach auto screens, only for non-success tests tests');
@@ -560,6 +573,7 @@ export class AllureReporter {
 
   end() {
     // ignore
+    // this.attached = [];
   }
 
   label(arg: AllureTaskArgs<'label'>) {
@@ -659,7 +673,13 @@ export class AllureReporter {
     const test = group!.startTest(title);
 
     // to show warning
-    allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid });
+    allTests.push({
+      retryIndex: currentRetry,
+      specRelative: this.currentSpec?.relative,
+      fullTitle,
+      mochaId: id,
+      uuid: test.uuid,
+    });
 
     this.tests.push(test);
 
@@ -740,7 +760,10 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
-    allTests[allTests.length - 1].status = result;
+
+    if (this.currentTestAll) {
+      this.currentTestAll.status = result;
+    }
     this.setExecutableStatus(this.currentTest, result, details);
 
     if (storedDetails) {
@@ -858,6 +881,12 @@ export class AllureReporter {
       if (execToAttach ?? this.currentExecutable) {
         copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
         (execToAttach ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        this.attached.push({
+          // toTest: true
+          retryIndex: this.currentTestAll?.retryIndex,
+          testMochaId: this.currentTestAll?.mochaId,
+          file: arg.file,
+        });
         log(`added attachment: ${fileNew} ${arg.file}`);
       }
     } catch (err) {
