@@ -1,7 +1,8 @@
 describe('suite @strange', () => {
-  it('test', () => {
+  it('example visit', () => {
     cy.visit('https://example.cypress.io/');
     cy.get('div').should('contain.text', 'Kitchen Sink');
-    cy.myLog('Some message here');
+    cy.get('div').should('have.length.gt', 1);
+    cy.get('div').click();
   });
 });
