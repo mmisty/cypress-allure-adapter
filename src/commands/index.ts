@@ -92,8 +92,8 @@ export const registerCommands = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const queue = () => (cy as any).queue.queueables;
-    const commandsCount = queue().length;
+    // const queue = () => (cy as any).queue.queueables;
+    // const commandsCount = queue().length;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const subjs = getPrevSubjects((cy as any).state()?.current);
     let prevSubj = undefined;
@@ -103,13 +103,13 @@ export const registerCommands = () => {
     }
     syncFn(prevSubj);
 
-    if (queue().length > commandsCount) {
+    /* if (queue().length > commandsCount) {
       console.warn(
         'Using cypress async commands inside `cy.doSyncCommand` my change the subject ' +
           'and retries will not be done for the chain. To avoid this warning ' +
           'do not use cy.<command> here, instead you can use Cypress.<command>',
       );
-    }
+    } */
 
     return prevSubj;
   });
