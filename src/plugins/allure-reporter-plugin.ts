@@ -90,6 +90,14 @@ export class AllureReporter {
     return this.groups[this.groups.length - 1];
   }
 
+  get currentTestAll() {
+    if (this.currentTest && allTests[allTests.length - 1]) {
+      return allTests[allTests.length - 1];
+    }
+
+    return undefined;
+  }
+
   get currentTest(): AllureTest | undefined {
     if (this.tests.length === 0) {
       log('No current test!');
@@ -311,7 +319,7 @@ export class AllureReporter {
     screenshots.forEach(x => {
       console.log(x);
 
-      if (
+      /*if (
         !this.screenshotsTest[this.keyWhenNoTest(x.testId)]?.[x.testAttemptIndex ?? 0] ||
         this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0].length === 0
       ) {
@@ -322,13 +330,14 @@ export class AllureReporter {
       }
 
       const screenshotsForTest = this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0];
-      const lastScreen = screenshotsForTest[screenshotsForTest.length - 1];
+      const lastScreen = screenshotsForTest[screenshotsForTest.length - 1];*/
 
       log(`attachScreenshots:${x.path}`);
+      console.log(allTests);
       const uuids = allTests.filter(t => t.mochaId == x.testId && t.status !== Status.PASSED).map(t => t.uuid);
 
-      if (lastScreen !== x.path && uuids.length === 0) {
-        log(`no attach, only ${lastScreen} for failed tests`);
+      if (uuids.length === 0) {
+        log('no attach auto screens, only for non-success tests tests');
 
         return;
       }

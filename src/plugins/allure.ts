@@ -191,6 +191,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
         allureReporter.currentTest.status = arg.result;
         allureReporter.currentTest.detailsMessage = arg.details?.message;
+
+        if (allureReporter.currentTestAll) {
+          console.log(`setting original id ${arg.originalTestId}` ?? arg.id);
+          allureReporter.currentTestAll.mochaId = arg.originalTestId ?? arg.id;
+        } else {
+          console.log('allureReporter.currentTestAll undef');
+        }
       }
       log('testResult');
     },

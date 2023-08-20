@@ -24,6 +24,7 @@ describe('test screenshot when fail', () => {
     ],
     {
       allureAddVideoOnPass: 'false',
+      DEBUG: 'true',
     },
   );
 
@@ -97,13 +98,12 @@ describe('test screenshot when fail', () => {
         })),
       }).toEqual({
         attach: [
-          // cannot attach to unknown yet, todo
-          // {
-          //   length: true,
-          //   name: 'test screenshot -- test fail -- before all hook (failed).png',
-          //   source: 'source.png',
-          //   type: 'image/png',
-          // },
+          {
+            length: true,
+            name: 'test screenshot -- test fail -- before all hook (failed).png',
+            source: 'source.png',
+            type: 'image/png',
+          },
           {
             length: true,
             name: 'test_0_number.cy.ts.mp4',

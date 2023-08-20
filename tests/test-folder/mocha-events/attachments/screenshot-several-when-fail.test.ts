@@ -103,6 +103,12 @@ describe('test screenshot when fail (several screenshots)', () => {
           },
           {
             length: true,
+            name: 'test screenshot -- test fail -- before all hook (failed).png',
+            source: 'source.png',
+            type: 'image/png',
+          },
+          {
+            length: true,
             name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
             type: 'video/mp4',

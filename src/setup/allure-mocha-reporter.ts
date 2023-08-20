@@ -174,34 +174,40 @@ const isHook = (test: Mocha.Test) => {
 
 const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
+  let firstId;
   test.parent?.eachTest(ts => {
     ts.err = test.err;
 
-    index++;
-
     if (ts) {
-      if (index === 1) {
+      if (index === 0) {
         ts.state = 'failed';
+        firstId = () => (ts as any).id;
       }
+
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId() : undefined);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
+    index++;
   });
 };
 
 const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
+  let firstId;
   test.parent?.eachTest(ts => {
     ts.err = test.err;
 
-    index++;
+    if (index === 0) {
+      firstId = () => (ts as any).id;
+    }
 
-    if (index !== 1 && ts) {
+    if (index !== 0 && ts) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId() : undefined);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
+    index++;
   });
 };
 
@@ -210,17 +216,21 @@ const createTestsForSuite = (runner: Mocha.Runner, testOrHook: Mocha.Test, suite
 
   runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
   runner.emit(MOCHA_EVENTS.SUITE_BEGIN, suite);
-
+  let index = 0;
+  let firstId;
   suite?.eachTest(ts => {
     ts.err = testOrHook.err;
 
-    // index++;
+    if (index === 0) {
+      firstId = () => (ts as any).id;
+    }
 
     if (ts) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
-      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
+      runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts, index !== 0 ? firstId() : undefined);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);
     }
+    index++;
   });
   runner.emit(MOCHA_EVENTS.SUITE_END, suite);
 };
@@ -493,7 +503,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       message(payload);
     })
 
-    .on(CUSTOM_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
+    .on(CUSTOM_EVENTS.TEST_FAIL, (test: Mocha.Test, originalTestId: string | undefined) => {
       debug(`event ${CUSTOM_EVENTS.TEST_FAIL}: ${test.title}`);
       message({
         task: 'testResult',
@@ -501,6 +511,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
           title: test?.title,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           id: (test as any)?.id,
+          originalTestId,
           result: convertState('failed'),
           details: { message: test?.err?.message, trace: test?.err?.stack },
         },
