@@ -141,7 +141,7 @@ export const swapItems = (arr: unknown[], index1: number, index2: number) => {
 export const baseUrlFromUrl = (url: string) => {
   const find = '://';
   const findPos = url.indexOf(find) + find.length;
-  const indexUrl = url?.slice(findPos).indexOf('/');
+  const indexUrl = url.slice(findPos).indexOf('/');
 
-  return indexUrl === -1 ? `${url}/` : `${url?.slice(0, indexUrl + findPos)}/`;
+  return indexUrl === -1 ? `${url}/` : `${url.slice(0, indexUrl + findPos)}/`;
 };

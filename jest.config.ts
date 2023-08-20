@@ -21,6 +21,7 @@ export default {
     '!**/node_modules/**',
     '!**/__tests__/**',
     '!**/mocks.ts',
+    '!**/types.ts',
   ],
 
   // The directory where Jest should output its coverage files
