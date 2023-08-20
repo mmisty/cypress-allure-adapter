@@ -221,7 +221,7 @@ You can put this into your `support/index.ts` file.
 To see debug log run cypress with DEBUG env variable like: `DEBUG=cypress-allure* npm run cy:open`
 
 ## Change log
-### 0.8.3
+### 0.8.4
  - environment variable to switch on and off cypress commands logging (`allureLogCyCommands: 'true'`)
  - environment variable to wrap specific commands (allureWrapCustomCommands)
    - commands can be excluded by `allureWrapCustomCommands: '!qaId,!cust',` - all should have `!` before command name
