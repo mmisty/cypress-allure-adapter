@@ -1,4 +1,9 @@
-import { checkCyResults, createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import {
+  checkCyResults,
+  createResTest2,
+  fixResult,
+  mapSteps,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands', () => {
@@ -69,7 +74,10 @@ describe('custom commands', () => {
   });
 `,
     ],
-    { allureWrapCustomCommands: 'true', allureSkipCommands: 'specialIgnoredCommand' },
+    {
+      allureWrapCustomCommands: 'true',
+      allureSkipCommands: 'specialIgnoredCommand',
+    },
   );
 
   describe('check results', () => {

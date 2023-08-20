@@ -64,19 +64,25 @@ describe('should have requests', () => {
     });
 
     it('should have simple get request', () => {
-      const tests = resAllure.filter(t => t.name === '01 super simple GET without data');
+      const tests = resAllure.filter(
+        t => t.name === '01 super simple GET without data',
+      );
       expect(tests.length).toEqual(1);
 
       const steps = mapSteps(tests[0].steps, t => ({
         name: t.name?.replace(/\d+/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
-          value: t.name === 'Request URL' ? t.value?.replace(/\d+/g, 'number') : t.value,
+          value:
+            t.name === 'Request URL'
+              ? t.value?.replace(/\d+/g, 'number')
+              : t.value,
         })),
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          sourceContentMoreThanZero:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -124,19 +130,25 @@ describe('should have requests', () => {
     });
 
     it('should have simple get request without data', () => {
-      const tests = resAllure.filter(t => t.name === '01.2 simple GET without data');
+      const tests = resAllure.filter(
+        t => t.name === '01.2 simple GET without data',
+      );
       expect(tests.length).toEqual(1);
 
       const steps = mapSteps(tests[0].steps, t => ({
         name: t.name?.replace(/\d+/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
-          value: t.name === 'Request URL' ? t.value?.replace(/\d+/g, 'number') : t.value,
+          value:
+            t.name === 'Request URL'
+              ? t.value?.replace(/\d+/g, 'number')
+              : t.value,
         })),
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          sourceContentMoreThanZero:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -184,19 +196,25 @@ describe('should have requests', () => {
     });
 
     it('should have simple POST with data', () => {
-      const tests = resAllure.filter(t => t.name === '02 simple POST with data');
+      const tests = resAllure.filter(
+        t => t.name === '02 simple POST with data',
+      );
       expect(tests.length).toEqual(1);
 
       const steps = mapSteps(tests[0].steps, t => ({
         name: t.name?.replace(/\d+/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
-          value: t.name === 'Request URL' ? t.value?.replace(/\d+/g, 'number') : t.value,
+          value:
+            t.name === 'Request URL'
+              ? t.value?.replace(/\d+/g, 'number')
+              : t.value,
         })),
         attach: t.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          sourceContentMoreThanZero: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          sourceContentMoreThanZero:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 

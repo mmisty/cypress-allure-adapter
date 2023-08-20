@@ -105,7 +105,11 @@ describe('one passed test with global before hook', () => {
 
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
-        [...whenCoverage('"before each" hook'), 'log: message', ...whenCoverage('"after each" hook')],
+        [
+          ...whenCoverage('"before each" hook'),
+          'log: message',
+          ...whenCoverage('"after each" hook'),
+        ],
       ]);
     });
   });

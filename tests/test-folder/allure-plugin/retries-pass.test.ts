@@ -17,7 +17,9 @@ describe('run retries test', () => {
 
     it('check results', () => {
       expect(
-        resFixed.sort((a, b) => (a.stop && b.stop && a.stop < b.stop ? 1 : -1)).map(t => [t.name, t.status]),
+        resFixed
+          .sort((a, b) => (a.stop && b.stop && a.stop < b.stop ? 1 : -1))
+          .map(t => [t.name, t.status]),
       ).toEqual([
         ['should pass on retries', 'passed'],
         ['should pass on retries', 'failed'],

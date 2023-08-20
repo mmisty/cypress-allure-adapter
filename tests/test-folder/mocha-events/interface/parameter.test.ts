@@ -50,7 +50,10 @@ describe('should have parameters by using cy.allure() interface', () => {
       const parameters = tests.map(t => t.parameters).sort();
       expect(parameters).toEqual([[]]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, params: t.parameters }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        params: t.parameters,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -70,7 +73,10 @@ describe('should have parameters by using cy.allure() interface', () => {
       const parameters = tests.map(t => t.parameters).sort();
       expect(parameters).toEqual([[{ name: 'Letter1', value: 'A' }]]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, params: t.parameters }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        params: t.parameters,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -78,13 +84,18 @@ describe('should have parameters by using cy.allure() interface', () => {
     });
 
     it('should have test parameters when using testParameter interface', () => {
-      const tests = resFixed.filter(t => t.name === '04 parameter for test when step started');
+      const tests = resFixed.filter(
+        t => t.name === '04 parameter for test when step started',
+      );
       expect(tests.length).toEqual(1);
 
       const parameters = tests.map(t => t.parameters).sort();
       expect(parameters).toEqual([[{ name: 'Letter1', value: 'A' }]]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, params: t.parameters }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        params: t.parameters,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -109,7 +120,10 @@ describe('should have parameters by using cy.allure() interface', () => {
         ],
       ]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, params: t.parameters }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        params: t.parameters,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -128,7 +142,10 @@ describe('should have parameters by using cy.allure() interface', () => {
         ],
       ]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, params: t.parameters }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        params: t.parameters,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 

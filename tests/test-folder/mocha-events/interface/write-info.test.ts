@@ -41,7 +41,9 @@ describe('should be able to write env info and other', () => {
       expect(tests.length).toEqual(1);
       expect(tests[0].status).toEqual('passed');
       expect(existsSync(`${res.watch}/environment.properties`)).toEqual(true);
-      expect(readFileSync(`${res.watch}/environment.properties`).toString()).toEqual('endVar = 123\nALLURE = 5');
+      expect(
+        readFileSync(`${res.watch}/environment.properties`).toString(),
+      ).toEqual('endVar = 123\nALLURE = 5');
     });
 
     it('should be able to write executor info from test', () => {

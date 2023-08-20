@@ -46,7 +46,10 @@ describe('should have steps by using cy.allure() interface', () => {
       const tests = resAllure.filter(t => t.name === '01 step');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, duration: (t.stop ?? 0) - (t.start ?? 0) }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        duration: (t.stop ?? 0) - (t.start ?? 0),
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
       expect(steps).toEqual([
@@ -62,7 +65,10 @@ describe('should have steps by using cy.allure() interface', () => {
       const tests = resAllure.filter(t => t.name === '02 step with duration');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, duration: (t.stop ?? 0) - (t.start ?? 0) }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        duration: (t.stop ?? 0) - (t.start ?? 0),
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
       expect(steps.length).toEqual(1);
@@ -73,10 +79,15 @@ describe('should have steps by using cy.allure() interface', () => {
     });
 
     it('should have merged steps with start and end', () => {
-      const tests = resAllure.filter(t => t.name === '03 mergeStep with duration');
+      const tests = resAllure.filter(
+        t => t.name === '03 mergeStep with duration',
+      );
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, duration: (t.stop ?? 0) - (t.start ?? 0) }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        duration: (t.stop ?? 0) - (t.start ?? 0),
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
       expect(steps.length).toEqual(1);
@@ -88,10 +99,15 @@ describe('should have steps by using cy.allure() interface', () => {
     });
 
     it('should have not merged steps with diff names', () => {
-      const tests = resAllure.filter(t => t.name === '04 not mergeStep when diff name');
+      const tests = resAllure.filter(
+        t => t.name === '04 not mergeStep when diff name',
+      );
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, duration: (t.stop ?? 0) - (t.start ?? 0) }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        duration: (t.stop ?? 0) - (t.start ?? 0),
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
       expect(steps.length).toEqual(2);

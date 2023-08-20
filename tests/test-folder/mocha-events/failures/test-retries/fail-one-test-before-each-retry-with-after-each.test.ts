@@ -1,4 +1,9 @@
-import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('one failed test in before each hook with after each', () => {

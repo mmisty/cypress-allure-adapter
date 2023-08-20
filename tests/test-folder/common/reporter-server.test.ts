@@ -7,11 +7,16 @@ const results = 'reports/allure-res';
 // need to fix process hanging in tests
 // eslint-disable-next-line jest/no-disabled-tests
 describe.skip('startReporterServer', () => {
-  const start = async (debug: boolean, env: any): Promise<{ serv: undefined | WebSocketServer }> => {
+  const start = async (
+    debug: boolean,
+    env: any,
+  ): Promise<{ serv: undefined | WebSocketServer }> => {
     process.env.DEBUG = debug ? 'cypress-allure*' : undefined;
+
     // require to enable DEBUG logging
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const startReporterServer = require('../../../src/plugins/server').startReporterServer;
+    const startReporterServer =
+      require('../../../src/plugins/server').startReporterServer;
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const allureTasks = require('../../../src/plugins/allure').allureTasks;
 
@@ -44,7 +49,8 @@ describe.skip('startReporterServer', () => {
     const env = {};
     const serv = await start(true, env);
 
-    const wsPathFixed = `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
+    const wsPathFixed =
+      `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
     const wsPath = `ws://localhost:${wsPathFixed}`;
     const ws = new WebSocket(wsPath, { origin: 'localhost' });
     const messages: string[] = [];
@@ -86,9 +92,9 @@ describe.skip('startReporterServer', () => {
       console.info(mess);
       throw err;
     }
-    expect(log.log.mock.calls[0].map(t => t.replace(/\d+/g, 'number'))).toEqual([
-      '[cypress-allure-adapter] running on number port',
-    ]);
+    expect(log.log.mock.calls[0].map(t => t.replace(/\d+/g, 'number'))).toEqual(
+      ['[cypress-allure-adapter] running on number port'],
+    );
     expect(messages).toEqual(['connection established']);
   });
 
@@ -100,7 +106,8 @@ describe.skip('startReporterServer', () => {
     }
     await start(true, env);
 
-    const wsPathFixed = `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
+    const wsPathFixed =
+      `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
     const wsPath = `ws://localhost:${wsPathFixed}`;
     const ws = new WebSocket(wsPath, { origin: 'localhost' });
     const messages: string[] = [];
@@ -117,14 +124,30 @@ describe.skip('startReporterServer', () => {
         messages.push(m.toString());
 
         if (m.toString() === 'connection established') {
-          ws.send(JSON.stringify({ id: 1, data: { task: 'specStarted', arg: { spec: { relative: 'speccc' } } } }));
+          ws.send(
+            JSON.stringify({
+              id: 1,
+              data: {
+                task: 'specStarted',
+                arg: { spec: { relative: 'speccc' } },
+              },
+            }),
+          );
           ws.send(
             JSON.stringify({
               id: 2,
-              data: { task: 'testStarted', arg: { title: 'test1', fullTitle: 'test1', id: '1' } },
+              data: {
+                task: 'testStarted',
+                arg: { title: 'test1', fullTitle: 'test1', id: '1' },
+              },
             }),
           );
-          ws.send(JSON.stringify({ id: 3, data: { task: 'testEnded', arg: { result: 'passed' } } }));
+          ws.send(
+            JSON.stringify({
+              id: 3,
+              data: { task: 'testEnded', arg: { result: 'passed' } },
+            }),
+          );
         }
 
         if (messages.length === 3) {
@@ -157,7 +180,8 @@ describe.skip('startReporterServer', () => {
     }
     await start(true, env);
 
-    const wsPathFixed = `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
+    const wsPathFixed =
+      `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
     const wsPath = `ws://localhost:${wsPathFixed}`;
     const ws = new WebSocket(wsPath, { origin: 'localhost' });
     const messages: string[] = [];
@@ -205,7 +229,8 @@ describe.skip('startReporterServer', () => {
     }
     await start(true, env);
 
-    const wsPathFixed = `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
+    const wsPathFixed =
+      `${env['allureWsPort']}/__cypress/allure_messages/`.replace(/\/\//g, '/');
     const wsPath = `ws://localhost:${wsPathFixed}`;
     const ws = new WebSocket(wsPath, { origin: 'localhost' });
     const messages: string[] = [];
@@ -237,7 +262,11 @@ describe.skip('startReporterServer', () => {
     ws.close();
     expect(isSent).toEqual(true);
 
-    expect(messages).toEqual(['connection established', '{"status":"done"}', '{"payload":{},"status":"failed"}']);
+    expect(messages).toEqual([
+      'connection established',
+      '{"status":"done"}',
+      '{"payload":{},"status":"failed"}',
+    ]);
     expect(existsSync(results)).toEqual(true);
   });
 });

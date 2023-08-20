@@ -1,4 +1,9 @@
-import { checkCyResults, createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import {
+  checkCyResults,
+  createResTest2,
+  fixResult,
+  mapSteps,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands exclude', () => {
@@ -52,7 +57,9 @@ describe('custom commands exclude', () => {
       const tests = resFixed.filter(t => t.name === 'qaId simple');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name?.replace(/\d{3,8}/, 'number') }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name?.replace(/\d{3,8}/, 'number'),
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -81,7 +88,9 @@ describe('custom commands exclude', () => {
       const tests = resFixed.filter(t => t.name === 'qaId simple several');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name?.replace(/\d{3,8}/, 'number') }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name?.replace(/\d{3,8}/, 'number'),
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 

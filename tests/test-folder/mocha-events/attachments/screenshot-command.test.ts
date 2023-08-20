@@ -1,4 +1,8 @@
-import { checkCyResults, createResTest2, mapSteps } from '../../../cy-helper/utils';
+import {
+  checkCyResults,
+  createResTest2,
+  mapSteps,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { readFileSync } from 'fs';
 import { extname } from '../../../../src/common';
@@ -42,7 +46,8 @@ describe('test screenshot', () => {
         test!.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          length: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          length:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       ).toEqual([
         {
@@ -53,8 +58,13 @@ describe('test screenshot', () => {
         },
       ]);
 
-      const steps = mapSteps(test!.steps, t => ({ name: t.name, attach: t.attachments })).filter(
-        t => t.name.indexOf('before each') === -1 && t.name.indexOf('after each') === -1,
+      const steps = mapSteps(test!.steps, t => ({
+        name: t.name,
+        attach: t.attachments,
+      })).filter(
+        t =>
+          t.name.indexOf('before each') === -1 &&
+          t.name.indexOf('after each') === -1,
       );
 
       expect(steps).toEqual([
@@ -79,7 +89,8 @@ describe('test screenshot', () => {
         test!.attachments.map(t => ({
           ...t,
           source: `source${extname(t.source)}`,
-          length: readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+          length:
+            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       ).toEqual([
         {
@@ -90,8 +101,13 @@ describe('test screenshot', () => {
         },
       ]);
 
-      const steps = mapSteps(test!.steps, t => ({ name: t.name, attach: t.attachments })).filter(
-        t => t.name.indexOf('before each') === -1 && t.name.indexOf('after each') === -1,
+      const steps = mapSteps(test!.steps, t => ({
+        name: t.name,
+        attach: t.attachments,
+      })).filter(
+        t =>
+          t.name.indexOf('before each') === -1 &&
+          t.name.indexOf('after each') === -1,
       );
       expect(steps).toEqual([
         {

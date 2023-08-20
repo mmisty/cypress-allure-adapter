@@ -74,7 +74,9 @@ describe('Summ - substract', { defaultCommandTimeout: 1000 }, () => {
     });
 
     it('should have step with retry', () => {
-      const tests = resFixed.filter(t => t.name === 'should summ values with retry');
+      const tests = resFixed.filter(
+        t => t.name === 'should summ values with retry',
+      );
       expect(tests.length).toEqual(2);
 
       const steps1 = mapSteps(tests[0].steps, t => ({

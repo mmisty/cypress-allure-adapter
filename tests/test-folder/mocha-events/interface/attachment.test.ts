@@ -56,7 +56,10 @@ describe('should have attachments by using cy.allure() interface', () => {
 
       const steps = mapSteps(tests[0].steps, t => ({
         name: t.name,
-        attach: t.attachments.map(k => ({ ...k, source: `source${extname(k.source)}` })),
+        attach: t.attachments.map(k => ({
+          ...k,
+          source: `source${extname(k.source)}`,
+        })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
@@ -77,7 +80,9 @@ describe('should have attachments by using cy.allure() interface', () => {
     });
 
     it('should have step fileAttachment', () => {
-      const tests = resFixed.filter(t => t.name === '01.1 fileAttachment for step');
+      const tests = resFixed.filter(
+        t => t.name === '01.1 fileAttachment for step',
+      );
       expect(tests.length).toEqual(1);
 
       const parameters = tests.map(t => t.attachments).sort();
@@ -85,7 +90,10 @@ describe('should have attachments by using cy.allure() interface', () => {
 
       const steps = mapSteps(tests[0].steps, t => ({
         name: t.name,
-        attach: t.attachments.map(k => ({ ...k, source: `source${extname(k.source)}` })),
+        attach: t.attachments.map(k => ({
+          ...k,
+          source: `source${extname(k.source)}`,
+        })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
@@ -120,7 +128,10 @@ describe('should have attachments by using cy.allure() interface', () => {
         ],
       ]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, attach: t.attachments }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        attach: t.attachments,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -128,7 +139,9 @@ describe('should have attachments by using cy.allure() interface', () => {
     });
 
     it('should have testAttachments when step started', () => {
-      const tests = resFixed.filter(t => t.name === '03 attachment for test when step started');
+      const tests = resFixed.filter(
+        t => t.name === '03 attachment for test when step started',
+      );
       expect(tests.length).toEqual(1);
 
       const parameters = tests.map(t => t.attachments).sort();
@@ -142,7 +155,10 @@ describe('should have attachments by using cy.allure() interface', () => {
         ],
       ]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, attach: t.attachments }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        attach: t.attachments,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 
@@ -155,7 +171,9 @@ describe('should have attachments by using cy.allure() interface', () => {
       ]);
     });
     it('should have testFileAttachments when step started', () => {
-      const tests = resFixed.filter(t => t.name === '03.1 fileAttachment for test when step started');
+      const tests = resFixed.filter(
+        t => t.name === '03.1 fileAttachment for test when step started',
+      );
       expect(tests.length).toEqual(1);
 
       const parameters = tests.map(t => t.attachments).sort();
@@ -169,7 +187,10 @@ describe('should have attachments by using cy.allure() interface', () => {
         ],
       ]);
 
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name, attach: t.attachments }))
+      const steps = mapSteps(tests[0].steps, t => ({
+        name: t.name,
+        attach: t.attachments,
+      }))
         .filter(t => t.name.indexOf('"after each"') === -1)
         .filter(t => t.name.indexOf('"before each"') === -1);
 

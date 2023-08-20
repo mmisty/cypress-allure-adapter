@@ -201,7 +201,9 @@ describe('hooks test - failed global hook step', () => {
 
     it('check first test befores', async () => {
       const parents = resFixed.map(t => getParentsArray(t));
-      expect(parents[0].map(t => t.befores?.map(x => mapSteps(x.steps)))).toEqual([
+      expect(
+        parents[0].map(t => t.befores?.map(x => mapSteps(x.steps))),
+      ).toEqual([
         [
           ...whenCoverage([
             {
@@ -232,7 +234,9 @@ describe('hooks test - failed global hook step', () => {
 
     it('check second test befores', async () => {
       const parents = resFixed.map(t => getParentsArray(t));
-      expect(parents[1].map(t => t.befores?.map(x => mapSteps(x.steps)))).toEqual([
+      expect(
+        parents[1].map(t => t.befores?.map(x => mapSteps(x.steps))),
+      ).toEqual([
         [
           ...whenCoverage([
             {
@@ -263,7 +267,9 @@ describe('hooks test - failed global hook step', () => {
 
     it('check first test afters', async () => {
       const parents = resFixed.map(t => getParentsArray(t));
-      expect(parents[0].map(t => t.afters?.map(x => mapSteps(x.steps)))).toEqual([
+      expect(
+        parents[0].map(t => t.afters?.map(x => mapSteps(x.steps))),
+      ).toEqual([
         [
           ...whenCoverage(
             [],

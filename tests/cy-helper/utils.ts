@@ -8,7 +8,10 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 jest.setTimeout(120000);
 
 // eslint-disable-next-line jest/no-export
-export const mapSteps = <T>(steps: ExecutableItem[], map?: (m: ExecutableItem) => T): (T & any)[] => {
+export const mapSteps = <T>(
+  steps: ExecutableItem[],
+  map?: (m: ExecutableItem) => T,
+): (T & any)[] => {
   if (steps?.length === 0) {
     return [];
   }
@@ -29,7 +32,12 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
       return [];
     }
 
-    return steps.map(s => ({ ...s, start: date, stop: date + 11, steps: replaceSteps(s.steps) }));
+    return steps.map(s => ({
+      ...s,
+      start: date,
+      stop: date + 11,
+      steps: replaceSteps(s.steps),
+    }));
   };
 
   return results.map(r => {
@@ -82,7 +90,10 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const createResTest = (fileName: string, envConfig?: Record<string, string | undefined>): string => {
+export const createResTest = (
+  fileName: string,
+  envConfig?: Record<string, string | undefined>,
+): string => {
   const cwd = process.cwd();
   beforeAll(async () => {
     await execSync('npm run build');
@@ -146,8 +157,14 @@ export const sortAttachments = (res: AllureTest[]) => {
 
 // eslint-disable-next-line jest/no-export
 export const checkCyResults = (
-  res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined,
-  expected: Partial<CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult>,
+  res:
+    | CypressCommandLine.CypressRunResult
+    | CypressCommandLine.CypressFailedRunResult
+    | undefined,
+  expected: Partial<
+    | CypressCommandLine.CypressRunResult
+    | CypressCommandLine.CypressFailedRunResult
+  >,
 ) => {
   expect(res).toEqual(expect.objectContaining(expected));
 };
@@ -159,9 +176,19 @@ export const createResTest2 = (
 ): {
   watch: string;
   specs: string[];
-  result: { res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined };
+  result: {
+    res:
+      | CypressCommandLine.CypressRunResult
+      | CypressCommandLine.CypressFailedRunResult
+      | undefined;
+  };
 } => {
-  const result: { res: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult | undefined } = {
+  const result: {
+    res:
+      | CypressCommandLine.CypressRunResult
+      | CypressCommandLine.CypressFailedRunResult
+      | undefined;
+  } = {
     res: undefined,
   };
   const testsPath = `${process.cwd()}/integration/e2e/temp`;
@@ -175,6 +202,14 @@ export const createResTest2 = (
     const specPath = `${testsPath}/test_${i}_${Date.now()}.cy.ts`;
     writeFileSync(specPath, content);
     specPaths.push(specPath);
+    const err = new Error('File path');
+    // const st = err.stack?.replace('Error: File path', '').split('\n');
+    // const pathRel = path.relative(process.cwd(), specPath);
+    err.stack = `\tat ${specPath}:1:1\n${err.stack?.replace(
+      'Error: File path',
+      '',
+    )}`.replace(/\n\n/g, '\n');
+    console.log(err);
   });
 
   const name = basename(specPaths[0], '.test.ts');
@@ -224,15 +259,19 @@ export const createResTest2 = (
 
   return {
     watch: env.allureResultsWatchPath,
-    specs: specPaths.map(t => `${process.cwd()}/reports/test-events/${basename(t)}.log`),
+    specs: specPaths.map(
+      t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
+    ),
     result: result,
   };
 };
 
 // eslint-disable-next-line jest/no-export
-export const whenCoverage = <T>(...res: T[]): T[] => (process.env.COVERAGE === 'true' ? res : []);
+export const whenCoverage = <T>(...res: T[]): T[] =>
+  process.env.COVERAGE === 'true' ? res : [];
 // eslint-disable-next-line jest/no-export
-export const whenNoCoverage = <T>(...res: T[]): T[] => (process.env.COVERAGE !== 'true' ? res : []);
+export const whenNoCoverage = <T>(...res: T[]): T[] =>
+  process.env.COVERAGE !== 'true' ? res : [];
 // eslint-disable-next-line jest/no-export
 export const covergeAfterAllEvent = [
   'mocha: hook: "after all" hook: collectBackendCoverage',
@@ -243,12 +282,21 @@ export const covergeAfterAllEvent = [
   'mocha: hook end: "after all" hook: generateReport',
 ];
 // eslint-disable-next-line jest/no-export
-export const coverageAfterEachEvent = ['mocha: hook: "after each" hook', 'mocha: hook end: "after each" hook'];
+export const coverageAfterEachEvent = [
+  'mocha: hook: "after each" hook',
+  'mocha: hook end: "after each" hook',
+];
 // eslint-disable-next-line jest/no-export
-export const coverageBeforeAll = ['mocha: hook: "before all" hook', 'mocha: hook end: "before all" hook'];
+export const coverageBeforeAll = [
+  'mocha: hook: "before all" hook',
+  'mocha: hook end: "before all" hook',
+];
 
 // eslint-disable-next-line jest/no-export
-export const coverageBeforeEachEvent = ['mocha: hook: "before each" hook', 'mocha: hook end: "before each" hook'];
+export const coverageBeforeEachEvent = [
+  'mocha: hook: "before each" hook',
+  'mocha: hook end: "before each" hook',
+];
 // eslint-disable-next-line jest/no-export
 export const covergeAfterAll = [
   {

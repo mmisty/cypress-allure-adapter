@@ -95,7 +95,10 @@ describe('hello suite', { retries: 1 }, () => {
     });
 
     it('check tests names', async () => {
-      expect(resFixed.map(t => t.fullName).sort()).toEqual(['hello suite hello test', 'hello suite hello test']);
+      expect(resFixed.map(t => t.fullName).sort()).toEqual([
+        'hello suite hello test',
+        'hello suite hello test',
+      ]);
     });
 
     it('check tests parents', async () => {
@@ -121,8 +124,14 @@ describe('hello suite', { retries: 1 }, () => {
 
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
-        ['"before each" hook', ...whenCoverage('"before each" hook', '"after each" hook')],
-        ['"before each" hook', ...whenCoverage('"before each" hook', '"after each" hook')],
+        [
+          '"before each" hook',
+          ...whenCoverage('"before each" hook', '"after each" hook'),
+        ],
+        [
+          '"before each" hook',
+          ...whenCoverage('"before each" hook', '"after each" hook'),
+        ],
       ]);
     });
 

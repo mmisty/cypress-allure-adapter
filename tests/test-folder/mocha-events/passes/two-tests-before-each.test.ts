@@ -1,4 +1,9 @@
-import { covergeAfterAllEvent, createResTest2, whenCoverage, whenNoCoverage } from '../../../cy-helper/utils';
+import {
+  covergeAfterAllEvent,
+  createResTest2,
+  whenCoverage,
+  whenNoCoverage,
+} from '../../../cy-helper/utils';
 import { readFileSync } from 'fs';
 
 describe('two passed tests with before each in suite', () => {
@@ -42,10 +47,16 @@ describe('two passed tests with before each in suite', () => {
       'mocha: hook: "before each" hook',
       ...whenNoCoverage('cypress: test:before:run: hello test1'),
       'mocha: hook end: "before each" hook',
-      ...whenCoverage('mocha: hook: "before each" hook', 'mocha: hook end: "before each" hook'),
+      ...whenCoverage(
+        'mocha: hook: "before each" hook',
+        'mocha: hook end: "before each" hook',
+      ),
       'mocha: pass: hello test1',
       'mocha: test end: hello test1',
-      ...whenCoverage('mocha: hook: "after each" hook', 'mocha: hook end: "after each" hook'),
+      ...whenCoverage(
+        'mocha: hook: "after each" hook',
+        'mocha: hook end: "after each" hook',
+      ),
       'cypress: test:after:run: hello test1',
       'plugin test:ended',
 
@@ -53,11 +64,17 @@ describe('two passed tests with before each in suite', () => {
       'plugin test:started',
       'mocha: hook: "before each" hook',
       'cypress: test:before:run: hello test2',
-      ...whenCoverage('mocha: hook end: "before each" hook', 'mocha: hook: "before each" hook'),
+      ...whenCoverage(
+        'mocha: hook end: "before each" hook',
+        'mocha: hook: "before each" hook',
+      ),
       'mocha: hook end: "before each" hook',
       'mocha: pass: hello test2',
       'mocha: test end: hello test2',
-      ...whenCoverage('mocha: hook: "after each" hook', 'mocha: hook end: "after each" hook'),
+      ...whenCoverage(
+        'mocha: hook: "after each" hook',
+        'mocha: hook end: "after each" hook',
+      ),
       'mocha: suite end: hello suite',
       ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test2',
