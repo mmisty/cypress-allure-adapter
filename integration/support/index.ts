@@ -1,7 +1,7 @@
 import { redirectTestLogs } from 'cypress-redirect-browser-log';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
-import { allureAdapterSetup } from '@src';
 import { COVERAGE } from '../common/constants';
+import '@src/support';
 
 console.log('====SUPPORT INDEX STARTED');
 
@@ -13,8 +13,6 @@ const setupCoverage = () => {
     console.log('COVERAGE NOT ENABLED IN BROWSER');
   }
 };
-
-allureAdapterSetup();
 
 redirectTestLogs({
   isLogCommandDetails: false,

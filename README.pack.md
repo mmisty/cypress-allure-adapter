@@ -25,15 +25,24 @@ Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.
 
 Install adapter by `npm i -D @mmisty/cypress-allure-adapter`
 
-**Setup**: 
-
 ### 1. Update support
+
+Import `@mmisty/cypress-allure-adapter/support` into your `support/index.ts` file (or `e2e.ts` file)
+
+```javascript
+   import '@mmisty/cypress-allure-adapter/support';
+   // import other custom ommands here
+   ```
+
+If you want all custom commands to be wrapped in report import adapter before adding(importing) any custom commands
+
+<details><summary>Alternative way</summary>
 
 Add `allureAdapterSetup(); ` in your `support/index.ts` file (or `e2e.ts` file)
    ```javascript
    import { allureAdapterSetup } from '@mmisty/cypress-allure-adapter';
-   
-   allureAdapterSetup();
+
+allureAdapterSetup();
    ```
 If you want all custom commands to be correctly wrapped in report register adapter before adding custom commands: 
 
@@ -43,6 +52,8 @@ If you want all custom commands to be correctly wrapped in report register adapt
    allureAdapterSetup();
    // register custom commands here
    ```
+</details>
+
 
 ### 2. Update plugins (setupNodeEvents)
 Add `configureAllureAdapterPlugins(on, config);` into your plugins file:
