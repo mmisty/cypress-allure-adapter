@@ -1,4 +1,7 @@
 ## Change Log
+### 0.9.0
+ - [tech] update cypress version to 13.0.0, check that compatible
+
 ### 0.8.7
  - fix error `Cypress detected that you returned a promise from a command while also invoking one or more cy commands in that promise.` for commands that return promises (ex. `cypress-real-events` plugin)
 

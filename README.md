@@ -16,7 +16,14 @@ This is under construction.
 todo
 
 ## Tests
-todo
+There are 2 types of tests:
+- jest tests that start cypress and check results
+- cypress tests to see result of plugin work
+
+To run jest test locally: 
+```shell
+npm run test:jest:cy
+```
 
 ### Project structure
 
