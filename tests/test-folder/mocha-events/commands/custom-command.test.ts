@@ -71,6 +71,10 @@ describe('custom commands', () => {
     it('ignore custom command', () => {
       cy.specialIgnoredCommand('nonexistingd2');
     });
+    
+     it('promises returned from commands', () => {
+        cy.get('div:eq(0)').promiseTest(10).should('exist').promiseTest(10);
+     });
   });
 `,
     ],
@@ -275,16 +279,56 @@ describe('custom commands', () => {
       ]);
     });
 
+    it('should pass promises returned from commands', () => {
+      const tests = resFixed.filter(
+        t => t.name === 'promises returned from commands',
+      );
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'get: div:eq(0)',
+          steps: [],
+        },
+        {
+          name: 'promiseTest: 10',
+          steps: [
+            {
+              name: 'promise inside: wait 10',
+              steps: [],
+            },
+          ],
+        },
+        {
+          name: 'assert: expected **<div.inner-container>** to exist in the DOM',
+          steps: [],
+        },
+        {
+          name: 'promiseTest: 10',
+          steps: [
+            {
+              name: 'promise inside: wait 10',
+              steps: [],
+            },
+          ],
+        },
+      ]);
+    });
+
     it('should have results', () => {
       // should not fail run
       checkCyResults(res?.result?.res, {
         status: 'finished',
-        totalPassed: 7,
+        totalPassed: 8,
         totalFailed: 0,
         totalPending: 0,
         totalSkipped: 0,
         totalSuites: 1,
-        totalTests: 7,
+        totalTests: 8,
       });
     });
   });

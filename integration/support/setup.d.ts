@@ -11,5 +11,6 @@ declare namespace Cypress {
     otherCmd(message: string): Chainable<void>;
     fileExists(filePath: string): Chainable<boolean>;
     qaId(selector: string): Chainable<Element>;
+    promiseTest(delay?: number): Chainable<any>;
   }
 }

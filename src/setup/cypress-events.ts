@@ -305,10 +305,18 @@ export const handleCyLogEvents = (
         events.emit('cmd:started:tech', currentCmd, true);
 
         const res = fn(...fnargs);
+        const end = () => events.emit('cmd:ended:tech', currentCmd, true);
 
-        cy.doSyncCommand(() => {
-          events.emit('cmd:ended:tech', currentCmd, true);
-        });
+        if (res?.then && !res?.should) {
+          // for promises returned from commands
+          res.then(() => {
+            end();
+          });
+        } else {
+          cy.doSyncCommand(() => {
+            end();
+          });
+        }
 
         return res;
       };
