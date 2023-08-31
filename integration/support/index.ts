@@ -2,6 +2,8 @@ import { redirectTestLogs } from 'cypress-redirect-browser-log';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
 import { COVERAGE } from '../common/constants';
 import '@src/support';
+import { delay } from '@src/common';
+import Chainable = Cypress.Chainable;
 
 console.log('====SUPPORT INDEX STARTED');
 
@@ -47,6 +49,22 @@ Cypress.Commands.add('fileExists', (filePath: string) => {
 
   return cy.task<boolean>('fileExists', filePath);
 });
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const fn: (subj: any, delay?: number) => Chainable<any> = async (subject: any, delayNum?: number) => {
+  const log = Cypress.log({
+    name: 'promise inside',
+    message: `wait ${delayNum ?? 1}`,
+    autoEnd: false,
+  });
+  await delay(delayNum ?? 1);
+  log.end();
+
+  return subject;
+};
+
+Cypress.Commands.add('promiseTest', { prevSubject: ['element'] }, fn);
 
 if (Cypress.config('isInteractive')) {
   console.log('DELETE');

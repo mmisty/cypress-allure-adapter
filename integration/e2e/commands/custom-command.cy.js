@@ -208,4 +208,9 @@ describe('should pass', () => {
       cy.specialIgnoredCommand('nonexistingd2');
     });
   });
+
+  it('Promises', () => {
+    visitHtml();
+    cy.get('div:eq(0)').promiseTest(10).contains('hello').promiseTest(10);
+  });
 });
