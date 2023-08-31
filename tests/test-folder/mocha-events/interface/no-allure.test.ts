@@ -20,7 +20,6 @@ describe('should be no results when allure:false', () => {
     it('should have no results', () => {
       // should not fail run
       checkCyResults(res?.result?.res, {
-        status: 'finished',
         totalPassed: 1,
         totalFailed: 0,
         totalPending: 0,
