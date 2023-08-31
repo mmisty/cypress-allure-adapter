@@ -14,7 +14,6 @@ export default defineConfig({
     trashAssetsBeforeRuns: true,
     video: true,
     chromeWebSecurity: false,
-    videoUploadOnPasses: true,
     env: {
       REDIRECT_BROWSER_LOG: true,
       allure: 'true',

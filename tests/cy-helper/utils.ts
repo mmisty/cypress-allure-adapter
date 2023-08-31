@@ -133,6 +133,7 @@ export const createResTest = (
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
         env,
+        video: true,
       });
     } catch (e) {
       err = e as Error;
@@ -247,6 +248,7 @@ export const createResTest2 = (
         trashAssetsBeforeRuns: true,
         env,
         quiet: process.env.CI === 'true',
+        video: true,
       });
     } catch (e) {
       err = e as Error;
