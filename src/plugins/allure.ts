@@ -305,8 +305,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       if (!video) {
         console.error(`${packageLog} No video path in afterSpec result`);
-
-        return;
       } else {
         await allureReporter.attachVideoToTests({ path: video ?? '' });
       }
