@@ -70,7 +70,6 @@ describe('do sync command', () => {
     it('should have results', () => {
       // should not fail run
       checkCyResults(res?.result?.res, {
-        status: 'finished',
         totalPassed: 4,
         totalFailed: 0,
         totalPending: 0,

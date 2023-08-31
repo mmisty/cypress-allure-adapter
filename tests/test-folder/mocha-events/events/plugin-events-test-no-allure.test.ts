@@ -26,7 +26,6 @@ describe('hello suite', () => {
   );
   it('should be ok', () => {
     checkCyResults(res?.result?.res, {
-      status: 'finished',
       totalPassed: 0,
       totalFailed: 1,
       totalPending: 0,
