@@ -305,16 +305,15 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       if (!video) {
         console.error(`${packageLog} No video path in afterSpec result`);
-
-        return;
+      } else {
+        await allureReporter.attachVideoToTests({ path: video ?? '' });
       }
-      await allureReporter.attachVideoToTests({ path: video ?? '' });
 
       if (allureResults !== allureResultsWatch) {
         const results = glob.sync(`${allureResults}/*.*`);
 
         if (!existsSync(allureResultsWatch)) {
-          const mkdirSyncSithTry = (dir: string) => {
+          const mkdirSyncWithTry = (dir: string) => {
             for (let i = 0; i < 5; i++) {
               try {
                 mkdirSync(dir);
@@ -325,7 +324,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
               }
             }
           };
-          mkdirSyncSithTry(allureResultsWatch);
+          mkdirSyncWithTry(allureResultsWatch);
         }
         log(`allureResults: ${allureResults}`);
         log(`allureResultsWatch: ${allureResultsWatch}`);
