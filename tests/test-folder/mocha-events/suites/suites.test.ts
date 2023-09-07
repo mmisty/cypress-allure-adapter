@@ -7,7 +7,7 @@ import {
 import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
-describe('several nested suiteds', () => {
+describe('several nested suites', () => {
   const res = createResTest2([
     `
 describe('hello suite', () => {
@@ -101,16 +101,18 @@ describe('hello suite', () => {
               x =>
                 x.name === 'suite' ||
                 x.name === 'parentSuite' ||
-                x.name === 'childSuite',
+                x.name === 'subSuite',
             ),
           ),
       ).toEqual([
+        // first test
         [
           {
             name: 'parentSuite',
             value: 'hello suite',
           },
         ],
+        // second test
         [
           {
             name: 'parentSuite',

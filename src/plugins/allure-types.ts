@@ -46,6 +46,9 @@ type AllureTask = {
   addDescriptionHtml: { value: string };
   label: { name: string; value: string };
   message: { name: string };
+  suite: { name?: string };
+  subSuite: { name?: string };
+  parentSuite: { name?: string };
   testMessage: { path: string; message: string };
   delete: { path: string };
   attachScreenshots: { screenshots: AutoScreen[] };

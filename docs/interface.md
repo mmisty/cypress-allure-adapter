@@ -41,6 +41,58 @@ Adds finished step with passed status.
 cy.allure().step('should login');
 ```
 
+### suite
+**suite(name?: string)**
+
+In most cases when you use `describe` plugin will automatically create correct 
+structure of suites (Suite tab in report), but in some cases you may want to override that 
+(or add when no describes are being used)
+
+Adds suite to test (or overrides automatic name)
+When name is `undefined` it will remove automatic label from test.
+
+```javascript
+cy.allure().suite('Suite name');
+```
+
+```javascript
+cy.allure().suite();
+```
+
+### parentSuite
+**parentSuite(name?: string)**
+
+In most cases when you use `describe` plugin will automatically create correct
+structure of suites (Suite tab in report), but in some cases you may want to override that
+(or add when no describes are being used)
+
+Adds parent suite to test (or overrides automatic name)
+
+```javascript
+cy.allure().parentSuite('Suite name');
+```
+
+```javascript
+cy.allure().parentSuite();
+```
+
+### subSuite
+**subSuite(name?: string)**
+
+In most cases when you use `describe` plugin will automatically create correct
+structure of suites (Suite tab in report), but in some cases you may want to override that
+(or add when no describes are being used)
+
+Adds sub suite to test (or overrides automatic name)
+
+```javascript
+cy.allure().subSuite('Suite name');
+```
+
+```javascript
+cy.allure().subSuite();
+```
+
 ### tag
 **tag(...tags: string[])**
 

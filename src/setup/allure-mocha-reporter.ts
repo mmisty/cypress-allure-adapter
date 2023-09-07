@@ -130,6 +130,9 @@ export const allureInterface = (
     issue: (url: string, name?: string) =>
       fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name: name ?? url, type: 'issue' } }),
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
+    suite: (name: string) => fn({ task: 'suite', arg: { name } }),
+    parentSuite: (name: string) => fn({ task: 'parentSuite', arg: { name } }),
+    subSuite: (name: string) => fn({ task: 'subSuite', arg: { name } }),
     tag: (...tags: string[]) => tags.forEach(tag => fn({ task: 'label', arg: { name: LabelName.TAG, value: tag } })),
     severity: (value: Cypress.Severity) => fn({ task: 'label', arg: { name: LabelName.SEVERITY, value } }),
     language: (value: string) => fn({ task: 'label', arg: { name: LabelName.LANGUAGE, value } }),
