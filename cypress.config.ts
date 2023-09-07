@@ -14,6 +14,11 @@ export default defineConfig({
     trashAssetsBeforeRuns: true,
     video: true,
     chromeWebSecurity: false,
+    reporter: 'junit',
+    reporterOptions: {
+      mochaFile: './reports/cypress/[hash].xml',
+      toConsole: false,
+    },
     env: {
       REDIRECT_BROWSER_LOG: true,
       allure: 'true',
