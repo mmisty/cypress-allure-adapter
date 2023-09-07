@@ -1,4 +1,5 @@
 name: NodeJS with Webpack
+permissions: write-all
 
 on:
   push:
