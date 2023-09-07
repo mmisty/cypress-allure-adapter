@@ -143,6 +143,30 @@ declare namespace Cypress {
     severity(level: Severity): T;
 
     /**
+     * Adds (or replaces automatic) suite for test
+     * @param name suite name, when undefined will not use suite
+     * @example
+     * cy.allure().suite('test suite');
+     */
+    suite(name?: string): T;
+
+    /**
+     * Adds (or replaces automatic) parent Suite for test
+     * @param name parent suite name, when undefined will not use parent suite
+     * @example
+     * cy.allure().parentSuite('test parent suite');
+     */
+    parentSuite(name?: string): T;
+
+    /**
+     * Adds (or replaces automatic) sub Suite for test
+     * @param name sub suite name, when undefined will not use sub suite
+     * @example
+     * cy.allure().subSuite('test sub suite');
+     */
+    subSuite(name?: string): T;
+
+    /**
      * Adds thread to test
      * @param value string to group in timeline
      * @example

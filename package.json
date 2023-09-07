@@ -73,8 +73,8 @@
     "@types/ws": "^8.5.5",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
-    "allure-commandline": "^2.23.1",
-    "cypress": "^13.0.0",
+    "allure-commandline": "^2.24.0",
+    "cypress": "^13.1.0",
     "cypress-redirect-browser-log": "^1.1.2",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^8.5.0",
@@ -98,12 +98,12 @@
     "webpack": "^5.88.2"
   },
   "dependencies": {
-    "allure-js-commons": "^2.6.0",
+    "allure-js-commons": "^2.7.0",
     "allure-js-parser": "^0.0.7",
     "debug": "^4.3.4",
     "fast-glob": "^3.3.1",
     "uuid": "^9.0.0",
     "uuid-by-string": "^4.0.0",
-    "ws": "^8.13.0"
+    "ws": "^8.14.0"
   }
 }

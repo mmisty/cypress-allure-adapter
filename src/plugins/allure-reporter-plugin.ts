@@ -51,6 +51,7 @@ export class AllureReporter {
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
   steps: AllureStep[] = [];
+  labels: { name: string; value: string }[] = [];
   globalHooks = new GlobalHooks(this);
 
   // this is variable for global hooks only
@@ -502,6 +503,37 @@ export class AllureReporter {
     }
   }
 
+  private addGroupLabelByUser(label: string, value?: string) {
+    if (value === undefined) {
+      // remove suite labels
+      this.labels = this.labels.filter(t => t.name !== label);
+    } else {
+      this.labels.push({ name: label, value: value });
+    }
+  }
+
+  suite(arg: AllureTaskArgs<'suite'>) {
+    if (!this.currentTest) {
+      return;
+    }
+    this.addGroupLabelByUser(LabelName.SUITE, arg.name);
+  }
+
+  parentSuite(arg: AllureTaskArgs<'parentSuite'>) {
+    if (!this.currentTest) {
+      return;
+    }
+
+    this.addGroupLabelByUser(LabelName.PARENT_SUITE, arg.name);
+  }
+
+  subSuite(arg: AllureTaskArgs<'subSuite'>) {
+    if (!this.currentTest) {
+      return;
+    }
+    this.addGroupLabelByUser(LabelName.SUB_SUITE, arg.name);
+  }
+
   testParameter(arg: AllureTaskArgs<'parameter'>) {
     if (this.currentTest) {
       this.currentTest.addParameter(arg.name, arg.value);
@@ -524,7 +556,7 @@ export class AllureReporter {
     this.executableAttachment(this.currentExecutable, arg);
   }
 
-  applyGroupLabels() {
+  addGroupLabels() {
     const [parentSuite, suite, subSuite] = this.groups;
 
     if (this.currentSpec) {
@@ -533,15 +565,15 @@ export class AllureReporter {
     }
 
     if (this.groups.length > 0) {
-      this.currentTest?.addLabel(LabelName.PARENT_SUITE, parentSuite.name);
+      this.labels.push({ name: LabelName.PARENT_SUITE, value: parentSuite.name });
     }
 
     if (this.groups.length > 1) {
-      this.currentTest?.addLabel(LabelName.SUITE, suite.name);
+      this.labels.push({ name: LabelName.SUITE, value: suite.name });
     }
 
     if (this.groups.length > 2) {
-      this.currentTest?.addLabel(LabelName.SUB_SUITE, subSuite.name);
+      this.labels.push({ name: LabelName.SUB_SUITE, value: subSuite.name });
     }
   }
 
@@ -579,7 +611,7 @@ export class AllureReporter {
     test.fullName = fullTitle;
 
     test.historyId = getUuid(fullTitle);
-    this.applyGroupLabels();
+    this.addGroupLabels();
 
     if (this.currentSpec?.relative) {
       test.addLabel('path', this.currentSpec.relative);
@@ -631,6 +663,28 @@ export class AllureReporter {
     this.testDetailsStored = arg;
   }
 
+  applyGroupLabels() {
+    // apply labels
+
+    const applyLabel = (name: string) => {
+      if (!this.currentTest) {
+        return;
+      }
+      const lb = this.labels.filter(l => l.name == name);
+
+      // return last added
+      const lastLabel = lb[lb.length - 1];
+
+      if (lastLabel) {
+        this.currentTest.addLabel(lastLabel.name, lastLabel.value);
+      }
+    };
+
+    applyLabel(LabelName.PARENT_SUITE);
+    applyLabel(LabelName.SUITE);
+    applyLabel(LabelName.SUB_SUITE);
+  }
+
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
@@ -663,12 +717,14 @@ export class AllureReporter {
       this.setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
     }
 
+    this.applyGroupLabels();
     this.currentTest.endTest();
 
     this.tests.pop();
     this.descriptionHtml = [];
     this.testStatusStored = undefined;
     this.testDetailsStored = undefined;
+    this.labels = [];
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {

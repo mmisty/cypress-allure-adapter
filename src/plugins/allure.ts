@@ -197,6 +197,24 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('label');
     },
 
+    suite: (arg: AllureTaskArgs<'suite'>) => {
+      log(`suite ${JSON.stringify(arg)}`);
+      allureReporter.suite(arg);
+      log('suite');
+    },
+
+    subSuite: (arg: AllureTaskArgs<'subSuite'>) => {
+      log(`subSuite ${JSON.stringify(arg)}`);
+      allureReporter.subSuite(arg);
+      log('subSuite');
+    },
+
+    parentSuite: (arg: AllureTaskArgs<'parentSuite'>) => {
+      log(`parentSuite ${JSON.stringify(arg)}`);
+      allureReporter.parentSuite(arg);
+      log('parentSuite');
+    },
+
     parameter: (arg: AllureTaskArgs<'parameter'>) => {
       log(`parameter ${JSON.stringify(arg)}`);
       allureReporter.parameter(arg);
@@ -309,50 +327,54 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         await allureReporter.attachVideoToTests({ path: video ?? '' });
       }
 
-      if (allureResults !== allureResultsWatch) {
-        const results = glob.sync(`${allureResults}/*.*`);
+      if (allureResults === allureResultsWatch) {
+        log(`afterSpec allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
 
-        if (!existsSync(allureResultsWatch)) {
-          const mkdirSyncWithTry = (dir: string) => {
-            for (let i = 0; i < 5; i++) {
-              try {
-                mkdirSync(dir);
+        return;
+      }
 
-                return;
-              } catch (err) {
-                // ignore
-              }
-            }
-          };
-          mkdirSyncWithTry(allureResultsWatch);
-        }
-        log(`allureResults: ${allureResults}`);
-        log(`allureResultsWatch: ${allureResultsWatch}`);
-        let doneFiles = 0;
-        const started = Date.now();
-        const timeout = 10000;
+      const results = glob.sync(`${allureResults}/*.*`);
 
-        results.forEach(res => {
-          const to = `${allureResultsWatch}/${basename(res)}`;
-          log(`copy file ${res} to ${to}`);
-          copyFile(res, to, err => {
-            if (err) {
-              log(err);
-            }
-            rm(res, () => {
+      if (!existsSync(allureResultsWatch)) {
+        const mkdirSyncWithTry = (dir: string) => {
+          for (let i = 0; i < 5; i++) {
+            try {
+              mkdirSync(dir);
+
+              return;
+            } catch (err) {
               // ignore
-            });
-            doneFiles = doneFiles + 1;
-          });
-        });
-
-        while (doneFiles < results.length) {
-          if (Date.now() - started >= timeout) {
-            console.error(`${packageLog} Could not write all attachments in ${timeout}ms`);
-            break;
+            }
           }
-          await delay(100);
+        };
+        mkdirSyncWithTry(allureResultsWatch);
+      }
+      log(`allureResults: ${allureResults}`);
+      log(`allureResultsWatch: ${allureResultsWatch}`);
+      let doneFiles = 0;
+      const started = Date.now();
+      const timeout = 10000;
+
+      results.forEach(res => {
+        const to = `${allureResultsWatch}/${basename(res)}`;
+        log(`copy file ${res} to ${to}`);
+        copyFile(res, to, err => {
+          if (err) {
+            log(err);
+          }
+          rm(res, () => {
+            // ignore
+          });
+          doneFiles = doneFiles + 1;
+        });
+      });
+
+      while (doneFiles < results.length) {
+        if (Date.now() - started >= timeout) {
+          console.error(`${packageLog} Could not write all attachments in ${timeout}ms`);
+          break;
         }
+        await delay(100);
       }
 
       log('afterSpec');
