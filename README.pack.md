@@ -8,6 +8,8 @@ In the same time you can generate [Allure Report](https://github.com/allure-fram
 
 Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.com/package/@shelex/cypress-allure-plugin)
 
+todo: add differences section
+
 ## Table of Contents
 
 1. [Installation](#installation)
@@ -31,7 +33,7 @@ Import `@mmisty/cypress-allure-adapter/support` into your `support/index.ts` fil
 
 ```javascript
    import '@mmisty/cypress-allure-adapter/support';
-   // import other custom ommands here
+   // import other custom commands here
    ```
 
 If you want all custom commands to be wrapped in report import adapter before adding(importing) any custom commands
