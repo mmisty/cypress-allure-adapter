@@ -35,7 +35,6 @@ jobs:
       run: npm run build:all
 
     - name: Test
-      continue-on-error: true
       run: npm run test:cov
 
     - name: Archive code coverage results
@@ -60,6 +59,7 @@ jobs:
         detailed_summary: true
 
     - name: Publish
+      if: success()
       env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |

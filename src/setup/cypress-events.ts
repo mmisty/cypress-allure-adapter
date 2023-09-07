@@ -91,17 +91,17 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   debug('consoleProps:');
   debug(consoleProps);
 
-  const logs = consoleProps.filter(t => t.Command === COMMAND_REQUEST);
+  const logs = consoleProps.filter(t => t.name === COMMAND_REQUEST);
 
   const getRequests = (): OneRequestConsoleProp[] | undefined => {
-    if (logs.every(t => !!t.Requests)) {
+    if (logs.every(t => !!t.props.Requests)) {
       // several requests if there are come redirects
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return logs.flatMap(t => t.Requests.map((x: any) => ({ ...x, duration: t.Yielded?.duration })));
+      return logs.flatMap(t => t.props.Requests.map((x: any) => ({ ...x, duration: t.props.Yielded?.duration })));
     }
 
-    if (logs.every(t => !!t.Request)) {
-      return logs.map(t => ({ ...t.Request, duration: t.Yielded?.duration }));
+    if (logs.every(t => !!t.props.Request)) {
+      return logs.map(t => ({ ...t.props.Request, duration: t.props.Yielded?.duration }));
     }
 
     return undefined;
