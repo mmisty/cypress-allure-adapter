@@ -1,4 +1,7 @@
 ## Change Log
+### 0.10.1
+  - fix attaching requests for cypress 13.x
+
 ### 0.10.0
   - added suite, parentSuite and subSuite to [interface](./docs/interface.md#suite)
 
