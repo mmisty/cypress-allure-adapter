@@ -43,5 +43,6 @@
 - setting to attach videos only for unsuccessfull results
 - setting to attach requests
 
-### 0.0.2
+### 0.0.2 
 Initial version
+
