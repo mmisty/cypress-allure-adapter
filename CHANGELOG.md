@@ -1,4 +1,7 @@
 ## Change Log
+### 0.10.0
+  - added suite, parentSuite and subSuite to [interface](./docs/interface.md#suite)
+
 ### 0.9.0
  - [tech] update cypress version to 13.0.0, check that compatible
 
