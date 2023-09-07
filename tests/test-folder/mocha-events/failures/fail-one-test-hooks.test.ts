@@ -53,6 +53,7 @@ describe('hello suite', () => {
       'mocha: hook: "before each" hook',
       ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: hook end: "before each" hook',
+      'cypress:screenshot:hello suite -- hello test (failed).png',
       'mocha: fail: hello test',
       'mocha: test end: hello test',
       ...whenCoverage('mocha: hook: "after each" hook'),

@@ -93,6 +93,7 @@ describe('hooks test - failed global hook step', () => {
       ...whenNoCoverage('cypress: test:before:run: test 1'),
       'mocha: hook end: "before all" hook: Global Setup Pass',
       'mocha: hook: "before all" hook: Global Setup',
+      'cypress:screenshot:test 1 -- before all hook Global Setup (failed).png',
       'mocha: fail: "before all" hook: Global Setup for "test 1"',
       ...whenCoverage(...covergeAfterAllEvent),
       'mocha: hook: "after all" hook: Global teardown',
@@ -136,12 +137,10 @@ describe('hooks test - failed global hook step', () => {
       expect(resFixed.map(t => t.attachments).sort()).toEqual([
         [
           {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
+            name: 'test 1 -- before all hook Global Setup (failed).png',
+            source: 'source.png',
+            type: 'image/png',
           },
-        ],
-        [
           {
             name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',
@@ -149,6 +148,23 @@ describe('hooks test - failed global hook step', () => {
           },
         ],
         [
+          {
+            name: 'test 1 -- before all hook Global Setup (failed).png',
+            source: 'source.png',
+            type: 'image/png',
+          },
+          {
+            name: 'test_0_number.cy.ts.mp4',
+            source: 'source.mp4',
+            type: 'video/mp4',
+          },
+        ],
+        [
+          {
+            name: 'test 1 -- before all hook Global Setup (failed).png',
+            source: 'source.png',
+            type: 'image/png',
+          },
           {
             name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',

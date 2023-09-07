@@ -1,4 +1,3 @@
-import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
 import { baseUrlFromUrl, packageLog, swapItems } from '../common';
@@ -212,12 +211,6 @@ const commandParams = (command: CommandT) => {
   };
 };
 
-const createEmitEvent =
-  (runner: Mocha.Runner) =>
-  <T extends RequestTask>(args: AllureTransfer<T>) => {
-    runner.emit('task', args);
-  };
-
 export const handleCyLogEvents = (
   runner: Mocha.Runner,
   events: EventEmitter,
@@ -235,7 +228,6 @@ export const handleCyLogEvents = (
   const customCommands: string[] = [];
   const commands: string[] = [];
   const logCommands: string[] = [];
-  const emit = createEmitEvent(runner);
 
   Cypress.Allure.on('test:started', () => {
     commands.splice(0, commands.length);
@@ -411,12 +403,6 @@ export const handleCyLogEvents = (
 
   Cypress.Allure.on('cmd:started', (command: CommandT) => {
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
-
-    if (name === 'screenshot') {
-      // add screenshot to report
-      const screenName = command.attributes?.args[0] ?? 'anyName';
-      emit({ task: 'screenshotOne', arg: { forStep: true, name: screenName } });
-    }
 
     if (!isLogCommand(isLog, name) || !allureLogCyCommands()) {
       return;
