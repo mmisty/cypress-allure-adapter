@@ -1,4 +1,7 @@
 ## Change Log
+### 0.10.3
+  - fix engines and support cypress versions > 11
+    
 ### 0.10.1
   - fix attaching requests for cypress 13.x
 
