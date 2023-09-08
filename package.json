@@ -60,6 +60,9 @@
     "publish:pack": "export ver=\"0.0.2-alpha-2\" && npm run publishPack && npm run postpublish",
     "postpublish": "git tag v$ver"
   },
+  "overrides": {
+    "loader-utils": "1.4.2"
+  },
   "jest-junit": {
     "suiteName": "jest tests",
     "outputDirectory": "./reports/jest",
