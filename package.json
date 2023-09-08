@@ -21,7 +21,7 @@
     "@mmisty/cypress-allure-adapter"
   ],
   "peerDependencies": {
-    "cypress": ">= 13.x"
+    "cypress": ">= 11.x"
   },
   "license": "MIT",
   "author": "Taisia Pitko (mmisty) <minydas@yandex.ru>",
@@ -59,6 +59,9 @@
     "publish:major": "export ver=$(semver $(npm show . version) --increment -i major) && npm run publishPack && npm run postpublish",
     "publish:pack": "export ver=\"0.0.2-alpha-2\" && npm run publishPack && npm run postpublish",
     "postpublish": "git tag v$ver"
+  },
+  "overrides": {
+    "loader-utils": "1.4.2"
   },
   "jest-junit": {
     "suiteName": "jest tests",
@@ -119,8 +122,8 @@
     "ws": "^8.14.0"
   },
   "engines": {
-    "node": "18.12.0",
-    "npm": "8.19.2"
+    "node": ">16",
+    "npm": ">8"
   },
   "volta": {
     "node": "18.12.0",
