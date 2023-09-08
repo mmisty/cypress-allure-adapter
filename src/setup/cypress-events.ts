@@ -91,17 +91,20 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   debug('consoleProps:');
   debug(consoleProps);
 
-  const logs = consoleProps.filter(t => t.name === COMMAND_REQUEST);
+  // t.Command for less than 13.x cypress
+  const logs = consoleProps.filter(t => t.name === COMMAND_REQUEST || t.Command === COMMAND_REQUEST);
 
   const getRequests = (): OneRequestConsoleProp[] | undefined => {
-    if (logs.every(t => !!t.props.Requests)) {
+    const logsMapped = logs.map(t => t.props ?? t); // support  cypress < 13.x
+
+    if (logsMapped.every(t => !!t.Requests)) {
       // several requests if there are come redirects
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      return logs.flatMap(t => t.props.Requests.map((x: any) => ({ ...x, duration: t.props.Yielded?.duration })));
+      return logsMapped.flatMap(t => t.Requests.map((x: any) => ({ ...x, duration: t.Yielded?.duration })));
     }
 
-    if (logs.every(t => !!t.props.Request)) {
-      return logs.map(t => ({ ...t.props.Request, duration: t.props.Yielded?.duration }));
+    if (logsMapped.every(t => !!t.Request)) {
+      return logsMapped.map(t => ({ ...t.Request, duration: t.Yielded?.duration }));
     }
 
     return undefined;

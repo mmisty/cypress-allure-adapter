@@ -21,7 +21,7 @@
     "@mmisty/cypress-allure-adapter"
   ],
   "peerDependencies": {
-    "cypress": ">= 13.x"
+    "cypress": ">= 11.x"
   },
   "license": "MIT",
   "author": "Taisia Pitko (mmisty) <minydas@yandex.ru>",
