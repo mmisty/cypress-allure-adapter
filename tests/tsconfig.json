@@ -3,11 +3,11 @@
   "compilerOptions": {
     "skipLibCheck": true,
     "types": ["node", "jest", "jest-test-each", "cypress"],
-    "baseUrl": "../src",
-    "paths": {
-      "@src": ["./index.ts"],
-      "@src/*": ["./*"]
-    }
+//    "baseUrl": "../src",
+//    "paths": {
+//      "@src": ["./index.ts"],
+//      "@src/*": ["./*"]
+//    }
   },
   "include": ["./", "../jest.setup.ts"],
 }
