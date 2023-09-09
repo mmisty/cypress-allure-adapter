@@ -121,6 +121,8 @@ describe('suite', () => {
 
   it('should start global hook', () => {
     reporter.hookStarted({ title: 'before all hook' });
+    reporter.startStep({ name: 'some hook step' });
+    reporter.endStep({ status: Status.PASSED });
     reporter.hookEnded({ title: 'before all hook', result: Status.PASSED });
 
     reporter.hookStarted({ title: 'before all hook 2' });

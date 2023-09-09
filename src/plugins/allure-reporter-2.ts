@@ -44,7 +44,7 @@ function applyGroupLabels(test: AllureTest | undefined, labels: Label[]) {
 type ItemType = 'group' | 'test' | 'step' | 'hook';
 type Data = {
   date?: number;
-  value: AllureGroup | AllureTest | AllureStep | GlobalHookC;
+  value: AllureGroup | AllureTest | AllureStep | GlobalHookC | ExecutableItemWrapper;
   type: ItemType;
   isEnded?: boolean;
 };
@@ -56,7 +56,7 @@ class RunnerNode<
     : T extends 'test'
     ? AllureTest
     : T extends 'hook'
-    ? GlobalHookC
+    ? GlobalHookC | ExecutableItemWrapper
     : T extends 'step'
     ? AllureStep
     : any, //AllureGroup | AllureTest | GlobalHookC | AllureStep
@@ -215,7 +215,7 @@ export class AllureReporter2 {
     return this.currentNode('step')?.item;
   }
 
-  get currentHook(): GlobalHookC | undefined {
+  get currentHook(): GlobalHookC | ExecutableItemWrapper | undefined {
     return this.currentNode('hook')?.item;
   }
 
@@ -264,12 +264,7 @@ export class AllureReporter2 {
     const { title, hookId, date } = arg ?? {};
 
     // may be for test or global
-
-    /*if (!this.currentGroup) {
-      this.addNode({ type: 'hook', value: hook });
-
-      return;
-    }*/
+    const group = this.currentGroup;
 
     if (!title) {
       return;
@@ -297,7 +292,17 @@ export class AllureReporter2 {
     currentHook.name = title;
     currentHook.wrappedItem.start = date ?? Date.now();*/
 
-    this.addNode({ type: 'hook', value: hook });
+    if (group) {
+      const currentHook = title.indexOf('before') !== -1 ? group.addBefore() : group.addAfter();
+      currentHook.name = title;
+      currentHook.wrappedItem.start = date ?? Date.now();
+      // currentHook.wrappedItem.stop = this.currentHook?.stop;
+
+      this.addNode({ type: 'hook', value: currentHook });
+    } else {
+      this.addNode({ type: 'hook', value: hook });
+    }
+
     //this.hooks.push({ id: hookId, hook: currentHook });
     //this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
   }
@@ -320,9 +325,14 @@ export class AllureReporter2 {
     }
 
     if (this.currentHook) {
-      this.currentHook.data.stop = date ?? Date.now();
-      this.currentHook.data.status = result;
-      setExecutableStatus(this.currentHook, result, details);
+      if ((this.currentHook as any).data) {
+        (this.currentHook as any).data.stop = date ?? Date.now();
+        (this.currentHook as any).data.status = result;
+        setExecutableStatus(this.currentHook, result, details);
+      } else {
+        (this.currentHook as any).wrappedItem.stop = date ?? Date.now();
+        setExecutableStatus(this.currentHook, result, details);
+      }
 
       return;
     }
@@ -342,16 +352,38 @@ export class AllureReporter2 {
 
     log('no current group - will end hook in storage');
 
-    //const group = this.currentNode('group')?.item;
+    // apply al global hooks for suite
     this.doEachNode('hook', globalHook => {
-      const currentHook = globalHook.item.name.indexOf('before') !== -1 ? group.addBefore() : group.addAfter();
-      currentHook.name = globalHook.item.name;
-      currentHook.wrappedItem.start = globalHook.item.start;
-      currentHook.wrappedItem.stop = globalHook.item.stop;
+      //console.log(globalHook.item);
 
-      globalHook.item.addSteps(this);
+      if ((globalHook.item as any).start) {
+        const currentHook = globalHook.item.name.indexOf('before') !== -1 ? group.addBefore() : group.addAfter();
+        currentHook.name = globalHook.item.name;
+        currentHook.wrappedItem.start = (globalHook.item as any).start;
+        currentHook.wrappedItem.stop = (globalHook.item as any).stop;
 
-      setExecutableStatus(currentHook, globalHook.item.status ?? Status.FAILED, globalHook.item.statusDetails);
+        (globalHook.item as any).addSteps(this);
+
+        setExecutableStatus(currentHook, globalHook.item.status ?? Status.FAILED, globalHook.item.statusDetails);
+      } else {
+        console.log(globalHook.data.value);
+
+        const hh = globalHook.data.value;
+
+        const currentHook =
+          (hh as any as ExecutableItemWrapper).wrappedItem.name?.indexOf('before') !== -1
+            ? group.addBefore()
+            : group.addAfter();
+        currentHook.name = (hh as any as ExecutableItemWrapper).wrappedItem.name ?? 'unknown';
+        currentHook.wrappedItem.start = (hh as any as ExecutableItemWrapper).wrappedItem.start;
+        currentHook.wrappedItem.stop = (hh as any as ExecutableItemWrapper).wrappedItem.stop;
+
+        setExecutableStatus(
+          currentHook,
+          (hh as any as ExecutableItemWrapper).status ?? Status.FAILED,
+          (hh as any as ExecutableItemWrapper).statusDetails,
+        );
+      }
     });
 
     this.addNode({ value: group, type: 'group' });
@@ -397,14 +429,16 @@ export class AllureReporter2 {
       return;
     }
 
-    if (!this.currentExecutable) {
+    if (!this.currentExecutable && !this.currentHook) {
       log('cannot start step before hook / test /step');
 
       return;
     }
     log('start step for current executable');
-    const step = this.currentExecutable.startStep(name, date);
-    // this.steps.push(step);
+
+    const step = this.currentExecutable
+      ? this.currentExecutable.startStep(name, date)
+      : (this.currentHook as ExecutableItemWrapper)?.startStep(name, date);
     this.addNode({ type: 'step', value: step });
   }
 
@@ -423,7 +457,10 @@ export class AllureReporter2 {
 
     if (!this.currentGroup && this.currentHook) {
       log('No current executable, test or hook - will end step for global hook');
-      this.currentHook?.endStep(arg.status, details);
+
+      if ((this.currentHook as any).endStep) {
+        (this.currentHook as any).endStep(arg.status, details);
+      }
 
       return;
     }
@@ -504,7 +541,7 @@ export class AllureReporter2 {
       }
       }
     */
-    // this.endAllSteps({ status: result, details });
+    this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
       return;
@@ -532,13 +569,17 @@ export class AllureReporter2 {
     this.labels = [];
   }
 
+  endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
+    this.doEachNode('step', step => {
+      setExecutableStatus(step.item, arg.status, arg.details);
+      step.item.endStep(arg.date);
+    });
+  }
+
   endGroup() {
     this.currentNode('group')?.item?.endGroup();
 
     let tnode = this.running;
-    this.doEachNode('n' as any, n => {
-      console.log(n.data.type);
-    });
 
     // delete global hooks below group
     // find last group
