@@ -7,17 +7,20 @@ import type { ContentType } from '../common/types';
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
 
+export type GlobalHook = {
+  name: string;
+  title: string;
+  status?: Status;
+  details?: StatusDetails;
+  hookId?: string;
+  start: number;
+  stop?: number;
+  steps?: Step[];
+  attachments?: { name: string; file: string; type: ContentType }[];
+};
+
 export class GlobalHooks {
-  hooks: {
-    title: string;
-    status?: Status;
-    details?: StatusDetails;
-    hookId?: string;
-    start: number;
-    stop?: number;
-    steps?: Step[];
-    attachments?: { name: string; file: string; type: ContentType }[];
-  }[] = [];
+  hooks: GlobalHook[] = [];
 
   constructor(private reporter: AllureReporter) {}
 
@@ -50,7 +53,7 @@ export class GlobalHooks {
   }
 
   start(title: string, id?: string) {
-    this.hooks.push({ title, hookId: id, start: Date.now() });
+    this.hooks.push({ title, name: title, hookId: id, start: Date.now() });
   }
 
   startStep(name: string) {

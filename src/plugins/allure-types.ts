@@ -18,8 +18,8 @@ type AllureTask = {
   writeEnvironmentInfo: { info: EnvironmentInfo };
   writeExecutorInfo: { info: ExecutorInfo };
   writeCategoriesDefinitions: { categories: Category[] | string };
-  testEnded: { result: Status; details?: StatusDetails };
-  testStarted: { title: string; fullTitle: string; id: string; currentRetry?: number };
+  testEnded: { result: Status; details?: StatusDetails; date?: number };
+  testStarted: { title: string; fullTitle: string; id: string; currentRetry?: number; date?: number };
   suiteStarted: { title: string; fullTitle: string; file?: string };
   hookStarted: { title: string; file?: string; hookId?: string; date?: number };
   hookEnded: { title: string; date?: number; result: Status; details?: StatusDetails };

@@ -1,11 +1,61 @@
 import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
-import { AllureTest } from 'allure-js-parser';
+import { AllureTest, parseAllure } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 jest.setTimeout(120000);
+
+// eslint-disable-next-line jest/no-export
+export const sortBy = <T>(fn: (t: AllureTest) => T) => {
+  return (a: AllureTest, b: AllureTest) => {
+    const resa = fn(a);
+    const resb = fn(b);
+
+    if (resa < resb) {
+      return -1;
+    }
+
+    return 1;
+  };
+};
+
+// eslint-disable-next-line jest/no-export
+export const selectItems = <T>(...keys: (keyof T)[]) => {
+  return (t: T) => {
+    const res = {} as any;
+    keys.forEach(k => {
+      res[k] = t[k];
+    });
+
+    // todo only keys from input
+    return res as { [key in keyof AllureTest]: any };
+  };
+};
+
+// eslint-disable-next-line jest/no-export
+export const selectMap = <T>(input: T[], ...keys: (keyof T)[]) => {
+  return input.map(t => {
+    const res = {} as any;
+    keys.forEach(k => {
+      if (k === 'labels') {
+        res[k] = (t[k] as any[]).map(t => `${t.name}: "${t.value}"`);
+
+        return;
+      }
+
+      res[k] = t[k];
+    });
+
+    // todo only keys from input
+    return res as { [key in keyof T]: any };
+  });
+};
+
+export const parseAllureSorted = (allureResults: string) => {
+  return parseAllure(allureResults).sort(sortBy(a => a.fullName));
+};
 
 // eslint-disable-next-line jest/no-export
 export const mapSteps = <T>(
