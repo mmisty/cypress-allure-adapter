@@ -318,13 +318,14 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
-      const { video } = arg.results;
-      log(`afterSpec video path: ${video}`);
 
-      if (!video) {
-        console.error(`${packageLog} No video path in afterSpec result`);
-      } else {
+      if (arg.results && arg.results?.video) {
+        const { video } = arg.results;
+        log(`afterSpec video path: ${video}`);
+
         await allureReporter.attachVideoToTests({ path: video ?? '' });
+      } else {
+        console.error(`${packageLog} No video path in afterSpec result`);
       }
 
       if (allureResults === allureResultsWatch) {
