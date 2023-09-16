@@ -24,6 +24,12 @@ export class SpecTree {
     this.currentSuite = addTo.add({ name, type: 'suite' });
   }
 
+  endSuite() {
+    if (this.currentSuite) {
+      this.currentSuite = getClosestParent(this.currentSuite, t => ['suite'].includes(t.type));
+    }
+  }
+
   addTest(name: string) {
     const addTo = this.currentSuite ?? this.root;
 
@@ -54,6 +60,16 @@ export class SpecTree {
     }
   }
 }
+
+export const findHooksForCurrentSuite = (specs: SpecTree) => {
+  const condition = (t: DataTree) => t.type === 'hook';
+
+  return [
+    ...findSiblingsForParents(specs.root, specs.currentSuite, condition),
+    ...findSiblings(specs.root, specs.currentSuite, condition),
+    ...findChildren(specs.currentSuite, condition),
+  ];
+};
 
 export class Tree<T> {
   children: Tree<T>[] = [];
@@ -124,8 +140,12 @@ export const deleteByCondition = <T>(tree: Tree<T>, condition: (t: T) => boolean
  * Get chain of parents
  *
  */
-export const getParents = <T>(tree: Tree<T>, condition?: (t: T) => boolean): Tree<T>[] => {
+export const getParents = <T>(tree: Tree<T> | undefined, condition?: (t: T) => boolean): Tree<T>[] => {
   const res: Tree<T>[] = [];
+
+  if (tree === undefined) {
+    return [];
+  }
   let ch = tree;
 
   while (ch.parent !== undefined) {
@@ -177,6 +197,34 @@ export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, cond
 
   return siblings;
 }
+
+export const findSiblingsForParents = <T>(
+  root: Tree<T>,
+  tree: Tree<T> | undefined,
+  condition: (t: T) => boolean,
+): Tree<T>[] => {
+  if (!tree) {
+    return [];
+  }
+  const parents = getParents(tree).reverse();
+
+  const current = condition(tree.data) ? [tree] : [];
+
+  return [...parents.flatMap(t => findSiblings(root, t, condition)), ...current];
+};
+
+/**
+ * Find current not children by condition
+ * @param tree
+ * @param condition
+ */
+export const findChildren = <T>(tree: Tree<T> | undefined, condition: (t: T) => boolean) => {
+  if (!tree) {
+    return [];
+  }
+
+  return tree.children.filter(t => condition(t.data));
+};
 
 export function printTreeWithIndents<T>(
   tree: Tree<T>,

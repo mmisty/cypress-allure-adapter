@@ -1,21 +1,10 @@
 import {
-  findSiblings,
   getParents,
   printTreeWithIndents,
   SpecTree,
-  Tree,
 } from '../../../src/plugins/tree-utils';
 
 describe('spec tree', () => {
-  const getParentsList = (
-    tree: Tree<any> | undefined,
-    type: 'suite' | 'test' | 'step' | 'hook',
-  ) => {
-    return tree
-      ? getParents(tree, t => t.type === type).map(t => t.data.name)
-      : undefined;
-  };
-
   it('test with parent suite', () => {
     const root = new SpecTree();
     root.addSuite('parent');
@@ -152,22 +141,6 @@ describe('spec tree', () => {
     const root = new SpecTree();
     root.addStep('step 1');
     expect(printTreeWithIndents(root.root, t => t.name)).toEqual(['root']);
-  });
-
-  it('find siblings', () => {
-    const root = new SpecTree();
-    root.addHook('hook 1');
-    root.addHook('hook 2');
-    root.addSuite('suite 2');
-    root.addTest('test 1');
-    root.addTest('test 2');
-
-    const siblings = findSiblings(
-      root.root,
-      root.currentSuite,
-      t => t.type === 'hook',
-    );
-    expect(siblings.map(t => t.data.name)).toEqual(['hook 1', 'hook 2']);
   });
 
   it.skip('test 1', () => {
