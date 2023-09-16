@@ -343,7 +343,7 @@ export class AllureReporter3 implements AllureReporter3Api {
     test.historyId = getUuid(fullTitle);
     const stored = this.currentHook as GlobalHookC;
 
-    if (stored.isStoredHook) {
+    if (stored?.isStoredHook) {
       // this.globalHooks.processForTest();
       stored.addAttachments(this);
     }
