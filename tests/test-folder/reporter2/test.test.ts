@@ -7,7 +7,7 @@ import { Status } from '../../../src/plugins/allure-types';
 describe('create results', () => {
   const allureResults = `allure-results-reporter2/${basename(__filename)}`;
   let reporter: AllureReporter3;
-  let res: AllureTest[];
+  // let res: AllureTest[];
 
   beforeEach(() => {
     if (existsSync(allureResults)) {

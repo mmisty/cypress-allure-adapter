@@ -1,3 +1,4 @@
+// eslint-disable jest/no-export
 import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
@@ -54,6 +55,7 @@ export const selectMap = <T>(input: T[], ...keys: (keyof T)[]) => {
   });
 };
 
+// eslint-disable-next-line jest/no-export
 export const parseAllureSorted = (allureResults: string) => {
   return parseAllure(allureResults).sort(sortBy(a => a.fullName));
 };

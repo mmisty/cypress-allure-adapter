@@ -389,7 +389,7 @@ export class AllureReporter3 implements AllureReporter3Api {
     //this.running = this.running?.next;
   }
 
-  printList(item?: 'group' | 'test' | 'step') {
+  printList() {
     return printTreeWithIndents(this.running.root, t => `${t.name}`);
   }
 
