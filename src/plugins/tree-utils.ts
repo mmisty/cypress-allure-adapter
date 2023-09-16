@@ -153,6 +153,31 @@ export const getClosestParent = <T>(tree: Tree<T>, condition?: (t: T) => boolean
   return undefined;
 };
 
+export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, condition: (t: T) => boolean): Tree<T>[] {
+  const siblings: Tree<T>[] = [];
+
+  if (target === undefined) {
+    return [];
+  }
+
+  // Helper function to traverse the tree using depth-first search (DFS)
+  function dfs(node: Tree<T>, parentNode: Tree<T> | null, cond: (t: T) => boolean) {
+    if (node === target && parentNode) {
+      siblings.push(...(parentNode.children || []).filter(child => child !== target && cond(child.data)));
+
+      return;
+    }
+
+    if (node.children) {
+      node.children.forEach(child => dfs(child, node, condition));
+    }
+  }
+
+  dfs(root, null, condition);
+
+  return siblings;
+}
+
 export function printTreeWithIndents<T>(
   tree: Tree<T>,
   propFn: (t: T) => string,
