@@ -52,6 +52,7 @@ type AllureTask = {
   testMessage: { path: string; message: string };
   delete: { path: string };
   attachScreenshots: { screenshots: AutoScreen[] };
+  screenshotAttachment: AutoScreen;
   screenshotOne: { name: string; forStep?: boolean };
   attachVideoToTests: { path: string };
   testResult: {

@@ -65,6 +65,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.endStep({ ...arg, status: (arg.status as Status) ?? Status.PASSED });
       log('step');
     },
+
+    screenshotAttachment: (arg: AllureTaskArgs<'screenshotAttachment'>) => {
+      log(`screenshotAttachment ${JSON.stringify(arg)}`);
+      allureReporter.screenshotAttachment(arg);
+      log('screenshotAttachment');
+    },
+
     mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
       log(`mergePrevStep ${JSON.stringify(arg)}`);
       console.log('mergePrevStep');

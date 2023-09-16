@@ -4,7 +4,7 @@ import { GlobalHookC } from './allure-global-hook2';
 export type DataType = 'suite' | 'hook' | 'step' | 'test' | 'root';
 export type DataTree<T = any> = { name: string; type: DataType; value?: T };
 type ConditionFn<T> = (t: T) => boolean;
-
+type TestData = { test: AllureTest; retryIndex: number | undefined; mochaId: string; uuid: string };
 export const isType =
   (checkType: DataType) =>
   <T>(t: DataTree<T>) =>
@@ -19,7 +19,7 @@ export class SpecTree {
 
   public currentSuite: Tree<DataTree<AllureGroup>> | undefined = undefined;
   public currentHook: Tree<DataTree<ExecutableItemWrapper | GlobalHookC>> | undefined = undefined;
-  public currentTest: Tree<DataTree<{ test: AllureTest; id: string; uuid: string }>> | undefined = undefined;
+  public currentTest: Tree<DataTree<TestData>> | undefined = undefined;
   public currentStep: Tree<DataTree<AllureStep>> | undefined = undefined;
 
   addHook(name: string, hook: ExecutableItemWrapper | GlobalHookC) {
@@ -50,7 +50,7 @@ export class SpecTree {
     }
   }
 
-  addTest(name: string, value: { test: AllureTest; id: string; uuid: string }) {
+  addTest(name: string, value: TestData) {
     const addTo = this.currentSuite ?? this.root;
 
     this.currentTest = addTo.add({ name, type: 'test', value });

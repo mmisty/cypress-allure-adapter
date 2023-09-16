@@ -27,7 +27,6 @@ import { randomUUID } from 'crypto';
 import glob from 'fast-glob';
 import path, { basename } from 'path';
 import { parseAllure } from 'allure-js-parser';
-import getUuidByString from 'uuid-by-string';
 import { ContentType } from '../common/types';
 import Debug from 'debug';
 
@@ -71,6 +70,9 @@ export class AllureReporter3 implements AllureReporter3Api {
   private allureAddVideoOnPass: boolean;
   private videos: string;
   private screenshots: string;
+  // testId -> test attempt index -> screenshots
+  private screenshotsTest: { [key: string]: { [key: string]: string[] } } = {};
+
   descriptionHtml: string[] = [];
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
@@ -78,7 +80,7 @@ export class AllureReporter3 implements AllureReporter3Api {
   allureRuntime: AllureRuntime;
   running: SpecTree = new SpecTree();
   labels: Label[] = [];
-  attached: string[] = [];
+  attached: { testMochaId?: string; file: string; retryIndex: number | undefined }[] = [];
 
   constructor(opts: ReporterOptions) {
     this.showDuplicateWarn = opts.showDuplicateWarn ?? false;
@@ -305,7 +307,7 @@ export class AllureReporter3 implements AllureReporter3Api {
 
   // interface
   startTest(arg: AllureTaskArgs<'testStarted'>) {
-    const { title, fullTitle, id, date } = arg;
+    const { title, fullTitle, id, date, currentRetry } = arg;
 
     if (this.currentTest) {
       // temp fix of defect with wrong event sequence
@@ -349,7 +351,7 @@ export class AllureReporter3 implements AllureReporter3Api {
       stored.addAttachments(this);
     }
 
-    this.running.addTest(title, { test, id, uuid: test.uuid });
+    this.running.addTest(title, { test, mochaId: id, uuid: test.uuid, retryIndex: currentRetry });
   }
 
   addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
@@ -555,7 +557,20 @@ export class AllureReporter3 implements AllureReporter3Api {
     this.testDetailsStored = arg;
   }
 
-  private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
+  get currentTestAll() {
+    const allTests = getItems(this.running.root, isType('test'));
+
+    if (this.currentTest && allTests[allTests.length - 1]) {
+      return allTests[allTests.length - 1].value;
+    }
+
+    return undefined;
+  }
+
+  private executableFileAttachment(
+    execToAttach: ExecutableItemWrapper | undefined,
+    arg: AllureTaskArgs<'fileAttachment'>,
+  ) {
     if (!this.currentExecutable && !this.currentGroup && this.currentHook) {
       log('No current executable, test or hook - add to global hook');
       // todo
@@ -564,7 +579,7 @@ export class AllureReporter3 implements AllureReporter3Api {
       return;
     }
 
-    if (!exec) {
+    if (!execToAttach && !this.currentExecutable) {
       return;
     }
 
@@ -585,18 +600,68 @@ export class AllureReporter3 implements AllureReporter3Api {
       }
 
       copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-      exec.addAttachment(arg.name, arg.type, fileNew);
+      // how to understand where to attach
+
+      if (execToAttach ?? this.currentExecutable) {
+        copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+        (execToAttach ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        this.attached.push({
+          // toTest: true
+          retryIndex: this.currentTestAll?.retryIndex,
+          testMochaId: this.currentTestAll?.mochaId,
+          file: arg.file,
+        });
+        log(`added attachment: ${fileNew} ${arg.file}`);
+      }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
     }
   }
 
   attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+    // attach auto screenshots for fails
     const { screenshots } = arg;
     log('attachScreenshots:');
 
-    screenshots?.forEach(x => {
-      const screenshotContent = readFileSync(x.path);
+    if (!screenshots) {
+      // no screenshots
+      return;
+    }
+    log('screenshotsTest:');
+    log(JSON.stringify(this.screenshotsTest));
+
+    screenshots.forEach(x => {
+      console.log(x);
+
+      const uuids = getItems(this.running.root, isType('test'))
+        .filter(t => t.value.id === x.testId)
+        .map(t => t.value.uuid && t.value.test.status !== Status.PASSED);
+      // const uuids = allTests
+      //   .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
+      //   .map(t => t.uuid);
+
+      const alreadyAttached = []; //this.attached.filter(t => t.file === x.path).filter(t => t.testMochaId === x.testId);
+
+      if (alreadyAttached.length > 0) {
+        log('already attached');
+
+        return;
+      }
+
+      if (uuids.length === 0) {
+        log('no attach auto screens, only for non-success tests tests');
+
+        return;
+      }
+
+      if (!uuids[x.testAttemptIndex ?? 0]) {
+        log(`no attach, cuurenct attampt ${x.testAttemptIndex}`);
+
+        // test passed or no
+        return;
+      }
+
+      /*const screenshotContent = readFileSync(x.path);
       const guidScreenshot = getUuidByString(screenshotContent.toString());
 
       if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
@@ -604,12 +669,9 @@ export class AllureReporter3 implements AllureReporter3Api {
 
         return;
       }
-
+*/
       log(`attachScreenshots:${x.path}`);
 
-      const uuids = getItems(this.running.root, isType('test'))
-        .filter(t => t.value.id === x.testId)
-        .map(t => t.value.uuid);
       // const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
 
       uuids.forEach(uuid => {
@@ -645,6 +707,11 @@ export class AllureReporter3 implements AllureReporter3Api {
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
     const { name, forStep } = arg;
 
+    if (!name) {
+      log('No name specified for screenshot, will not attach');
+
+      return;
+    }
     const pattern = `${this.screenshots}/**/${name}*.png`;
     const files = glob.sync(pattern);
 
@@ -655,8 +722,9 @@ export class AllureReporter3 implements AllureReporter3Api {
     }
 
     files.forEach(file => {
-      const executable = this.currentStep ?? this.currentTest;
-      const attachTo = forStep ? executable : this.currentTest;
+      const executable = this.currentExecutable; // currentStep ?? this.currentHook ?? this.currentTest; // todo check
+      const attachTo = forStep && this.currentStep ? this.currentStep : executable;
+
       // to have it in allure-results directory
 
       const newUuid = randomUUID();
@@ -674,8 +742,44 @@ export class AllureReporter3 implements AllureReporter3Api {
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
       attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      this.attached.push(fileNew);
+      //this.attached.push(fileNew);
     });
+  }
+
+  keyWhenNoTest(testId: string | undefined) {
+    return testId ?? 'NoTestId';
+  }
+
+  screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
+    const { testId, path, testAttemptIndex } = arg;
+    console.log(arg);
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
+    }
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
+    }
+    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
+  }
+
+  private testsToAttachBySpec(
+    specPath: string,
+    excludeStatuses: Status[],
+  ): { path: string | undefined; id: string; fullName: string | undefined }[] {
+    const res = parseAllure(this.allureResults);
+
+    const tests = res
+      .filter(t => (this.allureAddVideoOnPass ? true : excludeStatuses.every(s => s !== t.status)))
+      // )t.status !== 'passed' && t.status !== 'skipped'
+      .map(t => ({
+        path: t.labels.find(l => l.name === 'path')?.value,
+        id: t.uuid,
+        fullName: t.fullName,
+      }));
+
+    return tests.filter(t => t.path && t.path.indexOf(specPath) !== -1);
   }
 
   async attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
@@ -685,18 +789,8 @@ export class AllureReporter3 implements AllureReporter3Api {
     const ext = '.mp4';
     const specname = basename(videoPath, ext);
     log(specname);
-    const res = parseAllure(this.allureResults);
 
-    const tests = res
-      .filter(t => (this.allureAddVideoOnPass ? true : t.status !== 'passed' && t.status !== 'skipped'))
-      .map(t => ({
-        path: t.labels.find(l => l.name === 'path')?.value,
-        id: t.uuid,
-        fullName: t.fullName,
-      }));
-
-    const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
-
+    const testsAttach = this.testsToAttachBySpec(specname, [Status.PASSED, Status.SKIPPED]);
     let doneFiles = 0;
 
     readFile(videoPath, (errVideo, _contentVideo) => {
