@@ -1,6 +1,5 @@
 import { basename } from 'path';
 import { AllureReporter3 } from '../../../src/plugins/allure-reporter-3';
-import { AllureTest } from 'allure-js-parser';
 import { existsSync, rmSync } from 'fs';
 import { Status } from '../../../src/plugins/allure-types';
 

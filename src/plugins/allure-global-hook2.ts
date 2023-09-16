@@ -3,7 +3,6 @@ import Debug from 'debug';
 import { Stage, Status, UNKNOWN } from './allure-types';
 import type { ContentType } from '../common/types';
 import { AllureReporter3 } from './allure-reporter-3';
-import { AttachmentOptions } from 'allure-js-commons/dist/src/model';
 
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
