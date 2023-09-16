@@ -9,11 +9,11 @@ describe('spec tree', () => {
   describe('siblings', () => {
     it('find siblings', () => {
       const root = new SpecTree();
-      root.addHook('hook 1');
-      root.addHook('hook 2');
-      root.addSuite('suite 2');
-      root.addTest('test 1');
-      root.addTest('test 2');
+      root.addHook('hook 1', {} as any);
+      root.addHook('hook 2', {} as any);
+      root.addSuite('suite 2', {} as any);
+      root.addTest('test 1', {} as any);
+      root.addTest('test 2', {} as any);
 
       const siblings = findSiblings(
         root.root,
@@ -25,14 +25,14 @@ describe('spec tree', () => {
 
     it('find siblings - all global hooks for suite', () => {
       const root = new SpecTree();
-      root.addHook('hook 1');
-      root.addHook('hook 2');
-      root.addSuite('suite 1');
-      root.addHook('hook 3');
-      root.addSuite('suite 2');
-      root.addHook('hook 4');
-      root.addTest('test 1');
-      root.addTest('test 2');
+      root.addHook('hook 1', {} as any);
+      root.addHook('hook 2', {} as any);
+      root.addSuite('suite 1', {} as any);
+      root.addHook('hook 3', {} as any);
+      root.addSuite('suite 2', {} as any);
+      root.addHook('hook 4', {} as any);
+      root.addTest('test 1', {} as any);
+      root.addTest('test 2', {} as any);
 
       expect(printTreeWithIndents(root.root, t => t.name)).toEqual([
         'root',
@@ -56,13 +56,13 @@ describe('spec tree', () => {
 
     it('find siblings - all global hooks for suite 2', () => {
       const root = new SpecTree();
-      root.addHook('hook 1');
-      root.addHook('hook 2');
-      root.addSuite('suite 1');
-      root.addHook('hook 3');
-      root.addSuite('suite 2');
-      root.addTest('test 1');
-      root.addTest('test 2');
+      root.addHook('hook 1', {} as any);
+      root.addHook('hook 2', {} as any);
+      root.addSuite('suite 1', {} as any);
+      root.addHook('hook 3', {} as any);
+      root.addSuite('suite 2', {} as any);
+      root.addTest('test 1', {} as any);
+      root.addTest('test 2', {} as any);
 
       expect(printTreeWithIndents(root.root, t => t.name)).toEqual([
         'root',
@@ -84,16 +84,16 @@ describe('spec tree', () => {
 
     it('find siblings - all global hooks for suite (several suites)', () => {
       const root = new SpecTree();
-      root.addHook('hook 1');
-      root.addHook('hook 2');
-      root.addSuite('suite 1');
-      root.addHook('hook 3');
-      root.addSuite('suite 2');
-      root.addTest('test 1');
-      root.addTest('test 2');
+      root.addHook('hook 1', {} as any);
+      root.addHook('hook 2', {} as any);
+      root.addSuite('suite 1', {} as any);
+      root.addHook('hook 3', {} as any);
+      root.addSuite('suite 2', {} as any);
+      root.addTest('test 1', {} as any);
+      root.addTest('test 2', {} as any);
       root.endSuite();
-      root.addSuite('suite 4');
-      root.addTest('test 3');
+      root.addSuite('suite 4', {} as any);
+      root.addTest('test 3', {} as any);
 
       expect(printTreeWithIndents(root.root, t => t.name)).toEqual([
         'root',
@@ -117,17 +117,17 @@ describe('spec tree', () => {
 
     it('find siblings - all global hooks for suite (several suites - with hook)', () => {
       const root = new SpecTree();
-      root.addHook('hook 1');
-      root.addHook('hook 2');
-      root.addSuite('suite 1');
-      root.addHook('hook 3');
-      root.addSuite('suite 2');
-      root.addTest('test 1');
-      root.addTest('test 2');
+      root.addHook('hook 1', {} as any);
+      root.addHook('hook 2', {} as any);
+      root.addSuite('suite 1', {} as any);
+      root.addHook('hook 3', {} as any);
+      root.addSuite('suite 2', {} as any);
+      root.addTest('test 1', {} as any);
+      root.addTest('test 2', {} as any);
       root.endSuite();
-      root.addSuite('suite 4');
-      root.addHook('hook 4');
-      root.addTest('test 3');
+      root.addSuite('suite 4', {} as any);
+      root.addHook('hook 4', {} as any);
+      root.addTest('test 3', {} as any);
 
       expect(printTreeWithIndents(root.root, t => t.name)).toEqual([
         'root',

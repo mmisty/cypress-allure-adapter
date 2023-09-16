@@ -1,19 +1,19 @@
 // import { AllureReporter2 } from 'src/plugins/allure-reporter-2';
 
-import { AllureReporter2 } from '../../../src/plugins/allure-reporter-2';
+import { AllureReporter3 } from '../../../src/plugins/allure-reporter-3';
 import { Status } from '../../../src/plugins/allure-types';
 import { existsSync, rmSync } from 'fs';
 import { parseAllureSorted, selectMap } from '../../cy-helper/utils';
 
 describe('suite', () => {
   const allureResults = 'allure-results-reporter2';
-  let reporter: AllureReporter2;
+  let reporter: AllureReporter3;
 
   beforeEach(() => {
     if (existsSync(allureResults)) {
       rmSync(allureResults, { recursive: true });
     }
-    reporter = new AllureReporter2({ allureResults });
+    reporter = new AllureReporter3({ allureResults });
   });
 
   it('should start one group', () => {
@@ -38,7 +38,7 @@ describe('suite', () => {
 
     reporter.endGroup();
     const d = reporter.printList();
-    expect(d.map(t => t.data?.value.name)).toEqual(['Hello']);
+    expect(d).toEqual(['Hello']); // todo add ended
   });
 
   it('should start test', () => {
@@ -52,7 +52,8 @@ describe('suite', () => {
     const d = reporter.printList();
 
     expect(
-      d.map(t => t.data?.value.name ?? (t?.data?.value as any)?.info?.name),
+      // d.map(t => t.data?.value.name ?? (t?.data?.value as any)?.info?.name),
+      d,
     ).toEqual(['Test', 'Sub', 'Hello']);
     expect(groups).toEqual(['Hello', 'Sub', 'Test']);
   });
@@ -65,7 +66,8 @@ describe('suite', () => {
     reporter.endGroup();
     reporter.endGroup();
     const d1 = reporter.printList();
-    expect(d1.map(t => t.data?.value.name)).toEqual([]);
+    //expect(d1.map(t => t.data?.value.name)).toEqual([]);
+    expect(d1).toEqual([]);
   });
 
   it('start several tests', () => {

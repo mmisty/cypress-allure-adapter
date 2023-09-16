@@ -1,4 +1,4 @@
-import { AllureReporter2 } from '../../../src/plugins/allure-reporter-2';
+import { AllureReporter3 } from '../../../src/plugins/allure-reporter-3';
 import { existsSync, rmSync } from 'fs';
 import { Status } from '../../../src/plugins/allure-types';
 import {
@@ -14,14 +14,14 @@ import { AllureTest, getParentsArray } from 'allure-js-parser';
  */
 describe('several hooks', () => {
   const allureResults = `allure-results-reporter2/${basename(__filename)}`;
-  let reporter: AllureReporter2;
+  let reporter: AllureReporter3;
   let res: AllureTest[];
 
   beforeEach(() => {
     if (existsSync(allureResults)) {
       rmSync(allureResults, { recursive: true });
     }
-    reporter = new AllureReporter2({ allureResults });
+    reporter = new AllureReporter3({ allureResults });
   });
 
   beforeEach(() => {
@@ -198,7 +198,7 @@ describe('several hooks', () => {
             befores: [
               {
                 attachments: [],
-                name: 'before all hook 1',
+                name: 'before all hook 0',
                 parameters: [],
                 stage: 'finished',
                 start: 100,
@@ -209,7 +209,7 @@ describe('several hooks', () => {
               },
               {
                 attachments: [],
-                name: 'before all hook 0',
+                name: 'before all hook 1',
                 parameters: [],
                 stage: 'finished',
                 start: 100,

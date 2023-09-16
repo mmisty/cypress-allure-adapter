@@ -1,4 +1,14 @@
-type DataTree = { name: string; type: 'suite' | 'hook' | 'step' | 'test' | 'root'; value?: any };
+import { AllureGroup, AllureStep, AllureTest, ExecutableItemWrapper } from 'allure-js-commons';
+import { GlobalHookC } from './allure-global-hook2';
+
+export type DataType = 'suite' | 'hook' | 'step' | 'test' | 'root';
+export type DataTree<T = any> = { name: string; type: DataType; value?: T };
+type ConditionFn<T> = (t: T) => boolean;
+
+export const isType =
+  (checkType: DataType) =>
+  <T>(t: DataTree<T>) =>
+    t.type === checkType;
 
 export class SpecTree {
   public root: Tree<DataTree>;
@@ -7,36 +17,54 @@ export class SpecTree {
     this.root = new Tree({ name: 'root', type: 'root' });
   }
 
-  public currentSuite: Tree<DataTree> | undefined = undefined;
-  public currentHook: Tree<DataTree> | undefined = undefined;
-  public currentTest: Tree<DataTree> | undefined = undefined;
-  public currentStep: Tree<DataTree> | undefined = undefined;
+  public currentSuite: Tree<DataTree<AllureGroup>> | undefined = undefined;
+  public currentHook: Tree<DataTree<ExecutableItemWrapper | GlobalHookC>> | undefined = undefined;
+  public currentTest: Tree<DataTree<AllureTest>> | undefined = undefined;
+  public currentStep: Tree<DataTree<AllureStep>> | undefined = undefined;
 
-  addHook(name: string) {
+  addHook(name: string, hook: ExecutableItemWrapper | GlobalHookC) {
     const addTo = this.currentSuite ?? this.root;
 
-    this.currentHook = addTo.add({ name, type: 'hook' });
+    this.currentHook = addTo.add({ name, type: 'hook', value: hook });
   }
 
-  addSuite(name: string) {
-    const addTo = this.currentSuite ?? this.root;
+  endHook() {
+    this.endAllSteps();
 
-    this.currentSuite = addTo.add({ name, type: 'suite' });
-  }
-
-  endSuite() {
-    if (this.currentSuite) {
-      this.currentSuite = getClosestParent(this.currentSuite, t => ['suite'].includes(t.type));
+    if (this.currentHook) {
+      this.currentHook = getClosestParent(this.currentHook, isType('hook'));
     }
   }
 
-  addTest(name: string) {
+  addSuite(name: string, data: AllureGroup) {
     const addTo = this.currentSuite ?? this.root;
 
-    this.currentTest = addTo.add({ name, type: 'test' });
+    this.currentSuite = addTo.add({ name, type: 'suite', value: data });
   }
 
-  addStep(name: string) {
+  endSuite() {
+    this.endAllSteps();
+
+    if (this.currentSuite) {
+      this.currentSuite = getClosestParent(this.currentSuite, isType('suite'));
+    }
+  }
+
+  addTest(name: string, value: AllureTest) {
+    const addTo = this.currentSuite ?? this.root;
+
+    this.currentTest = addTo.add({ name, type: 'test', value });
+  }
+
+  endTest() {
+    this.endAllSteps();
+
+    if (this.currentTest) {
+      this.currentTest = getClosestParent(this.currentTest, isType('test'));
+    }
+  }
+
+  addStep(name: string, step: AllureStep) {
     const addTo = this.currentStep ?? this.currentTest ?? this.currentHook;
 
     if (!addTo) {
@@ -45,18 +73,25 @@ export class SpecTree {
       return;
     }
 
-    this.currentStep = addTo.add({ name, type: 'step' });
+    // todo type
+    this.currentStep = (addTo as Tree<DataTree<AllureStep>>).add({ name, type: 'step', value: step });
   }
 
   endStep() {
     if (this.currentStep) {
-      this.currentStep = getClosestParent(this.currentStep, t => ['step'].includes(t.type));
+      this.currentStep = getClosestParent(this.currentStep, isType('step'));
     }
   }
 
   endAllSteps() {
     while (this.currentStep !== undefined) {
-      this.currentStep = getClosestParent(this.currentStep, t => ['step'].includes(t.type));
+      this.currentStep = getClosestParent(this.currentStep, isType('step'));
+    }
+  }
+
+  endAllSuites() {
+    while (this.currentSuite !== undefined) {
+      this.currentSuite = getClosestParent(this.currentSuite, isType('suite'));
     }
   }
 }
@@ -97,7 +132,7 @@ export class Tree<T> {
  * @param condition
  * @param res
  */
-export const getItems = <T>(tree: Tree<T>, condition: (tr: T) => boolean, res: T[] = []) => {
+export const getItems = <T>(tree: Tree<T>, condition: ConditionFn<T>, res: T[] = []) => {
   if (condition(tree.data)) {
     res.push(tree.data);
   }
@@ -111,7 +146,7 @@ export const getItems = <T>(tree: Tree<T>, condition: (tr: T) => boolean, res: T
   return res;
 };
 
-export const deleteByCondition = <T>(tree: Tree<T>, condition: (t: T) => boolean) => {
+export const deleteByCondition = <T>(tree: Tree<T>, condition: ConditionFn<T>) => {
   const mergeChildren = (node: Tree<T>) => {
     if (node.children && node.children.length > 0) {
       const mergedChildren: Tree<T>[] = [];
@@ -140,7 +175,7 @@ export const deleteByCondition = <T>(tree: Tree<T>, condition: (t: T) => boolean
  * Get chain of parents
  *
  */
-export const getParents = <T>(tree: Tree<T> | undefined, condition?: (t: T) => boolean): Tree<T>[] => {
+export const getParents = <T>(tree: Tree<T> | undefined, condition?: ConditionFn<T>): Tree<T>[] => {
   const res: Tree<T>[] = [];
 
   if (tree === undefined) {
@@ -159,7 +194,17 @@ export const getParents = <T>(tree: Tree<T> | undefined, condition?: (t: T) => b
   return res;
 };
 
-export const getClosestParent = <T>(tree: Tree<T>, condition?: (t: T) => boolean): Tree<T> | undefined => {
+/**
+ * get parents in order including current node
+ * @param tree
+ * @param current
+ * @param condition
+ */
+export const getAllParents = <T>(tree: Tree<T>, current: Tree<T> | undefined, condition: ConditionFn<T>): Tree<T>[] => {
+  return [...getParents(current, condition).reverse(), ...findSiblingsForParents(tree, current, condition)];
+};
+
+export const getClosestParent = <T>(tree: Tree<T>, condition?: ConditionFn<T>): Tree<T> | undefined => {
   let ch = tree;
 
   while (ch.parent !== undefined) {
@@ -173,7 +218,7 @@ export const getClosestParent = <T>(tree: Tree<T>, condition?: (t: T) => boolean
   return undefined;
 };
 
-export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, condition: (t: T) => boolean): Tree<T>[] {
+export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, condition: ConditionFn<T>): Tree<T>[] {
   const siblings: Tree<T>[] = [];
 
   if (target === undefined) {
@@ -181,7 +226,7 @@ export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, cond
   }
 
   // Helper function to traverse the tree using depth-first search (DFS)
-  function dfs(node: Tree<T>, parentNode: Tree<T> | null, cond: (t: T) => boolean) {
+  function dfs(node: Tree<T>, parentNode: Tree<T> | null, cond: ConditionFn<T>) {
     if (node === target && parentNode) {
       siblings.push(...(parentNode.children || []).filter(child => child !== target && cond(child.data)));
 
@@ -201,7 +246,7 @@ export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, cond
 export const findSiblingsForParents = <T>(
   root: Tree<T>,
   tree: Tree<T> | undefined,
-  condition: (t: T) => boolean,
+  condition: ConditionFn<T>,
 ): Tree<T>[] => {
   if (!tree) {
     return [];
@@ -218,7 +263,7 @@ export const findSiblingsForParents = <T>(
  * @param tree
  * @param condition
  */
-export const findChildren = <T>(tree: Tree<T> | undefined, condition: (t: T) => boolean) => {
+export const findChildren = <T>(tree: Tree<T> | undefined, condition: ConditionFn<T>) => {
   if (!tree) {
     return [];
   }

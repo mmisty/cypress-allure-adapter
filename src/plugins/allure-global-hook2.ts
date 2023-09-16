@@ -1,8 +1,8 @@
-import { AllureStep, ExecutableItem, ExecutableItemWrapper, StatusDetails } from 'allure-js-commons';
+import { ExecutableItem, StatusDetails } from 'allure-js-commons';
 import Debug from 'debug';
 import { Stage, Status, UNKNOWN } from './allure-types';
 import type { ContentType } from '../common/types';
-import { AllureReporter2 } from './allure-reporter-2';
+import { AllureReporter3 } from './allure-reporter-3';
 
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
@@ -23,6 +23,7 @@ export type GlobalHookType2 = {
 };
 
 export class GlobalHookC implements Partial<ExecutableItem> {
+  public isStoredHook = true;
   public name: string;
   public title: string;
   public status: Status | undefined;
@@ -33,7 +34,7 @@ export class GlobalHookC implements Partial<ExecutableItem> {
   public detailsMessage: string | undefined;
   public detailsTrace: string | undefined;
 
-  constructor(public data: GlobalHookType2) {
+  constructor(private data: GlobalHookType2) {
     this.name = data.name;
     this.title = data.title;
     this.status = data.status;
@@ -82,7 +83,7 @@ export class GlobalHookC implements Partial<ExecutableItem> {
     log(`this.currentHook.steps: ${JSON.stringify(this.data.steps.map(t => t.name))}`);
   }
 
-  addSteps(reporter: AllureReporter2) {
+  addSteps(reporter: AllureReporter3) {
     this.data.steps?.forEach(step => {
       if (step.event === 'start') {
         reporter.startStep({ name: step.name, date: step.date });

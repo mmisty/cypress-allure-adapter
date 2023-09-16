@@ -1,4 +1,3 @@
-import { AllureReporter2 } from '../../../src/plugins/allure-reporter-2';
 import { existsSync, rmSync } from 'fs';
 import { Status } from '../../../src/plugins/allure-types';
 import {
@@ -8,20 +7,21 @@ import {
 } from '../../cy-helper/utils';
 import { basename } from 'path';
 import { AllureTest, getParentsArray } from 'allure-js-parser';
+import { AllureReporter3 } from '../../../src/plugins/allure-reporter-3';
 
 /**
  * This is simple test where one group with two tests created
  */
 describe('create several tests with hook', () => {
   const allureResults = `allure-results-reporter2/${basename(__filename)}`;
-  let reporter: AllureReporter2;
+  let reporter: AllureReporter3;
   let res: AllureTest[];
 
   beforeEach(() => {
     if (existsSync(allureResults)) {
       rmSync(allureResults, { recursive: true });
     }
-    reporter = new AllureReporter2({ allureResults });
+    reporter = new AllureReporter3({ allureResults });
   });
 
   beforeEach(() => {
