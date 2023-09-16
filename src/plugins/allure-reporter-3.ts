@@ -1,4 +1,4 @@
-import { AllureGroup, AllureRuntime, AllureStep, AllureTest, ExecutableItemWrapper, Status } from 'allure-js-commons';
+import { AllureGroup, AllureRuntime, AllureStep, AllureTest, ExecutableItemWrapper } from 'allure-js-commons';
 import {
   addGroupLabelByUser,
   addGroupLabels,
@@ -7,12 +7,28 @@ import {
   Label,
   setExecutableStatus,
   setLastStepStatus,
+  writeTestFile,
 } from './allure-utils';
-import { findHooksForCurrentSuite, findSiblingsForParents, isType, printTreeWithIndents, SpecTree } from './tree-utils';
+import {
+  findHooksForCurrentSuite,
+  findSiblingsForParents,
+  getItems,
+  isType,
+  printTreeWithIndents,
+  SpecTree,
+} from './tree-utils';
 import { GlobalHookC } from './allure-global-hook2';
-import { AllureTaskArgs, LabelName, UNKNOWN } from './allure-types';
+import { AllureTaskArgs, LabelName, Status, UNKNOWN } from './allure-types';
 import getUuid from 'uuid-by-string';
-import { existsSync, mkdirSync } from 'fs';
+import { copyFile, copyFileSync, existsSync, mkdirSync, readFile, readFileSync, writeFileSync } from 'fs';
+import { ReporterOptions } from './allure';
+import { delay, extname, packageLog } from '../common';
+import { randomUUID } from 'crypto';
+import glob from 'fast-glob';
+import path, { basename } from 'path';
+import { parseAllure } from 'allure-js-parser';
+import getUuidByString from 'uuid-by-string';
+import { ContentType } from '../common/types';
 
 // const debug = Debug('cypress-allure:reporter2');
 
@@ -37,18 +53,38 @@ interface AllureReporter3Api {
   suite(arg: AllureTaskArgs<'suite'>): void;
   parentSuite(arg: AllureTaskArgs<'parentSuite'>): void;
   subSuite(arg: AllureTaskArgs<'subSuite'>): void;
+
+  label(arg: AllureTaskArgs<'label'>): void;
+  link(arg: AllureTaskArgs<'link'>): void;
+  fullName(arg: AllureTaskArgs<'fullName'>): void;
+  parameter(arg: AllureTaskArgs<'parameter'>): void;
+  testParameter(arg: AllureTaskArgs<'parameter'>): void;
+
+  endAll(arg: AllureTaskArgs<'endAll'>): void;
 }
 
 export class AllureReporter3 implements AllureReporter3Api {
   currentSpec: Cypress.Spec | undefined;
   private allureResults: string;
+  private showDuplicateWarn: boolean;
+  private allureAddVideoOnPass: boolean;
+  private videos: string;
+  private screenshots: string;
+  descriptionHtml: string[] = [];
+  testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
+  testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
+
   allureRuntime: AllureRuntime;
   running: SpecTree = new SpecTree();
   labels: Label[] = [];
+  attached: string[] = [];
 
-  // constructor(opts: ReporterOptions) {
-  constructor(opts: { allureResults: string }) {
+  constructor(opts: ReporterOptions) {
+    this.showDuplicateWarn = opts.showDuplicateWarn;
     this.allureResults = opts.allureResults;
+    this.allureAddVideoOnPass = opts.allureAddVideoOnPass;
+    this.videos = opts.videos;
+    this.screenshots = opts.screenshots;
 
     log('Created reporter');
     log(opts);
@@ -60,7 +96,7 @@ export class AllureReporter3 implements AllureReporter3Api {
   }
 
   get currentTest(): AllureTest | undefined {
-    return this.running.currentTest?.data.value;
+    return this.running.currentTest?.data.value?.test;
   }
 
   get currentStep(): AllureStep | undefined {
@@ -188,8 +224,7 @@ export class AllureReporter3 implements AllureReporter3Api {
         return;
       }
 
-      // stored hook
-      if (globalHook.start) {
+      if (globalHook.isStoredHook) {
         const currentHook =
           hook.data.name.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
         currentHook.name = hook.data.name;
@@ -269,7 +304,7 @@ export class AllureReporter3 implements AllureReporter3Api {
 
   // interface
   startTest(arg: AllureTaskArgs<'testStarted'>) {
-    const { title, fullTitle, date } = arg;
+    const { title, fullTitle, id, date } = arg;
 
     if (this.currentTest) {
       // temp fix of defect with wrong event sequence
@@ -306,9 +341,25 @@ export class AllureReporter3 implements AllureReporter3Api {
     test.fullName = fullTitle;
 
     test.historyId = getUuid(fullTitle);
-    this.running.addTest(title, test);
+    const stored = this.currentHook as GlobalHookC;
 
-    // this.globalHooks.processForTest();
+    if (stored.isStoredHook) {
+      // this.globalHooks.processForTest();
+      stored.addAttachments(this);
+    }
+
+    this.running.addTest(title, { test, id, uuid: test.uuid });
+  }
+
+  addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
+    this.descriptionHtml.push(arg.value);
+    this.applyDescriptionHtml();
+  }
+
+  applyDescriptionHtml() {
+    if (this.currentTest) {
+      this.currentTest.descriptionHtml = this.descriptionHtml.join('');
+    }
   }
 
   // interface
@@ -325,8 +376,8 @@ export class AllureReporter3 implements AllureReporter3Api {
     const { result, details, date } = arg;
 
     //const test = this.currentNode('test');
-    // const storedStatus = this.testStatusStored;
-    //const storedDetails = this.testDetailsStored;
+    const storedStatus = this.testStatusStored;
+    const storedDetails = this.testDetailsStored;
 
     /*
       todo case when all steps finished but test failed
@@ -347,25 +398,23 @@ export class AllureReporter3 implements AllureReporter3Api {
 
     setExecutableStatus(this.currentTest, result, details);
 
-    /*if (storedDetails) {
-      this.setExecutableStatus(this.currentTest, result, storedDetails.details);
+    if (storedDetails) {
+      setExecutableStatus(this.currentTest, result, storedDetails.details);
     }
 
     if (storedStatus) {
-      this.setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
-    }*/
+      setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
+    }
 
-    //this.labels = addGroupLabels(this.running.root, this.running.currentSuite);
     applyGroupLabels(this.currentTest, this.labels);
 
     this.currentTest.endTest(date);
-    // t.data.isEnded = true;
     // todo remove correct
     this.running.endTest();
 
-    //this.descriptionHtml = [];
-    //this.testStatusStored = undefined;
-    //this.testDetailsStored = undefined;
+    this.descriptionHtml = [];
+    this.testStatusStored = undefined;
+    this.testDetailsStored = undefined;
     this.labels = [];
   }
 
@@ -387,6 +436,82 @@ export class AllureReporter3 implements AllureReporter3Api {
 
     this.running = tnode;*/
     //this.running = this.running?.next;
+  }
+
+  /*endHooks() {
+    findSiblingsForParents(this.running.root, this.running.currentHook, isType('hook')).forEach(hook => {
+      setExecutableStatus(step.data.value, arg.status, arg.details);
+      step.data.value.e(arg.date);
+    });
+    this.running.endAllSteps();
+  }*/
+
+  label(arg: AllureTaskArgs<'label'>) {
+    if (this.currentTest) {
+      this.currentTest.addLabel(arg.name, arg.value);
+    }
+  }
+
+  link(arg: AllureTaskArgs<'link'>) {
+    if (this.currentTest) {
+      this.currentTest.addLink(arg.url, arg.name, arg.type);
+    }
+  }
+
+  fullName(arg: AllureTaskArgs<'fullName'>) {
+    if (this.currentTest) {
+      this.currentTest.fullName = arg.value;
+    }
+  }
+
+  parameter(arg: AllureTaskArgs<'parameter'>) {
+    if (this.currentExecutable) {
+      this.currentExecutable.addParameter(arg.name, arg.value);
+    }
+  }
+
+  testParameter(arg: AllureTaskArgs<'parameter'>) {
+    if (this.currentTest) {
+      this.currentTest.addParameter(arg.name, arg.value);
+    }
+  }
+
+  testFileAttachment(arg: AllureTaskArgs<'testFileAttachment'>) {
+    this.executableFileAttachment(this.currentTest, arg);
+  }
+
+  fileAttachment(arg: AllureTaskArgs<'fileAttachment'>) {
+    this.executableFileAttachment(this.currentExecutable, arg);
+  }
+
+  testAttachment(arg: AllureTaskArgs<'testAttachment'>) {
+    this.executableAttachment(this.currentTest, arg);
+  }
+
+  attachment(arg: AllureTaskArgs<'attachment'>) {
+    this.executableAttachment(this.currentExecutable, arg);
+  }
+
+  private executableAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'attachment'>) {
+    if (!exec) {
+      log('No current executable - will not attach');
+
+      return;
+    }
+    const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
+    exec.addAttachment(arg.name, arg.type, file);
+  }
+
+  endAll() {
+    this.endAllSteps({ status: UNKNOWN, details: undefined });
+
+    while (this.currentHook) {
+      this.hookEnded({ title: this.running.currentHook?.data.name ?? '', result: Status.BROKEN, details: undefined });
+    }
+
+    while (this.currentGroup) {
+      this.endGroup();
+    }
   }
 
   printList() {
@@ -413,5 +538,234 @@ export class AllureReporter3 implements AllureReporter3Api {
       return;
     }
     addGroupLabelByUser(this.labels, LabelName.SUB_SUITE, arg.name);
+  }
+
+  testStatus(arg: AllureTaskArgs<'testStatus'>) {
+    if (!this.currentTest) {
+      return;
+    }
+    this.testStatusStored = arg;
+  }
+
+  testDetails(arg: AllureTaskArgs<'testDetails'>) {
+    if (!this.currentTest) {
+      return;
+    }
+    this.testDetailsStored = arg;
+  }
+
+  private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
+    if (!this.currentExecutable && !this.currentGroup && this.currentHook) {
+      log('No current executable, test or hook - add to global hook');
+      // todo
+      (this.currentHook as GlobalHookC).addAttachment(arg.name, arg.type, arg.file);
+
+      return;
+    }
+
+    if (!exec) {
+      return;
+    }
+
+    if (!existsSync(arg.file)) {
+      console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
+
+      return;
+    }
+
+    try {
+      const uuid = randomUUID();
+
+      // to have it in allure-results directory
+      const fileNew = `${uuid}-attachment${extname(arg.file)}`;
+
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults, { recursive: true });
+      }
+
+      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+      exec.addAttachment(arg.name, arg.type, fileNew);
+    } catch (err) {
+      console.error(`${packageLog} Could not attach ${arg.file}`);
+    }
+  }
+
+  attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+    const { screenshots } = arg;
+    log('attachScreenshots:');
+
+    screenshots?.forEach(x => {
+      const screenshotContent = readFileSync(x.path);
+      const guidScreenshot = getUuidByString(screenshotContent.toString());
+
+      if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
+        log(`Already attached: ${x.path}`);
+
+        return;
+      }
+
+      log(`attachScreenshots:${x.path}`);
+
+      const uuids = getItems(this.running.root, isType('test'))
+        .filter(t => t.value.id === x.testId)
+        .map(t => t.value.uuid);
+      // const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
+
+      uuids.forEach(uuid => {
+        const testFile = `${this.allureResults}/${uuid}-result.json`;
+        const contents = readFileSync(testFile);
+        const ext = path.extname(x.path);
+        const name = path.basename(x.path);
+        type ParsedAttachment = { name: string; type: ContentType; source: string };
+        const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
+        const uuidNew = randomUUID();
+        const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same image
+        const newPath = path.join(this.allureResults, nameAttAhc);
+
+        if (!existsSync(newPath)) {
+          copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
+        }
+
+        if (!testCon.attachments) {
+          testCon.attachments = [];
+        }
+
+        testCon.attachments.push({
+          name: name,
+          type: 'image/png',
+          source: nameAttAhc, // todo
+        });
+
+        writeFileSync(testFile, JSON.stringify(testCon));
+      });
+    });
+  }
+
+  screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
+    const { name, forStep } = arg;
+
+    const pattern = `${this.screenshots}/**/${name}*.png`;
+    const files = glob.sync(pattern);
+
+    if (files.length === 0) {
+      log(`NO SCREENSHOTS: ${pattern}`);
+
+      return;
+    }
+
+    files.forEach(file => {
+      const executable = this.currentStep ?? this.currentTest;
+      const attachTo = forStep ? executable : this.currentTest;
+      // to have it in allure-results directory
+
+      const newUuid = randomUUID();
+      const fileNew = `${newUuid}-attachment.png`;
+
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults, { recursive: true });
+      }
+
+      if (!existsSync(file)) {
+        console.log(`file ${file} doesnt exist`);
+
+        return;
+      }
+      copyFileSync(file, `${this.allureResults}/${fileNew}`);
+
+      attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
+      this.attached.push(fileNew);
+    });
+  }
+
+  async attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
+    // this happens after test has already finished
+    const { path: videoPath } = arg;
+    log(`attachVideoToTests: ${videoPath}`);
+    const ext = '.mp4';
+    const specname = basename(videoPath, ext);
+    log(specname);
+    const res = parseAllure(this.allureResults);
+
+    const tests = res
+      .filter(t => (this.allureAddVideoOnPass ? true : t.status !== 'passed' && t.status !== 'skipped'))
+      .map(t => ({
+        path: t.labels.find(l => l.name === 'path')?.value,
+        id: t.uuid,
+        fullName: t.fullName,
+      }));
+
+    const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
+
+    let doneFiles = 0;
+
+    readFile(videoPath, (errVideo, _contentVideo) => {
+      if (errVideo) {
+        console.error(`Could not read video: ${errVideo}`);
+
+        return;
+      }
+
+      testsAttach.forEach(test => {
+        log(`ATTACHING to ${test.id} ${test.path} ${test.fullName}`);
+        const testFile = `${this.allureResults}/${test.id}-result.json`;
+
+        readFile(testFile, (err, contents) => {
+          if (err) {
+            return;
+          }
+          const testCon = JSON.parse(contents.toString());
+          const uuid = randomUUID();
+
+          // todo do not copy same video
+          // currently Allure Testops does not rewrite uploaded results if use same file
+          // const uuid = getUuidByString(contentVideo.toString());
+
+          const nameAttAhc = `${uuid}-attachment${ext}`;
+          const newPath = path.join(this.allureResults, nameAttAhc);
+
+          if (!testCon.attachments) {
+            testCon.attachments = [];
+          }
+          testCon.attachments.push({
+            name: `${specname}${ext}`,
+            type: 'video/mp4',
+            source: nameAttAhc,
+          });
+
+          if (existsSync(newPath)) {
+            log(`not writing! video file ${newPath} `);
+
+            writeTestFile(log, testFile, JSON.stringify(testCon), () => {
+              doneFiles = doneFiles + 1;
+            });
+
+            return;
+          }
+
+          log(`write video file ${newPath} `);
+          copyFile(videoPath, newPath, errCopy => {
+            if (errCopy) {
+              log(`error copy file  ${errCopy.message} `);
+
+              return;
+            }
+            log(`write test file ${testFile} `);
+            writeTestFile(log, testFile, JSON.stringify(testCon), () => {
+              doneFiles = doneFiles + 1;
+            });
+          });
+        });
+      });
+    });
+    const started = Date.now();
+    const timeout = 10000;
+
+    while (doneFiles < testsAttach.length) {
+      if (Date.now() - started >= timeout) {
+        console.error(`Could not write all video attachments in ${timeout}ms`);
+        break;
+      }
+      await delay(100);
+    }
   }
 }

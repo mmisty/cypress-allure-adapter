@@ -2,6 +2,7 @@ import { AllureTest, ExecutableItem, ExecutableItemWrapper, Status, StatusDetail
 import { GlobalHookC } from './allure-global-hook2';
 import { LabelName, Stage, UNKNOWN } from './allure-types';
 import { DataTree, getAllParents, isType, Tree } from './tree-utils';
+import { writeFile } from 'fs';
 
 export type Label = { name: string; value: string };
 
@@ -145,4 +146,16 @@ export const setLastStepStatus = (steps: ExecutableItem[], status: Status, detai
     setLastStepStatus(steps[stepsCount - 1].steps, status, details);
     setExecutableItemStatus(steps[stepsCount - 1], status, details);
   }
+};
+
+export const writeTestFile = (log: (msg: string) => void, testFile: string, content: string, callBack: () => void) => {
+  writeFile(testFile, content, errWrite => {
+    if (errWrite) {
+      log(`error test file  ${errWrite.message} `);
+
+      return;
+    }
+    log(`write test file done ${testFile} `);
+    callBack();
+  });
 };

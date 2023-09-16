@@ -1,10 +1,10 @@
 import Debug from 'debug';
-import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, copyFile, existsSync, mkdirSync, readFileSync, rm, rmSync, writeFileSync } from 'fs';
 import { delay, packageLog } from '../common';
 import glob from 'fast-glob';
 import { basename, dirname } from 'path';
+import { AllureReporter3 } from './allure-reporter-3';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -25,7 +25,7 @@ export type ReporterOptions = {
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
-  let allureReporter = new AllureReporter(opts);
+  let allureReporter = new AllureReporter3(opts);
   const allureResults = opts.allureResults;
   const allureResultsWatch = opts.techAllureResults;
 
@@ -33,7 +33,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter3(opts);
       allureReporter.specStarted(arg);
       log('specStarted');
     },
@@ -50,7 +50,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     suiteStarted: (arg: AllureTaskArgs<'suiteStarted'>) => {
       log(`suiteStarted: ${JSON.stringify(arg)}`);
-      allureReporter.suiteStarted(arg);
+      allureReporter.startGroup(arg);
       log('suiteStarted');
     },
     stepStarted: (arg: AllureTaskArgs<'stepStarted'>) => {
@@ -163,7 +163,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter3(opts);
 
       try {
         if (existsSync(allureResults)) {

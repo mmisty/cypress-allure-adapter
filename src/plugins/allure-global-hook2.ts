@@ -3,6 +3,7 @@ import Debug from 'debug';
 import { Stage, Status, UNKNOWN } from './allure-types';
 import type { ContentType } from '../common/types';
 import { AllureReporter3 } from './allure-reporter-3';
+import { AttachmentOptions } from 'allure-js-commons/dist/src/model';
 
 const log = Debug('cypress-allure:reporter');
 type Step = { name: string; event: 'start' | 'stop'; date: number; status?: Status; details?: StatusDetails };
@@ -94,6 +95,30 @@ export class GlobalHookC implements Partial<ExecutableItem> {
       }
     });
     // reporter.endAllSteps({ status: hook.status || UNKNOWN });
+  }
+
+  addAttachment(name: string, type: ContentType, file: string) {
+    log(`add attachement: ${name}`);
+
+    if (!this.data.attachments) {
+      this.data.attachments = [];
+    }
+
+    this.data.attachments.push({ name, file, type });
+
+    log(`added attachement: ${name}`);
+  }
+
+  addAttachments(reporter: AllureReporter3) {
+    log('process global hooks for test');
+
+    if (!this.data.attachments || this.data.attachments.length == 0) {
+      log('no attachments');
+    }
+    this.data.attachments?.forEach(attach => {
+      log('process attach');
+      reporter.testFileAttachment({ name: attach.name, file: attach?.file, type: attach.type });
+    });
   }
 
   // when suite created

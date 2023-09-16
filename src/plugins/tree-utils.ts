@@ -19,7 +19,7 @@ export class SpecTree {
 
   public currentSuite: Tree<DataTree<AllureGroup>> | undefined = undefined;
   public currentHook: Tree<DataTree<ExecutableItemWrapper | GlobalHookC>> | undefined = undefined;
-  public currentTest: Tree<DataTree<AllureTest>> | undefined = undefined;
+  public currentTest: Tree<DataTree<{ test: AllureTest; id: string; uuid: string }>> | undefined = undefined;
   public currentStep: Tree<DataTree<AllureStep>> | undefined = undefined;
 
   addHook(name: string, hook: ExecutableItemWrapper | GlobalHookC) {
@@ -50,7 +50,7 @@ export class SpecTree {
     }
   }
 
-  addTest(name: string, value: AllureTest) {
+  addTest(name: string, value: { test: AllureTest; id: string; uuid: string }) {
     const addTo = this.currentSuite ?? this.root;
 
     this.currentTest = addTo.add({ name, type: 'test', value });
