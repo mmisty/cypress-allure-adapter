@@ -29,11 +29,12 @@ import path, { basename } from 'path';
 import { parseAllure } from 'allure-js-parser';
 import getUuidByString from 'uuid-by-string';
 import { ContentType } from '../common/types';
+import Debug from 'debug';
 
-// const debug = Debug('cypress-allure:reporter2');
+const debug = Debug('cypress-allure:reporter2');
 
 const log = (...args: unknown[]) => {
-  console.log(...args);
+  debug.log(...args);
 };
 
 interface AllureReporter3Api {

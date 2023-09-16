@@ -13,12 +13,12 @@ const log = (...args: unknown[]) => {
 };
 
 export type ReporterOptions = {
-  allureAddVideoOnPass: boolean;
+  allureAddVideoOnPass?: boolean;
   allureResults: string;
   techAllureResults: string;
   videos: string;
   screenshots: string;
-  showDuplicateWarn: boolean;
+  showDuplicateWarn?: boolean;
   // to test mocha events in jest
   isTest: boolean;
 };
