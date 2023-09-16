@@ -13,7 +13,13 @@ describe('suite', () => {
     if (existsSync(allureResults)) {
       rmSync(allureResults, { recursive: true });
     }
-    reporter = new AllureReporter3({ allureResults });
+    reporter = new AllureReporter3({
+      allureResults,
+      techAllureResults: allureResults,
+      videos: '',
+      screenshots: '',
+      isTest: false,
+    });
   });
 
   it('should start one group', () => {
