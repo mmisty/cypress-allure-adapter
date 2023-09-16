@@ -4,6 +4,7 @@ import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 
 jest.setTimeout(120000);
 
@@ -298,7 +299,7 @@ export const createResTest2 = (
         trashAssetsBeforeRuns: true,
         env,
         quiet: process.env.CI === 'true',
-        video: true,
+        video: parseBoolean(envConfig?.video ?? `${true}`),
       });
     } catch (e) {
       err = e as Error;
