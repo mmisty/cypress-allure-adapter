@@ -34,7 +34,7 @@ import Debug from 'debug';
 const debug = Debug('cypress-allure:reporter2');
 
 const log = (...args: unknown[]) => {
-  debug.log(...args);
+  debug(args);
 };
 
 interface AllureReporter3Api {
