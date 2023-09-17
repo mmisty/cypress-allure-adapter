@@ -1,10 +1,24 @@
 import { AllureGroup, AllureStep, AllureTest, ExecutableItemWrapper } from 'allure-js-commons';
 import { GlobalHookC } from './allure-global-hook2';
+import { AllureTaskArgs } from './allure-types';
+import { Label } from './allure-utils';
 
 export type DataType = 'suite' | 'hook' | 'step' | 'test' | 'root';
 export type DataTree<T = any> = { name: string; type: DataType; value?: T };
 type ConditionFn<T> = (t: T) => boolean;
-type TestData = { test: AllureTest; retryIndex: number | undefined; mochaId: string; uuid: string };
+
+export type TestData = {
+  test: AllureTest;
+  retryIndex: number | undefined;
+  mochaId: string;
+  uuid: string;
+  descriptionHtml?: string[];
+  testStatusStored?: AllureTaskArgs<'testStatus'> | undefined;
+  testDetailsStored?: AllureTaskArgs<'testDetails'> | undefined;
+  labels?: Label[];
+  specRelative?: string;
+};
+
 export const isType =
   (checkType: DataType) =>
   <T>(t: DataTree<T>) =>
@@ -21,6 +35,10 @@ export class SpecTree {
   public currentHook: Tree<DataTree<ExecutableItemWrapper | GlobalHookC>> | undefined = undefined;
   public currentTest: Tree<DataTree<TestData>> | undefined = undefined;
   public currentStep: Tree<DataTree<AllureStep>> | undefined = undefined;
+
+  get currentTestData(): TestData | undefined {
+    return this.currentTest?.data.value;
+  }
 
   addHook(name: string, hook: ExecutableItemWrapper | GlobalHookC) {
     const addTo = this.currentSuite ?? this.root;
@@ -218,7 +236,7 @@ export const getClosestParent = <T>(tree: Tree<T>, condition?: ConditionFn<T>): 
   return undefined;
 };
 
-export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, condition: ConditionFn<T>): Tree<T>[] {
+export function findSiblings<X, T>(root: Tree<X>, target: Tree<T> | undefined, condition: ConditionFn<T>): Tree<T>[] {
   const siblings: Tree<T>[] = [];
 
   if (target === undefined) {
@@ -226,7 +244,10 @@ export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, cond
   }
 
   // Helper function to traverse the tree using depth-first search (DFS)
-  function dfs(node: Tree<T>, parentNode: Tree<T> | null, cond: ConditionFn<T>) {
+  function dfs(node: Tree<X>, parentNode: Tree<T> | null, cond: ConditionFn<T>) {
+    // todo
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     if (node === target && parentNode) {
       siblings.push(...(parentNode.children || []).filter(child => child !== target && cond(child.data)));
 
@@ -234,7 +255,7 @@ export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, cond
     }
 
     if (node.children) {
-      node.children.forEach(child => dfs(child, node, condition));
+      node.children.forEach(child => dfs(child, node as any as Tree<T>, condition));
     }
   }
 
@@ -243,8 +264,8 @@ export function findSiblings<T>(root: Tree<T>, target: Tree<T> | undefined, cond
   return siblings;
 }
 
-export const findSiblingsForParents = <T>(
-  root: Tree<T>,
+export const findSiblingsForParents = <X, T>(
+  root: Tree<X>,
   tree: Tree<T> | undefined,
   condition: ConditionFn<T>,
 ): Tree<T>[] => {

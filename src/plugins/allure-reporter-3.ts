@@ -2,21 +2,14 @@ import { AllureGroup, AllureRuntime, AllureStep, AllureTest, ExecutableItemWrapp
 import {
   addGroupLabelByUser,
   addGroupLabels,
+  addPackageLabel,
   addPathLabel,
-  applyGroupLabels,
-  Label,
+  applyLabels,
   setExecutableStatus,
   setLastStepStatus,
   writeTestFile,
 } from './allure-utils';
-import {
-  findHooksForCurrentSuite,
-  findSiblingsForParents,
-  getItems,
-  isType,
-  printTreeWithIndents,
-  SpecTree,
-} from './tree-utils';
+import { findHooksForCurrentSuite, getItems, isType, printTreeWithIndents, SpecTree, TestData } from './tree-utils';
 import { GlobalHookC } from './allure-global-hook2';
 import { AllureTaskArgs, LabelName, Status, UNKNOWN } from './allure-types';
 import getUuid from 'uuid-by-string';
@@ -72,14 +65,8 @@ export class AllureReporter3 implements AllureReporter3Api {
   private screenshots: string;
   // testId -> test attempt index -> screenshots
   private screenshotsTest: { [key: string]: { [key: string]: string[] } } = {};
-
-  descriptionHtml: string[] = [];
-  testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
-  testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
-
   allureRuntime: AllureRuntime;
   running: SpecTree = new SpecTree();
-  labels: Label[] = [];
   attached: { testMochaId?: string; file: string; retryIndex: number | undefined }[] = [];
 
   constructor(opts: ReporterOptions) {
@@ -198,8 +185,7 @@ export class AllureReporter3 implements AllureReporter3Api {
         (this.currentHook as ExecutableItemWrapper).wrappedItem.stop = date ?? Date.now();
         setExecutableStatus(this.currentHook, result, details);
       }
-
-      return;
+      this.running.endHook();
     }
   }
 
@@ -221,28 +207,36 @@ export class AllureReporter3 implements AllureReporter3Api {
 
     // apply all global hooks for suite
     findHooksForCurrentSuite(this.running).forEach(hook => {
-      const globalHook = hook.data.value as GlobalHookC;
+      const globalHook = hook.data.value as GlobalHookC & AllureGroup;
 
       if (!this.currentGroup) {
         return;
       }
 
       if (globalHook.isStoredHook) {
+        const h = globalHook as any as GlobalHookC;
+
         const currentHook =
           hook.data.name.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
         currentHook.name = hook.data.name;
-        currentHook.wrappedItem.start = globalHook.start;
-        currentHook.wrappedItem.stop = globalHook.stop;
+        currentHook.wrappedItem.start = h.start;
+        currentHook.wrappedItem.stop = h.stop;
 
-        globalHook.addSteps(this);
+        h.addSteps(this);
 
-        setExecutableStatus(currentHook, globalHook.status ?? Status.FAILED, globalHook.statusDetails);
+        setExecutableStatus(currentHook, h.status ?? Status.FAILED, h.statusDetails);
       } else {
-        const hh = hook.data.value as ExecutableItemWrapper;
+        const hh = hook.data.value as any as ExecutableItemWrapper; // todo
+
+        // const currentHook =
+        //   hh.wrappedItem.name?.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+        // currentHook.name = hh.wrappedItem.name ?? 'unknown';
+        // currentHook.wrappedItem.start = hh.wrappedItem.start;
+        // currentHook.wrappedItem.stop = hh.wrappedItem.stop;
 
         const currentHook =
-          hh.wrappedItem.name?.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
-        currentHook.name = hh.wrappedItem.name ?? 'unknown';
+          hook.data.name.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+        currentHook.name = hook.data.name;
         currentHook.wrappedItem.start = hh.wrappedItem.start;
         currentHook.wrappedItem.stop = hh.wrappedItem.stop;
 
@@ -285,9 +279,10 @@ export class AllureReporter3 implements AllureReporter3Api {
 
     if (!this.currentGroup && this.currentHook) {
       log('No current executable, test or hook - will end step for global hook');
+      const hook = this.currentHook as GlobalHookC;
 
-      if ((this.currentHook as any).endStep) {
-        (this.currentHook as any).endStep(arg.status, details);
+      if (hook.isStoredHook) {
+        hook.endStep(arg.status, details);
       }
 
       return;
@@ -330,124 +325,104 @@ export class AllureReporter3 implements AllureReporter3Api {
       // fallback
       this.startGroup({ title: 'Root suite', fullTitle: 'Root suite' });
     }
-
     const group = this.currentGroup;
 
-    // process globals hooks
+    if (!group) {
+      console.error('Could not start group, unknown reason');
 
-    const test = group!.startTest(title, date);
+      return;
+    }
 
-    this.labels = [...addGroupLabels(this.running.root, this.running.currentSuite), ...addPathLabel(this.currentSpec)];
-
-    //allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
+    const test = group.startTest(title, date);
 
     test.fullName = fullTitle;
-
     test.historyId = getUuid(fullTitle);
+
     const stored = this.currentHook as GlobalHookC;
 
     if (stored?.isStoredHook) {
-      // this.globalHooks.processForTest();
       stored.addAttachments(this);
     }
 
-    this.running.addTest(title, { test, mochaId: id, uuid: test.uuid, retryIndex: currentRetry });
+    this.running.addTest(title, {
+      test,
+      mochaId: id,
+      uuid: test.uuid,
+      retryIndex: currentRetry,
+      labels: addGroupLabels(this.running),
+      specRelative: this.currentSpec?.relative,
+    });
+
+    addPackageLabel(this.running, this.currentSpec);
+    addPathLabel(this.running, this.currentSpec);
   }
 
   addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
-    this.descriptionHtml.push(arg.value);
+    this.running.currentTest?.data.value?.descriptionHtml?.push(arg.value);
     this.applyDescriptionHtml();
   }
 
   applyDescriptionHtml() {
-    if (this.currentTest) {
-      this.currentTest.descriptionHtml = this.descriptionHtml.join('');
+    if (this.currentTest && this.running.currentTest?.data.value?.descriptionHtml) {
+      this.currentTest.descriptionHtml = this.running.currentTest.data.value.descriptionHtml.join('');
     }
   }
 
   // interface
   endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
-    findSiblingsForParents(this.running.root, this.running.currentStep, isType('step')).forEach(step => {
-      setExecutableStatus(step.data.value, arg.status, arg.details);
-      step.data.value.endStep(arg.date);
-    });
-    this.running.endAllSteps();
+    while (this.currentStep) {
+      this.endStep(arg);
+    }
+    // this.running.endAllSteps();
   }
 
   // interface
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details, date } = arg;
-
-    //const test = this.currentNode('test');
-    const storedStatus = this.testStatusStored;
-    const storedDetails = this.testDetailsStored;
+    const storedStatus = this.running.currentTest?.data.value?.testStatusStored;
+    const storedDetails = this.running.currentTest?.data.value?.testDetailsStored;
 
     /*
       todo case when all steps finished but test failed
       if (this.steps.length === 0) {
-       */
+      
     // all ended already
-    /*this.currentExecutable?.wrappedItem.steps && this.currentExecutable.wrappedItem.steps.length > 0) {
+     this.currentExecutable?.wrappedItem.steps && this.currentExecutable.wrappedItem.steps.length > 0) {
         this.startStep({ name: 'some of previous steps failed' });
         this.endStep({ status: arg.result, details: arg.details });
       }
       }
     */
+
     this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
       return;
     }
 
-    setExecutableStatus(this.currentTest, result, details);
+    const detailsRes = () => {
+      if (storedDetails) {
+        return storedDetails.details;
+      }
 
-    if (storedDetails) {
-      setExecutableStatus(this.currentTest, result, storedDetails.details);
-    }
+      if (storedStatus) {
+        return storedStatus.details;
+      }
 
-    if (storedStatus) {
-      setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
-    }
+      return details;
+    };
 
-    applyGroupLabels(this.currentTest, this.labels);
+    setExecutableStatus(this.currentTest, storedStatus ? storedStatus.result : result, detailsRes());
+    applyLabels(this.running);
 
     this.currentTest.endTest(date);
-    // todo remove correct
     this.running.endTest();
-
-    this.descriptionHtml = [];
-    this.testStatusStored = undefined;
-    this.testDetailsStored = undefined;
-    this.labels = [];
   }
 
   endGroup() {
     this.running.currentSuite?.data.value?.endGroup();
     this.running.endSuite();
-
-    /*let tnode = this.running;
-
-    // delete global hooks below group
-    // find last group
-    while (tnode != null) {
-      if (tnode.data.type === 'group') {
-        tnode = tnode.next;
-        break;
-      }
-      tnode = tnode.next;
-    }
-
-    this.running = tnode;*/
-    //this.running = this.running?.next;
   }
-
-  /*endHooks() {
-    findSiblingsForParents(this.running.root, this.running.currentHook, isType('hook')).forEach(hook => {
-      setExecutableStatus(step.data.value, arg.status, arg.details);
-      step.data.value.e(arg.date);
-    });
-    this.running.endAllSteps();
-  }*/
 
   label(arg: AllureTaskArgs<'label'>) {
     if (this.currentTest) {
@@ -495,6 +470,30 @@ export class AllureReporter3 implements AllureReporter3Api {
     this.executableAttachment(this.currentExecutable, arg);
   }
 
+  suite(arg: AllureTaskArgs<'suite'>) {
+    addGroupLabelByUser(this.running, LabelName.SUITE, arg.name);
+  }
+
+  parentSuite(arg: AllureTaskArgs<'parentSuite'>) {
+    addGroupLabelByUser(this.running, LabelName.PARENT_SUITE, arg.name);
+  }
+
+  subSuite(arg: AllureTaskArgs<'subSuite'>) {
+    addGroupLabelByUser(this.running, LabelName.SUB_SUITE, arg.name);
+  }
+
+  testStatus(arg: AllureTaskArgs<'testStatus'>) {
+    if (this.running.currentTestData) {
+      this.running.currentTestData.testStatusStored = arg;
+    }
+  }
+
+  testDetails(arg: AllureTaskArgs<'testDetails'>) {
+    if (this.running.currentTestData) {
+      this.running.currentTestData.testDetailsStored = arg;
+    }
+  }
+
   private executableAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'attachment'>) {
     if (!exec) {
       log('No current executable - will not attach');
@@ -505,56 +504,26 @@ export class AllureReporter3 implements AllureReporter3Api {
     exec.addAttachment(arg.name, arg.type, file);
   }
 
-  endAll() {
-    this.endAllSteps({ status: UNKNOWN, details: undefined });
-
-    while (this.currentHook) {
-      this.hookEnded({ title: this.running.currentHook?.data.name ?? '', result: Status.BROKEN, details: undefined });
-    }
-
-    while (this.currentGroup) {
+  endAllGroups() {
+    while (this.running.currentSuite !== undefined) {
       this.endGroup();
     }
   }
 
+  endAllHooks() {
+    while (this.running.currentHook !== undefined) {
+      this.hookEnded({ result: Status.BROKEN, details: undefined, title: this.running.currentHook?.data.name ?? '' });
+    }
+  }
+
+  endAll() {
+    this.endAllSteps({ status: UNKNOWN, details: undefined });
+    this.endAllHooks();
+    this.endAllGroups();
+  }
+
   printList() {
     return printTreeWithIndents(this.running.root, t => `${t.name}`);
-  }
-
-  suite(arg: AllureTaskArgs<'suite'>) {
-    if (!this.currentTest) {
-      return;
-    }
-    addGroupLabelByUser(this.labels, LabelName.SUITE, arg.name);
-  }
-
-  parentSuite(arg: AllureTaskArgs<'parentSuite'>) {
-    if (!this.currentTest) {
-      return;
-    }
-
-    addGroupLabelByUser(this.labels, LabelName.PARENT_SUITE, arg.name);
-  }
-
-  subSuite(arg: AllureTaskArgs<'subSuite'>) {
-    if (!this.currentTest) {
-      return;
-    }
-    addGroupLabelByUser(this.labels, LabelName.SUB_SUITE, arg.name);
-  }
-
-  testStatus(arg: AllureTaskArgs<'testStatus'>) {
-    if (!this.currentTest) {
-      return;
-    }
-    this.testStatusStored = arg;
-  }
-
-  testDetails(arg: AllureTaskArgs<'testDetails'>) {
-    if (!this.currentTest) {
-      return;
-    }
-    this.testDetailsStored = arg;
   }
 
   get currentTestAll() {
@@ -618,6 +587,10 @@ export class AllureReporter3 implements AllureReporter3Api {
     }
   }
 
+  allTests(): TestData[] {
+    return getItems(this.running.root, isType('test')).map(t => t.value);
+  }
+
   attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
     // attach auto screenshots for fails
     const { screenshots } = arg;
@@ -633,12 +606,9 @@ export class AllureReporter3 implements AllureReporter3Api {
     screenshots.forEach(x => {
       console.log(x);
 
-      const uuids = getItems(this.running.root, isType('test'))
-        .filter(t => t.value.id === x.testId)
-        .map(t => t.value.uuid && t.value.test.status !== Status.PASSED);
-      // const uuids = allTests
-      //   .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
-      //   .map(t => t.uuid);
+      const uuids = this.allTests()
+        .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.test.status !== Status.PASSED)
+        .map(t => t.uuid);
 
       const alreadyAttached = []; //this.attached.filter(t => t.file === x.path).filter(t => t.testMochaId === x.testId);
 

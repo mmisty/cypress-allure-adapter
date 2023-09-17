@@ -18,7 +18,7 @@ describe('allure-utils', () => {
     root.endTest();
 
     // add group labels for current suite
-    expect(addGroupLabels(root.root, root.currentSuite)).toEqual([
+    expect(addGroupLabels(root)).toEqual([
       {
         name: 'parentSuite',
         value: 'parent',

@@ -1,8 +1,9 @@
-import { AllureTest, ExecutableItem, ExecutableItemWrapper, Status, StatusDetails } from 'allure-js-commons';
+import { ExecutableItem, ExecutableItemWrapper, Status, StatusDetails } from 'allure-js-commons';
 import { GlobalHookC } from './allure-global-hook2';
 import { LabelName, Stage, UNKNOWN } from './allure-types';
-import { DataTree, getAllParents, isType, Tree } from './tree-utils';
+import { getAllParents, isType, SpecTree } from './tree-utils';
 import { writeFile } from 'fs';
+import { uniq } from '@mmisty/cypress-grep/utils/functions';
 
 export type Label = { name: string; value: string };
 
@@ -75,30 +76,46 @@ export function setExecutableStatus(
   }
 }
 
-export const addPathLabel = (currentSpec: Cypress.Spec | undefined): Label[] => {
-  const labels: Label[] = [];
+export const addPathLabel = (run: SpecTree, currentSpec: Cypress.Spec | undefined) => {
+  if (!run.currentTestData) {
+    return;
+  }
 
   if (currentSpec) {
-    const paths = currentSpec.relative?.split('/');
-    labels.push({ name: LabelName.PACKAGE, value: paths.join('.') });
+    const value = currentSpec.relative;
+    // run.currentTestData.test?.addLabel('path', label);
+    run.currentTestData.labels?.push({ name: 'path', value });
   }
-
-  return labels;
 };
 
-export const addGroupLabelByUser = (existingLabels: Label[], label: string, value?: string): void => {
+export const addPackageLabel = (run: SpecTree, currentSpec: Cypress.Spec | undefined): void => {
+  if (!run.currentTestData) {
+    return;
+  }
+
+  if (currentSpec) {
+    const value = currentSpec.relative?.split('/').join('.');
+    run.currentTestData.labels?.push({ name: LabelName.PACKAGE, value });
+  }
+};
+
+export const addGroupLabelByUser = (run: SpecTree, label: string, value?: string): void => {
+  if (!run.currentTestData) {
+    return;
+  }
+
   if (value === undefined) {
-    // remove suite labels
-    existingLabels = existingLabels.filter(t => t.name !== label);
+    // remove labels
+    run.currentTestData.labels = run.currentTestData.labels?.filter(t => t.name !== label);
   } else {
-    existingLabels.push({ name: label, value: value });
+    run.currentTestData.labels?.push({ name: label, value });
   }
 };
 
-export const addGroupLabels = (root: Tree<DataTree>, currentSuite: Tree<DataTree> | undefined): Label[] => {
+export const addGroupLabels = (run: SpecTree): Label[] => {
   const labels: Label[] = [];
 
-  const suites = getAllParents(root, currentSuite, isType('suite')).map(t => t.data.name);
+  const suites = getAllParents(run.root, run.currentSuite, isType('suite')).map(t => t.data.name);
 
   const [parentSuite, suite, subSuite] = suites;
 
@@ -117,26 +134,28 @@ export const addGroupLabels = (root: Tree<DataTree>, currentSuite: Tree<DataTree
   return labels;
 };
 
-export function applyGroupLabels(test: AllureTest | undefined, labels: Label[]) {
-  // apply labels
+// todo unit test
+export function applyLabels(run: SpecTree) {
+  if (!run.currentTest) {
+    return;
+  }
+
+  const labels = run.currentTestData?.labels ?? [];
 
   const applyLabel = (name: string) => {
-    if (!test) {
-      return;
-    }
     const lb = labels.filter(l => l.name == name);
 
     // return last added
     const lastLabel = lb[lb.length - 1];
 
     if (lastLabel) {
-      test.addLabel(lastLabel.name, lastLabel.value ?? 'undif');
+      run.currentTestData?.test.addLabel(lastLabel.name, lastLabel.value ?? 'undef');
     }
   };
 
-  applyLabel(LabelName.PARENT_SUITE);
-  applyLabel(LabelName.SUITE);
-  applyLabel(LabelName.SUB_SUITE);
+  uniq(labels.map(t => t.name)).forEach(name => {
+    applyLabel(name);
+  });
 }
 
 export const setLastStepStatus = (steps: ExecutableItem[], status: Status, details?: StatusDetails) => {

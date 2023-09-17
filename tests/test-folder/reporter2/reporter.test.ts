@@ -1,11 +1,9 @@
-// import { AllureReporter2 } from 'src/plugins/allure-reporter-2';
-
 import { AllureReporter3 } from '../../../src/plugins/allure-reporter-3';
 import { Status } from '../../../src/plugins/allure-types';
 import { existsSync, rmSync } from 'fs';
 import { parseAllureSorted, selectMap } from '../../cy-helper/utils';
 
-describe('suite', () => {
+describe('reporter', () => {
   const allureResults = 'allure-results-reporter2';
   let reporter: AllureReporter3;
 
@@ -43,8 +41,7 @@ describe('suite', () => {
     reporter.startGroup({ title: 'Sub', fullTitle: 'any' });
 
     reporter.endGroup();
-    const d = reporter.printList();
-    expect(d).toEqual(['Hello']); // todo add ended
+    expect(reporter.currentGroup?.name).toEqual('Hello');
   });
 
   it('should start test', () => {
@@ -55,12 +52,7 @@ describe('suite', () => {
     groups.push(reporter.currentGroup?.name);
     reporter.startTest({ title: 'Test', id: '1', fullTitle: 'any' });
     groups.push((reporter.currentTest as any)?.info?.name);
-    const d = reporter.printList();
 
-    expect(
-      // d.map(t => t.data?.value.name ?? (t?.data?.value as any)?.info?.name),
-      d,
-    ).toEqual(['Test', 'Sub', 'Hello']);
     expect(groups).toEqual(['Hello', 'Sub', 'Test']);
   });
 
@@ -71,12 +63,11 @@ describe('suite', () => {
     reporter.endTest({ result: Status.PASSED });
     reporter.endGroup();
     reporter.endGroup();
-    const d1 = reporter.printList();
-    //expect(d1.map(t => t.data?.value.name)).toEqual([]);
-    expect(d1).toEqual([]);
+
+    expect(reporter.currentTest?.name).toEqual(undefined);
   });
 
-  it('start several tests', () => {
+  it('start several tests - check full tests', () => {
     reporter.startGroup({ title: 'PArent', fullTitle: 'any' });
     reporter.startTest({ title: 'Hello 1', id: '1', fullTitle: 'Hello 1' });
     reporter.endTest({ result: Status.PASSED });
@@ -101,10 +92,7 @@ describe('suite', () => {
         'statusDetails',
         'labels',
         'steps',
-      ).map(t => ({
-        ...t,
-        labels: t.labels.map(t => `${t.name}: "${t.value}"`),
-      })),
+      ),
     ).toEqual([
       {
         statusDetails: {},

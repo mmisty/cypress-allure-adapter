@@ -69,11 +69,18 @@ export const mapSteps = <T>(
     return [];
   }
 
-  return steps.map(s => {
-    const obj = map ? map(s) : { name: s.name };
+  return steps
+    .filter(
+      t =>
+        !['Saving code coverage', 'Coverage: Generating report'].some(
+          x => t.name?.indexOf(x) !== -1,
+        ),
+    )
+    .map(s => {
+      const obj = map ? map(s) : { name: s.name };
 
-    return { ...obj, steps: mapSteps(s.steps, map) };
-  });
+      return { ...obj, steps: mapSteps(s.steps, map) };
+    });
 };
 
 // eslint-disable-next-line jest/no-export
@@ -85,12 +92,19 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
       return [];
     }
 
-    return steps.map(s => ({
-      ...s,
-      start: date,
-      stop: date + 11,
-      steps: replaceSteps(s.steps),
-    }));
+    return steps
+      .filter(
+        t =>
+          !['Saving code coverage', 'Coverage: Generating report'].some(
+            x => t.name?.indexOf(x) !== -1,
+          ),
+      )
+      .map(s => ({
+        ...s,
+        start: date,
+        stop: date + 11,
+        steps: replaceSteps(s.steps),
+      }));
   };
 
   return results.map(r => {
@@ -256,14 +270,7 @@ export const createResTest2 = (
     const specPath = `${testsPath}/test_${i}_${Date.now()}.cy.ts`;
     writeFileSync(specPath, content);
     specPaths.push(specPath);
-    const err = new Error('File path');
-    // const st = err.stack?.replace('Error: File path', '').split('\n');
-    // const pathRel = path.relative(process.cwd(), specPath);
-    err.stack = `\tat ${specPath}:1:1\n${err.stack?.replace(
-      'Error: File path',
-      '',
-    )}`.replace(/\n\n/g, '\n');
-    console.log(err);
+    console.log(specPath);
   });
 
   const name = basename(specPaths[0], '.test.ts');
