@@ -15,7 +15,7 @@ import {
   visitHtmlStr,
 } from '../../../cy-helper/test-compose';
 
-describe('test screenshot when fail (several screenshots)', () => {
+describe('test screenshot when fail in before (several screenshots)', () => {
   const res = createResTest2(
     [
       suiteStr('test screenshot', [

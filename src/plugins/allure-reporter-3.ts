@@ -534,10 +534,10 @@ export class AllureReporter3 implements AllureReporter3Api {
   }
 
   get currentTestAll() {
-    const allTests = getItems(this.running.root, isType('test'));
+    const allTests = this.allTests();
 
     if (this.currentTest && allTests[allTests.length - 1]) {
-      return allTests[allTests.length - 1].value;
+      return allTests[allTests.length - 1];
     }
 
     return undefined;
@@ -647,6 +647,17 @@ export class AllureReporter3 implements AllureReporter3Api {
         return;
       }
 */
+
+      /*if (
+        !this.screenshotsTest[this.keyWhenNoTest(x.testId)]?.[x.testAttemptIndex ?? 0] ||
+        this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0].length === 0
+      ) {
+        log('no screenshots');
+        // no screenshots
+        return;
+      }
+      const screenshotsForTest = this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0];
+      const lastScreen = screenshotsForTest[screenshotsForTest.length - 1];*/
       log(`attachScreenshots:${x.path}`);
 
       // const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
