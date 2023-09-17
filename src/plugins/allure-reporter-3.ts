@@ -358,13 +358,20 @@ export class AllureReporter3 implements AllureReporter3Api {
   }
 
   addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
-    this.running.currentTest?.data.value?.descriptionHtml?.push(arg.value);
+    if (!this.running.currentTestData) {
+      return;
+    }
+
+    if (!this.running.currentTestData.descriptionHtml) {
+      this.running.currentTestData.descriptionHtml = [];
+    }
+    this.running.currentTestData.descriptionHtml.push(arg.value);
     this.applyDescriptionHtml();
   }
 
   applyDescriptionHtml() {
-    if (this.currentTest && this.running.currentTest?.data.value?.descriptionHtml) {
-      this.currentTest.descriptionHtml = this.running.currentTest.data.value.descriptionHtml.join('');
+    if (this.currentTest && this.running.currentTestData?.descriptionHtml) {
+      this.currentTest.descriptionHtml = this.running.currentTestData.descriptionHtml.join('');
     }
   }
 

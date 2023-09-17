@@ -1,6 +1,6 @@
 import { createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../lib/common';
+import { extname } from '../../../../src/common';
 
 describe('should have attachments by using cy.allure() interface', () => {
   const res = createResTest2(
