@@ -367,7 +367,7 @@ export class AllureReporter {
     });
   }
 
-  async attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
+  async attachVideoToTests(arg: { path: string }) {
     // this happens after test has already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
