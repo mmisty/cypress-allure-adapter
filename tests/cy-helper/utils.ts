@@ -255,8 +255,6 @@ export const createResTest2 = (
       err = e as Error;
     }
 
-    await delay(2000);
-
     expect(err).toBeUndefined();
   });
 

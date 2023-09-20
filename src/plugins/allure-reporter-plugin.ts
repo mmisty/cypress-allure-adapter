@@ -367,7 +367,7 @@ export class AllureReporter {
     });
   }
 
-  async attachVideoToTests(arg: AllureTaskArgs<'attachVideoToTests'>) {
+  async attachVideoToTests(arg: { path: string }) {
     // this happens after test has already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
@@ -718,6 +718,7 @@ export class AllureReporter {
     }
 
     this.applyGroupLabels();
+    const uid = this.currentTest.uuid;
     this.currentTest.endTest();
 
     this.tests.pop();
@@ -725,6 +726,19 @@ export class AllureReporter {
     this.testStatusStored = undefined;
     this.testDetailsStored = undefined;
     this.labels = [];
+
+    const waitResultWritten = (results: string, file: string) => {
+      const started = Date.now();
+
+      while (!(Date.now() - started > 10000 || existsSync(file))) {
+        // do sync
+      }
+
+      if (!existsSync(file)) {
+        console.error(`${packageLog} Result file doesn't exist: ${file}`);
+      }
+    };
+    waitResultWritten(this.allureResults, `${this.allureResults}/${uid}-result.json`);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
