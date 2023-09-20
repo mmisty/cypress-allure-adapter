@@ -727,29 +727,18 @@ export class AllureReporter {
     this.testDetailsStored = undefined;
     this.labels = [];
 
-    function hasResultOrTimeout(results: string, uid: string, start: number, timeout: number) {
-      if (existsSync(`${results}/${uid}-result.json`)) {
-        return true;
-      }
-
-      if (Date.now() - start > timeout) {
-        return false;
-      }
-    }
-
-    const waitResultWritten = (results: string) => {
+    const waitResultWritten = (results: string, file: string) => {
       const started = Date.now();
 
-      while (!hasResultOrTimeout(results, uid, started, 10000)) {
+      while (!(Date.now() - started > 10000 || existsSync(file))) {
         // do sync
       }
-      const res = !hasResultOrTimeout(results, uid, started, 10000);
 
-      if (!res) {
-        console.error(`${packageLog} Result file doesn't exist: ${results}/${uid}-result.json`);
+      if (!existsSync(file)) {
+        console.error(`${packageLog} Result file doesn't exist: ${file}`);
       }
     };
-    waitResultWritten(this.allureResults);
+    waitResultWritten(this.allureResults, `${this.allureResults}/${uid}-result.json`);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
