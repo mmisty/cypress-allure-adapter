@@ -718,6 +718,7 @@ export class AllureReporter {
     }
 
     this.applyGroupLabels();
+    const uid = this.currentTest.uuid;
     this.currentTest.endTest();
 
     this.tests.pop();
@@ -725,6 +726,30 @@ export class AllureReporter {
     this.testStatusStored = undefined;
     this.testDetailsStored = undefined;
     this.labels = [];
+
+    function hasResultOrTimeout(results, uid, start, timeout) {
+      if (existsSync(`${results}/${uid}-result.json`)) {
+        return true;
+      }
+
+      if (Date.now() - start > timeout) {
+        return false;
+      }
+    }
+
+    const waitResultWritten = results => {
+      const started = Date.now();
+
+      while (!hasResultOrTimeout(results, uid, started, 10000)) {
+        // do sync
+      }
+      const res = !hasResultOrTimeout(results, uid, started, 10000);
+
+      if (!res) {
+        console.error(`${packageLog} Result file doesn't exist: ${results}/${uid}-result.json`);
+      }
+    };
+    waitResultWritten(this.allureResults);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
