@@ -727,7 +727,7 @@ export class AllureReporter {
     this.testDetailsStored = undefined;
     this.labels = [];
 
-    function hasResultOrTimeout(results, uid, start, timeout) {
+    function hasResultOrTimeout(results: string, uid: string, start: number, timeout: number) {
       if (existsSync(`${results}/${uid}-result.json`)) {
         return true;
       }
@@ -737,7 +737,7 @@ export class AllureReporter {
       }
     }
 
-    const waitResultWritten = results => {
+    const waitResultWritten = (results: string) => {
       const started = Date.now();
 
       while (!hasResultOrTimeout(results, uid, started, 10000)) {
