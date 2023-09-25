@@ -65,9 +65,9 @@ export class AllureReporter {
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
   constructor(opts: ReporterOptions) {
-    this.showDuplicateWarn = opts.showDuplicateWarn;
+    this.showDuplicateWarn = opts.showDuplicateWarn ?? false;
     this.allureResults = opts.allureResults;
-    this.allureAddVideoOnPass = opts.allureAddVideoOnPass;
+    this.allureAddVideoOnPass = opts.allureAddVideoOnPass ?? false;
     this.videos = opts.videos;
     this.screenshots = opts.screenshots;
 

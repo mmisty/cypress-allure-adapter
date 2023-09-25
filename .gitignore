@@ -23,8 +23,6 @@
 /js-files-cypress
 /lib
 
-/allure-results
-/allure-results-2
-/allure-results-jest
+/allure-results*
 /allure-report
 /filtered_tests.json

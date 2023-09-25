@@ -7,6 +7,7 @@ module.exports = {
   rules: {
     ...original.rules,
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     'jest/no-standalone-expect': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
     'jest/expect-expect': 'off',

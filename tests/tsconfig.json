@@ -2,12 +2,13 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "skipLibCheck": true,
-    "types": ["node", "jest", "jest-test-each", "cypress"],
-    "baseUrl": "../src",
-    "paths": {
-      "@src": ["./index.ts"],
-      "@src/*": ["./*"]
-    }
+    "noEmit": true,
+    "types": ["node", "jest", "jest-test-each", "cypress"]
+//    "baseUrl": "../src",
+//    "paths": {
+//      "@src": ["./index.ts"],
+//      "@src/*": ["./*"]
+//    }
   },
   "include": ["./", "../jest.setup.ts"],
 }

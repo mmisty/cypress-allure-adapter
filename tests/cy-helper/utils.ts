@@ -1,12 +1,64 @@
+// eslint-disable jest/no-export
 import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
-import { AllureTest } from 'allure-js-parser';
+import { AllureTest, parseAllure } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 
 jest.setTimeout(120000);
+
+// eslint-disable-next-line jest/no-export
+export const sortBy = <T>(fn: (t: AllureTest) => T) => {
+  return (a: AllureTest, b: AllureTest) => {
+    const resa = fn(a);
+    const resb = fn(b);
+
+    if (resa < resb) {
+      return -1;
+    }
+
+    return 1;
+  };
+};
+
+// eslint-disable-next-line jest/no-export
+export const selectItems = <T>(...keys: (keyof T)[]) => {
+  return (t: T) => {
+    const res = {} as any;
+    keys.forEach(k => {
+      res[k] = t[k];
+    });
+
+    // todo only keys from input
+    return res as { [key in keyof AllureTest]: any };
+  };
+};
+
+// eslint-disable-next-line jest/no-export
+export const selectMap = <T>(input: T[], ...keys: (keyof T)[]) => {
+  return input.map(t => {
+    const res = {} as any;
+    keys.forEach(k => {
+      if (k === 'labels') {
+        res[k] = (t[k] as any[]).map(t => `${t.name}: "${t.value}"`);
+
+        return;
+      }
+
+      res[k] = t[k];
+    });
+
+    // todo only keys from input
+    return res as { [key in keyof T]: any };
+  });
+};
+
+// eslint-disable-next-line jest/no-export
+export const parseAllureSorted = (allureResults: string) => {
+  return parseAllure(allureResults).sort(sortBy(a => a.fullName));
+};
 
 // eslint-disable-next-line jest/no-export
 export const mapSteps = <T>(
@@ -17,11 +69,18 @@ export const mapSteps = <T>(
     return [];
   }
 
-  return steps.map(s => {
-    const obj = map ? map(s) : { name: s.name };
+  return steps
+    .filter(
+      t =>
+        !['Saving code coverage', 'Coverage: Generating report'].some(
+          x => t.name?.indexOf(x) !== -1,
+        ),
+    )
+    .map(s => {
+      const obj = map ? map(s) : { name: s.name };
 
-    return { ...obj, steps: mapSteps(s.steps, map) };
-  });
+      return { ...obj, steps: mapSteps(s.steps, map) };
+    });
 };
 
 // eslint-disable-next-line jest/no-export
@@ -33,12 +92,19 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
       return [];
     }
 
-    return steps.map(s => ({
-      ...s,
-      start: date,
-      stop: date + 11,
-      steps: replaceSteps(s.steps),
-    }));
+    return steps
+      .filter(
+        t =>
+          !['Saving code coverage', 'Coverage: Generating report'].some(
+            x => t.name?.indexOf(x) !== -1,
+          ),
+      )
+      .map(s => ({
+        ...s,
+        start: date,
+        stop: date + 11,
+        steps: replaceSteps(s.steps),
+      }));
   };
 
   return results.map(r => {
@@ -204,14 +270,7 @@ export const createResTest2 = (
     const specPath = `${testsPath}/test_${i}_${Date.now()}.cy.ts`;
     writeFileSync(specPath, content);
     specPaths.push(specPath);
-    const err = new Error('File path');
-    // const st = err.stack?.replace('Error: File path', '').split('\n');
-    // const pathRel = path.relative(process.cwd(), specPath);
-    err.stack = `\tat ${specPath}:1:1\n${err.stack?.replace(
-      'Error: File path',
-      '',
-    )}`.replace(/\n\n/g, '\n');
-    console.log(err);
+    console.log(specPath);
   });
 
   const name = basename(specPaths[0], '.test.ts');

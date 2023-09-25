@@ -6,7 +6,8 @@ import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
 import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
-import { configureAllureAdapterPlugins } from '@src/plugins';
+// eslint-disable-next-line no-restricted-imports
+import { configureAllureAdapterPlugins } from '../../src/plugins';
 import { startTestServer } from './test-server';
 import { Server } from 'http';
 
