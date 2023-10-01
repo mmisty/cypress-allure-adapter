@@ -377,7 +377,7 @@ export const handleCyLogEvents = (
 
         Cypress.Allure.startStep(cmdMessage);
 
-        if (log.name !== 'assert' && log.message.length > ARGS_TRIM_AT) {
+        if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
           Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
         }
         Cypress.Allure.endStep(Status.PASSED);

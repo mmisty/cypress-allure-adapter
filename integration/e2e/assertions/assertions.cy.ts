@@ -2,7 +2,6 @@ import { visitHtml } from '../../common/helper';
 
 describe('assertions', () => {
   beforeEach(() => {
-    //visitHtml();
     visitHtml({
       body: `
         <div data-test-id="item">
