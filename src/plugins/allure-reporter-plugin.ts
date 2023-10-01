@@ -264,6 +264,7 @@ export class AllureReporter {
 
     if (title?.indexOf('before each') !== -1 || title?.indexOf('after each') !== -1) {
       this.endStep({ status: this.currentStep?.isAnyStepFailed ? Status.FAILED : Status.PASSED });
+      this.endAllSteps({ status: UNKNOWN });
 
       return;
     }
