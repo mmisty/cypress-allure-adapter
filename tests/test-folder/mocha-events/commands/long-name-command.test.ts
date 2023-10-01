@@ -94,10 +94,17 @@ describe('custom commands', () => {
 
       expect(steps).toEqual([
         {
+          attach: [
+            {
+              name: 'tasklog1 args',
+              sourceContent:
+                '{"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+              type: 'application/json',
+            },
+          ],
           name: 'tasklog1',
           steps: [
             {
-              name: 'task: log',
               attach: [
                 {
                   name: 'task: log args',
@@ -106,22 +113,21 @@ describe('custom commands', () => {
                   type: 'application/json',
                 },
               ],
+              name: 'task: log',
               steps: [
                 {
+                  attach: [
+                    {
+                      name: 'task args',
+                      sourceContent:
+                        'log, {"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+                      type: 'application/json',
+                    },
+                  ],
                   name: 'task',
-                  attach: [],
                   steps: [],
                 },
               ],
-            },
-          ],
-          attach: [
-            {
-              name: 'tasklog1 args',
-              sourceContent:
-                '{"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
-
-              type: 'application/json',
             },
           ],
         },
