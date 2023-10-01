@@ -236,13 +236,11 @@ export const handleCyLogEvents = (
   const ingoreAllCommands = () =>
     [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand'].filter(t => t.trim() !== '');
   const customCommands: string[] = [];
-  const commands: string[] = [];
-  const logCommands: string[] = [];
+  const allLogged: string[] = [];
   const emit = createEmitEvent(runner);
 
   Cypress.Allure.on('test:started', () => {
-    commands.splice(0, commands.length);
-    logCommands.splice(0, logCommands.length);
+    allLogged.splice(0, allLogged.length);
   });
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
@@ -363,19 +361,17 @@ export const handleCyLogEvents = (
     withTry('report log:added', () => {
       const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
       const logName = log.name;
-      const lastCommand = commands[commands.length - 1];
-      const lastLogCommand = logCommands[logCommands.length - 1];
+      const lastAllLoggedCommand = allLogged[allLogged.length - 1];
       // const isEnded = log.end;
 
       // logs are being added for all from command log, need to exclude same items
       if (
-        cmdMessage !== lastCommand &&
-        cmdMessage !== lastLogCommand &&
+        cmdMessage !== lastAllLoggedCommand &&
         !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
         !ingoreAllCommands().includes(logName) &&
         logName !== COMMAND_REQUEST
       ) {
-        logCommands.push(cmdMessage);
+        allLogged.push(cmdMessage);
         debug(`step: ${cmdMessage}`);
 
         Cypress.Allure.startStep(cmdMessage);
@@ -428,7 +424,7 @@ export const handleCyLogEvents = (
     debug(`started: ${cmdMessage}`);
     Cypress.Allure.startStep(cmdMessage);
 
-    commands.push(cmdMessage);
+    allLogged.push(cmdMessage);
 
     withTry('report command:attachment', () => {
       const requestAndLogRequests = allureAttachRequests && name === COMMAND_REQUEST;
@@ -461,8 +457,6 @@ export const handleCyLogEvents = (
     if (!isLogCommand(isLog, name)) {
       return;
     }
-
-    commands.pop();
 
     if (name === COMMAND_REQUEST) {
       withTry('report attach:requests', () => {
