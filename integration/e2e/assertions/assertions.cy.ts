@@ -85,6 +85,12 @@ describe('assertions', () => {
     });
   });
 
+  it('05 repro no assert', () => {
+    cy.qaId('task-card-title').should(subj => {
+      expect((subj as any as JQuery).text(), 'text should %NOT_PLACE% match').match(/Task Card/i);
+    });
+  });
+
   it('01 assertion: should contain', () => {
     cy.window().then(w => {
       cy.get('div').should('contain', 'Some text');

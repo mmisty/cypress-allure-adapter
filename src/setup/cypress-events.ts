@@ -20,7 +20,8 @@ const withTry = (message: string, callback: () => void) => {
 };
 
 const stepMessage = (name: string, args: string | undefined) => {
-  const argsLine = args && args.length > ARGS_TRIM_AT ? '' : args && args.length > 0 ? `: ${args}` : '';
+  const argsLine =
+    args && args.length > ARGS_TRIM_AT && name !== 'assert' ? '' : args && args.length > 0 ? `: ${args}` : '';
 
   return `${name}${argsLine}`;
 };
@@ -376,7 +377,7 @@ export const handleCyLogEvents = (
 
         Cypress.Allure.startStep(cmdMessage);
 
-        if (log.message > ARGS_TRIM_AT) {
+        if (log.name !== 'assert' && log.message.length > ARGS_TRIM_AT) {
           Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
         }
         Cypress.Allure.endStep(Status.PASSED);
