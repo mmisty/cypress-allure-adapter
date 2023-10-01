@@ -2,7 +2,6 @@ import { visitHtml } from '../../common/helper';
 
 describe('assertions', () => {
   beforeEach(() => {
-    //visitHtml();
     visitHtml({
       body: `
         <div data-test-id="item">
@@ -82,6 +81,12 @@ describe('assertions', () => {
   it('assertion: exist as chai function with custom message', () => {
     cy.get('div').should(t => {
       expect(t, 'custom assert').to.exist;
+    });
+  });
+
+  it('05 repro no assert', () => {
+    cy.qaId('task-card-title').should(subj => {
+      expect((subj as any as JQuery).text(), 'text should %NOT_PLACE% match').match(/Task Card/i);
     });
   });
 
