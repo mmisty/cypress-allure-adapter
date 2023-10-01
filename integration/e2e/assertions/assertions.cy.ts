@@ -55,7 +55,7 @@ describe('assertions', () => {
   });
 
   it('test', () => {
-    cy.get('div').should(t => {
+    cy.get('div').should(() => {
       expect(1, ' 1 should eq').eq(1);
     });
   });
