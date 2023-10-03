@@ -1,4 +1,16 @@
 ## Change Log
+### 0.10.7
+  -  [#34] issue - fix for long assertions text missing [PR-36](https://github.com/mmisty/cypress-allure-adapter/pull/36)
+
+### 0.10.6
+  -  [#34] issue - missing assertions [PR-35](https://github.com/mmisty/cypress-allure-adapter/pull/35)
+
+### 0.10.5
+  - [fix] await for result to be written on test ending [PR-33](https://github.com/mmisty/cypress-allure-adapter/pull/33)
+
+### 0.10.4
+  -  fix descrtructuring video when no video results [PR-31](https://github.com/mmisty/cypress-allure-adapter/pull/31)
+
 ### 0.10.3
   - fix engines and support cypress versions > 11
     
