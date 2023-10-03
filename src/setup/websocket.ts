@@ -36,7 +36,7 @@ export type MessageManager = {
 };
 
 export const createMessage = (ws: WebSocket): MessageManager => {
-  let idInterval: NodeJS.Timer;
+  let idInterval: number | NodeJS.Timeout | undefined;
 
   const process = () => {
     const debug = logClient(dbg);
