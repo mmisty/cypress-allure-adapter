@@ -21,6 +21,8 @@ import { packageLog, extname, delay } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 
+const beforeEachHookName = '"before each" hook';
+const afterEachHookName = '"after each" hook';
 const debug = Debug('cypress-allure:reporter');
 
 const log = (...args: unknown[]) => {
@@ -46,6 +48,7 @@ export class AllureReporter {
   private showDuplicateWarn: boolean;
   private allureResults: string;
   private allureAddVideoOnPass: boolean;
+  private allureSkipCommands: string;
   private videos: string;
   private screenshots: string;
   groups: AllureGroup[] = [];
@@ -70,6 +73,7 @@ export class AllureReporter {
     this.allureAddVideoOnPass = opts.allureAddVideoOnPass;
     this.videos = opts.videos;
     this.screenshots = opts.screenshots;
+    this.allureSkipCommands = opts.allureSkipCommands;
 
     log('Created reporter');
     log(opts);
@@ -261,10 +265,36 @@ export class AllureReporter {
 
       return;
     }
+    const isBeforeEachHook = title?.indexOf(beforeEachHookName) !== -1;
+    const isAfterEachHook = title?.indexOf(afterEachHookName) !== -1;
 
-    if (title?.indexOf('before each') !== -1 || title?.indexOf('after each') !== -1) {
+    if (isBeforeEachHook || isAfterEachHook) {
       this.endStep({ status: this.currentStep?.isAnyStepFailed ? Status.FAILED : Status.PASSED });
       this.endAllSteps({ status: UNKNOWN });
+
+      const skipCommands = this.allureSkipCommands.split(',');
+
+      const filterFn = (t: string) =>
+        (t.indexOf(beforeEachHookName) !== -1 && isBeforeEachHook) ||
+        (t.indexOf(afterEachHookName) !== -1 && isAfterEachHook);
+
+      const filterStrictFn = (t: string) =>
+        (t === beforeEachHookName && isBeforeEachHook) || (t === afterEachHookName && isAfterEachHook);
+
+      const hooksSkipCommands = skipCommands.filter(filterFn);
+
+      // exclude only hooks without name
+      if (this.currentTest && hooksSkipCommands.length > 0) {
+        console.log('excluding!!!');
+        this.currentTest.wrappedItem.steps = this.currentTest.wrappedItem.steps.filter(
+          t =>
+            !(
+              (hooksSkipCommands.some(k => k.indexOf('*') !== -1)
+                ? filterFn(`${t.name}`)
+                : filterStrictFn(`${t.name}`)) && t.status === 'passed'
+            ),
+        );
+      }
 
       return;
     }
