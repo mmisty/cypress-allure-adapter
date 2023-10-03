@@ -5,6 +5,8 @@ import {
   AllureTest,
   ExecutableItem,
   ExecutableItemWrapper,
+  FixtureResult,
+  TestResult,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
@@ -22,7 +24,13 @@ import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 
 const beforeEachHookName = '"before each" hook';
+const beforeAllHookName = '"before all" hook';
 const afterEachHookName = '"after each" hook';
+
+const isBeforeEachHook = (ttl: string | undefined) => ttl?.indexOf(beforeEachHookName) !== -1;
+const isAfterEachHook = (ttl: string | undefined) => ttl?.indexOf(afterEachHookName) !== -1;
+const isBeforeAllHook = (ttl: string | undefined) => ttl?.indexOf(beforeAllHookName) !== -1;
+
 const debug = Debug('cypress-allure:reporter');
 
 const log = (...args: unknown[]) => {
@@ -49,6 +57,7 @@ export class AllureReporter {
   private allureResults: string;
   private allureAddVideoOnPass: boolean;
   private allureSkipCommands: string;
+  private allureSkipSteps: RegExp[];
   private videos: string;
   private screenshots: string;
   groups: AllureGroup[] = [];
@@ -74,6 +83,9 @@ export class AllureReporter {
     this.videos = opts.videos;
     this.screenshots = opts.screenshots;
     this.allureSkipCommands = opts.allureSkipCommands;
+    this.allureSkipSteps = opts.allureSkipSteps
+      .split(',')
+      .map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`));
 
     log('Created reporter');
     log(opts);
@@ -174,7 +186,7 @@ export class AllureReporter {
     }
 
     // when before each or after each we create just step inside current test
-    if ((this.currentTest && title.indexOf('before each') !== -1) || title.indexOf('after each') !== -1) {
+    if (this.currentTest && (isBeforeEachHook(title) || isAfterEachHook(title))) {
       log(`${title} will not be added to suite:${hookId} ${title}`);
       // need to end all steps before logging hook - it should be logged as parent
       this.endAllSteps({ status: UNKNOWN });
@@ -183,12 +195,15 @@ export class AllureReporter {
 
       return;
     }
-    const currentHook = title.indexOf('before') !== -1 ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
 
-    currentHook.name = title;
-    currentHook.wrappedItem.start = date ?? Date.now();
-    this.hooks.push({ id: hookId, hook: currentHook });
-    this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+    if (this.allureSkipSteps.every(t => !t.test(title))) {
+      const currentHook = isBeforeAllHook(title) ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+
+      currentHook.name = title;
+      currentHook.wrappedItem.start = date ?? Date.now();
+      this.hooks.push({ id: hookId, hook: currentHook });
+      this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+    }
   }
 
   setExecutableStatus(executable: ExecutableItemWrapper | undefined, res: Status, dtls?: StatusDetails) {
@@ -265,41 +280,16 @@ export class AllureReporter {
 
       return;
     }
-    const isBeforeEachHook = title?.indexOf(beforeEachHookName) !== -1;
-    const isAfterEachHook = title?.indexOf(afterEachHookName) !== -1;
 
-    if (isBeforeEachHook || isAfterEachHook) {
+    if (isBeforeEachHook(title) || isAfterEachHook(title)) {
       this.endStep({ status: this.currentStep?.isAnyStepFailed ? Status.FAILED : Status.PASSED });
       this.endAllSteps({ status: UNKNOWN });
-
-      const skipCommands = this.allureSkipCommands.split(',');
-
-      const filterFn = (t: string) =>
-        (t.indexOf(beforeEachHookName) !== -1 && isBeforeEachHook) ||
-        (t.indexOf(afterEachHookName) !== -1 && isAfterEachHook);
-
-      const filterStrictFn = (t: string) =>
-        (t === beforeEachHookName && isBeforeEachHook) || (t === afterEachHookName && isAfterEachHook);
-
-      const hooksSkipCommands = skipCommands.filter(filterFn);
-
-      // exclude only hooks without name
-      if (this.currentTest && hooksSkipCommands.length > 0) {
-        console.log('excluding!!!');
-        this.currentTest.wrappedItem.steps = this.currentTest.wrappedItem.steps.filter(
-          t =>
-            !(
-              (hooksSkipCommands.some(k => k.indexOf('*') !== -1)
-                ? filterFn(`${t.name}`)
-                : filterStrictFn(`${t.name}`)) && t.status === 'passed'
-            ),
-        );
-      }
 
       return;
     }
 
     if (this.currentHook) {
+      this.filterSteps(this.currentHook.wrappedItem);
       this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.setExecutableStatus(this.currentHook, result, details);
 
@@ -716,6 +706,17 @@ export class AllureReporter {
     applyLabel(LabelName.SUB_SUITE);
   }
 
+  filterSteps(result: FixtureResult | TestResult | undefined) {
+    const skipSteps = this.allureSkipSteps;
+
+    if (this.currentTest && result && result.steps.length > 0) {
+      result.steps = result.steps.filter(t => !skipSteps.some(x => x.test(t.name ?? '')));
+      result.steps.forEach(res => {
+        this.filterSteps(res);
+      });
+    }
+  }
+
   endTest(arg: AllureTaskArgs<'testEnded'>) {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
@@ -737,6 +738,8 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
+    // filter steps here
+    this.filterSteps(this.currentTest.wrappedItem);
 
     this.setExecutableStatus(this.currentTest, result, details);
 

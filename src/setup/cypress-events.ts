@@ -235,7 +235,9 @@ export const handleCyLogEvents = (
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
   const ingoreAllCommands = () =>
-    [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand'].filter(t => t.trim() !== '');
+    [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand']
+      .filter(t => t.trim() !== '')
+      .map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`));
   const customCommands: string[] = [];
   const allLogged: string[] = [];
   const emit = createEmitEvent(runner);
@@ -253,7 +255,7 @@ export const handleCyLogEvents = (
     : true;
 
   const isLogCommand = (isLog: boolean, name: string) => {
-    return isLog && !ingoreAllCommands().includes(name) && !Object.keys(Cypress.Allure).includes(name);
+    return isLog && ingoreAllCommands().every(t => !t.test(name)) && !Object.keys(Cypress.Allure).includes(name);
   };
 
   const wrapCustomCommandsFn = (commands: string[], isExclude: boolean) => {
@@ -288,7 +290,7 @@ export const handleCyLogEvents = (
       if (
         !fnName ||
         typeof fnName !== 'string' ||
-        ingoreAllCommands().includes(fnName) ||
+        ingoreAllCommands().every(t => !t.test(fnName)) ||
         // wrap only specified commands
         (commands.length > 0 && commands.includes(fnName) && isExclude) ||
         (commands.length > 0 && !commands.includes(fnName) && !isExclude)

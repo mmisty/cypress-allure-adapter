@@ -1,6 +1,9 @@
 import { visitHtml } from '../../common/helper';
 
 describe('log-not log commands', () => {
+  before(() => {
+    cy.log('before setup');
+  });
   beforeEach(() => {
     cy.log('hello');
   });

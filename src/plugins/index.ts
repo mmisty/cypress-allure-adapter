@@ -48,6 +48,7 @@ export const configureAllureAdapterPlugins = (
     allureResults: results,
     techAllureResults: watchResultsPath ?? results,
     allureSkipCommands: config.env['allureSkipCommands'] ?? '',
+    allureSkipSteps: config.env['allureSkipSteps'] ?? '',
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
     isTest: config.env['JEST_TEST'] === 'true' || config.env['JEST_TEST'] === true,
