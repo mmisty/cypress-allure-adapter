@@ -18,10 +18,10 @@ import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
-import StatusDetails = Cypress.StatusDetails;
-import { packageLog, extname, delay } from '../common';
+import { delay, extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
+import StatusDetails = Cypress.StatusDetails;
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -200,6 +200,24 @@ export class AllureReporter {
       const currentHook = isBeforeAllHook(title) ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
 
       currentHook.name = title;
+      currentHook.wrappedItem.start = date ?? Date.now();
+      this.hooks.push({ id: hookId, hook: currentHook });
+      this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+    } else {
+      // create but not add to suite for steps to be added there
+      const currentHook = new ExecutableItemWrapper({
+        name: title,
+        uuid: '',
+        historyId: '',
+        links: [],
+        attachments: [],
+        parameters: [],
+        labels: [],
+        steps: [],
+        statusDetails: { message: '', trace: '' },
+        stage: Stage.FINISHED,
+      });
+
       currentHook.wrappedItem.start = date ?? Date.now();
       this.hooks.push({ id: hookId, hook: currentHook });
       this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
