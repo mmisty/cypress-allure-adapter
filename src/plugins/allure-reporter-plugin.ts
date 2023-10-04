@@ -724,7 +724,7 @@ export class AllureReporter {
   filterSteps(result: FixtureResult | TestResult | undefined) {
     const skipSteps = this.allureSkipSteps;
 
-    if (this.currentTest && result && result.steps.length > 0) {
+    if (result && result.steps.length > 0) {
       result.steps = result.steps.filter(t => !skipSteps.some(x => x.test(t.name ?? '')));
       result.steps.forEach(res => {
         this.filterSteps(res);
