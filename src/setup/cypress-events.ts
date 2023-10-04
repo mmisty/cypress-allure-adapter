@@ -234,10 +234,18 @@ export const handleCyLogEvents = (
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
-  const ingoreAllCommands = () =>
-    [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand']
+  const ignoreAllCommands = () => {
+    const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand']
       .filter(t => t.trim() !== '')
-      .map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`));
+      .map(x => new RegExp(`^${x.replace(/\*/g, '.*')}$`));
+
+    return {
+      includes(ttl: string): boolean {
+        return cmds.some(t => t.test(ttl));
+      },
+    };
+  };
+
   const customCommands: string[] = [];
   const allLogged: string[] = [];
   const emit = createEmitEvent(runner);
@@ -255,7 +263,7 @@ export const handleCyLogEvents = (
     : true;
 
   const isLogCommand = (isLog: boolean, name: string) => {
-    return isLog && ingoreAllCommands().every(t => !t.test(name)) && !Object.keys(Cypress.Allure).includes(name);
+    return isLog && !ignoreAllCommands().includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
 
   const wrapCustomCommandsFn = (commands: string[], isExclude: boolean) => {
@@ -290,7 +298,7 @@ export const handleCyLogEvents = (
       if (
         !fnName ||
         typeof fnName !== 'string' ||
-        ingoreAllCommands().every(t => !t.test(fnName)) ||
+        ignoreAllCommands().includes(fnName) ||
         // wrap only specified commands
         (commands.length > 0 && commands.includes(fnName) && isExclude) ||
         (commands.length > 0 && !commands.includes(fnName) && !isExclude)
@@ -371,7 +379,7 @@ export const handleCyLogEvents = (
       if (
         cmdMessage !== lastAllLoggedCommand &&
         !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
-        !ingoreAllCommands().includes(logName) &&
+        !ignoreAllCommands().includes(logName) &&
         logName !== COMMAND_REQUEST
       ) {
         allLogged.push(cmdMessage);

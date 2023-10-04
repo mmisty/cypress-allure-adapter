@@ -1,6 +1,6 @@
 ## Change Log
 ### 0.10.8
-  - [#35] issue - add possibility to skip hooks by env var allureSkipCommands
+  - [#35] issue - add possibility to skip hooks by env var `allureSkipSteps`
 
 ### 0.10.7
   -  [#34] issue - fix for long assertions text missing [PR-36](https://github.com/mmisty/cypress-allure-adapter/pull/36)
