@@ -19,6 +19,7 @@ export type ReporterOptions = {
   videos: string;
   screenshots: string;
   showDuplicateWarn: boolean;
+  allureSkipSteps: string;
   // to test mocha events in jest
   isTest: boolean;
 };

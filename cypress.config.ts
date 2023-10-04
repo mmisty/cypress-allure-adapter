@@ -28,6 +28,7 @@ export default defineConfig({
       allureResults: 'allure-results', // for test results to write
       allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
       allureSkipCommands: '', // separated comma
+      // allureSkipSteps: '"after each" hook*,"before each" hook*,"before all" hook', // separated comma
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
       // allureWrapCustomCommands: '!qaId,!cust',
