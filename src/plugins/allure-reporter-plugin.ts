@@ -6,6 +6,7 @@ import {
   ExecutableItem,
   ExecutableItemWrapper,
   FixtureResult,
+  StatusDetails,
   TestResult,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
@@ -21,7 +22,6 @@ import { AllureTaskArgs, LabelName, Stage, Status, StatusType, UNKNOWN } from '.
 import { delay, extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
-import StatusDetails = Cypress.StatusDetails;
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
