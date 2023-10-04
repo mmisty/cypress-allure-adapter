@@ -56,7 +56,6 @@ export class AllureReporter {
   private showDuplicateWarn: boolean;
   private allureResults: string;
   private allureAddVideoOnPass: boolean;
-  private allureSkipCommands: string;
   private allureSkipSteps: RegExp[];
   private videos: string;
   private screenshots: string;
@@ -82,10 +81,8 @@ export class AllureReporter {
     this.allureAddVideoOnPass = opts.allureAddVideoOnPass;
     this.videos = opts.videos;
     this.screenshots = opts.screenshots;
-    this.allureSkipCommands = opts.allureSkipCommands;
-    this.allureSkipSteps = opts.allureSkipSteps
-      .split(',')
-      .map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`));
+    this.allureSkipSteps =
+      opts.allureSkipSteps?.split(',').map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
 
     log('Created reporter');
     log(opts);
