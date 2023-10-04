@@ -5,7 +5,7 @@ import { mapSteps } from '../../cy-helper/utils';
 import type { ReporterOptions } from '../../../src/plugins/allure';
 
 /**
- * Test for issue that some of steps had unknown status
+ * Test for issue that some steps had unknown status
  * Cause: steps were not ended correctly on testResult event
  */
 describe('reporter', () => {
@@ -60,7 +60,7 @@ describe('reporter', () => {
       },
     });
     reporter.hookStarted({
-      title: "'after each' hook: Test teardown",
+      title: '"after each" hook: Test teardown',
       hookId: 'h1',
     });
     reporter.stepStarted({
@@ -69,7 +69,7 @@ describe('reporter', () => {
     });
     reporter.stepEnded({ status: 'passed' as Status, date: 1691492869574 });
     reporter.hookEnded({
-      title: 'after each hook: Test teardown',
+      title: '"after each" hook: Test teardown',
       result: 'passed' as Status,
     });
 
@@ -104,7 +104,7 @@ describe('reporter', () => {
         ],
       },
       {
-        name: "'after each' hook: Test teardown",
+        name: '"after each" hook: Test teardown',
         status: 'passed',
         steps: [
           {
