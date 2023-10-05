@@ -17,7 +17,6 @@ import path, { basename } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
-import { GlobalHooks } from './allure-global-hook';
 import { AllureTaskArgs, LabelName, Stage, Status, StatusType, UNKNOWN } from './allure-types';
 import { delay, extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
@@ -63,10 +62,12 @@ export class AllureReporter {
   tests: AllureTest[] = [];
   steps: AllureStep[] = [];
   labels: { name: string; value: string }[] = [];
-  globalHooks = new GlobalHooks(this);
 
   // this is variable for global hooks only
   hooks: { id?: string; hook: ExecutableItemWrapper }[] = [];
+  globHooks: { id?: string; hook: ExecutableItemWrapper }[] = [];
+  allGlobHooks: ExecutableItemWrapper[] = [];
+  globHookSteps: AllureStep[] = [];
   allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
@@ -119,6 +120,26 @@ export class AllureReporter {
     return this.hooks[this.hooks.length - 1].hook;
   }
 
+  get currentGlobHook() {
+    if (this.globHooks.length === 0) {
+      return undefined;
+    }
+
+    log('current glob hook');
+
+    return this.globHooks[this.globHooks.length - 1].hook;
+  }
+
+  get currentGlobHookStep() {
+    if (this.globHookSteps.length === 0) {
+      return undefined;
+    }
+
+    log('current glob hook step');
+
+    return this.globHookSteps[this.globHookSteps.length - 1];
+  }
+
   get currentStep() {
     if (this.steps.length === 0) {
       return undefined;
@@ -129,20 +150,42 @@ export class AllureReporter {
   }
 
   get currentExecutable() {
-    return this.currentStep || this.currentHook || this.currentTest;
+    return this.currentStep || this.currentGlobHookStep || this.currentHook || this.currentGlobHook || this.currentTest;
   }
 
   addGlobalHooks() {
     log('>>> add Global Hooks');
 
-    if (this.groups.length > 1 || !this.globalHooks.hasHooks()) {
-      log('not root hooks');
+    this.allGlobHooks.forEach(g => {
+      const getHook = () => {
+        if (isBeforeAllHook(g.wrappedItem.name)) {
+          return this.currentGroup?.addBefore();
+        } else {
+          return this.currentGroup?.addAfter();
+        }
+      };
+      const hk = getHook();
 
-      return;
-    }
-
-    log('add root hooks');
-    this.globalHooks.process();
+      if (hk) {
+        hk.wrappedItem.name = g.wrappedItem.name;
+        hk.wrappedItem.start = g.wrappedItem.start;
+        hk.wrappedItem.stop = g.wrappedItem.stop;
+        hk.wrappedItem.steps = g.wrappedItem.steps;
+        hk.wrappedItem.attachments = g.wrappedItem.attachments;
+        hk.wrappedItem.statusDetails = g.wrappedItem.statusDetails;
+        hk.wrappedItem.status = g.wrappedItem.status;
+        hk.wrappedItem.stage = g.wrappedItem.stage;
+        hk.wrappedItem.parameters = g.wrappedItem.parameters;
+      }
+    });
+    // if (this.groups.length > 1 || !this.globalHooks.hasHooks()) {
+    //   log('not root hooks');
+    //
+    //   return;
+    // }
+    //
+    // log('add root hooks');
+    // this.globalHooks.process();
   }
 
   suiteStarted(arg: AllureTaskArgs<'suiteStarted'>) {
@@ -153,9 +196,9 @@ export class AllureReporter {
     this.groups.push(group);
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
-    if (this.groups.length === 1) {
-      this.addGlobalHooks();
-    }
+    //if (this.groups.length === 1) {
+    this.addGlobalHooks();
+    //}
   }
 
   specStarted(args: AllureTaskArgs<'specStarted'>) {
@@ -173,7 +216,23 @@ export class AllureReporter {
 
     if (!this.currentGroup) {
       log(`no current group - start added hook to storage: ${JSON.stringify(arg)}`);
-      this.globalHooks.start(title, hookId);
+      //this.globalHooks.start(title, hookId);
+      this.globHooks.push({
+        id: hookId,
+        hook: new ExecutableItemWrapper({
+          start: date ?? Date.now(),
+          name: title,
+          uuid: '',
+          historyId: '',
+          links: [],
+          attachments: [],
+          parameters: [],
+          labels: [],
+          steps: [],
+          statusDetails: { message: '', trace: '' },
+          stage: Stage.FINISHED,
+        }),
+      });
 
       return;
     }
@@ -193,6 +252,7 @@ export class AllureReporter {
       return;
     }
 
+    // do not add hook when env var specified with hook title
     if (this.allureSkipSteps.every(t => !t.test(title))) {
       const currentHook = isBeforeAllHook(title) ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
 
@@ -291,7 +351,18 @@ export class AllureReporter {
 
     if (!this.currentGroup) {
       log('no current group - will end hook in storage');
-      this.globalHooks.end(result, details);
+
+      // this.globalHooks.end(result, details);
+      if (this.currentGlobHook) {
+        this.filterSteps(this.currentGlobHook.wrappedItem);
+        this.currentGlobHook.wrappedItem.stop = date ?? Date.now();
+        this.setExecutableStatus(this.currentGlobHook, result, details);
+
+        this.allGlobHooks.push(this.currentGlobHook);
+        this.globHooks.pop();
+
+        return;
+      }
 
       return;
     }
@@ -496,11 +567,6 @@ export class AllureReporter {
   }
 
   endGroup() {
-    // why >= 1?
-    if (this.groups.length >= 1) {
-      this.addGlobalHooks();
-    }
-
     if (this.currentGroup) {
       this.currentGroup?.endGroup();
       this.groups.pop();
@@ -652,7 +718,7 @@ export class AllureReporter {
     if (this.currentSpec?.relative) {
       test.addLabel('path', this.currentSpec.relative);
     }
-    this.globalHooks.processForTest();
+    // this.globalHooks.processForTest();
   }
 
   endTests() {
@@ -793,15 +859,36 @@ export class AllureReporter {
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
     const { name, date } = arg;
 
-    if (!this.currentExecutable || this.globalHooks.currentHook) {
-      log('will start step for global hook');
-      this.globalHooks.startStep(name);
+    if (!this.currentExecutable) {
+      log('will not start step for global hook');
+      // this.globalHooks.startStep(name);
+      //  const hookStep = this.currentGlobHook.startStep(name, date);
+      //  this.globHookSteps.push(hookStep);
+
+      /*{
+        name,
+        start: date ?? Date.now(),
+        stage: Stage.PENDING,
+        attachments: [],
+        statusDetails: { message: '', trace: '' },
+        parameters: [],
+        steps: [],
+      });
+*/
 
       return;
     }
     log('start step for current executable');
     const step = this.currentExecutable.startStep(name, date);
-    this.steps.push(step);
+
+    console.log(this.currentExecutable.wrappedItem.name);
+    console.log(this.currentGlobHook?.wrappedItem.name);
+
+    if (this.currentExecutable.wrappedItem.name === this.currentGlobHook?.wrappedItem.name) {
+      this.globHookSteps.push(step);
+    } else {
+      this.steps.push(step);
+    }
   }
 
   endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
@@ -824,8 +911,7 @@ export class AllureReporter {
     const { status, date, details } = arg;
 
     if (!this.currentExecutable) {
-      log('No current executable, test or hook - will end step for global hook');
-      this.globalHooks.endStep(arg.status, details);
+      log('No current executable, test or hook');
 
       return;
     }
@@ -854,9 +940,8 @@ export class AllureReporter {
   }
 
   private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
-    if (!this.currentExecutable && this.globalHooks.currentHook) {
+    if (!this.currentExecutable) {
       log('No current executable, test or hook - add to global hook');
-      this.globalHooks.attachment(arg.name, arg.file, arg.type);
 
       return;
     }
