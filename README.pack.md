@@ -37,6 +37,7 @@ Example report is here - [Allure Report example](https://mmisty.github.io/cypres
 5. [Troubleshooting](#troubleshooting)
 6. [Credits](#credits)
 6. [Change log](#change-log)
+6. [Support](#support)
 
 ## Installation
 
@@ -315,3 +316,17 @@ Thanks to [@shelex](https://github.com/shelex), without his plugin this plugin w
 ## Change log
 
 [see change log](./CHANGELOG.md)
+
+## Support
+
+Mostly, I develop this plugin during 
+my free time. However, I need your 
+support to take it to the next level. 
+Your donation will directly contribute 
+to the further development of this
+ plugin, allowing me to dedicate more 
+time and resources to enhancing its 
+features, improving user experience, 
+and ensuring its compatibility with the 
+latest versions. Help this plugin to grow 
+by [donating](https://buy.stripe.com/28o2cc56x03LbnieUY).
