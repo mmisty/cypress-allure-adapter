@@ -96,26 +96,6 @@ export const configureAllureAdapterPlugins = (
     url: config.reporterUrl,
   };
 
-  // process.on('message', (message: any) => {
-  //   const [event, , args] = message.args;
-  //   /*console.log('message');
-  //   console.log(message);
-  //   console.log(message.args);*/
-  //
-  //   if (message.event !== 'preprocessor:close') {
-  //     return;
-  //   }
-  //   console.log(message);
-  //   const [spec] = message.args;
-  //   console.log(spec);
-  //   //const [spec, results] = args;
-  //   reporter.suiteStarted({ fullTitle: 'd', title: 'video' });
-  //   reporter.testStarted({ fullTitle: spec, title: spec, id: spec });
-  //   reporter.video({ path: 'd' });
-  //   reporter.testEnded({ result: 'passed' });
-  //   reporter.suiteEnded({});
-  // });
-
   on('after:spec', async (spec, results) => {
     await reporter.afterSpec({ results });
   });

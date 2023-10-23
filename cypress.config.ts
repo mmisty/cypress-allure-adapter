@@ -2,8 +2,7 @@ import { defineConfig } from 'cypress';
 import { setupPlugins } from './integration/plugins';
 
 const cypressFolder = 'integration';
-
-export default defineConfig({
+export const commonConfig: Cypress.ConfigOptions = {
   e2e: {
     specPattern: `${cypressFolder}/e2e/**/*.(cy|test|spec).(j|t)s`,
     supportFile: `${cypressFolder}/support/index.ts`,
@@ -45,4 +44,6 @@ export default defineConfig({
       return config;
     },
   },
-});
+};
+
+export default defineConfig(commonConfig);

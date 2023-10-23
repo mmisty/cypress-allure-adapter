@@ -9,6 +9,8 @@ import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
 import { configureAllureAdapterPlugins } from '@src/plugins';
 import { startTestServer } from './test-server';
 import { Server } from 'http';
+import { addCucumberPreprocessorPlugin } from '@badeball/cypress-cucumber-preprocessor';
+import { EventForwarder } from './events-forwarder';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -25,8 +27,10 @@ const clearJsFiles = () => {
 const isCoverage = (config: PluginConfigOptions) => {
   return process.env[COVERAGE] === 'true' || config.env[COVERAGE] === true;
 };
+const eventForwarder = new EventForwarder();
 
-export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
+export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptions) => {
+  const { on } = eventForwarder;
   clearJsFiles();
   const isCov = isCoverage(config);
 
@@ -43,6 +47,10 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     return browserHandler(browser, opts);
   });
 
+  cyOn('file:preprocessor', preprocessor(isCov, config));
+
+  await addCucumberPreprocessorPlugin(on, config);
+
   const allure = configureAllureAdapterPlugins(on, config);
   on('before:run', details => {
     allure?.writeEnvironmentInfo({
@@ -53,13 +61,14 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
     });
   });
 
-  on('file:preprocessor', preprocessor(isCov));
-
   console.log('CYPRESS ENV:');
   console.log(config.env);
 
   // register grep plugin
-  pluginGrep(on, config);
+  if (config.env['USE_GREP'] === 'true' || config.env['USE_GREP'] === true) {
+    pluginGrep(on, config);
+  }
+
   let server: Server;
 
   on('task', {
@@ -103,6 +112,8 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   on('after:screenshot', details => {
     console.log(`SCREENSHOT: ${details.path}`);
   });
+
+  eventForwarder.forward(cyOn);
 
   // It's IMPORTANT to return the config object
   // with any changed environment variables

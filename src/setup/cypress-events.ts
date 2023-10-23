@@ -364,6 +364,36 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
+  const cucLogs: string[] = [];
+
+  const isGherkin = (logName: string) => {
+    return logName && ['When', 'Given', 'Then'].some(t => logName.startsWith(t));
+  };
+
+  const failed: { name: string; message: string }[] = [];
+  const gherkinLog: { current: string | undefined } = { current: undefined };
+
+  Cypress.on('log:changed', async log => {
+    if (!allureLogCyCommands()) {
+      return;
+    }
+
+    if (log.state !== 'passed') {
+      failed.push({ name: `${log.name}`, message: log.message });
+    }
+
+    if (log.ended === true && isGherkin(log.name)) {
+      const status = failed.length !== 0 ? Status.FAILED : log.state;
+      console.log(`ENDED ${log.name} ${status}`);
+      console.log(log);
+      emit({ task: 'endAllSteps', arg: { status } });
+
+      if (failed.length > 0) {
+        failed.pop();
+      }
+    }
+  });
+
   Cypress.on('log:added', async log => {
     if (!allureLogCyCommands()) {
       return;
@@ -373,6 +403,19 @@ export const handleCyLogEvents = (
       const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
       const logName = log.name;
       const lastAllLoggedCommand = allLogged[allLogged.length - 1];
+
+      if (isGherkin(logName)) {
+        if (gherkinLog.current) {
+          // gherkins step should be parent all the time
+          emit({ task: 'endAllSteps', arg: { status: failed.length !== 0 ? Status.FAILED : Status.PASSED } });
+        }
+        const msg = cmdMessage.replace(/\*\*/g, '');
+        Cypress.Allure.startStep(msg);
+        gherkinLog.current = msg;
+
+        return;
+      }
+
       // const isEnded = log.end;
 
       // logs are being added for all from command log, need to exclude same items

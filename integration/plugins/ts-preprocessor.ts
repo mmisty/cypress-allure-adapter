@@ -1,8 +1,12 @@
 import { TsconfigPathsPlugin } from 'tsconfig-paths-webpack-plugin';
 import path from 'path';
 import type { Configuration } from 'webpack';
+import createBundler from '@bahmutov/cypress-esbuild-preprocessor';
 
-export const preprocessor = (isCoverage: boolean) => {
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const createEsbuildPlugin = require('@badeball/cypress-cucumber-preprocessor/esbuild').createEsbuildPlugin;
+
+export const preprocessor = (isCoverage: boolean, config: Cypress.PluginConfigOptions) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const tsconfigPath = path.resolve(__dirname, '../tsconfig.json');
 
@@ -27,6 +31,14 @@ export const preprocessor = (isCoverage: boolean) => {
       },
     ],
   };
+
+  const cucumberBundler = createBundler({
+    define: {
+      global: 'window',
+    },
+    tsconfig: tsconfigPath,
+    plugins: [createEsbuildPlugin(config)],
+  });
 
   const rules = isCoverage ? [coverageRule, tsRule] : [tsRule];
 
@@ -55,5 +67,5 @@ export const preprocessor = (isCoverage: boolean) => {
     webpackOptions,
   };
 
-  return wp(options);
+  return config.env['cucumber'] === 'true' ? cucumberBundler : wp(options);
 };

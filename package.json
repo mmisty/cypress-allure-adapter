@@ -33,7 +33,9 @@
     "test:cov": "npm run test:jest && npm run test:jest:cy && npm run cov:merge",
     "cy": "cypress",
     "cy:open": "npm run cy -- open",
+    "cy:open:cuc": "npm run cy -- open --config-file cypress.cucumber.config.ts",
     "cy:run": "npm run cy -- run --browser chrome --headless",
+    "cy:run:cuc:grep": "npm run cy:run --  --config-file cypress.cucumber.config.ts",
     "cy:run:grep": "CYPRESS_GREP_RESULTS_FILE='./filtered_tests.json' cy-grep --script 'npm run cy:run'",
     "cy:run:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- run || true",
     "cy:open:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- open",
@@ -74,10 +76,12 @@
     "usePathForSuiteName": "true"
   },
   "devDependencies": {
+    "@badeball/cypress-cucumber-preprocessor": "^18.0.6",
+    "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
     "@cypress/code-coverage": "^3.11.0",
     "@ephesoft/webpack.istanbul.loader": "^2.2.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mmisty/cypress-grep": "^1.6.9",
+    "@mmisty/cypress-grep": "^1.8.0",
     "@types/cors": "^2.8.13",
     "@types/debug": "^4.1.8",
     "@types/express": "^4.17.17",

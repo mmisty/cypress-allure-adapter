@@ -20,9 +20,11 @@ redirectTestLogs({
   isLogCommandDetails: false,
 });
 
-registerCypressGrep({
-  addControlToUI: true,
-});
+if (Cypress.env('USE_GREP') === 'true' || Cypress.env('USE_GREP') === true) {
+  registerCypressGrep({
+    addControlToUI: true,
+  });
+}
 
 setupCoverage();
 
