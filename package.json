@@ -81,7 +81,6 @@
     "@cypress/code-coverage": "^3.11.0",
     "@ephesoft/webpack.istanbul.loader": "^2.2.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mmisty/cypress-grep": "^1.8.0",
     "@types/cors": "^2.8.13",
     "@types/debug": "^4.1.8",
     "@types/express": "^4.17.17",
@@ -117,6 +116,7 @@
     "webpack": "^5.88.2"
   },
   "dependencies": {
+    "@mmisty/cypress-grep": "^1.8.0",
     "allure-js-commons": "^2.7.0",
     "allure-js-parser": "^0.0.7",
     "debug": "^4.3.4",
@@ -124,6 +124,12 @@
     "uuid": "^9.0.0",
     "uuid-by-string": "^4.0.0",
     "ws": "^8.14.0"
+  },
+  "cypress-cucumber-preprocessor": {
+    "stepDefinitions": [
+      "integration/cucumber-steps/**/*.{js,ts}",
+      "integration/cucumber/**/*.{js,ts}"
+    ]
   },
   "engines": {
     "node": ">=16",

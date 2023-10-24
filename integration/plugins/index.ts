@@ -52,6 +52,7 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   await addCucumberPreprocessorPlugin(on, config);
 
   const allure = configureAllureAdapterPlugins(on, config);
+
   on('before:run', details => {
     allure?.writeEnvironmentInfo({
       info: {

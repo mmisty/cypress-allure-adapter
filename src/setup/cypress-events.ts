@@ -364,10 +364,8 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
-  const cucLogs: string[] = [];
-
   const isGherkin = (logName: string) => {
-    return logName && ['When', 'Given', 'Then'].some(t => logName.startsWith(t));
+    return logName && ['When', 'Given', 'Then', 'And'].some(t => logName.startsWith(t));
   };
 
   const failed: { name: string; message: string }[] = [];

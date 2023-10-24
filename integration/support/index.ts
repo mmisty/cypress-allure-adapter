@@ -1,9 +1,10 @@
 import { redirectTestLogs } from 'cypress-redirect-browser-log';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
 import { COVERAGE } from '../common/constants';
-import '@src/support';
+//import '@src/support';
 import { delay } from '@src/common';
 import Chainable = Cypress.Chainable;
+import { allureAdapterSetup } from '@src';
 
 console.log('====SUPPORT INDEX STARTED');
 
@@ -26,6 +27,7 @@ if (Cypress.env('USE_GREP') === 'true' || Cypress.env('USE_GREP') === true) {
   });
 }
 
+allureAdapterSetup();
 setupCoverage();
 
 /**

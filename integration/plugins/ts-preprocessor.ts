@@ -67,5 +67,9 @@ export const preprocessor = (isCoverage: boolean, config: Cypress.PluginConfigOp
     webpackOptions,
   };
 
+  if (config.env['cucumber'] === 'true') {
+    console.log('Will Run cucumber tests');
+  }
+
   return config.env['cucumber'] === 'true' ? cucumberBundler : wp(options);
 };

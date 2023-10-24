@@ -38,8 +38,8 @@ export const commonConfig: Cypress.ConfigOptions = {
       issuePrefix: 'http://jira/*',
     },
 
-    setupNodeEvents(on, config) {
-      setupPlugins(on, config);
+    async setupNodeEvents(on, config) {
+      await setupPlugins(on, config);
 
       return config;
     },
