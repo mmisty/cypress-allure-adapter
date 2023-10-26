@@ -78,9 +78,6 @@ const copyFileToWatch = async (
     if (err) {
       log(err);
     }
-    rm(allureResultFile, () => {
-      // ignore
-    });
   });
 };
 
@@ -302,7 +299,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log(`testEnded ${JSON.stringify(arg)}`);
       const res = allureReporter.endTest(arg);
 
-      if (res && !opts.allureAddVideoOnPass && arg.result === 'passed') {
+      if (res) {
         // move to watch
 
         log('testEnded: will move result to watch folder');
