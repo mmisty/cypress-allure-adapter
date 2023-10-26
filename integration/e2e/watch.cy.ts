@@ -1,4 +1,19 @@
 describe('should move passed test right away @watch', () => {
+  it('test zero', () => {
+    cy.allure().step('hello');
+    cy.allure().startStep('with attach');
+    cy.allure().attachment('out', 'test number', 'text/plain');
+    cy.allure().endStep();
+
+    cy.allure().startStep('with attach other');
+    cy.allure().attachment('out2', 'test number - attach 2', 'text/plain');
+    cy.allure().endStep();
+
+    cy.allure().startStep('may fail');
+    cy.wait(1000);
+    cy.allure().endStep();
+  });
+
   describe('more suite', () => {
     before(() => {
       cy.allure().step('some setup');

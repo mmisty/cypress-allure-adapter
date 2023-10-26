@@ -3,7 +3,6 @@ import {
   AllureRuntime,
   AllureStep,
   AllureTest,
-  Attachment,
   ExecutableItem,
   ExecutableItemWrapper,
   FixtureResult,
@@ -13,19 +12,7 @@ import {
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import {
-  copyFile,
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFile,
-  readFileSync,
-  rm,
-  rmSync,
-  writeFile,
-  writeFileSync,
-} from 'fs';
+import { copyFile, copyFileSync, existsSync, mkdirSync, readFile, readFileSync, writeFile, writeFileSync } from 'fs';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -420,7 +407,7 @@ export class AllureReporter {
    * Attach video to parent suite
    * @param arg {path: string}
    */
-  async attachVideoToTests(arg: { path: string }) {
+  async attachVideoToContainers(arg: { path: string }) {
     // this happens after test has already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
@@ -428,7 +415,7 @@ export class AllureReporter {
     const specname = basename(videoPath, ext);
     log(specname);
 
-    // when video uploads everything is moved already except containers
+    // when video uploads everything is uploaded already(TestOps)  except containers
     const res = parseAllure(this.allureResults);
 
     const tests = res
@@ -526,14 +513,6 @@ export class AllureReporter {
       }
       await delay(100);
     }
-
-    // cleanup - remove moved files
-    const results = glob.sync(`${this.allureResults}/*.*`);
-    results.forEach(r => {
-      rm(r, () => {
-        // ignore
-      });
-    });
   }
 
   endGroup() {
@@ -773,7 +752,7 @@ export class AllureReporter {
     }
   }
 
-  endTest(arg: AllureTaskArgs<'testEnded'>): { test: string; attachments: any[] } | undefined {
+  endTest(arg: AllureTaskArgs<'testEnded'>): void {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
@@ -792,7 +771,7 @@ export class AllureReporter {
     this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
-      return undefined;
+      return;
     }
     // filter steps here
     this.filterSteps(this.currentTest.wrappedItem);
@@ -809,19 +788,6 @@ export class AllureReporter {
 
     this.applyGroupLabels();
     const uid = this.currentTest.uuid;
-
-    const getAllAttach = (res: Attachment[], item: ExecutableItem) => {
-      if (!this.currentTest) {
-        return [];
-      }
-      item.steps.forEach(step => {
-        res.push(...getAllAttach(res, step));
-      });
-
-      return [...res, ...item.attachments];
-    };
-    const resAtt: Attachment[] = [...this.currentTest.wrappedItem.attachments];
-    const attachments = getAllAttach(resAtt, this.currentTest.wrappedItem);
     this.currentTest.endTest();
     this.tests.pop();
     this.descriptionHtml = [];
@@ -841,8 +807,6 @@ export class AllureReporter {
       }
     };
     waitResultWritten(this.allureResults, `${this.allureResults}/${uid}-result.json`);
-
-    return { test: `${this.allureResults}/${uid}-result.json`, attachments };
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
