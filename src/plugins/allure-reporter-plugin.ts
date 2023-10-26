@@ -3,6 +3,7 @@ import {
   AllureRuntime,
   AllureStep,
   AllureTest,
+  Attachment,
   ExecutableItem,
   ExecutableItemWrapper,
   FixtureResult,
@@ -732,7 +733,7 @@ export class AllureReporter {
     }
   }
 
-  endTest(arg: AllureTaskArgs<'testEnded'>) {
+  endTest(arg: AllureTaskArgs<'testEnded'>): { test: string; attachments: any[] } | undefined {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
@@ -751,7 +752,7 @@ export class AllureReporter {
     this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
-      return;
+      return undefined;
     }
     // filter steps here
     this.filterSteps(this.currentTest.wrappedItem);
@@ -768,8 +769,20 @@ export class AllureReporter {
 
     this.applyGroupLabels();
     const uid = this.currentTest.uuid;
-    this.currentTest.endTest();
 
+    const getAllAttach = (res: Attachment[], item: ExecutableItem) => {
+      if (!this.currentTest) {
+        return [];
+      }
+      item.steps.forEach(step => {
+        res.push(...getAllAttach(res, step));
+      });
+
+      return [...res, ...item.attachments];
+    };
+    const resAtt: Attachment[] = [...this.currentTest.wrappedItem.attachments];
+    const attachments = getAllAttach(resAtt, this.currentTest.wrappedItem);
+    this.currentTest.endTest();
     this.tests.pop();
     this.descriptionHtml = [];
     this.testStatusStored = undefined;
@@ -788,6 +801,8 @@ export class AllureReporter {
       }
     };
     waitResultWritten(this.allureResults, `${this.allureResults}/${uid}-result.json`);
+
+    return { test: `${this.allureResults}/${uid}-result.json`, attachments };
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
