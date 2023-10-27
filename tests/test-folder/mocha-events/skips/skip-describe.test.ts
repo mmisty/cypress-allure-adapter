@@ -2,6 +2,7 @@ import {
   covergeAfterAllEvent,
   createResTest2,
   fixResult,
+  fullStepAttachment,
   sortAttachments,
   whenCoverage,
   whenNoCoverage,
@@ -117,35 +118,141 @@ xdescribe('hello suite', () => {
     });
 
     it('check attachments', async () => {
-      expect(sortAttachments(resFixed)).toEqual([
-        [
-          {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
-        [
-          {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
-        [
-          {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
-        [
-          {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
+      expect(
+        fullStepAttachment(resFixed, t => ({ name: t.name, status: t.status })),
+      ).toEqual([
+        {
+          attachments: [],
+          name: 'hello test 1',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_0_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'hello suite',
+            },
+          ],
+          status: 'skipped',
+          steps: [],
+        },
+        {
+          attachments: [],
+          name: 'hello test 2',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_0_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'hello suite',
+            },
+          ],
+          status: 'skipped',
+          steps: [],
+        },
+        {
+          attachments: [],
+          name: 'hello test 3',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_0_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'hello suite',
+            },
+          ],
+          status: 'skipped',
+          steps: [],
+        },
+        {
+          attachments: [],
+          name: 'hello test 4',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_0_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'hello suite',
+            },
+          ],
+          status: 'skipped',
+          steps: [],
+        },
       ]);
     });
 

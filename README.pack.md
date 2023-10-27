@@ -5,7 +5,7 @@
 This is allure adapter for Cypress providing realtime results. 
 It is useful when using Allure TestOps - so you can watch tests execution. It adds tests, steps, suites and screenshots during tests execution.
 
-In the same time you can generate [Allure Report](https://github.com/allure-framework/allure2) from these results and it will have all necessary fields.
+In the same time you can generate [Allure Report](https://github.com/allure-framework/allure2) from these results, and it will have all necessary fields.
 
 Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.com/package/@shelex/cypress-allure-plugin), thank you!
 
@@ -19,6 +19,7 @@ Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.
  - has interface to add additional steps
  - Wraps custom commands into parent step, so report is cleaner
  - has interface to set status message for tests - `cy.allure().testDetails({ message: "This test is skipped because needs to be reviewed" })`
+ - writes test files after each test - so you can watch execution in Allure TestOps
 
 Example report is here - [Allure Report example](https://mmisty.github.io/cypress-allure-adapter-example/)
 
