@@ -1,5 +1,4 @@
 import { redirectTestLogs } from 'cypress-redirect-browser-log';
-import { registerCypressGrep } from '@mmisty/cypress-grep';
 import { COVERAGE } from '../common/constants';
 import '@src/support';
 import { delay } from '@src/common';
@@ -18,10 +17,6 @@ const setupCoverage = () => {
 
 redirectTestLogs({
   isLogCommandDetails: false,
-});
-
-registerCypressGrep({
-  addControlToUI: true,
 });
 
 setupCoverage();

@@ -58,8 +58,6 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   console.log('CYPRESS ENV:');
   console.log(config.env);
 
-  // register grep plugin
-  pluginGrep(on, config);
   let server: Server;
 
   on('task', {
