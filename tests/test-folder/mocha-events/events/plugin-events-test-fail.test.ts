@@ -86,7 +86,25 @@ describe('hello suite', () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [...whenCoverage(...covergeAfterAll)],
+            afters: [
+              ...whenCoverage(...covergeAfterAll),
+              {
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4',
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+                name: 'video',
+                parameters: [],
+                stage: 'finished',
+                start: 1323475200000,
+                status: 'passed',
+                steps: [],
+                stop: 1323475200010,
+              },
+            ],
             befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
