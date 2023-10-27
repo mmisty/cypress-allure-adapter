@@ -22,7 +22,6 @@ describe('reporter', () => {
       allureAddVideoOnPass: false,
       allureSkipSteps: '',
       allureResults: resultsPath,
-      techAllureResults: `${resultsPath}/watch`,
       videos: 'vid',
       screenshots: 'scr',
       showDuplicateWarn: false,

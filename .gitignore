@@ -28,3 +28,4 @@
 /allure-results-jest
 /allure-report
 /filtered_tests.json
+adapter-ctl.sh

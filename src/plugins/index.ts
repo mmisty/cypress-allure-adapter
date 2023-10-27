@@ -33,7 +33,6 @@ export const configureAllureAdapterPlugins = (
   debug('Register plugin');
 
   const results = config.env['allureResults'] ?? 'allure-results';
-  const watchResultsPath = config.env['allureResultsWatchPath'];
 
   const allureAddVideoOnPass =
     config.env['allureAddVideoOnPass'] === true || config.env['allureAddVideoOnPass'] === 'true';
@@ -46,7 +45,6 @@ export const configureAllureAdapterPlugins = (
     showDuplicateWarn,
     allureAddVideoOnPass,
     allureResults: results,
-    techAllureResults: watchResultsPath ?? results,
     allureSkipSteps: config.env['allureSkipSteps'] ?? '',
     screenshots: config.screenshotsFolder || 'no', // todo when false
     videos: config.videosFolder,
@@ -74,11 +72,9 @@ export const configureAllureAdapterPlugins = (
     };
 
     cleanDir(options.allureResults);
-    cleanDir(options.techAllureResults);
 
     try {
       mkdirSync(options.allureResults, { recursive: true });
-      mkdirSync(options.techAllureResults, { recursive: true });
     } catch (err) {
       debug(`Error creating allure-results: ${(err as Error).message}`);
     }

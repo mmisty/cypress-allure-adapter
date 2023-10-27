@@ -109,7 +109,10 @@ describe('hello suite', () => {
     });
 
     it('check attachments', async () => {
-      expect(resFixed.map(t => t.attachments).sort()).toEqual([
+      expect(resFixed.flatMap(t => t.attachments).sort()).toEqual([]);
+      expect(
+        resFixed.map(t => t.parent?.afters?.flatMap(x => x.attachments)).sort(),
+      ).toEqual([
         [
           {
             name: 'test_0_number.cy.ts.mp4',
@@ -195,6 +198,22 @@ describe('hello suite', () => {
                     stop: 1323475200011,
                   },
                 ],
+                stop: 1323475200010,
+              },
+              {
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4',
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+                name: 'video',
+                parameters: [],
+                stage: 'finished',
+                start: 1323475200000,
+                status: 'passed',
+                steps: [],
                 stop: 1323475200010,
               },
             ],

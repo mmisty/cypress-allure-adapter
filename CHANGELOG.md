@@ -1,5 +1,14 @@
 ## Change Log
-### 0.10.8
+### 1.0.0
+ - [TestOps] [BREAKING CHANGE] - videos will be uploaded once for spec and uploaded to an after hook named `video`. 
+This should keep more storage, since video file is one. It will be available in all tests from the spec.<br>
+If you used env var `allureResultsWatchPath` previously from this version it is removed. 
+You need to specify only `allureResults` now and tell testops to watch it.
+
+### 0.12.0
+ - [TestOps] watcher imrovements - realtime results for passed tests
+
+### 0.11.0
   - [#35] issue - add possibility to skip hooks by env var `allureSkipSteps`
 
 ### 0.10.7

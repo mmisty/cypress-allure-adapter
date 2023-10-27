@@ -1,10 +1,11 @@
 import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
-import { AllureTest } from 'allure-js-parser';
+import { AllureTest, getParentsArray } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
+import { AllureHook } from 'allure-js-parser/types';
 
 jest.setTimeout(120000);
 
@@ -68,6 +69,11 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
           steps: replaceSteps(b.steps),
           start: date,
           stop: date + 10,
+          attachments: b.attachments.map(t => ({
+            ...t,
+            name: t.name.replace(/\d{5,}/g, 'number'), // todo check name in one test
+            source: `source${path.extname(t.source)}`,
+          })),
           statusDetails: b.statusDetails?.message
             ? {
                 message: b.statusDetails.message,
@@ -151,10 +157,73 @@ export const createResTest = (
 // eslint-disable-next-line jest/no-export
 export const sortAttachments = (res: AllureTest[]) => {
   return res
-    .map(t => t.attachments.sort((a, b) => (a.name < b.name ? -1 : 1)))
+    .map(t =>
+      t.attachments.sort((a, b) =>
+        a.name && b.name && a.name < b.name ? -1 : 1,
+      ),
+    )
     .sort((a, b) => {
-      return b[0].name < a[0].name ? -1 : 1;
+      return a?.[0].name && b?.[0].name && b[0].name < a[0].name ? -1 : 1;
     });
+};
+
+// eslint-disable-next-line jest/no-export
+export const fullStepAttachment = (
+  res: AllureTest[],
+  mapStep?: (m: ExecutableItem) => any,
+) => {
+  const parents = res
+    .map(x => ({
+      ...x,
+      parent: undefined,
+      parents: getParentsArray(x),
+    }))
+    .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1));
+  const skipItems = ['generatereport', 'coverage'];
+
+  const mapItem = (items: undefined | AllureHook[] | AllureTest[]) => {
+    return (
+      items
+        ?.map(t => ({
+          name: t.name,
+          status: t.status,
+          attachments: t.attachments.sort((z1, z2) =>
+            z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+          ),
+          steps: mapSteps(t.steps, mapStep).filter(x =>
+            skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
+          ),
+        }))
+        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)) ??
+      []
+    );
+  };
+
+  const full = parents.map(t => ({
+    name: t.name,
+    status: t.status,
+    attachments: t.attachments.sort((z1, z2) =>
+      z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+    ),
+    steps: mapSteps(t.steps, mapStep).filter(x =>
+      skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
+    ),
+    parents: t.parents?.map(x => ({
+      suiteName: x.name,
+      befores: mapItem(x.befores)
+        .filter(z =>
+          skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
+        )
+        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)),
+      afters: mapItem(x.afters)
+        .filter(z =>
+          skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
+        )
+        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)),
+    })),
+  }));
+
+  return full;
 };
 
 // eslint-disable-next-line jest/no-export
@@ -221,7 +290,6 @@ export const createResTest2 = (
   const env = {
     allure: 'true',
     allureResults: storeResDir,
-    allureResultsWatchPath: `${storeResDir}/watch`,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
     COVERAGE: `${process.env.COVERAGE === 'true'}`,
@@ -259,7 +327,7 @@ export const createResTest2 = (
   });
 
   return {
-    watch: env.allureResultsWatchPath,
+    watch: env.allureResults,
     specs: specPaths.map(
       t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
     ),

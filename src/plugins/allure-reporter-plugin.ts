@@ -3,7 +3,6 @@ import {
   AllureRuntime,
   AllureStep,
   AllureTest,
-  Attachment,
   ExecutableItem,
   ExecutableItemWrapper,
   FixtureResult,
@@ -404,13 +403,19 @@ export class AllureReporter {
     });
   }
 
-  async attachVideoToTests(arg: { path: string }) {
+  /**
+   * Attach video to parent suite
+   * @param arg {path: string}
+   */
+  async attachVideoToContainers(arg: { path: string }) {
     // this happens after test has already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
     const ext = '.mp4';
     const specname = basename(videoPath, ext);
     log(specname);
+
+    // when video uploads everything is uploaded already(TestOps)  except containers
     const res = parseAllure(this.allureResults);
 
     const tests = res
@@ -419,6 +424,7 @@ export class AllureReporter {
         path: t.labels.find(l => l.name === 'path')?.value,
         id: t.uuid,
         fullName: t.fullName,
+        parent: t.parent,
       }));
 
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
@@ -433,36 +439,49 @@ export class AllureReporter {
       }
 
       testsAttach.forEach(test => {
-        log(`ATTACHING to ${test.id} ${test.path} ${test.fullName}`);
-        const testFile = `${this.allureResults}/${test.id}-result.json`;
+        const containerFile = `${this.allureResults}/${test.parent?.uuid}-container.json`;
+        log(`ATTACHING to container: ${containerFile}`);
 
-        readFile(testFile, (err, contents) => {
+        readFile(containerFile, (err, contents) => {
           if (err) {
+            log(`error reading container: ${err.message}`);
+
             return;
           }
           const testCon = JSON.parse(contents.toString());
           const uuid = randomUUID();
 
-          // todo do not copy same video
-          // currently Allure Testops does not rewrite uploaded results if use same file
-          // const uuid = getUuidByString(contentVideo.toString());
-
           const nameAttAhc = `${uuid}-attachment${ext}`;
           const newPath = path.join(this.allureResults, nameAttAhc);
 
-          if (!testCon.attachments) {
-            testCon.attachments = [];
+          const after = {
+            name: 'video',
+            attachments: [
+              {
+                name: `${specname}${ext}`,
+                type: 'video/mp4',
+                source: nameAttAhc,
+              },
+            ],
+            parameters: [],
+            start: Date.now(),
+            stop: Date.now(),
+            status: 'passed',
+            statusDetails: {},
+            stage: 'finished',
+            steps: [],
+          };
+
+          if (!testCon.afters) {
+            testCon.afters = [after];
+          } else {
+            testCon.afters.push(after);
           }
-          testCon.attachments.push({
-            name: `${specname}${ext}`,
-            type: 'video/mp4',
-            source: nameAttAhc,
-          });
 
           if (existsSync(newPath)) {
             log(`not writing! video file ${newPath} `);
 
-            writeTestFile(testFile, JSON.stringify(testCon), () => {
+            writeTestFile(containerFile, JSON.stringify(testCon), () => {
               doneFiles = doneFiles + 1;
             });
 
@@ -476,8 +495,8 @@ export class AllureReporter {
 
               return;
             }
-            log(`write test file ${testFile} `);
-            writeTestFile(testFile, JSON.stringify(testCon), () => {
+            log(`write test file ${containerFile} `);
+            writeTestFile(containerFile, JSON.stringify(testCon), () => {
               doneFiles = doneFiles + 1;
             });
           });
@@ -733,7 +752,7 @@ export class AllureReporter {
     }
   }
 
-  endTest(arg: AllureTaskArgs<'testEnded'>): { test: string; attachments: any[] } | undefined {
+  endTest(arg: AllureTaskArgs<'testEnded'>): void {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
@@ -752,7 +771,7 @@ export class AllureReporter {
     this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
-      return undefined;
+      return;
     }
     // filter steps here
     this.filterSteps(this.currentTest.wrappedItem);
@@ -769,19 +788,6 @@ export class AllureReporter {
 
     this.applyGroupLabels();
     const uid = this.currentTest.uuid;
-
-    const getAllAttach = (res: Attachment[], item: ExecutableItem) => {
-      if (!this.currentTest) {
-        return [];
-      }
-      item.steps.forEach(step => {
-        res.push(...getAllAttach(res, step));
-      });
-
-      return [...res, ...item.attachments];
-    };
-    const resAtt: Attachment[] = [...this.currentTest.wrappedItem.attachments];
-    const attachments = getAllAttach(resAtt, this.currentTest.wrappedItem);
     this.currentTest.endTest();
     this.tests.pop();
     this.descriptionHtml = [];
@@ -801,8 +807,6 @@ export class AllureReporter {
       }
     };
     waitResultWritten(this.allureResults, `${this.allureResults}/${uid}-result.json`);
-
-    return { test: `${this.allureResults}/${uid}-result.json`, attachments };
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
