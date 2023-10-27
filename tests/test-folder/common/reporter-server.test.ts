@@ -23,6 +23,7 @@ describe.skip('startReporterServer', () => {
     const reporter = allureTasks({
       allureAddVideoOnPass: true,
       allureResults: results,
+      techAllureResults: `${results}/watch`,
       videos: 'reports/screens',
       screenshots: 'reports/screens',
       showDuplicateWarn: true,

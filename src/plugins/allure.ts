@@ -3,7 +3,9 @@ import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { packageLog } from '../common';
-import { dirname } from 'path';
+import { basename, dirname } from 'path';
+import glob from 'fast-glob';
+import { copyFileCp, mkdirSyncWithTry, waitWhileCondition } from './fs-tools';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -14,6 +16,7 @@ const log = (...args: unknown[]) => {
 export type ReporterOptions = {
   allureAddVideoOnPass: boolean;
   allureResults: string;
+  techAllureResults: string;
   videos: string;
   screenshots: string;
   showDuplicateWarn: boolean;
@@ -22,10 +25,36 @@ export type ReporterOptions = {
   isTest: boolean;
 };
 
+const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
+  if (allureResults === allureResultsWatch) {
+    log(`afterSpec allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+
+    return;
+  }
+
+  const results = glob.sync(`${allureResults}/*.*`);
+
+  mkdirSyncWithTry(allureResultsWatch);
+
+  log(`allureResults: ${allureResults}`);
+  log(`allureResultsWatch: ${allureResultsWatch}`);
+
+  let doneFiles = 0;
+
+  results.forEach(res => {
+    const to = `${allureResultsWatch}/${basename(res)}`;
+    copyFileCp(res, to, true, () => {
+      doneFiles = doneFiles + 1;
+    });
+  });
+  await waitWhileCondition(() => doneFiles < results.length);
+};
+
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
   let allureReporter = new AllureReporter(opts);
   const allureResults = opts.allureResults;
+  const allureResultsWatch = opts.techAllureResults;
 
   return {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
@@ -185,7 +214,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     testEnded: async (arg: AllureTaskArgs<'testEnded'>) => {
       log(`testEnded ${JSON.stringify(arg)}`);
-      allureReporter.endTest(arg);
+
+      await allureReporter.endTest(arg);
+
       log('testEnded');
     },
 
@@ -327,7 +358,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         console.error(`${packageLog} No video path in afterSpec result`);
       }
 
-      // await copyResultsToWatchFolder(allureResults, allureResultsWatch);
+      await copyResultsToWatchFolder(allureResults, allureResultsWatch);
       log('afterSpec');
     },
 
