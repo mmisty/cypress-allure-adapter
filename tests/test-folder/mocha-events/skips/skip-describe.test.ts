@@ -3,7 +3,6 @@ import {
   createResTest2,
   fixResult,
   fullStepAttachment,
-  sortAttachments,
   whenCoverage,
   whenNoCoverage,
 } from '../../../cy-helper/utils';

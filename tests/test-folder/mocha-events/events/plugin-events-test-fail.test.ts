@@ -110,7 +110,13 @@ describe('hello suite', () => {
     it('check attachments', async () => {
       expect(fullStepAttachment(resFixed, () => ({}))).toEqual([
         {
-          attachments: [],
+          attachments: [
+            {
+              name: 'hello suite -- hello test (failed).png',
+              source: 'source.png',
+              type: 'image/png',
+            },
+          ],
           name: 'hello test',
           parents: [
             {
@@ -139,7 +145,7 @@ describe('hello suite', () => {
               suiteName: 'hello suite',
             },
           ],
-          status: 'skipped',
+          status: 'failed',
           steps: [],
         },
       ]);

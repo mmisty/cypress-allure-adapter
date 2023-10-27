@@ -86,7 +86,20 @@ describe('hello suite', () => {
           name: 'hello test',
           parents: [
             {
-              afters: [],
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_0_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
               befores: [
                 {
                   attachments: [],
