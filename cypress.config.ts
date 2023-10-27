@@ -26,6 +26,7 @@ export default defineConfig({
       allureAttachRequests: true,
       allureCompactAttachments: 'false',
       allureResults: 'allure-results', // for test results to write
+      allureResultsWatchPath: 'allure-results/watch',
       allureSkipCommands: '', // separated comma
       // allureSkipSteps: '"after each" hook*,"before each" hook*,"before all" hook', // separated comma
       allureAddVideoOnPass: 'true',

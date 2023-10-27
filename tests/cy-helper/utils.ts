@@ -290,6 +290,7 @@ export const createResTest2 = (
   const env = {
     allure: 'true',
     allureResults: storeResDir,
+    allureResultsWatchPath: `${storeResDir}/watch`,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
     COVERAGE: `${process.env.COVERAGE === 'true'}`,
@@ -327,7 +328,7 @@ export const createResTest2 = (
   });
 
   return {
-    watch: env.allureResults,
+    watch: env.allureResultsWatchPath,
     specs: specPaths.map(
       t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
     ),
