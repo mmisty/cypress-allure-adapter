@@ -774,11 +774,19 @@ export class AllureReporter {
       if (!this.currentTest) {
         return [];
       }
-      item.steps.forEach(step => {
-        res.push(...getAllAttach(res, step));
-      });
 
-      return [...res, ...item.attachments];
+      const inner = (steps: ExecutableItem[], accumulatedRes: Attachment[]) => {
+        if (steps.length === 0) {
+          return accumulatedRes;
+        }
+
+        const [first, ...rest] = steps;
+        const newRes = [...accumulatedRes, ...first.attachments];
+
+        return inner(rest, newRes);
+      };
+
+      return inner(item.steps, res);
     };
     const resAtt: Attachment[] = [...this.currentTest.wrappedItem.attachments];
     const attachments = getAllAttach(resAtt, this.currentTest.wrappedItem);
