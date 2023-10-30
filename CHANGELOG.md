@@ -1,4 +1,6 @@
 ## Change Log
+### 0.12.2
+- small local dependancy issue
 ### 0.12.1
 - [TestOps] watcher improvements - realtime results for all tests
 
