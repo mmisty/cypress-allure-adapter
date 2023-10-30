@@ -98,8 +98,8 @@ jobs:
             exit 0
           fi
           
-          # echo "publishing alpha, for other commit message should contain [minor], [major] or [patch]/[fix]"
-          # npm run publish:alpha
-          # git push --tags    
+          echo "publishing alpha, for other commit message should contain [minor], [major] or [patch]/[fix]"
+          npm run publish:alpha
+          git push --tags    
 
 
