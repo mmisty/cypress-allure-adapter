@@ -5,7 +5,6 @@ import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import type { AllureTasks } from './allure-types';
-import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -84,9 +83,6 @@ export const configureAllureAdapterPlugins = (
       debug(`Error creating allure-results: ${(err as Error).message}`);
     }
   }
-
-  // register grep plugin
-  pluginGrep(on, config);
 
   const reporter = allureTasks(options);
   debug('Registered with options:');
