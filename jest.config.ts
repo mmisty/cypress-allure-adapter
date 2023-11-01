@@ -47,6 +47,11 @@ export default {
   transform: {
     '.(ts)$': 'ts-jest',
   },
+  globals: {
+    'ts-jest': {
+      tsConfig: 'tests/tsconfig.json',
+    },
+  },
 
   setupFilesAfterEnv: ['./jest.setup.js'],
 };
