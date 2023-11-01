@@ -4,6 +4,7 @@ import { preprocessor } from './ts-preprocessor';
 import { existsSync, rmdirSync } from 'fs';
 import { resolve } from 'path';
 import { COVERAGE } from '../common/constants';
+import { pluginGrep } from '@mmisty/cypress-grep/plugins';
 import { redirectLogBrowser } from 'cypress-redirect-browser-log/plugins';
 import { configureAllureAdapterPlugins } from '@src/plugins';
 import { startTestServer } from './test-server';
@@ -57,6 +58,8 @@ export const setupPlugins = (on: PluginEvents, config: PluginConfigOptions) => {
   console.log('CYPRESS ENV:');
   console.log(config.env);
 
+  // register grep plugin
+  pluginGrep(on, config);
   let server: Server;
 
   on('task', {
