@@ -2,7 +2,7 @@ import { copyFile, existsSync, mkdirSync, rm, writeFile } from 'fs';
 import Debug from 'debug';
 import { delay, packageLog } from '../common';
 import { Attachment } from 'allure-js-commons';
-import { basename } from 'path';
+import { basename, dirname } from 'path';
 
 const debug = Debug('cypress-allure:fs-tools');
 
@@ -58,8 +58,9 @@ export const waitWhileCondition = async (whileCondition: () => boolean) => {
   }
 };
 
-export const copyAttachments = async (attachments: Attachment[], watchPath: string, allureResults: string) => {
+export const copyAttachments = async (attachments: Attachment[], watchPath: string, allureResultFile: string) => {
   let attachsDone = 0;
+  const allureResults = dirname(allureResultFile);
 
   attachments.forEach(attach => {
     const attachTo = `${watchPath}/${attach.source}`;

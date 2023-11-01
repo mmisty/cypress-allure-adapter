@@ -301,9 +301,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('testParameter');
     },
 
-    endAll: () => {
+    endAll: async () => {
       log('endAll started');
-      allureReporter.endAll();
+      await allureReporter.endAll();
       log('endAll');
     },
 
@@ -340,12 +340,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('attachScreenshots');
     },
 
-    /* attachVideoToTests: async (arg: AllureTaskArgs<'attachVideoToTests'>) => {
-      log(`attachScreenshots ${JSON.stringify(arg)}`);
-      await allureReporter.attachVideoToTests(arg);
-      log('attachVideoToTests');
-    },*/
-
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
 
@@ -361,45 +355,5 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       await copyResultsToWatchFolder(allureResults, allureResultsWatch);
       log('afterSpec');
     },
-
-    /*flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
-      const allFiles = sync(`${allureResults}/*`);
-      debug('FLUSH spec');
-      let doneFiles = 0;
-
-      for (const fl of allFiles) {
-        if (!existsSync(fl)) {
-          doneFiles = doneFiles + 1;
-
-          return;
-        }
-
-        readFile(fl, (err, content) => {
-          if (!err) {
-            writeFile(fl, content, errWrite => {
-              if (errWrite) {
-                debug(`Error writing file: ${errWrite.message}`);
-              } else {
-                debug('done writing');
-                doneFiles++;
-              }
-            });
-          } else {
-            debug(`Error reading file: ${err?.message}`);
-          }
-        });
-      }
-
-      const started = Date.now();
-      const timeout = 10000;
-
-      while (doneFiles < allFiles.length) {
-        if (Date.now() - started >= timeout) {
-          console.error(`Could not flush all files in ${timeout}ms`);
-          break;
-        }
-        await delay(100);
-      }
-    },*/
   };
 };
