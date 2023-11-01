@@ -1,4 +1,7 @@
 ## Change Log
+### 0.12.3
+- [tech] update cypress 13.3.4
+- fix of #59 issue
 ### 0.12.2
 - small local dependancy issue
 ### 0.12.1
