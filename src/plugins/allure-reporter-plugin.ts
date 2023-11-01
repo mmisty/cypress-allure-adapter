@@ -723,23 +723,24 @@ export class AllureReporter {
     this.globalHooks.processForTest();
   }
 
-  endTests() {
-    this.tests.forEach(() => {
-      this.endTest({ result: UNKNOWN, details: undefined });
-    });
+  async endTests() {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    for (const _tst of this.tests) {
+      await this.endTest({ result: UNKNOWN, details: undefined });
+    }
   }
 
-  endGroups() {
-    this.endTests();
+  async endGroups() {
+    await this.endTests();
     this.groups.forEach(() => {
       this.endGroup();
     });
   }
 
-  endAll() {
+  async endAll() {
     this.endAllSteps({ status: UNKNOWN, details: undefined });
     this.endHooks(Status.BROKEN);
-    this.endGroups();
+    await this.endGroups();
   }
 
   addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
