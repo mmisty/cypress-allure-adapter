@@ -88,7 +88,7 @@
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
     "allure-commandline": "^2.24.0",
-    "cypress": "^13.3.3",
+    "cypress": "^13.3.4",
     "cypress-redirect-browser-log": "^1.1.2",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^8.5.0",
