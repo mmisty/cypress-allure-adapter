@@ -113,7 +113,7 @@
     "webpack": "^5.88.2"
   },
   "dependencies": {
-    "@mmisty/cypress-tags": "^1.0.2",
+    "@mmisty/cypress-tags": "^1.0.3",
     "allure-js-commons": "^2.7.0",
     "allure-js-parser": "^0.0.7",
     "debug": "^4.3.4",
