@@ -17,7 +17,9 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [urlOrId, name] = t.info ?? [];
 
         if (!urlOrId) {
-          throw new Error(`${tagNoAt} tag should have id: @${tagNoAt}("idOrUrl")`);
+          console.warn(`${tagNoAt} tag should have id: @${tagNoAt}("idOrUrl"). Tag: ${JSON.stringify(t)}`);
+
+          return;
         }
         Cypress.Allure[tagNoAt](urlOrId, name);
 
@@ -28,7 +30,9 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [urlOrId, name, type] = t.info ?? [];
 
         if (!urlOrId) {
-          throw new Error(`${tagNoAt} tag should have id or url: @${tagNoAt}("idOrUrl")`);
+          console.warn(`${tagNoAt} tag should have id or url: @${tagNoAt}("idOrUrl"). Tag: ${JSON.stringify(t)}`);
+
+          return;
         }
         Cypress.Allure[tagNoAt](urlOrId, name, type as 'issue' | 'tms');
 
@@ -65,7 +69,9 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [singleValue] = t.info ?? [];
 
         if (!singleValue) {
-          throw new Error(`${tagNoAt} tag should have value: @${tagNoAt}("value")`);
+          console.warn(`${tagNoAt} tag should have value: @${tagNoAt}("value"). Tag: ${JSON.stringify(t)}`);
+
+          return;
         }
         Cypress.Allure[tagNoAt](singleValue as Severity);
 
@@ -76,14 +82,20 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [name, value] = t.info ?? [];
 
         if (!name) {
-          throw new Error(`${tagNoAt} tag should have name: @${tagNoAt}("myLabel")`);
+          console.warn(`${tagNoAt} tag should have name: @${tagNoAt}("myLabel"). Tag: ${JSON.stringify(t)}`);
+
+          return;
         }
         Cypress.Allure.label(name, value);
         break;
       }
 
       default: {
-        Cypress.Allure.tag(t.tag);
+        const addTagsEnv = Cypress.env('allureAddTags');
+
+        if (addTagsEnv === undefined || addTagsEnv === 'true' || addTagsEnv === true) {
+          Cypress.Allure.tag(t.tag);
+        }
         break;
       }
     }
