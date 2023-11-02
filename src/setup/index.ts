@@ -1,13 +1,17 @@
 import Debug from 'debug';
+import { registerTags } from '@mmisty/cypress-tags/register';
 import { registerCommands } from '../commands';
 import { registerMochaReporter, registerStubReporter } from './allure-mocha-reporter';
 import { startWsClient } from './websocket';
 import { packageLog } from '../common';
-import '@mmisty/cypress-tags';
+import { processTagsOnTestStart } from './process-tags';
 
 const debug = Debug('cypress-allure:setup');
 
 export const allureAdapterSetup = () => {
+  Cypress.env('cyTagsShowTagsInTitle', Cypress.env('allureShowTagsInTitle'));
+
+  registerTags();
   registerCommands();
 
   const ws = startWsClient();
@@ -21,4 +25,8 @@ export const allureAdapterSetup = () => {
   }
 
   registerMochaReporter(ws);
+
+  Cypress.Allure.on('test:started', test => {
+    processTagsOnTestStart(test);
+  });
 };

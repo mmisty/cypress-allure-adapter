@@ -32,7 +32,7 @@
     "test:jest": "CI=true COVERAGE=true jest --runInBand --coverage --testPathIgnorePatterns=\"tests/test-folder/(mocha-events)|(allure-plugin)\" --reporters=default --reporters=jest-junit",
     "test:cov": "npm run test:jest && npm run test:jest:cy && npm run cov:merge",
     "cy": "cypress",
-    "cy:open": "npm run cy -- open",
+    "cy:open": "npm run cy -- open --e2e",
     "cy:run": "npm run cy -- run --browser chrome --headless",
     "cy:run:grep": "CYPRESS_GREP_RESULTS_FILE='./filtered_tests.json' cy-grep --script 'npm run cy:run'",
     "cy:run:cov": "COVERAGE_REPORT_DIR=reports/coverage-cypress COVERAGE=true npm run cy -- run || true",
@@ -113,7 +113,7 @@
     "webpack": "^5.88.2"
   },
   "dependencies": {
-    "@mmisty/cypress-tags": "^1.0.3",
+    "@mmisty/cypress-tags": "^1.0.9",
     "allure-js-commons": "^2.7.0",
     "allure-js-parser": "^0.0.7",
     "debug": "^4.3.4",
