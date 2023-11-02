@@ -1,11 +1,11 @@
 import { createResTest2, fixResult } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
-describe('should have all hooks and steps inside', () => {
+describe('should have correct synthetic tests creation when fails in test then in hook when retries', () => {
   const res = createResTest2(
     [
       `
-describe('before each fail with retry - first in test then in hook @beforeEachRetry', { retries: 2 }, () => {
+describe('before each fail with retry - first in test then in hook', { retries: 2 }, () => {
   beforeEach('Named hook', function () {
     cy.log('before each');
 
@@ -47,20 +47,25 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
       expect(resFixed.length).toEqual(12);
     });
 
+    it('check tests results', async () => {
+      expect((res.result.res as any)?.totalFailed).toEqual(1);
+      expect((res.result.res as any)?.totalPassed).toEqual(4);
+    });
+
     it('check tests names', async () => {
       expect(resFixed.map(t => t.fullName).sort()).toEqual([
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 01',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 02',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 03',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 04',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 05',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 05',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 05',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 06',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 07',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 08',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 09',
-        'before each fail with retry - first in test then in hook @beforeEachRetry test 10',
+        'before each fail with retry - first in test then in hook test 01',
+        'before each fail with retry - first in test then in hook test 02',
+        'before each fail with retry - first in test then in hook test 03',
+        'before each fail with retry - first in test then in hook test 04',
+        'before each fail with retry - first in test then in hook test 05',
+        'before each fail with retry - first in test then in hook test 05',
+        'before each fail with retry - first in test then in hook test 05',
+        'before each fail with retry - first in test then in hook test 06',
+        'before each fail with retry - first in test then in hook test 07',
+        'before each fail with retry - first in test then in hook test 08',
+        'before each fail with retry - first in test then in hook test 09',
+        'before each fail with retry - first in test then in hook test 10',
       ]);
     });
 
@@ -79,45 +84,45 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
       ).toEqual([
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 01',
+            'before each fail with retry - first in test then in hook test 01',
           name: 'test 01',
           status: 'passed',
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 02',
+            'before each fail with retry - first in test then in hook test 02',
           name: 'test 02',
           status: 'passed',
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 03',
+            'before each fail with retry - first in test then in hook test 03',
           name: 'test 03',
           status: 'passed',
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 04',
+            'before each fail with retry - first in test then in hook test 04',
           name: 'test 04',
           status: 'passed',
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 05',
+            'before each fail with retry - first in test then in hook test 05',
           message: 'Fail in test',
           name: 'test 05',
           status: 'failed',
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 05',
+            'before each fail with retry - first in test then in hook test 05',
           message: 'Fail in test',
           name: 'test 05',
           status: 'failed',
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 05',
+            'before each fail with retry - first in test then in hook test 05',
           message:
             'Fail in hook\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `before each fail with retry...`',
           name: 'test 05',
@@ -125,7 +130,7 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 06',
+            'before each fail with retry - first in test then in hook test 06',
           message:
             'Fail in hook\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `before each fail with retry...`',
           name: 'test 06',
@@ -133,7 +138,7 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 07',
+            'before each fail with retry - first in test then in hook test 07',
           message:
             'Fail in hook\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `before each fail with retry...`',
           name: 'test 07',
@@ -141,7 +146,7 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 08',
+            'before each fail with retry - first in test then in hook test 08',
           message:
             'Fail in hook\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `before each fail with retry...`',
           name: 'test 08',
@@ -149,7 +154,7 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 09',
+            'before each fail with retry - first in test then in hook test 09',
           message:
             'Fail in hook\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `before each fail with retry...`',
           name: 'test 09',
@@ -157,7 +162,7 @@ describe('before each fail with retry - first in test then in hook @beforeEachRe
         },
         {
           fullName:
-            'before each fail with retry - first in test then in hook @beforeEachRetry test 10',
+            'before each fail with retry - first in test then in hook test 10',
           message:
             'Fail in hook\n\nBecause this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `before each fail with retry...`',
           name: 'test 10',

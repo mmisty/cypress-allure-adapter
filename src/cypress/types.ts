@@ -244,6 +244,7 @@ declare namespace Cypress {
      * Adds link with type tms or issue
      * @param url = full url
      * @param name = display text for URL in report
+     * @param type = type of link, optional
      * @example
      *  cy.allure().link('http://my.jira.com/ABD-123', 'ABD-123 description', 'issue');
      *  cy.allure().link('http://my.jira.com/ABD-123', 'ABD-123 description', 'tms');

@@ -31,7 +31,7 @@ export default defineConfig({
       // allureSkipSteps: '"after each" hook*,"before each" hook*,"before all" hook', // separated comma
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
-      // allureAddGrepUI: 'true',
+      allureShowTagsInTitle: false,
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
       // allureLogCyCommands: 'false',

@@ -42,15 +42,14 @@ export default {
     '!**/tests/test-folder/allure-plugin/**/?(*.)+(spec|test).[tj]s?(x)',
     '!**/lib/**/*.*',
   ],
-
-  // A map from regular expressions to paths to transformers
-  transform: {
-    '.(ts)$': 'ts-jest',
-  },
   globals: {
     'ts-jest': {
       tsConfig: 'tests/tsconfig.json',
     },
+  },
+  // A map from regular expressions to paths to transformers
+  transform: {
+    '.(ts)$': 'ts-jest',
   },
 
   setupFilesAfterEnv: ['./jest.setup.js'],
