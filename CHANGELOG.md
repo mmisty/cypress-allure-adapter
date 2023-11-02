@@ -1,4 +1,12 @@
 ## Change Log
+### 0.12.5
+- special tags integration - can use `@issue("ABC-123")`(and other meta tags like parentSuite, suite etc)
+in title or in configuration object like
+  ```javascript
+  it("test", { tags: ['@issue("ABC-123")'] }, () => {
+   // ...
+  });
+  ```
 ### 0.12.3
 - [tech] update cypress 13.3.4
 - fix of #59 issue
