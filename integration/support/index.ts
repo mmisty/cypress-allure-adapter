@@ -1,10 +1,9 @@
 import { redirectTestLogs } from 'cypress-redirect-browser-log';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
 import { COVERAGE } from '../common/constants';
-//import '@src/support';
+import { allureAdapterSetup } from '@src';
 import { delay } from '@src/common';
 import Chainable = Cypress.Chainable;
-import { allureAdapterSetup } from '@src';
 
 console.log('====SUPPORT INDEX STARTED');
 
@@ -16,9 +15,6 @@ const setupCoverage = () => {
     console.log('COVERAGE NOT ENABLED IN BROWSER');
   }
 };
-
-// todo
-// Cypress.env('cyTagsShowTagsInTitle', false);
 
 redirectTestLogs({
   isLogCommandDetails: false,

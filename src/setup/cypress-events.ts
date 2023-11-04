@@ -382,8 +382,6 @@ export const handleCyLogEvents = (
 
     if (log.ended === true && isGherkin(log.name)) {
       const status = failed.length !== 0 ? Status.FAILED : log.state;
-      console.log(`ENDED ${log.name} ${status}`);
-      console.log(log);
       emit({ task: 'endAllSteps', arg: { status } });
 
       if (failed.length > 0) {
