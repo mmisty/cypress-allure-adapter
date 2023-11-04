@@ -17,6 +17,9 @@ const setupCoverage = () => {
   }
 };
 
+// todo
+// Cypress.env('cyTagsShowTagsInTitle', false);
+
 redirectTestLogs({
   isLogCommandDetails: false,
 });

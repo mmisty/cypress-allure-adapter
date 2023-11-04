@@ -6,6 +6,7 @@ import {
   covergeBeforeAll,
   createResTest2,
   fixResult,
+  fullStepAttachment,
   whenCoverage,
   whenNoCoverage,
 } from '../../../cy-helper/utils';
@@ -85,7 +86,25 @@ describe('hello suite', () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [...whenCoverage(...covergeAfterAll)],
+            afters: [
+              ...whenCoverage(...covergeAfterAll),
+              {
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4',
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+                name: 'video',
+                parameters: [],
+                stage: 'finished',
+                start: 1323475200000,
+                status: 'passed',
+                steps: [],
+                stop: 1323475200010,
+              },
+            ],
             befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
@@ -107,19 +126,46 @@ describe('hello suite', () => {
     });
 
     it('check attachments', async () => {
-      expect(resFixed.map(t => t.attachments).sort()).toEqual([
-        [
-          {
-            name: 'hello suite -- hello test (failed).png',
-            source: 'source.png',
-            type: 'image/png',
-          },
-          {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
-        ],
+      expect(fullStepAttachment(resFixed, () => ({}))).toEqual([
+        {
+          attachments: [
+            {
+              name: 'hello suite -- hello test (failed).png',
+              source: 'source.png',
+              type: 'image/png',
+            },
+          ],
+          name: 'hello test',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_0_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'hello suite',
+            },
+          ],
+          status: 'failed',
+          steps: [],
+        },
       ]);
     });
 

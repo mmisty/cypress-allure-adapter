@@ -1,5 +1,5 @@
 import { Suite } from 'mocha';
-import { parseInlineTags, parseTags, tag } from '@mmisty/cypress-grep/utils/tags';
+import { parseInlineTags, tag } from '@mmisty/cypress-grep/utils/tags';
 
 export const addGherkin = () => {
   const org = describe;

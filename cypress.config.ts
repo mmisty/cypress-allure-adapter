@@ -25,11 +25,12 @@ export const commonConfig: Cypress.ConfigOptions = {
       allureAttachRequests: true,
       allureCompactAttachments: 'false',
       allureResults: 'allure-results', // for test results to write
-      allureResultsWatchPath: 'allure-results/watch', // for test ops to watch
+      allureResultsWatchPath: 'allure-results/watch',
       allureSkipCommands: '', // separated comma
       // allureSkipSteps: '"after each" hook*,"before each" hook*,"before all" hook', // separated comma
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
+      allureShowTagsInTitle: false,
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
       // allureLogCyCommands: 'false',

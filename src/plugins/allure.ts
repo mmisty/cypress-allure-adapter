@@ -1,10 +1,11 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFileSync, copyFile, existsSync, mkdirSync, readFileSync, rm, rmSync, writeFileSync } from 'fs';
-import { delay, packageLog } from '../common';
-import glob from 'fast-glob';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { packageLog } from '../common';
 import { basename, dirname } from 'path';
+import glob from 'fast-glob';
+import { copyFileCp, mkdirSyncWithTry, waitWhileCondition } from './fs-tools';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -33,47 +34,20 @@ const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatc
 
   const results = glob.sync(`${allureResults}/*.*`);
 
-  if (!existsSync(allureResultsWatch)) {
-    const mkdirSyncWithTry = (dir: string) => {
-      for (let i = 0; i < 5; i++) {
-        try {
-          mkdirSync(dir);
+  mkdirSyncWithTry(allureResultsWatch);
 
-          return;
-        } catch (err) {
-          // ignore
-        }
-      }
-    };
-    mkdirSyncWithTry(allureResultsWatch);
-  }
   log(`allureResults: ${allureResults}`);
   log(`allureResultsWatch: ${allureResultsWatch}`);
+
   let doneFiles = 0;
-  const started = Date.now();
-  const timeout = 10000;
 
   results.forEach(res => {
     const to = `${allureResultsWatch}/${basename(res)}`;
-    log(`copy file ${res} to ${to}`);
-    copyFile(res, to, err => {
-      if (err) {
-        log(err);
-      }
-      rm(res, () => {
-        // ignore
-      });
+    copyFileCp(res, to, true, () => {
       doneFiles = doneFiles + 1;
     });
   });
-
-  while (doneFiles < results.length) {
-    if (Date.now() - started >= timeout) {
-      console.error(`${packageLog} Could not write all attachments in ${timeout}ms`);
-      break;
-    }
-    await delay(100);
-  }
+  await waitWhileCondition(() => doneFiles < results.length);
 };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
@@ -246,7 +220,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     testEnded: async (arg: AllureTaskArgs<'testEnded'>) => {
       log(`testEnded ${JSON.stringify(arg)}`);
-      allureReporter.endTest(arg);
+
+      await allureReporter.endTest(arg);
+
       log('testEnded');
     },
 
@@ -331,9 +307,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('testParameter');
     },
 
-    endAll: () => {
+    endAll: async () => {
       log('endAll started');
-      allureReporter.endAll();
+      await allureReporter.endAll();
       log('endAll');
     },
 
@@ -370,12 +346,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('attachScreenshots');
     },
 
-    /* attachVideoToTests: async (arg: AllureTaskArgs<'attachVideoToTests'>) => {
-      log(`attachScreenshots ${JSON.stringify(arg)}`);
-      await allureReporter.attachVideoToTests(arg);
-      log('attachVideoToTests');
-    },*/
-
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
 
@@ -383,7 +353,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         const { video } = arg.results ?? {};
         log(`afterSpec video path: ${video}`);
 
-        await allureReporter.attachVideoToTests({ path: video ?? '' });
+        await allureReporter.attachVideoToContainers({ path: video ?? '' });
       } else {
         console.error(`${packageLog} No video path in afterSpec result`);
       }
@@ -391,45 +361,5 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       await copyResultsToWatchFolder(allureResults, allureResultsWatch);
       log('afterSpec');
     },
-
-    /*flushWatcher: async (_arg: AllureTaskArgs<'flushWatcher'>) => {
-      const allFiles = sync(`${allureResults}/*`);
-      debug('FLUSH spec');
-      let doneFiles = 0;
-
-      for (const fl of allFiles) {
-        if (!existsSync(fl)) {
-          doneFiles = doneFiles + 1;
-
-          return;
-        }
-
-        readFile(fl, (err, content) => {
-          if (!err) {
-            writeFile(fl, content, errWrite => {
-              if (errWrite) {
-                debug(`Error writing file: ${errWrite.message}`);
-              } else {
-                debug('done writing');
-                doneFiles++;
-              }
-            });
-          } else {
-            debug(`Error reading file: ${err?.message}`);
-          }
-        });
-      }
-
-      const started = Date.now();
-      const timeout = 10000;
-
-      while (doneFiles < allFiles.length) {
-        if (Date.now() - started >= timeout) {
-          console.error(`Could not flush all files in ${timeout}ms`);
-          break;
-        }
-        await delay(100);
-      }
-    },*/
   };
 };

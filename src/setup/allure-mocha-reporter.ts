@@ -193,14 +193,28 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
   });
 };
 
+/**
+ * Will create synthetic tests that were not run for allure report with unknown status
+ * @param runner
+ * @param test - hook that failed
+ */
 const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
+  let failedIndex = 0;
+  let found = false;
+
   test.parent?.eachTest(ts => {
     ts.err = test.err;
-
+    // test.title is hook title like ""before each" hook: Named hook for "test 05""
+    const startFrom = test.title.indexOf(ts.title);
     index++;
 
-    if (index !== 1 && ts) {
+    if (!found && startFrom !== -1) {
+      found = true;
+      failedIndex = index;
+    }
+
+    if (found && index > failedIndex) {
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
       runner.emit(CUSTOM_EVENTS.TEST_END, ts);

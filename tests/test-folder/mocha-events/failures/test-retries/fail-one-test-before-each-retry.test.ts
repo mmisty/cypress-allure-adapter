@@ -105,7 +105,25 @@ describe('hello suite', { retries: 1 }, () => {
       expect(resFixed.map(t => getParentsArray(t))).toEqual([
         [
           {
-            afters: [...whenCoverage(...covergeAfterAll)],
+            afters: [
+              ...whenCoverage(...covergeAfterAll),
+              {
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4',
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+                name: 'video',
+                parameters: [],
+                stage: 'finished',
+                start: 1323475200000,
+                status: 'passed',
+                steps: [],
+                stop: 1323475200010,
+              },
+            ],
             befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
@@ -113,7 +131,25 @@ describe('hello suite', { retries: 1 }, () => {
         ],
         [
           {
-            afters: [...whenCoverage(...covergeAfterAll)],
+            afters: [
+              ...whenCoverage(...covergeAfterAll),
+              {
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4',
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+                name: 'video',
+                parameters: [],
+                stage: 'finished',
+                start: 1323475200000,
+                status: 'passed',
+                steps: [],
+                stop: 1323475200010,
+              },
+            ],
             befores: [...whenCoverage(...covergeBeforeAll)],
             name: 'hello suite',
             uuid: 'no',
@@ -144,11 +180,6 @@ describe('hello suite', { retries: 1 }, () => {
             source: 'source.png',
             type: 'image/png',
           },
-          {
-            name: 'test_0_number.cy.ts.mp4',
-            source: 'source.mp4',
-            type: 'video/mp4',
-          },
         ],
         [
           {
@@ -156,6 +187,20 @@ describe('hello suite', { retries: 1 }, () => {
             source: 'source.png',
             type: 'image/png',
           },
+        ],
+      ]);
+
+      expect(
+        resFixed.map(t => t.parent?.afters?.flatMap(t => t.attachments)).sort(),
+      ).toEqual([
+        [
+          {
+            name: 'test_0_number.cy.ts.mp4',
+            source: 'source.mp4',
+            type: 'video/mp4',
+          },
+        ],
+        [
           {
             name: 'test_0_number.cy.ts.mp4',
             source: 'source.mp4',

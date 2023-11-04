@@ -1,5 +1,24 @@
 ## Change Log
-### 0.10.8
+### 0.12.5
+- special tags integration - can use `@issue("ABC-123")`(and other meta tags like parentSuite, suite etc)
+in title or in configuration object like
+  ```javascript
+  it("test", { tags: ['@issue("ABC-123")'] }, () => {
+   // ...
+  });
+  ```
+### 0.12.3
+- [tech] update cypress 13.3.4
+- fix of #59 issue
+### 0.12.2
+- small local dependancy issue
+### 0.12.1
+- [TestOps] watcher improvements - realtime results for all tests
+
+### 0.12.0
+ - [TestOps] watcher improvements - realtime results for passed tests
+
+### 0.11.0
   - [#35] issue - add possibility to skip hooks by env var `allureSkipSteps`
 
 ### 0.10.7

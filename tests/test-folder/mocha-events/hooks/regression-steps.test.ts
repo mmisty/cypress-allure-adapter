@@ -133,7 +133,10 @@ describe('hooks test - failed global hook step', () => {
     });
 
     it('check attachments', async () => {
-      expect(resFixed.map(t => t.attachments).sort()).toEqual([
+      expect(resFixed.flatMap(t => t.attachments).sort()).toEqual([]);
+      expect(
+        resFixed.map(t => t.parent?.afters?.flatMap(x => x.attachments)).sort(),
+      ).toEqual([
         [
           {
             name: 'test_0_number.cy.ts.mp4',
@@ -292,6 +295,7 @@ describe('hooks test - failed global hook step', () => {
               steps: [],
             },
           ],
+          [],
         ],
       ]);
     });

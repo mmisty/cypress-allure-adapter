@@ -17,7 +17,7 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '18.12.0'
         registry-url: 'https://registry.npmjs.org'
 
     - uses: volta-cli/action@v4
@@ -98,8 +98,8 @@ jobs:
             exit 0
           fi
           
-          # echo "publishing alpha, for other commit message should contain [minor], [major] or [patch]/[fix]"
-          # npm run publish:alpha
-          # git push --tags    
+          echo "publishing alpha, for other commit message should contain [minor], [major] or [patch]/[fix]"
+          npm run publish:alpha
+          git push --tags    
 
 

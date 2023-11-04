@@ -34,3 +34,5 @@
 # grep
 spec_pattern*.json
 filter*.json
+
+adapter-ctl.sh
