@@ -13,6 +13,7 @@
 /integration/downloads
 /integration/screenshots
 /integration/e2e/temp/
+/integration/cucumber/temp/
 
 # coverage and test reports
 /reports
@@ -28,4 +29,10 @@
 /allure-results-jest
 /allure-report
 /filtered_tests.json
+
+
+# grep
+spec_pattern*.json
+filter*.json
+
 adapter-ctl.sh

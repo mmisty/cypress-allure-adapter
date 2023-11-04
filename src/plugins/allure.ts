@@ -119,6 +119,12 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('stepEnded');
     },
 
+    endAllSteps: (arg: AllureTaskArgs<'endAllSteps'>) => {
+      log(`endAllSteps ${JSON.stringify(arg)}`);
+      allureReporter.endAllSteps(arg);
+      log('endAllSteps');
+    },
+
     suiteEnded: (arg: AllureTaskArgs<'suiteEnded'>) => {
       log(`suiteEnded ${JSON.stringify(arg)}`);
       allureReporter.endGroup();

@@ -1,7 +1,7 @@
 import { redirectTestLogs } from 'cypress-redirect-browser-log';
 import { registerCypressGrep } from '@mmisty/cypress-grep';
 import { COVERAGE } from '../common/constants';
-import '@src/support';
+import { allureAdapterSetup } from '@src';
 import { delay } from '@src/common';
 import Chainable = Cypress.Chainable;
 
@@ -16,9 +16,6 @@ const setupCoverage = () => {
   }
 };
 
-// todo
-// Cypress.env('cyTagsShowTagsInTitle', false);
-
 redirectTestLogs({
   isLogCommandDetails: false,
 });
@@ -27,6 +24,7 @@ registerCypressGrep({
   addControlToUI: true,
 });
 
+allureAdapterSetup();
 setupCoverage();
 
 /**

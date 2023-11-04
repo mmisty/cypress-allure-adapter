@@ -2,8 +2,7 @@ import { defineConfig } from 'cypress';
 import { setupPlugins } from './integration/plugins';
 
 const cypressFolder = 'integration';
-
-export default defineConfig({
+export const commonConfig: Cypress.ConfigOptions = {
   e2e: {
     specPattern: `${cypressFolder}/e2e/**/*.(cy|test|spec).(j|t)s`,
     supportFile: `${cypressFolder}/support/index.ts`,
@@ -32,6 +31,7 @@ export default defineConfig({
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
       allureShowTagsInTitle: false,
+      allureAddNonSpecialTags: 'true',
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
       // allureLogCyCommands: 'false',
@@ -40,10 +40,12 @@ export default defineConfig({
       issuePrefix: 'http://jira/*',
     },
 
-    setupNodeEvents(on, config) {
-      setupPlugins(on, config);
+    async setupNodeEvents(on, config) {
+      await setupPlugins(on, config);
 
       return config;
     },
   },
-});
+};
+
+export default defineConfig(commonConfig);
