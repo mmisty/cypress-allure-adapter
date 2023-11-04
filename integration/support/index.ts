@@ -24,11 +24,9 @@ redirectTestLogs({
   isLogCommandDetails: false,
 });
 
-if (Cypress.env('USE_GREP') === 'true' || Cypress.env('USE_GREP') === true) {
-  registerCypressGrep({
-    addControlToUI: true,
-  });
-}
+registerCypressGrep({
+  addControlToUI: true,
+});
 
 allureAdapterSetup();
 setupCoverage();

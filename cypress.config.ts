@@ -31,6 +31,7 @@ export const commonConfig: Cypress.ConfigOptions = {
       allureAddVideoOnPass: 'true',
       allureShowDuplicateWarn: 'true',
       allureShowTagsInTitle: false,
+      allureAddNonSpecialTags: 'true',
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
       // allureLogCyCommands: 'false',

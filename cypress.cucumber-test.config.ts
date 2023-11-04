@@ -10,7 +10,6 @@ export default defineConfig({
       allure: true,
       ...(commonConfig.e2e?.env || {}),
       cucumber: 'true',
-      USE_GREP: true,
       omitFiltered: true,
       filterSpecs: true,
     },

@@ -9,7 +9,6 @@ export default defineConfig({
     env: {
       ...(commonConfig.e2e?.env || {}),
       cucumber: 'true',
-      USE_GREP: true,
       omitFiltered: true,
       filterSpecs: true,
     },

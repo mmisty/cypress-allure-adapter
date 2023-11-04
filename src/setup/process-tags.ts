@@ -83,7 +83,11 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
       }
 
       default: {
-        Cypress.Allure.tag(t.tag);
+        const addTags = Cypress.env('allureAddNonSpecialTags');
+
+        if (addTags === 'true' || addTags === true || addTags === undefined) {
+          Cypress.Allure.tag(t.tag);
+        }
         break;
       }
     }

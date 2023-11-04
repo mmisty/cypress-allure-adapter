@@ -66,9 +66,7 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   console.log(config.env);
 
   // register grep plugin
-  if (config.env['USE_GREP'] === 'true' || config.env['USE_GREP'] === true) {
-    pluginGrep(on, config);
-  }
+  pluginGrep(on, config);
 
   let server: Server;
 
