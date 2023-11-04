@@ -40,32 +40,24 @@ Feature: test cucumber
     it('check labels of test', async () => {
       const test = results.find(t => t.name === '01 visiting the frontpage');
 
-      expect(test!.labels).toEqual([
+      expect(
+        test!.labels.filter(t => t.name !== 'package' && t.name !== 'path'),
+      ).toEqual([
         {
-          duration: true,
-          name: 'Given : I visit site',
-          status: 'passed',
-          steps: [
-            {
-              duration: true,
-              name: 'log: visit site',
-              status: 'passed',
-              steps: [],
-            },
-          ],
+          name: 'tag',
+          value: '@Feature',
         },
         {
-          duration: true,
-          name: 'Then : I should see a search bar "hello"',
-          status: 'passed',
-          steps: [
-            {
-              duration: true,
-              name: 'log: hello',
-              status: 'passed',
-              steps: [],
-            },
-          ],
+          name: 'tag',
+          value: '@P1',
+        },
+        {
+          name: 'tag',
+          value: '@visit',
+        },
+        {
+          name: 'parentSuite',
+          value: 'test cucumber',
         },
       ]);
     });
