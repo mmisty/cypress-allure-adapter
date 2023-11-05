@@ -365,11 +365,16 @@ export const handleCyLogEvents = (
   }
 
   const isGherkin = (logName: string) => {
-    return logName && ['When', 'Given', 'Then', 'And'].some(t => logName.startsWith(t));
+    return logName && ['When', 'Given', 'Then', 'And', 'After', 'Before'].some(t => logName.startsWith(t));
   };
 
   const failed: { name: string; message: string }[] = [];
   const gherkinLog: { current: string | undefined } = { current: undefined };
+
+  Cypress.Allure.on('test:started', () => {
+    failed.splice(0, failed.length);
+    gherkinLog.current = undefined;
+  });
 
   Cypress.on('log:changed', async log => {
     if (!allureLogCyCommands()) {
