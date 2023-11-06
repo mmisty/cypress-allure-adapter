@@ -10,7 +10,7 @@ import { processTagsOnTestStart } from './process-tags';
 const debug = Debug('cypress-allure:setup');
 
 export const allureAdapterSetup = () => {
-  Cypress.env('cyTagsShowTagsInTitle', Cypress.env('allureShowTagsInTitle'));
+  Cypress.env('cyTagsShowTagsInTitle', Cypress.env('allureShowTagsInTitle') ?? Cypress.env('cyTagsShowTagsInTitle'));
 
   registerTags();
   registerCommands();
