@@ -10,7 +10,7 @@ declare namespace Cypress {
     myLog(message: string): Chainable<void>;
     otherCmd(message: string): Chainable<void>;
     fileExists(filePath: string): Chainable<boolean>;
-    qaId(selector: string): Chainable<Element>;
+    qaId(selector: string): Chainable<JQuery>;
     promiseTest(delay?: number): Chainable<any>;
   }
 }

@@ -31,10 +31,31 @@ describe('do sync command', () => {
       cy.visit('mytest.com');
     });
     
+    it('should click when added during chain (no custom commands)', () => {
+      cy.get('[data-qa-id=link-2]')
+        .doSyncCommand(s => {
+          expect(s.text()).eq('My link');
+        })
+        .click();
+    });
+
     it('should click when added during chain', () => {
-      cy.qaId('link-2').doSyncCommand(() => {
-        console.log('hello')
-      }).click();
+      cy.qaId('link-2')
+        .doSyncCommand(s => {
+          expect(s.text()).eq('My link');
+        })
+        .click();
+    });
+
+    it('should click when added during chain (several)', () => {
+      cy.qaId('link-2')
+        .doSyncCommand(s => {
+          expect(s.text()).eq('My link');
+        })
+        .doSyncCommand(s => {
+          expect(s.text()).eq('My link');
+        })
+        .click();
     });
     
     it('should succeed when added before should', () => {
@@ -70,12 +91,12 @@ describe('do sync command', () => {
     it('should have results', () => {
       // should not fail run
       checkCyResults(res?.result?.res, {
-        totalPassed: 4,
+        totalPassed: 6,
         totalFailed: 0,
         totalPending: 0,
         totalSkipped: 0,
         totalSuites: 1,
-        totalTests: 4,
+        totalTests: 6,
       });
     });
     beforeAll(() => {
@@ -107,6 +128,11 @@ describe('do sync command', () => {
               steps: [],
             },
           ],
+        },
+        {
+          name: 'assert: expected **My link** to equal **My link**',
+          status: 'passed',
+          steps: [],
         },
         {
           name: 'click',
