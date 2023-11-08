@@ -69,5 +69,17 @@ describe('suite', () => {
         .eq(1)
         .should('have.text', 'My link 3');
     });
+
+    it('file exists true', () => {
+      cy.fileExists(Cypress.spec.absolute).then(exists => {
+        expect(exists).eq(true);
+      });
+    });
+
+    it('file exists false', () => {
+      cy.fileExists(`${Cypress.spec.absolute}/123`).then(exists => {
+        expect(exists).eq(false);
+      });
+    });
   });
 });

@@ -42,4 +42,14 @@ describe('interface', () => {
     cy.allure().issue('PROJ-02', 'Description of issue');
     cy.allure().issue('PROJ-04');
   });
+
+  it('test with param', () => {
+    cy.allure().parameter('A', 'valueA');
+    cy.allure().historyId('valueA');
+  });
+
+  it('test with param', () => {
+    cy.allure().parameter('A', 'valueB');
+    cy.allure().historyId('valueB');
+  });
 });

@@ -78,6 +78,18 @@ describe('do sync command', () => {
       }).eq(1).should('have.text', 'My link 3');
     });
     
+     it('file exists true', () => {
+      cy.fileExists(Cypress.spec.absolute).then(exists => {
+        expect(exists).eq(true);
+      });
+    });
+
+    it('file exists false', () => {
+      cy.fileExists(Cypress.spec.absolute +'/123').then(exists => {
+        expect(exists).eq(false);
+      });
+    });
+    
    
   });
 `,
@@ -91,12 +103,12 @@ describe('do sync command', () => {
     it('should have results', () => {
       // should not fail run
       checkCyResults(res?.result?.res, {
-        totalPassed: 6,
+        totalPassed: 8,
         totalFailed: 0,
         totalPending: 0,
         totalSkipped: 0,
         totalSuites: 1,
-        totalTests: 6,
+        totalTests: 8,
       });
     });
     beforeAll(() => {
