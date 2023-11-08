@@ -93,12 +93,7 @@ export const registerCommands = () => {
     // const queue = () => (cy as any).queue.queueables;
     // const commandsCount = queue().length;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subj = getLastSubject((cy as any).state('current'));
-    let prevSubj = undefined;
-
-    if (subj) {
-      prevSubj = subj;
-    }
+    const prevSubj = getLastSubject((cy as any).state('current'));
 
     syncFn(prevSubj);
 
