@@ -1,4 +1,22 @@
 ## Change Log
+### 0.15.0
+- [minor] Add historyId to interface in #74
+
+### 0.14.3
+- [patch] small defect fixes in #73
+
+### 0.14.2
+- [patch] fix tags showing in #70
+
+### 0.14.1
+- [patch] Fix before after for gherkin in #67
+
+### 0.14.0
+- [minor] Gherkin support in #49
+
+### 0.13.0
+- [patch] fix tags integration in #63
+
 ### 0.12.5
 - special tags integration - can use `@issue("ABC-123")`(and other meta tags like parentSuite, suite etc)
 in title or in configuration object like
