@@ -285,11 +285,19 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.attachment(arg);
       log('attachment');
     },
+
     fullName: (arg: AllureTaskArgs<'fullName'>) => {
       log(`fullName ${JSON.stringify(arg)}`);
       allureReporter.fullName(arg);
       log('fullName');
     },
+
+    historyId: (arg: AllureTaskArgs<'historyId'>) => {
+      log(`historyId ${JSON.stringify(arg)}`);
+      allureReporter.historyId(arg);
+      log('historyId');
+    },
+
     link: (arg: AllureTaskArgs<'link'>) => {
       log(`link ${JSON.stringify(arg)}`);
       allureReporter.link(arg);

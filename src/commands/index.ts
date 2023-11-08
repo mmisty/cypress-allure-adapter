@@ -47,6 +47,7 @@ export const registerCommands = () => {
     attachment: (allure, name, content, type) => allure.attachment(name, content, type),
     owner: (allure, name) => allure.owner(name),
     fullName: (allure, name) => allure.fullName(name),
+    historyId: (allure, value) => allure.historyId(value),
     lead: (allure, name) => allure.lead(name),
     layer: (allure, name) => allure.layer(name),
     browser: (allure, name) => allure.browser(name),

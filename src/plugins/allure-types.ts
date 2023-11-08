@@ -36,6 +36,7 @@ type AllureTask = {
   step: { name: string; status?: string; date?: number };
   parameter: { name: string; value: string };
   fullName: { value: string };
+  historyId: { value: string };
   link: { url: string; name?: string; type?: LinkType };
   testParameter: { name: string; value: string };
   testStatus: { result: Status; details?: StatusDetails };

@@ -183,6 +183,14 @@ declare namespace Cypress {
     fullName(value: string): T;
 
     /**
+     * Sets test history Id
+     * @param value string to group in timeline
+     * @example
+     * cy.allure().historyId('1c6b6e73-6043-4772-a079-c722afcd1700');
+     */
+    historyId(value: string): T;
+
+    /**
      * Sets label 'owner' - will be shown in allure report as Owner field
      * @param value owner name
      * @example
