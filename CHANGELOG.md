@@ -1,4 +1,7 @@
 ## Change Log
+### 0.15.1
+- [patch] fix of corner case with custom commands in #75
+
 ### 0.15.0
 - [minor] Add historyId to interface in #74
 
