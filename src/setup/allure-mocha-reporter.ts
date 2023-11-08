@@ -104,6 +104,7 @@ export const allureInterface = (
       fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now() } }),
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
+    historyId: (value: string) => fn({ task: 'historyId', arg: { value } }),
     testAttachment: (name: string, content: string | Buffer, type) =>
       fn({ task: 'testAttachment', arg: { name, content, type } }),
     testStatus: (result: Status, details?: StatusDetails) => fn({ task: 'testStatus', arg: { result, details } }),

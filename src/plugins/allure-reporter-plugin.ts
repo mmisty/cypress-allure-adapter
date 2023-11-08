@@ -601,6 +601,12 @@ export class AllureReporter {
     }
   }
 
+  historyId(arg: AllureTaskArgs<'fullName'>) {
+    if (this.currentTest) {
+      this.currentTest.historyId = arg.value;
+    }
+  }
+
   parameter(arg: AllureTaskArgs<'parameter'>) {
     if (this.currentExecutable) {
       this.currentExecutable.addParameter(arg.name, arg.value);
