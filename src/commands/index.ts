@@ -81,14 +81,8 @@ export const registerCommands = () => {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getPrevSubjects = (cmd: any, arr: any[] = []): any[] => {
-    arr.unshift(cmd?.attributes?.subject);
-
-    if (cmd?.attributes?.prev) {
-      return getPrevSubjects(cmd.attributes.prev, arr);
-    }
-
-    return arr;
+  const getLastSubject = (cmd: any): any => {
+    return cmd?.get('prev')?.attributes?.subject;
   };
 
   // not changing the subject
@@ -98,12 +92,13 @@ export const registerCommands = () => {
     // const queue = () => (cy as any).queue.queueables;
     // const commandsCount = queue().length;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subjs = getPrevSubjects((cy as any).state()?.current);
+    const subj = getLastSubject((cy as any).state('current'));
     let prevSubj = undefined;
 
-    if (subjs.length > 1) {
-      prevSubj = subjs[subjs.length - 2];
+    if (subj) {
+      prevSubj = subj;
     }
+
     syncFn(prevSubj);
 
     /* if (queue().length > commandsCount) {
