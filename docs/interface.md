@@ -135,6 +135,17 @@ Full name is being used for history id
 cy.allure().fullName('authentication: should login');
 ```
 
+### historyId
+**historyId(value: string)**
+
+Sets test historyId
+
+historyId is entity on which Allure reporter decides whether test is retried or not
+
+```javascript
+cy.allure().historyId('<guid>');
+```
+
 ### owner
 **owner(value: string)**
 
