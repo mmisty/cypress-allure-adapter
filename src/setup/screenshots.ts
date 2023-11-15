@@ -15,9 +15,15 @@ export const registerScreenshotHandler = () => {
     const [{ path }] = args;
 
     if (path) {
-      // todo setting
       debug(`Attaching: ${path}`);
-      Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
+      const win = window as unknown as { allureAttachToStep: boolean };
+
+      if (win.allureAttachToStep) {
+        console.log(path);
+        Cypress.Allure.fileAttachment(basename(path), path, getContentType(path));
+      } else {
+        Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
+      }
     } else {
       debug(`No path: ${JSON.stringify(args)}`);
     }

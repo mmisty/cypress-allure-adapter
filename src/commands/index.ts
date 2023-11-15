@@ -86,6 +86,15 @@ export const registerCommands = () => {
     return cmd?.get('prev')?.attributes?.subject;
   };
 
+  Cypress.Commands.overwrite('screenshot', function (originalFn, ...args) {
+    const [arg0, arg1] = args as any[];
+
+    (window as unknown as { allureAttachToStep: boolean }).allureAttachToStep =
+      (typeof arg0 === 'object' && arg0.allureAttachToStep) || (typeof arg1 === 'object' && arg1.allureAttachToStep);
+
+    return originalFn(...args);
+  });
+
   // not changing the subject
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {

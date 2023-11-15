@@ -37,6 +37,8 @@ Example report is here - [Allure Report example](https://mmisty.github.io/cypres
 5. [Examples](#examples)
 5. [Allure TestOps](#allure-testops)
 5. [Troubleshooting](#troubleshooting)
+6. See also:
+   - [adding screenshots](docs/screenshots.md)
 6. [Credits](#credits)
 6. [Change log](#change-log)
 6. [Support](#support)
