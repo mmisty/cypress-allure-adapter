@@ -1,5 +1,12 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars,@typescript-eslint/no-namespace
 declare namespace Cypress {
+  interface ScreenshotOptions {
+    /**
+     * Add screenshot to a step when true, otherwise to a test
+     */
+    allureAttachToStep: boolean;
+  }
+
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
   export type CommandT = {
     state?: string;

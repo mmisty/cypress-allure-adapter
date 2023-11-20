@@ -38,6 +38,11 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
       ...s,
       start: date,
       stop: date + 11,
+      attachments: s.attachments.map(t => ({
+        ...t,
+        name: t.name.replace(/\d{5,}/g, 'number'),
+        source: `source${path.extname(t.source)}`,
+      })),
       steps: replaceSteps(s.steps),
     }));
   };
