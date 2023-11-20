@@ -123,7 +123,9 @@ const getAllAttachments = (item: ExecutableItem) => {
     return inner(rest, newRes);
   };
 
-  return inner(item.steps, attachmentsResult);
+  const stepAttachments = inner(item.steps, attachmentsResult);
+
+  return [...stepAttachments, ...item.attachments];
 };
 
 // all tests for session

@@ -7,20 +7,20 @@ describe('screenshot', () => {
       visitHtml();
     });
 
-    it('test 1', () => {
+    it('test 1 - should have 1 step screenshot', () => {
       cy.allure().startStep('step 1');
       cy.get('div').first().screenshot({ allureAttachToStep: true });
       cy.allure().endStep();
     });
 
-    it('test 2', () => {
+    it('test 2 - should have 1 step screenshot and one test screenshot', () => {
       cy.allure().startStep('step 1');
       cy.get('div').first().screenshot({ allureAttachToStep: true });
       cy.get('div').eq(1).screenshot();
       cy.allure().endStep();
     });
 
-    it('test 3', () => {
+    it('test 3 - should have 1 test screenshot', () => {
       cy.allure().startStep('step 1');
       cy.get('div').first().screenshot();
       cy.allure().endStep();
