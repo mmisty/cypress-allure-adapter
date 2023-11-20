@@ -15,13 +15,13 @@ export const registerScreenshotHandler = () => {
     const [{ path }] = args;
 
     if (path) {
-      debug(`Attaching: ${path}`);
       const win = window as unknown as { allureAttachToStep: boolean };
 
       if (win.allureAttachToStep) {
-        console.log(path);
+        debug(`Attaching to step: ${path}`);
         Cypress.Allure.fileAttachment(basename(path), path, getContentType(path));
       } else {
+        debug(`Attaching to test: ${path}`);
         Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
       }
     } else {

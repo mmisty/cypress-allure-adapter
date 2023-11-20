@@ -86,11 +86,19 @@ export const registerCommands = () => {
     return cmd?.get('prev')?.attributes?.subject;
   };
 
+  // first arg may be JQuery
   Cypress.Commands.overwrite('screenshot', function (originalFn, ...args) {
-    const [arg0, arg1] = args as any[];
+    const setSettingAttachToStep = (res: boolean) => {
+      (window as unknown as { allureAttachToStep: boolean }).allureAttachToStep = res;
+    };
 
-    (window as unknown as { allureAttachToStep: boolean }).allureAttachToStep =
-      (typeof arg0 === 'object' && arg0.allureAttachToStep) || (typeof arg1 === 'object' && arg1.allureAttachToStep);
+    const getAllureAttachToStep = (obj: unknown) => {
+      return obj && typeof obj === 'object' && (obj as any).allureAttachToStep;
+    };
+
+    const toStep = args.some(t => getAllureAttachToStep(t));
+
+    setSettingAttachToStep(toStep);
 
     return originalFn(...args);
   });
