@@ -35,9 +35,10 @@ describe('custom commands', () => {
 
   describe('check results', () => {
     let resFixed: AllureTest[];
+    let results: AllureTest[];
 
     beforeAll(() => {
-      const results = parseAllure(res.watch);
+      results = parseAllure(res.watch);
       resFixed = fixResult(results);
     });
 
@@ -78,7 +79,7 @@ describe('custom commands', () => {
     });
 
     it('should have attaches for commands with long args', () => {
-      const tests = resFixed.filter(t => t.name === 'tasklog1 long');
+      const tests = results.filter(t => t.name === 'tasklog1 long');
       expect(tests.length).toEqual(1);
 
       const steps = mapSteps(tests[0].steps, t => ({
@@ -135,7 +136,7 @@ describe('custom commands', () => {
     });
 
     it('should have attach for command log with long message', () => {
-      const tests = resFixed.filter(t => t.name === 'just long log');
+      const tests = results.filter(t => t.name === 'just long log');
       expect(tests.length).toEqual(1);
 
       const steps = mapSteps(tests[0].steps, t => ({
