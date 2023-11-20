@@ -99,7 +99,7 @@ jobs:
           fi
           
           echo "publishing alpha, for other commit message should contain [minor], [major] or [patch]/[fix]"
-          npm run publish:alpha
-          git push --tags    
+          npm run publish:alpha || publish:alpha:init || true
+          git push --tags || true
 
 

@@ -86,6 +86,23 @@ export const registerCommands = () => {
     return cmd?.get('prev')?.attributes?.subject;
   };
 
+  // first arg may be JQuery
+  Cypress.Commands.overwrite('screenshot', function (originalFn, ...args) {
+    const setSettingAttachToStep = (res: boolean) => {
+      (window as unknown as { allureAttachToStep: boolean }).allureAttachToStep = res;
+    };
+
+    const getAllureAttachToStep = (obj: unknown) => {
+      return obj && typeof obj === 'object' && (obj as any).allureAttachToStep;
+    };
+
+    const toStep = args.some(t => getAllureAttachToStep(t));
+
+    setSettingAttachToStep(toStep);
+
+    return originalFn(...args);
+  });
+
   // not changing the subject
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Cypress.Commands.add('doSyncCommand', function (syncFn: (subj: any) => any) {

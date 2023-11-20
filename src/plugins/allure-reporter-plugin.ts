@@ -109,7 +109,7 @@ const copyFileToWatch = async (
  * Get all attachments for test to move them to watch folder
  * @param item test item
  */
-const getAllAttachments = (item: ExecutableItem) => {
+const getAllAttachments = (item: ExecutableItem): Attachment[] => {
   const attachmentsResult: Attachment[] = [];
 
   const inner = (steps: ExecutableItem[], accumulatedRes: Attachment[]): Attachment[] => {
@@ -866,12 +866,14 @@ export class AllureReporter {
         console.error(`${packageLog} Result file doesn't exist: ${file}`);
       }
     };
-    waitResultWritten(this.allureResults, `${this.allureResults}/${uid}-result.json`);
+    const testFile = `${this.allureResults}/${uid}-result.json`;
+
+    waitResultWritten(this.allureResults, testFile);
 
     // move to watch
 
     log('testEnded: will move result to watch folder');
-    await copyFileToWatch({ test: `${this.allureResults}/${uid}-result.json`, attachments }, this.allureResultsWatch);
+    await copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
