@@ -1,4 +1,6 @@
 ## Change Log
+### 0.15.3
+- [patch] fix moving test attachments during execution for test
 ### 0.15.1
 - [patch] fix of corner case with custom commands in #75
 
