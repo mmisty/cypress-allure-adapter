@@ -3,6 +3,8 @@ import { parseInlineTags } from '@mmisty/cypress-tags/utils/tags';
 
 export const addGherkin = () => {
   const originalDesc = describe;
+  const originalDescSkip = describe.skip;
+  const originalDescOnly = describe.only;
 
   const getTags = (test: any): { tag: string; info: string }[] => {
     // this is tags support for @badeball/cypress-cucumber-preprocessor
@@ -16,17 +18,20 @@ export const addGherkin = () => {
     return tagsStored.length > 0 ? [...existingTags, ...cucumberTags] : existingTags;
   };
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  (global as any).describe = function (...args) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const suite: Suite = originalDesc(...args);
+  const parseTags = original =>
+    function (...args) {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const suite: Suite = original(...args);
 
-    suite.eachTest((test: any) => {
-      test.tags = getTags(test);
-    });
+      suite.eachTest((test: any) => {
+        test.tags = getTags(test);
+      });
 
-    return suite;
-  };
+      return suite;
+    };
+
+  (global as any).describe = parseTags(originalDesc);
+  (global as any).describe.skip = parseTags(originalDescSkip);
+  (global as any).describe.only = parseTags(originalDescOnly);
 };
