@@ -18,7 +18,11 @@ export const addGherkin = () => {
     return tagsStored.length > 0 ? [...existingTags, ...cucumberTags] : existingTags;
   };
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   const parseTags = original =>
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     function (...args) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
