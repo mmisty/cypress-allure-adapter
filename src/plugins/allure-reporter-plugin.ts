@@ -935,7 +935,11 @@ export class AllureReporter {
 
       return;
     }
-    const file = this.allureRuntime.writeAttachment(arg.content, arg.type);
+
+    const file = this.allureRuntime.writeAttachment(
+      arg.content ?? `Could not create attachment: no content for ${arg.name} received`,
+      arg.type,
+    );
     exec.addAttachment(arg.name, arg.type, file);
   }
 
