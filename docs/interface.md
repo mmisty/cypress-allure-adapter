@@ -342,7 +342,7 @@ Adds parameter to current test
 Will be shown in report in Parameters section for test and in overview
 
 ```javascript
-cy.allure().parameter('varA', 'bus');
+cy.allure().testParameter('varA', 'bus');
 ```
 
 ### parameters
