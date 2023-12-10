@@ -356,8 +356,6 @@ see [parameter](#parameter)
 cy.allure().parameters( {name: 'varA', value: 'bus'}, {name: 'varB', value: 'car'} );
 ```
 
-
-
 ### testStatus
 **testStatus(result: 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown', details?: StatusDetails)**
 details is optional:
@@ -370,7 +368,7 @@ Sets test status. In some cases you may need to change test status (testing purp
 cy.allure().testStatus('broken', { message: 'review test' });
 ```
 
-### testStatus
+### testDetails
 **testDetails(details: StatusDetails)**
 
 - details.message - message that is shown in report for test
