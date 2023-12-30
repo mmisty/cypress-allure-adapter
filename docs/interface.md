@@ -342,7 +342,7 @@ Adds parameter to current test
 Will be shown in report in Parameters section for test and in overview
 
 ```javascript
-cy.allure().parameter('varA', 'bus');
+cy.allure().testParameter('varA', 'bus');
 ```
 
 ### parameters
@@ -356,8 +356,6 @@ see [parameter](#parameter)
 cy.allure().parameters( {name: 'varA', value: 'bus'}, {name: 'varB', value: 'car'} );
 ```
 
-
-
 ### testStatus
 **testStatus(result: 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown', details?: StatusDetails)**
 details is optional:
@@ -370,7 +368,7 @@ Sets test status. In some cases you may need to change test status (testing purp
 cy.allure().testStatus('broken', { message: 'review test' });
 ```
 
-### testStatus
+### testDetails
 **testDetails(details: StatusDetails)**
 
 - details.message - message that is shown in report for test
