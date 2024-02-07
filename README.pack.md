@@ -316,6 +316,14 @@ To have correct suites tree you need to set up Allure TestOps:
 ## Troubleshooting
 To see debug log run cypress with DEBUG env variable like: `DEBUG=cypress-allure* npm run cy:open`
 
+### No allure results folder
+- make sure you have enabled plugin by 'allure' env variable
+- to be continued
+
+### No results in allure folder
+ - make sure you are not overriding confi in plugins (env variables, and events)
+ - to be continued
+
 ## Credits
 Thanks to [@shelex](https://github.com/shelex), without his plugin this plugin would have been harder to start. 
 
