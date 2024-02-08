@@ -600,7 +600,7 @@ export class AllureReporter {
   fullName(arg: AllureTaskArgs<'fullName'>) {
     if (this.currentTest) {
       this.currentTest.fullName = arg.value;
-      // should update history id when updateing title
+      // should update history id when updating title
       this.currentTest.historyId = getUuid(arg.value);
     }
   }
