@@ -48,7 +48,17 @@ const log = (...args: unknown[]) => {
 };
 
 const createNewContentForContainer = (nameAttAhc: string, existingContents: Buffer, ext: string, specname: string) => {
-  const containerJSON = JSON.parse(existingContents.toString());
+  const getContentJson = () => {
+    try {
+      return JSON.parse(existingContents.toString());
+    } catch (e) {
+      console.error(`${packageLog} Could not parse the contents of attachment ${nameAttAhc}`);
+
+      return {};
+    }
+  };
+
+  const containerJSON = getContentJson();
 
   const after: ExecutableItem = {
     name: 'video',
@@ -421,30 +431,35 @@ export class AllureReporter {
 
       uuids.forEach(uuid => {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
-        const contents = readFileSync(testFile);
-        const ext = path.extname(x.path);
-        const name = path.basename(x.path);
-        type ParsedAttachment = { name: string; type: ContentType; source: string };
-        const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
-        const uuidNew = randomUUID();
-        const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same image
-        const newPath = path.join(this.allureResults, nameAttAhc);
 
-        if (!existsSync(newPath)) {
-          copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
+        try {
+          const contents = readFileSync(testFile);
+          const ext = path.extname(x.path);
+          const name = path.basename(x.path);
+          type ParsedAttachment = { name: string; type: ContentType; source: string };
+          const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
+          const uuidNew = randomUUID();
+          const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same image
+          const newPath = path.join(this.allureResults, nameAttAhc);
+
+          if (!existsSync(newPath)) {
+            copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
+          }
+
+          if (!testCon.attachments) {
+            testCon.attachments = [];
+          }
+
+          testCon.attachments.push({
+            name: name,
+            type: 'image/png',
+            source: nameAttAhc, // todo
+          });
+
+          writeFileSync(testFile, JSON.stringify(testCon));
+        } catch (e) {
+          console.log(`Could not attach screenshot ${x.screenshotId}`);
         }
-
-        if (!testCon.attachments) {
-          testCon.attachments = [];
-        }
-
-        testCon.attachments.push({
-          name: name,
-          type: 'image/png',
-          source: nameAttAhc, // todo
-        });
-
-        writeFileSync(testFile, JSON.stringify(testCon));
       });
     });
   }
@@ -474,7 +489,7 @@ export class AllureReporter {
       }
 
       if (!existsSync(file)) {
-        console.log(`file ${file} doesnt exist`);
+        console.log(`${packageLog} file ${file} doesnt exist`);
 
         return;
       }
@@ -515,14 +530,14 @@ export class AllureReporter {
 
     readFile(videoPath, errVideo => {
       if (errVideo) {
-        console.error(`Could not read video: ${errVideo}`);
+        console.error(`${packageLog} Could not read video: ${errVideo}`);
 
         return;
       }
 
       testsAttach.forEach(test => {
         if (!test.parent) {
-          console.error(`not writing videos since test has no parent suite: ${test.fullName}`);
+          console.error(`${packageLog} not writing videos since test has no parent suite: ${test.fullName}`);
 
           return;
         }
