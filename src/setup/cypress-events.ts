@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import CommandT = Cypress.CommandT;
 
 const dbg = 'cypress-allure:cy-events';
-const ARGS_TRIM_AT = 80;
+const ARGS_TRIM_AT = 200;
 
 const withTry = (message: string, callback: () => void) => {
   try {
