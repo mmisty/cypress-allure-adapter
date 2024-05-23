@@ -343,4 +343,4 @@ time and resources to enhancing its
 features, improving user experience, 
 and ensuring its compatibility with the 
 latest versions. Help this plugin to grow 
-by [donating](https://buy.stripe.com/28o2cc56x03LbnieUY).
+by [donating - paypal](https://www.paypal.me/tpitko).
