@@ -3,6 +3,7 @@ import { copyFile, writeFile } from 'fs/promises';
 import Debug from 'debug';
 import { Attachment } from 'allure-js-commons';
 import { basename, dirname } from 'path';
+import { packageLog } from '../common';
 
 const debug = Debug('cypress-allure:fs-tools');
 
@@ -30,7 +31,7 @@ export const copyFileCp = (from: string, to: string, isRemoveSource: boolean) =>
 
   return copyFile(from, to)
     .then(() => {
-      console.log(`Copied ${from} to ${to}`);
+      log(`Copied ${from} to ${to}`);
 
       if (isRemoveSource) {
         rm(from, () => {
@@ -39,7 +40,7 @@ export const copyFileCp = (from: string, to: string, isRemoveSource: boolean) =>
       }
     })
     .catch(err => {
-      console.error(`Failed to copy ${from} to ${to}: ${err}`);
+      console.error(`${packageLog} Failed to copy ${from} to ${to}: ${err}`);
     });
 };
 
