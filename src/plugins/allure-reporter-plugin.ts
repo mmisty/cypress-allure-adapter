@@ -532,51 +532,50 @@ export class AllureReporter {
 
     try {
       readFileSync(videoPath);
+    } catch (errVideo) {
+      console.error(`${packageLog} Could not read video: ${errVideo}`);
 
-      testsAttach.forEach(test => {
+      return;
+    }
+
+    allTasks.push(
+      ...testsAttach.map(test => {
         if (!test.parent) {
           console.error(`${packageLog} not writing videos since test has no parent suite: ${test.fullName}`);
 
-          return;
+          return Promise.resolve();
         }
+
         const containerFile = `${this.allureResults}/${test.parent.uuid}-container.json`;
         log(`ATTACHING to container: ${containerFile}`);
 
-        allTasks.push(
-          readFile(containerFile)
-            .then(contents => {
-              const uuid = randomUUID();
-              const nameAttAhc = `${uuid}-attachment${ext}`;
-              const newPath = path.join(this.allureResults, nameAttAhc);
-              const newContentJson = createNewContentForContainer(nameAttAhc, contents, ext, specname);
-              const newContent = JSON.stringify(newContentJson);
+        return readFile(containerFile)
+          .then(contents => {
+            const uuid = randomUUID();
+            const nameAttAhc = `${uuid}-attachment${ext}`;
+            const newPath = path.join(this.allureResults, nameAttAhc);
+            const newContentJson = createNewContentForContainer(nameAttAhc, contents, ext, specname);
+            const newContent = JSON.stringify(newContentJson);
 
-              const writeContainer = () => {
-                log(`write result file ${containerFile} `);
-                allTasks.push(writeResultFile(containerFile, newContent));
-              };
+            const writeContainer = () => {
+              log(`write result file ${containerFile} `);
 
-              if (existsSync(newPath)) {
-                log(`not writing video, file already exist in path ${newPath} `);
-                writeContainer();
+              return writeResultFile(containerFile, newContent);
+            };
 
-                return;
-              }
+            if (existsSync(newPath)) {
+              log(`not writing video, file already exists in path ${newPath} `);
 
-              allTasks.push(
-                copyFileCp(videoPath, newPath, false).then(() => {
-                  writeContainer();
-                }),
-              );
-            })
-            .catch(err => {
-              log(`error reading container: ${err.message}`);
-            }),
-        );
-      });
-    } catch (errVideo) {
-      console.error(`${packageLog} Could not read video: ${errVideo}`);
-    }
+              return writeContainer();
+            }
+
+            return copyFileCp(videoPath, newPath, false).then(writeContainer);
+          })
+          .catch(err => {
+            log(`error reading container: ${err.message}`);
+          });
+      }),
+    );
   }
 
   endGroup() {
