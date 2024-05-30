@@ -315,7 +315,7 @@ export const createResTest2 = (
     allureResultsWatchPath: definedWatchPath,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
-    COVERAGE: `${process.env.COVERAGE === 'true'}`,
+    COVERAGE: `${process.env.COVERAGE}` === 'true',
     JEST_TEST: 'true',
     ...(envConfig || {}),
   };
