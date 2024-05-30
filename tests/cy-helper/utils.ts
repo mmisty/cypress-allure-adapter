@@ -292,10 +292,27 @@ export const createResTest2 = (
   const testname = `${name}.cy.ts`;
   const storeResDir = `allure-results/${testname}`;
 
+  // ability to set allureResultsWatchPath from test to undefined or to <storeResDir>
+  let definedWatchPath: string | undefined = `${storeResDir}/watch`;
+
+  if (
+    envConfig &&
+    Object.getOwnPropertyNames(envConfig).includes('allureResultsWatchPath')
+  ) {
+    if (envConfig?.allureResultsWatchPath === undefined) {
+    } else {
+      definedWatchPath = envConfig?.allureResultsWatchPath?.replace(
+        '<storeResDir>',
+        storeResDir,
+      );
+      delete envConfig?.allureResultsWatchPath;
+    }
+  }
+
   const env = {
     allure: 'true',
     allureResults: storeResDir,
-    allureResultsWatchPath: `${storeResDir}/watch`,
+    allureResultsWatchPath: definedWatchPath,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
     COVERAGE: `${process.env.COVERAGE === 'true'}`,
@@ -333,7 +350,7 @@ export const createResTest2 = (
   });
 
   return {
-    watch: env.allureResultsWatchPath,
+    watch: env.allureResultsWatchPath ?? storeResDir,
     specs: specPaths.map(
       t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
     ),
