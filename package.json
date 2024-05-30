@@ -28,8 +28,8 @@
   "scripts": {
     "husky:install": "husky install",
     "lint": "eslint --fix '**/*.{ts,tsx,js}'",
-    "test:jest:cy": "CI=true COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events\" --reporters=default --reporters=jest-junit",
-    "test:jest": "CI=true COVERAGE=true jest --runInBand --coverage --testPathIgnorePatterns=\"tests/test-folder/(mocha-events)|(allure-plugin)\" --reporters=default --reporters=jest-junit",
+    "test:jest:cy": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events\" --reporters=default --reporters=jest-junit",
+    "test:jest": "QUIET=true COVERAGE=true jest --runInBand --coverage --testPathIgnorePatterns=\"tests/test-folder/(mocha-events)|(allure-plugin)\" --reporters=default --reporters=jest-junit",
     "test:cov": "npm run test:jest && npm run test:jest:cy && npm run cov:merge",
     "cy": "cypress",
     "cy:open": "npm run cy -- open --e2e",
@@ -135,7 +135,7 @@
     ]
   },
   "engines": {
-    "node": ">=16",
+    "node": ">=18",
     "npm": ">=8"
   },
   "volta": {

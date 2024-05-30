@@ -339,7 +339,7 @@ export const createResTest2 = (
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
         env,
-        quiet: process.env.CI === 'true',
+        quiet: `${process.env.QUIET}` === 'true',
         video: parseBoolean(envConfig?.video ?? `${true}`),
       });
     } catch (e) {
