@@ -25,7 +25,6 @@ describe('One test', () => {
   
   it('other5', () => {
     cy.log("5");
-    cy.wait(100);
   });
 })
 `,
