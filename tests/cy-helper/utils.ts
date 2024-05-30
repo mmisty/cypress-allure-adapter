@@ -280,25 +280,42 @@ export const createResTest2 = (
     specPaths.push(specPath);
     const err = new Error('File path');
     // const st = err.stack?.replace('Error: File path', '').split('\n');
-    // const pathRel = path.relative(process.cwd(), specPath);
+    const pathRel = path.relative(process.cwd(), specPath);
     err.stack = `\tat ${specPath}:1:1\n${err.stack?.replace(
       'Error: File path',
       '',
     )}`.replace(/\n\n/g, '\n');
-    console.log(err);
+    console.log(`running spec: ${pathRel}`);
   });
 
   const name = basename(specPaths[0], '.test.ts');
   const testname = `${name}.cy.ts`;
   const storeResDir = `allure-results/${testname}`;
 
+  // ability to set allureResultsWatchPath from test to undefined or to <storeResDir>
+  let definedWatchPath: string | undefined = `${storeResDir}/watch`;
+
+  if (
+    envConfig &&
+    Object.getOwnPropertyNames(envConfig).includes('allureResultsWatchPath')
+  ) {
+    if (envConfig?.allureResultsWatchPath === undefined) {
+    } else {
+      definedWatchPath = envConfig?.allureResultsWatchPath?.replace(
+        '<storeResDir>',
+        storeResDir,
+      );
+      delete envConfig?.allureResultsWatchPath;
+    }
+  }
+
   const env = {
     allure: 'true',
     allureResults: storeResDir,
-    allureResultsWatchPath: `${storeResDir}/watch`,
+    allureResultsWatchPath: definedWatchPath,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
-    COVERAGE: `${process.env.COVERAGE === 'true'}`,
+    COVERAGE: `${process.env.COVERAGE}` === 'true',
     JEST_TEST: 'true',
     ...(envConfig || {}),
   };
@@ -322,7 +339,7 @@ export const createResTest2 = (
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
         env,
-        quiet: process.env.CI === 'true',
+        quiet: `${process.env.QUIET}` === 'true',
         video: parseBoolean(envConfig?.video ?? `${true}`),
       });
     } catch (e) {
@@ -333,7 +350,7 @@ export const createResTest2 = (
   });
 
   return {
-    watch: env.allureResultsWatchPath,
+    watch: env.allureResultsWatchPath ?? storeResDir,
     specs: specPaths.map(
       t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
     ),

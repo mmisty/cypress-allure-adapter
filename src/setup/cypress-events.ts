@@ -376,7 +376,7 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  Cypress.on('log:changed', async log => {
+  Cypress.on('log:changed', log => {
     if (!allureLogCyCommands()) {
       return;
     }
@@ -395,7 +395,7 @@ export const handleCyLogEvents = (
     }
   });
 
-  Cypress.on('log:added', async log => {
+  Cypress.on('log:added', log => {
     if (!allureLogCyCommands()) {
       return;
     }
@@ -439,11 +439,11 @@ export const handleCyLogEvents = (
     });
   });
 
-  Cypress.on('command:start', async (command: CommandT) => {
+  Cypress.on('command:start', (command: CommandT) => {
     events.emit('cmd:started:tech', command);
   });
 
-  Cypress.on('command:end', async (command: CommandT) => {
+  Cypress.on('command:end', (command: CommandT) => {
     events.emit('cmd:ended:tech', command);
   });
 
