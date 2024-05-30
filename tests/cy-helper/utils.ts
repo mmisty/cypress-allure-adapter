@@ -280,12 +280,12 @@ export const createResTest2 = (
     specPaths.push(specPath);
     const err = new Error('File path');
     // const st = err.stack?.replace('Error: File path', '').split('\n');
-    // const pathRel = path.relative(process.cwd(), specPath);
+    const pathRel = path.relative(process.cwd(), specPath);
     err.stack = `\tat ${specPath}:1:1\n${err.stack?.replace(
       'Error: File path',
       '',
     )}`.replace(/\n\n/g, '\n');
-    console.log(err);
+    console.log(`running spec: ${pathRel}`);
   });
 
   const name = basename(specPaths[0], '.test.ts');
