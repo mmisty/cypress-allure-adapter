@@ -2,6 +2,7 @@ import { createResTest2, fixResult } from '../../../cy-helper/utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 // https://github.com/mmisty/cypress-allure-adapter/issues/112
+// started to occur when ws package is ^8.17.0
 describe('should be no Root suite when watch path is the same as results path (regression)', () => {
   const res = createResTest2(
     [
