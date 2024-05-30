@@ -21,7 +21,8 @@ Some settings were taken from [@shelex/cypress-allure-plugin](https://www.npmjs.
  - has interface to set status message for tests - `cy.allure().testDetails({ message: "This test is skipped because needs to be reviewed" })`
  - writes test files after each test - so you can watch execution in Allure TestOps
  - [gherkin support](./docs/gherkin.md)
-
+ - supports latest version of cypress (13.x)
+   
 Example report is here - [Allure Report example](https://mmisty.github.io/cypress-allure-adapter-example/)
 
 ## Table of Contents
