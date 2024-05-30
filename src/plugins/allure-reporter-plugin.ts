@@ -522,7 +522,7 @@ export class AllureReporter {
     const tests = res
       .filter(t => (this.allureAddVideoOnPass ? true : t.status !== 'passed' && t.status !== 'skipped'))
       .map(t => ({
-        path: t.labels.find(l => l.name === 'path')?.value,
+        path: t.labels.find((l: any) => l.name === 'path')?.value,
         id: t.uuid,
         fullName: t.fullName,
         parent: t.parent,
