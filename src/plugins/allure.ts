@@ -5,7 +5,7 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileS
 import { packageLog } from '../common';
 import { basename, dirname } from 'path';
 import glob from 'fast-glob';
-import { copyFileCp, mkdirSyncWithTry, waitWhileCondition } from './fs-tools';
+import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -27,7 +27,7 @@ export type ReporterOptions = {
 
 const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
   if (allureResults === allureResultsWatch) {
-    log(`afterSpec allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+    log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
 
     return;
   }
@@ -39,15 +39,19 @@ const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatc
   log(`allureResults: ${allureResults}`);
   log(`allureResultsWatch: ${allureResultsWatch}`);
 
-  let doneFiles = 0;
-
-  results.forEach(res => {
+  const resultCopyTasks = results.map(res => {
     const to = `${allureResultsWatch}/${basename(res)}`;
-    copyFileCp(res, to, true, () => {
-      doneFiles = doneFiles + 1;
-    });
+
+    return copyFileCp(res, to, true);
   });
-  await waitWhileCondition(() => doneFiles < results.length);
+
+  await Promise.all(resultCopyTasks)
+    .then(() => {
+      log('All results copied to watch folder');
+    })
+    .catch(err => {
+      log('Some files failed to copy to watch folder:', err);
+    });
 };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
@@ -218,10 +222,10 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('testResult');
     },
 
-    testEnded: async (arg: AllureTaskArgs<'testEnded'>) => {
+    testEnded: (arg: AllureTaskArgs<'testEnded'>) => {
       log(`testEnded ${JSON.stringify(arg)}`);
 
-      await allureReporter.endTest(arg);
+      allureReporter.endTest(arg);
 
       log('testEnded');
     },
@@ -315,9 +319,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('testParameter');
     },
 
-    endAll: async () => {
+    endAll: () => {
       log('endAll started');
-      await allureReporter.endAll();
+      allureReporter.endAll();
       log('endAll');
     },
 
@@ -361,11 +365,12 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         const { video } = arg.results ?? {};
         log(`afterSpec video path: ${video}`);
 
-        await allureReporter.attachVideoToContainers({ path: video ?? '' });
+        allureReporter.attachVideoToContainers({ path: video ?? '' });
       } else {
         console.error(`${packageLog} No video path in afterSpec result`);
       }
 
+      await allureReporter.waitAllTasksToFinish();
       await copyResultsToWatchFolder(allureResults, allureResultsWatch);
       log('afterSpec');
     },

@@ -64,10 +64,6 @@ export const basename = (path: string): string => {
   return path;
 };
 
-export async function delay(ms: number) {
-  await new Promise(resolve => setTimeout(resolve, ms));
-}
-
 export const getContentType = (file: string): ContentType => {
   const ext = extname(file).toLowerCase();
 

@@ -14,7 +14,8 @@ import {
 import getUuid from 'uuid-by-string';
 import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, mkdirSync, readFile, readFileSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 import path, { basename } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -24,14 +25,7 @@ import { AllureTaskArgs, LabelName, Stage, StatusType, UNKNOWN } from './allure-
 import { extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
-import {
-  copyAttachments,
-  copyFileCp,
-  copyTest,
-  mkdirSyncWithTry,
-  waitWhileCondition,
-  writeResultFile,
-} from './fs-tools';
+import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -41,11 +35,9 @@ const isBeforeEachHook = (ttl: string | undefined) => ttl?.indexOf(beforeEachHoo
 const isAfterEachHook = (ttl: string | undefined) => ttl?.indexOf(afterEachHookName) !== -1;
 const isBeforeAllHook = (ttl: string | undefined) => ttl?.indexOf(beforeAllHookName) !== -1;
 
-const debug = Debug('cypress-allure:reporter');
+const log = Debug('cypress-allure:reporter');
 
-const log = (...args: unknown[]) => {
-  debug(args);
-};
+const allTasks: any[] = [];
 
 const createNewContentForContainer = (nameAttAhc: string, existingContents: Buffer, ext: string, specname: string) => {
   const getContentJson = () => {
@@ -93,7 +85,7 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
  * @param input
  * @param allureResultsWatch
  */
-const copyFileToWatch = async (
+const copyFileToWatch = (
   input: { test: string; attachments: { name: string; type: string; source: string }[] },
   allureResultsWatch: string,
 ) => {
@@ -101,7 +93,7 @@ const copyFileToWatch = async (
   const allureResults = path.dirname(allureResultFile);
 
   if (allureResults === allureResultsWatch) {
-    log(`afterSpec allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+    log(`copyFileToWatch allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
 
     return;
   }
@@ -111,8 +103,8 @@ const copyFileToWatch = async (
   log(`allureResultsWatch: ${allureResultsWatch}`);
   log(`attachments: ${JSON.stringify(attachments)}`);
 
-  await copyAttachments(attachments, allureResultsWatch, allureResultFile);
-  await copyTest(allureResultFile, allureResultsWatch);
+  copyAttachments(allTasks, attachments, allureResultsWatch, allureResultFile);
+  copyTest(allTasks, allureResultFile, allureResultsWatch);
 };
 
 /**
@@ -458,7 +450,7 @@ export class AllureReporter {
 
           writeFileSync(testFile, JSON.stringify(testCon));
         } catch (e) {
-          console.log(`Could not attach screenshot ${x.screenshotId}`);
+          console.log(`${packageLog} Could not attach screenshot ${x.screenshotId}`);
         }
       });
     });
@@ -500,11 +492,23 @@ export class AllureReporter {
     });
   }
 
+  async waitAllTasksToFinish() {
+    await Promise.all(allTasks)
+      .then(() => {
+        log(`All tasks completed (${allTasks.length})`);
+      })
+      .catch(err => {
+        console.error(`${packageLog} Some of tasks (${allTasks.length}) failed:`, err);
+      });
+
+    log('All files / video copying tasks finished!');
+  }
+
   /**
    * Attach video to parent suite
    * @param arg {path: string}
    */
-  async attachVideoToContainers(arg: { path: string }) {
+  attachVideoToContainers(arg: { path: string }) {
     // this happens after test and suites have already finished
     const { path: videoPath } = arg;
     log(`attachVideoToTests: ${videoPath}`);
@@ -526,14 +530,8 @@ export class AllureReporter {
 
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
 
-    let doneFiles = 0;
-
-    readFile(videoPath, errVideo => {
-      if (errVideo) {
-        console.error(`${packageLog} Could not read video: ${errVideo}`);
-
-        return;
-      }
+    try {
+      readFileSync(videoPath);
 
       testsAttach.forEach(test => {
         if (!test.parent) {
@@ -544,55 +542,59 @@ export class AllureReporter {
         const containerFile = `${this.allureResults}/${test.parent.uuid}-container.json`;
         log(`ATTACHING to container: ${containerFile}`);
 
-        readFile(containerFile, (err, contents) => {
-          if (err) {
-            log(`error reading container: ${err.message}`);
+        allTasks.push(
+          readFile(containerFile)
+            .then(contents => {
+              const uuid = randomUUID();
+              const nameAttAhc = `${uuid}-attachment${ext}`;
+              const newPath = path.join(this.allureResults, nameAttAhc);
+              const newContentJson = createNewContentForContainer(nameAttAhc, contents, ext, specname);
+              const newContent = JSON.stringify(newContentJson);
 
-            return;
-          }
-          const uuid = randomUUID();
-          const nameAttAhc = `${uuid}-attachment${ext}`;
-          const newPath = path.join(this.allureResults, nameAttAhc);
-          const newContentJson = createNewContentForContainer(nameAttAhc, contents, ext, specname);
-          const newContent = JSON.stringify(newContentJson);
+              const writeContainer = () => {
+                log(`write result file ${containerFile} `);
+                allTasks.push(writeResultFile(containerFile, newContent));
+              };
 
-          const writeContainer = () => {
-            log(`write result file ${containerFile} `);
-            writeResultFile(containerFile, newContent, () => {
-              doneFiles = doneFiles + 1;
-            });
-          };
+              if (existsSync(newPath)) {
+                log(`not writing video, file already exist in path ${newPath} `);
+                writeContainer();
 
-          if (existsSync(newPath)) {
-            log(`not writing video, file already exist in path ${newPath} `);
-            writeContainer();
+                return;
+              }
 
-            return;
-          }
-
-          copyFileCp(videoPath, newPath, false, () => {
-            writeContainer();
-          });
-        });
+              allTasks.push(
+                copyFileCp(videoPath, newPath, false).then(() => {
+                  writeContainer();
+                }),
+              );
+            })
+            .catch(err => {
+              log(`error reading container: ${err.message}`);
+            }),
+        );
       });
-    });
-
-    await waitWhileCondition(() => doneFiles < testsAttach.length);
+    } catch (errVideo) {
+      console.error(`${packageLog} Could not read video: ${errVideo}`);
+    }
   }
 
   endGroup() {
     // why >= 1?
     if (this.groups.length >= 1) {
+      log('addGlobalHooks');
       this.addGlobalHooks();
     }
 
     if (this.currentGroup) {
+      log('END GROUP');
       this.currentGroup?.endGroup();
       this.groups.pop();
     }
   }
 
   endAllGroups() {
+    log('endAllGroups');
     this.groups.forEach(g => {
       g.endGroup();
     });
@@ -748,24 +750,24 @@ export class AllureReporter {
     this.globalHooks.processForTest();
   }
 
-  async endTests() {
+  endTests() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _tst of this.tests) {
-      await this.endTest({ result: UNKNOWN, details: undefined });
+      this.endTest({ result: UNKNOWN, details: undefined });
     }
   }
 
-  async endGroups() {
-    await this.endTests();
+  endGroups() {
+    this.endTests();
     this.groups.forEach(() => {
       this.endGroup();
     });
   }
 
-  async endAll() {
+  endAll() {
     this.endAllSteps({ status: UNKNOWN, details: undefined });
     this.endHooks(Status.BROKEN);
-    await this.endGroups();
+    this.endGroups();
   }
 
   addDescriptionHtml(arg: AllureTaskArgs<'addDescriptionHtml'>) {
@@ -826,7 +828,7 @@ export class AllureReporter {
     }
   }
 
-  async endTest(arg: AllureTaskArgs<'testEnded'>): Promise<void> {
+  endTest(arg: AllureTaskArgs<'testEnded'>): void {
     const { result, details } = arg;
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
@@ -888,9 +890,8 @@ export class AllureReporter {
     waitResultWritten(this.allureResults, testFile);
 
     // move to watch
-
     log('testEnded: will move result to watch folder');
-    await copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
+    copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
