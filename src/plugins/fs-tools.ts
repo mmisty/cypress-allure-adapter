@@ -1,6 +1,6 @@
-import { copyFile, existsSync, mkdirSync, rm, writeFile } from 'fs';
+import { existsSync, mkdirSync, rm } from 'fs';
+import { copyFile, writeFile } from 'fs/promises';
 import Debug from 'debug';
-import { delay, packageLog } from '../common';
 import { Attachment } from 'allure-js-commons';
 import { basename, dirname } from 'path';
 
@@ -25,74 +25,56 @@ export const mkdirSyncWithTry = (dir: string) => {
   }
 };
 
-export const copyFileCp = (from: string, to: string, isRemoveSource: boolean, callback: () => void) => {
+export const copyFileCp = (from: string, to: string, isRemoveSource: boolean) => {
   log(`copy file ${from} to ${to}`);
 
-  copyFile(from, to, err => {
-    if (err) {
-      log(`Error copying file: ${err.message}`);
+  return copyFile(from, to)
+    .then(() => {
+      console.log(`Copied ${from} to ${to}`);
 
-      return;
-    }
-
-    if (isRemoveSource) {
-      rm(from, () => {
-        // ignore
-      });
-    }
-
-    callback();
-  });
+      if (isRemoveSource) {
+        rm(from, () => {
+          // ignore
+        });
+      }
+    })
+    .catch(err => {
+      console.error(`Failed to copy ${from} to ${to}: ${err}`);
+    });
 };
 
-export const waitWhileCondition = async (whileCondition: () => boolean) => {
-  const started = Date.now();
-  const timeout = 10000;
-
-  while (whileCondition()) {
-    if (Date.now() - started >= timeout) {
-      console.error(`${packageLog} Could not write all attachments in ${timeout}ms`);
-      break;
-    }
-    await delay(100);
-  }
-};
-
-export const copyAttachments = async (attachments: Attachment[], watchPath: string, allureResultFile: string) => {
-  let attachsDone = 0;
+export const copyAttachments = (
+  allTasks: any[],
+  attachments: Attachment[],
+  watchPath: string,
+  allureResultFile: string,
+) => {
   const allureResults = dirname(allureResultFile);
 
-  attachments.forEach(attach => {
+  const attachCopyOperations = attachments.map(attach => {
     const attachTo = `${watchPath}/${attach.source}`;
     const attachFrom = `${allureResults}/${attach.source}`;
-    copyFileCp(attachFrom, attachTo, true, () => {
-      attachsDone = attachsDone + 1;
-    });
+
+    return copyFileCp(attachFrom, attachTo, true);
   });
 
-  await waitWhileCondition(() => attachsDone < attachments.length);
+  allTasks.push(...attachCopyOperations);
 };
 
-export const copyTest = async (testFile: string, watchPath: string) => {
-  let testsDone = 0;
+export const copyTest = (allTasks: any[], testFile: string, watchPath: string) => {
   const to = `${watchPath}/${basename(testFile)}`;
 
   // do not remove for understanding how containers connected to tests
-  copyFileCp(testFile, to, false, () => {
-    testsDone = testsDone + 1;
-  });
-
-  await waitWhileCondition(() => testsDone < 1);
+  const testCopyOperation = [copyFileCp(testFile, to, false)];
+  allTasks.push(testCopyOperation);
 };
 
-export const writeResultFile = (resultContainer: string, content: string, callBack: () => void) => {
-  writeFile(resultContainer, content, errWrite => {
-    if (errWrite) {
-      log(`error test file  ${errWrite.message} `);
-
-      return;
-    }
-    log(`write test file done ${resultContainer} `);
-    callBack();
-  });
+export const writeResultFile = (resultContainer: string, content: string) => {
+  return writeFile(resultContainer, content)
+    .then(() => {
+      log(`write test file done ${resultContainer} `);
+    })
+    .catch(err => {
+      log(`error test file  ${err.message} `);
+    });
 };
