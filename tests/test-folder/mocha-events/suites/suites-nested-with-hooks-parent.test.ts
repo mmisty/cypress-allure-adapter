@@ -3,6 +3,7 @@ import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
 import { readFileSync } from 'fs';
 
+// https://github.com/mmisty/cypress-allure-adapter/issues/7
 describe('several nested suites with global hook - hook should be added to all children', () => {
   const res = createResTest2([
     `
@@ -23,6 +24,14 @@ describe('hello suite', () => {
         cy.log('message');
       });
     });
+    
+    it('test2', () => {
+      cy.log('message');
+    });
+  });
+  
+  it('test3', () => {
+    cy.log('message');
   });
 });
 `,

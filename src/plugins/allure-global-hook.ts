@@ -95,7 +95,7 @@ export class GlobalHooks {
   }
 
   attachment(name: string, file: string, type: ContentType) {
-    log(`add attachement: ${name}`);
+    log(`add attachment: ${name}`);
 
     if (!this.currentHook) {
       return;
@@ -106,7 +106,7 @@ export class GlobalHooks {
     }
     this.currentHook.attachments.push({ name, file, type });
 
-    log(`added attachement: ${name}`);
+    log(`added attachment: ${name}`);
   }
 
   // proces attachments
