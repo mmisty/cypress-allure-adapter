@@ -30,7 +30,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
   const date = Date.parse('10 Dec 2011 UTC');
 
   const replaceSteps = (steps: ExecutableItem[]): any[] => {
-    if (steps.length === 0) {
+    if (!steps || steps.length === 0) {
       return [];
     }
 
@@ -328,11 +328,11 @@ export const createResTest2 = (
     let err: Error | undefined;
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
-    try {
-      process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
-      process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
+    process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
+    process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
-      result.res = await cy.run({
+    return cy
+      .run({
         spec,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
         port,
@@ -341,12 +341,16 @@ export const createResTest2 = (
         env,
         quiet: `${process.env.QUIET}` === 'true',
         video: parseBoolean(envConfig?.video ?? `${true}`),
+      })
+      .catch(e => {
+        err = e as Error;
+      })
+      .then(cyResult => {
+        result.res = cyResult;
+      })
+      .then(() => {
+        expect(err).toBeUndefined();
       });
-    } catch (e) {
-      err = e as Error;
-    }
-
-    expect(err).toBeUndefined();
   });
 
   return {

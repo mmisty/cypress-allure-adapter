@@ -149,8 +149,8 @@ export class AllureReporter {
   globalHooks = new GlobalHooks(this);
 
   // this is variable for global hooks only
-  hooks: { id?: string; hook: ExecutableItemWrapper }[] = [];
-  allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string }[] = [];
+  hooks: { id?: string; hook: ExecutableItemWrapper; nested: number; name: string }[] = [];
+  allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string; nested: number; name: string }[] = [];
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
@@ -216,10 +216,10 @@ export class AllureReporter {
     return this.currentStep || this.currentHook || this.currentTest;
   }
 
-  addGlobalHooks() {
+  addGlobalHooks(nestedLevel: number) {
     log('>>> add Global Hooks');
 
-    if (this.groups.length > 1 || !this.globalHooks.hasHooks()) {
+    if (nestedLevel > 1 || !this.globalHooks.hasHooks()) {
       log('not root hooks');
 
       return;
@@ -237,8 +237,27 @@ export class AllureReporter {
     this.groups.push(group);
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
-    if (this.groups.length === 1) {
-      this.addGlobalHooks();
+    this.addGlobalHooks(this.groups.length);
+    this.addHooks(this.groups.length);
+  }
+
+  addHooks(nested: number) {
+    const hooks = this.allHooks.filter(t => t.nested <= nested - 1);
+
+    if (!!this.currentGroup && hooks.length > 0) {
+      hooks.forEach(hk => {
+        const currentHook = isBeforeAllHook(hk.hook.name)
+          ? this.currentGroup!.addBefore()
+          : this.currentGroup!.addAfter();
+
+        currentHook.name = hk.name;
+        currentHook.wrappedItem.status = hk.hook.status;
+        currentHook.wrappedItem.stop = hk.hook.wrappedItem.stop;
+        currentHook.wrappedItem.start = hk.hook.wrappedItem.start;
+        currentHook.wrappedItem.attachments = hk.hook.wrappedItem.attachments;
+        currentHook.wrappedItem.statusDetails = hk.hook.wrappedItem.statusDetails;
+        currentHook.wrappedItem.parameters = hk.hook.wrappedItem.parameters;
+      });
     }
   }
 
@@ -282,8 +301,14 @@ export class AllureReporter {
 
       currentHook.name = title;
       currentHook.wrappedItem.start = date ?? Date.now();
-      this.hooks.push({ id: hookId, hook: currentHook });
-      this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+      this.hooks.push({ id: hookId, hook: currentHook, nested: this.groups.length, name: title });
+      this.allHooks.push({
+        id: hookId,
+        hook: currentHook,
+        suite: this.currentGroup?.uuid,
+        nested: this.groups.length,
+        name: title,
+      });
     } else {
       // create but not add to suite for steps to be added there
       const currentHook = new ExecutableItemWrapper({
@@ -300,8 +325,14 @@ export class AllureReporter {
       });
 
       currentHook.wrappedItem.start = date ?? Date.now();
-      this.hooks.push({ id: hookId, hook: currentHook });
-      this.allHooks.push({ id: hookId, hook: currentHook, suite: this.currentGroup?.uuid });
+      this.hooks.push({ id: hookId, hook: currentHook, nested: this.groups.length, name: title });
+      this.allHooks.push({
+        id: hookId,
+        hook: currentHook,
+        suite: this.currentGroup?.uuid,
+        nested: this.groups.length,
+        name: title,
+      });
     }
   }
 
@@ -582,7 +613,7 @@ export class AllureReporter {
     // why >= 1?
     if (this.groups.length >= 1) {
       log('addGlobalHooks');
-      this.addGlobalHooks();
+      this.addGlobalHooks(this.groups.length);
     }
 
     if (this.currentGroup) {
