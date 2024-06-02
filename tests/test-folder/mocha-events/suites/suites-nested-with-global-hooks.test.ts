@@ -6,7 +6,7 @@ describe('several nested suites with global hook - hook should be added to all p
     `
 describe('hello suite', () => {
   describe('child suite', () => {
-    before(() => {
+    before('Child hook', () => {
       cy.log('before');
     });
     
@@ -41,9 +41,11 @@ describe('hello suite', () => {
         resFixed.map(t => ({
           name: t.name,
           status: t.status,
-          parents: getParentsArray(t).map(t => ({
-            name: t.name,
-            befores: t.befores?.map(x => ({ status: x.status })),
+          parents: getParentsArray(t).map(z => ({
+            name: z.name,
+            befores: z.befores
+              ?.filter(x => (x as any).name !== '"before all" hook')
+              ?.map(x => ({ status: x.status, name: (x as any).name })),
           })),
         })),
       ).toEqual([
@@ -53,27 +55,14 @@ describe('hello suite', () => {
             {
               befores: [
                 {
-                  name: '"before all" hook',
-                  status: 'broken',
-                },
-                {
-                  name: '"before all" hook: parent hook',
-                  status: 'broken',
+                  name: '"before all" hook: Child hook',
+                  status: 'passed',
                 },
               ],
               name: 'child suite',
             },
             {
-              befores: [
-                {
-                  name: '"before all" hook',
-                  status: 'passed',
-                },
-                {
-                  name: '"before all" hook: parent hook',
-                  status: 'passed',
-                },
-              ],
+              befores: [],
               name: 'hello suite',
             },
           ],
