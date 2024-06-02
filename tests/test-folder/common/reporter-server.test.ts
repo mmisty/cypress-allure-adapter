@@ -87,11 +87,7 @@ describe('startReporterServer', () => {
         });
         ws.on('open', function open() {
           ws.send('OPENED');
-        });
-        ws.on('message', function msg(m) {
-          if (`${m}` !== 'connection established') {
-            back.push(`${m}`);
-          }
+
           sendObjs.forEach((obj, i) => {
             ws.send(
               JSON.stringify({
@@ -100,6 +96,12 @@ describe('startReporterServer', () => {
               }),
             );
           });
+        });
+
+        ws.on('message', function msg(m) {
+          if (`${m}` !== 'connection established') {
+            back.push(`${m}`);
+          }
 
           res(true);
         });
