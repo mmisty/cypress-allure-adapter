@@ -13,6 +13,10 @@ describe('hello suite', () => {
     it('hello test', () => {
       cy.log('message');
     });
+    
+    after('Child after hook', () => {
+      cy.log('after');
+    });
   });
 });
 `,
@@ -46,6 +50,11 @@ describe('hello suite', () => {
             befores: z.befores
               ?.filter(x => (x as any).name !== '"before all" hook')
               ?.map(x => ({ status: x.status, name: (x as any).name })),
+            afters: z.afters
+              ?.filter(x => (x as any).name !== '"after all" hook')
+              ?.filter(x => (x as any).name.indexOf('Coverage') === -1)
+              ?.filter(x => (x as any).name.indexOf('generateReport') === -1)
+              ?.map(x => ({ status: x.status, name: (x as any).name })),
           })),
         })),
       ).toEqual([
@@ -59,10 +68,21 @@ describe('hello suite', () => {
                   status: 'passed',
                 },
               ],
+              afters: [
+                {
+                  name: '"after all" hook: Child after hook',
+                  status: 'passed',
+                },
+                {
+                  name: 'video',
+                  status: 'passed',
+                },
+              ],
               name: 'child suite',
             },
             {
               befores: [],
+              afters: [],
               name: 'hello suite',
             },
           ],

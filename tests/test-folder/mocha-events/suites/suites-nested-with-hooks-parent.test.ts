@@ -13,8 +13,17 @@ describe('hello suite', () => {
     cy.log('before');
   });
   
+  after('parent hook', () => {
+    cy.log('before');
+  });
+  
   describe('child suite', () => {
     before('child hook', () => {
+      cy.allure().attachment('out child', 'test number', 'text/plain');
+      cy.log('before');
+    });
+    
+    after('child hook', () => {
       cy.allure().attachment('out child', 'test number', 'text/plain');
       cy.log('before');
     });
@@ -24,14 +33,6 @@ describe('hello suite', () => {
         cy.log('message');
       });
     });
-    
-    it('test2', () => {
-      cy.log('message');
-    });
-  });
-  
-  it('test3', () => {
-    cy.log('message');
   });
 });
 `,
@@ -75,6 +76,11 @@ describe('hello suite', () => {
                     0,
                 })),
               })),
+            afters: t.afters
+              ?.filter(x => (x as any).name !== '"after all" hook')
+              ?.filter(x => (x as any).name.indexOf('Coverage') === -1)
+              ?.filter(x => (x as any).name.indexOf('generateReport') === -1)
+              ?.map(x => ({ status: x.status, name: (x as any).name })),
           })),
         })),
       ).toEqual([
@@ -82,6 +88,12 @@ describe('hello suite', () => {
           name: 'hello test',
           parents: [
             {
+              afters: [
+                {
+                  name: 'video',
+                  status: 'passed',
+                },
+              ],
               befores: [
                 {
                   attachments: [
@@ -111,6 +123,12 @@ describe('hello suite', () => {
               name: 'sub sub suite',
             },
             {
+              afters: [
+                {
+                  name: '"after all" hook: child hook',
+                  status: 'passed',
+                },
+              ],
               befores: [
                 {
                   attachments: [
@@ -140,6 +158,12 @@ describe('hello suite', () => {
               name: 'child suite',
             },
             {
+              afters: [
+                {
+                  name: '"after all" hook: parent hook',
+                  status: 'passed',
+                },
+              ],
               befores: [
                 {
                   attachments: [
