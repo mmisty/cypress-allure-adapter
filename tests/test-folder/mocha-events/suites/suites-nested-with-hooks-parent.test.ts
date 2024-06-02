@@ -3,26 +3,28 @@ import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
 import { readFileSync } from 'fs';
 
-// issue https://github.com/mmisty/cypress-allure-adapter/issues/95
+// https://github.com/mmisty/cypress-allure-adapter/issues/7
 describe('several nested suites with global hook - hook should be added to all children', () => {
   const res = createResTest2([
     `
-before('glob hook', () => {
-  cy.log('before');
-});
-
 describe('hello suite', () => {
   before('parent hook', () => {
-    cy.allure().attachment('out', 'test number', 'text/plain');
+    cy.allure().attachment('out parent', 'test number', 'text/plain');
     cy.log('before');
   });
   
-  it('test 1', () => {
-    cy.log('message');
+  after('parent hook', () => {
+    cy.log('before');
   });
   
   describe('child suite', () => {
     before('child hook', () => {
+      cy.allure().attachment('out child', 'test number', 'text/plain');
+      cy.log('before');
+    });
+    
+    after('child hook', () => {
+      cy.allure().attachment('out child', 'test number', 'text/plain');
       cy.log('before');
     });
     
@@ -45,56 +47,58 @@ describe('hello suite', () => {
     });
 
     it('check tests count', async () => {
-      expect(resFixed.length).toEqual(2);
+      expect(resFixed.length).toEqual(1);
     });
 
     it('check tests names', async () => {
       expect(resFixed.map(t => t.fullName).sort()).toEqual([
         'hello suite child suite sub sub suite hello test',
-        'hello suite test 1',
       ]);
     });
 
     it('suites parents', () => {
       expect(
-        resFixed
-          .sort((a, b) => (a.name < b.name ? -1 : 1))
-          .map(t => ({
+        resFixed.map(t => ({
+          name: t.name,
+          status: t.status,
+          parents: getParentsArray(t).map(t => ({
             name: t.name,
-            status: t.status,
-            parents: getParentsArray(t).map(t => ({
-              name: t.name,
-              befores: t.befores
-                ?.filter(x => (x as any).name !== '"before all" hook')
-                .map(x => ({
-                  name: (x as any).name,
-                  status: x.status,
-                  statusDetails: x.statusDetails,
-                  attachments: x.attachments.map(t => ({
-                    ...t,
-                    source: `source${extname(t.source)}`,
-                    sourceContentMoreThanZero:
-                      readFileSync(`${res.watch}/${t.source}`).toString()
-                        .length > 0,
-                  })),
+            befores: t.befores
+              ?.filter(x => (x as any).name !== '"before all" hook')
+              .map(x => ({
+                name: (x as any).name,
+                status: x.status,
+                attachments: x.attachments.map(t => ({
+                  ...t,
+                  source: `source${extname(t.source)}`,
+                  sourceContentMoreThanZero:
+                    readFileSync(`${res.watch}/${t.source}`).toString().length >
+                    0,
                 })),
-            })),
+              })),
+            afters: t.afters
+              ?.filter(x => (x as any).name !== '"after all" hook')
+              ?.filter(x => (x as any).name.indexOf('Coverage') === -1)
+              ?.filter(x => (x as any).name.indexOf('generateReport') === -1)
+              ?.map(x => ({ status: x.status, name: (x as any).name })),
           })),
+        })),
       ).toEqual([
         {
           name: 'hello test',
           parents: [
             {
-              befores: [
+              afters: [
                 {
-                  name: '"before all" hook: glob hook',
+                  name: 'video',
                   status: 'passed',
-                  attachments: [],
                 },
+              ],
+              befores: [
                 {
                   attachments: [
                     {
-                      name: 'out',
+                      name: 'out parent',
                       source: 'source.txt',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
@@ -104,7 +108,14 @@ describe('hello suite', () => {
                   status: 'passed',
                 },
                 {
-                  attachments: [],
+                  attachments: [
+                    {
+                      name: 'out child',
+                      source: 'source.txt',
+                      sourceContentMoreThanZero: true,
+                      type: 'text/plain',
+                    },
+                  ],
                   name: '"before all" hook: child hook',
                   status: 'passed',
                 },
@@ -112,17 +123,17 @@ describe('hello suite', () => {
               name: 'sub sub suite',
             },
             {
-              befores: [
+              afters: [
                 {
-                  attachments: [],
-                  name: '"before all" hook: glob hook',
+                  name: '"after all" hook: child hook',
                   status: 'passed',
-                  statusDetails: {},
                 },
+              ],
+              befores: [
                 {
                   attachments: [
                     {
-                      name: 'out',
+                      name: 'out parent',
                       source: 'source.txt',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
@@ -130,58 +141,34 @@ describe('hello suite', () => {
                   ],
                   name: '"before all" hook: parent hook',
                   status: 'passed',
-                  statusDetails: {},
                 },
                 {
-                  attachments: [],
+                  attachments: [
+                    {
+                      name: 'out child',
+                      source: 'source.txt',
+                      sourceContentMoreThanZero: true,
+                      type: 'text/plain',
+                    },
+                  ],
                   name: '"before all" hook: child hook',
                   status: 'passed',
-                  statusDetails: {},
                 },
               ],
               name: 'child suite',
             },
             {
-              befores: [
+              afters: [
                 {
-                  attachments: [],
-                  name: '"before all" hook: glob hook',
+                  name: '"after all" hook: parent hook',
                   status: 'passed',
-                  statusDetails: {},
-                },
-                {
-                  attachments: [
-                    {
-                      name: 'out',
-                      source: 'source.txt',
-                      sourceContentMoreThanZero: true,
-                      type: 'text/plain',
-                    },
-                  ],
-                  name: '"before all" hook: parent hook',
-                  status: 'passed',
-                  statusDetails: {},
                 },
               ],
-              name: 'hello suite',
-            },
-          ],
-          status: 'passed',
-        },
-        {
-          name: 'test 1',
-          parents: [
-            {
               befores: [
-                {
-                  attachments: [],
-                  name: '"before all" hook: glob hook',
-                  status: 'passed',
-                },
                 {
                   attachments: [
                     {
-                      name: 'out',
+                      name: 'out parent',
                       source: 'source.txt',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',

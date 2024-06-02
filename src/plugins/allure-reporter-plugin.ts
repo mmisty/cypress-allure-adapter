@@ -216,10 +216,10 @@ export class AllureReporter {
     return this.currentStep || this.currentHook || this.currentTest;
   }
 
-  addGlobalHooks(nestedLevel: number) {
+  addGlobalHooks(_nestedLevel: number) {
     log('>>> add Global Hooks');
 
-    if (nestedLevel > 1 || !this.globalHooks.hasHooks()) {
+    if (!this.globalHooks.hasHooks()) {
       log('not root hooks');
 
       return;
@@ -610,11 +610,7 @@ export class AllureReporter {
   }
 
   endGroup() {
-    // why >= 1?
-    if (this.groups.length >= 1) {
-      log('addGlobalHooks');
-      this.addGlobalHooks(this.groups.length);
-    }
+    this.addGlobalHooks(this.groups.length);
 
     if (this.currentGroup) {
       log('END GROUP');
