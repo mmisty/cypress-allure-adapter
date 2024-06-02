@@ -216,7 +216,7 @@ export class AllureReporter {
     return this.currentStep || this.currentHook || this.currentTest;
   }
 
-  addGlobalHooks(nestedLevel: number) {
+  addGlobalHooks(_nestedLevel: number) {
     log('>>> add Global Hooks');
 
     if (!this.globalHooks.hasHooks()) {
