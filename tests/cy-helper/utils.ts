@@ -30,7 +30,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
   const date = Date.parse('10 Dec 2011 UTC');
 
   const replaceSteps = (steps: ExecutableItem[]): any[] => {
-    if (steps.length === 0) {
+    if (!steps || steps.length === 0) {
       return [];
     }
 
