@@ -21,11 +21,11 @@ describe('custom commands', () => {
     });
     
      it('tasklog1 long', () => {
-      cy.tasklog1({long: {long: ['chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken' ]}});
+      cy.tasklog1("0123456789".repeat(21));
     });
     
     it('just long log', () => {
-      cy.log(JSON.stringify({long: {long: ['chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken', 'chicken' ]}}));
+      cy.log("0123456789".repeat(21));
     });
   });
 `,
@@ -99,7 +99,7 @@ describe('custom commands', () => {
             {
               name: 'tasklog1 args',
               sourceContent:
-                '{"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+                '012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
               type: 'application/json',
             },
           ],
@@ -110,7 +110,7 @@ describe('custom commands', () => {
                 {
                   name: 'task: log args',
                   sourceContent:
-                    'log\n{"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+                    'log\n012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
                   type: 'application/json',
                 },
               ],
@@ -121,7 +121,7 @@ describe('custom commands', () => {
                     {
                       name: 'task args',
                       sourceContent:
-                        'log, {"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+                        'log, "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"',
                       type: 'application/json',
                     },
                   ],
@@ -156,7 +156,7 @@ describe('custom commands', () => {
             {
               name: 'log args',
               sourceContent:
-                '{"long":{"long":["chicken","chicken","chicken","chicken","chicken","chicken","chicken","chicken"]}}',
+                '012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
               type: 'application/json',
             },
           ],
