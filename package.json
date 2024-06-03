@@ -28,8 +28,8 @@
   "scripts": {
     "husky:install": "husky install",
     "lint": "eslint --fix '**/*.{ts,tsx,js}'",
-    "test:jest:cy": "CI=true COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events\" --reporters=default --reporters=jest-junit",
-    "test:jest": "CI=true COVERAGE=true jest --runInBand --coverage --testPathIgnorePatterns=\"tests/test-folder/(mocha-events)|(allure-plugin)\" --reporters=default --reporters=jest-junit",
+    "test:jest:cy": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events\" --reporters=default --reporters=jest-junit",
+    "test:jest": "QUIET=true COVERAGE=true jest --runInBand --coverage --testPathIgnorePatterns=\"tests/test-folder/(mocha-events)|(allure-plugin)\" --reporters=default --reporters=jest-junit",
     "test:cov": "npm run test:jest && npm run test:jest:cy && npm run cov:merge",
     "cy": "cypress",
     "cy:open": "npm run cy -- open --e2e",
@@ -79,21 +79,21 @@
   "devDependencies": {
     "@badeball/cypress-cucumber-preprocessor": "^19.1.0",
     "@bahmutov/cypress-esbuild-preprocessor": "^2.2.0",
-    "@cypress/code-coverage": "^3.12.20",
+    "@cypress/code-coverage": "^3.12.39",
     "@ephesoft/webpack.istanbul.loader": "^2.2.0",
     "@istanbuljs/nyc-config-typescript": "^1.0.2",
-    "@mmisty/cypress-grep": "^1.9.5",
+    "@mmisty/cypress-grep": "^1.9.8",
     "@types/cors": "^2.8.17",
     "@types/debug": "^4.1.12",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
     "@types/node": "^18.11.9",
     "@types/uuid": "^9.0.8",
-    "@types/ws": "^8.5.9",
+    "@types/ws": "^8.5.10",
     "@typescript-eslint/eslint-plugin": "^5.44.0",
     "@typescript-eslint/parser": "^5.44.0",
     "allure-commandline": "^2.27.0",
-    "cypress": "^13.6.4",
+    "cypress": "13.10.0",
     "cypress-redirect-browser-log": "^1.3.0",
     "eslint": "^8.46.0",
     "eslint-config-prettier": "^8.5.0",
@@ -115,18 +115,18 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "typescript": "^4.9.3",
-    "webpack": "^5.89.0"
+    "webpack": "^5.91.0"
   },
   "dependencies": {
-    "@mmisty/cypress-tags": "^1.0.15",
-    "allure-js-commons": "^2.12.0",
+    "@mmisty/cypress-tags": "1.0.15",
+    "allure-js-commons": "2.15.1",
     "allure-js-parser": "^0.0.7",
-    "debug": "^4.3.4",
-    "events": "^3.3.0",
-    "fast-glob": "^3.3.2",
-    "uuid": "^9.0.1",
-    "uuid-by-string": "^4.0.0",
-    "ws": "^8.16.0"
+    "debug": "4.3.4",
+    "events": "3.3.0",
+    "fast-glob": "3.3.2",
+    "uuid": "9.0.1",
+    "uuid-by-string": "4.0.0",
+    "ws": "8.17.0"
   },
   "cypress-cucumber-preprocessor": {
     "stepDefinitions": [
@@ -135,7 +135,7 @@
     ]
   },
   "engines": {
-    "node": ">=16",
+    "node": ">=18",
     "npm": ">=8"
   },
   "volta": {

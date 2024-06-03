@@ -13,7 +13,7 @@ describe('reporter', () => {
   const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
 
-  it('should correctly end all steps', () => {
+  it('should correctly end all steps', async () => {
     if (existsSync(resultsPath)) {
       rmSync(resultsPath, { recursive: true });
     }
@@ -81,6 +81,7 @@ describe('reporter', () => {
       },
     });
     reporter.suiteEnded({});
+    await reporter.afterSpec({ results: [] });
 
     const results = parseAllure(resultsPath);
     expect(

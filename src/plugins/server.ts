@@ -11,6 +11,9 @@ const log = (...args: unknown[]) => {
   debug(`${args}`);
 };
 
+// for testing
+export const testMessages: any[] = [];
+
 const messageGot = (...args: unknown[]) => {
   logMessage(`${args}`);
 };
@@ -36,6 +39,8 @@ const socketLogic = (port: number, sockserver: WebSocketServer | undefined, task
     ws.on('message', data => {
       messageGot('message received');
       messageGot(data);
+
+      testMessages.push(`${data}`);
 
       const parseData = (data: RawData) => {
         try {
@@ -94,6 +99,8 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
 
     console.error(`${packageLog} Error on ws server: ${(err as Error).message}`);
   });
+
+  return sockserver;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
