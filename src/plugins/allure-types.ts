@@ -10,6 +10,7 @@ export interface AutoScreen {
   path: string; // abs path
   height: number;
   width: number;
+  name?: string;
 }
 export type AfterSpecScreenshots = {
   screenshots: AutoScreen[];
@@ -57,7 +58,7 @@ type AllureTask = {
   testMessage: { path: string; message: string };
   delete: { path: string };
   screenshotOne: { name: string | undefined; forStep?: boolean };
-  screenshotAttachment: AutoScreen;
+  // screenshotAttachment: AutoScreen;
   testResult: {
     title: string;
     id: string;

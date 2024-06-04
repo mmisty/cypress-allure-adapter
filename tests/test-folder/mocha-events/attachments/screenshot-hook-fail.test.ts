@@ -53,7 +53,13 @@ describe('screenshot when before hook fails @screen', () => {
       );
       expect(obj).toEqual([
         {
-          attachments: [],
+          attachments: [
+            {
+              name: 'screenshot when before hook fails -- 01 test -- before all hook (failed).png',
+              source: 'source.png',
+              type: 'image/png',
+            },
+          ],
           name: '01 test',
           parents: [
             {
@@ -79,13 +85,7 @@ describe('screenshot when before hook fails @screen', () => {
                   steps: [],
                 },
                 {
-                  attachments: [
-                    {
-                      name: 'screenshot when before hook fails -- 01 test -- before all hook (failed).png',
-                      source: 'source.png',
-                      type: 'image/png',
-                    },
-                  ],
+                  attachments: [],
                   name: '"before all" hook',
                   status: 'failed',
                   steps: [

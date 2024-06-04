@@ -162,8 +162,6 @@ export class AllureReporter {
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
 
-  private screenshotsTest: { [testId: string]: { [testAttemptIndex: string]: string[] } } = {};
-
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
@@ -456,20 +454,26 @@ export class AllureReporter {
     // attach auto screenshots for fails
     const { screenshots } = arg;
     log('attachScreenshots:');
+    log(JSON.stringify(screenshots));
 
     if (!screenshots) {
       return;
     }
 
     log('screenshotsTest:');
-    log(JSON.stringify(this.screenshotsTest));
 
     screenshots.forEach(x => {
       log(`attachScreenshots:${x.path}`);
+      let uuids;
 
-      const uuids = allTests
-        .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
-        .map(t => t.uuid);
+      if (x.testId === undefined && x.testAttemptIndex === undefined) {
+        // this is global hook screenshot - attach to all
+        uuids = allTests.map(t => t.uuid);
+      } else {
+        uuids = allTests
+          .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
+          .map(t => t.uuid);
+      }
 
       if (uuids.length === 0) {
         log('no attach auto screens, only for non-success tests tests');
@@ -505,6 +509,7 @@ export class AllureReporter {
             testCon.attachments = [];
           }
 
+          // todo fix duplicates
           testCon.attachments.push({
             name: name,
             type: 'image/png',
@@ -521,20 +526,6 @@ export class AllureReporter {
 
   keyWhenNoTest(testId: string | undefined) {
     return testId ?? 'NoTestId';
-  }
-
-  screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
-    const { testId, path, testAttemptIndex } = arg;
-    console.log(arg);
-
-    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
-      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
-    }
-
-    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
-      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
-    }
-    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
   }
 
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
