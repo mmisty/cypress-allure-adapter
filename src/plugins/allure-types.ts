@@ -61,7 +61,6 @@ type AllureTask = {
   testResult: {
     title: string;
     id: string;
-    originalTestId?: string;
     result: Status;
     details?: StatusDetails;
   };

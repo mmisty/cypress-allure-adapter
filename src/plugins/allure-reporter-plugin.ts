@@ -163,7 +163,6 @@ export class AllureReporter {
   descriptionHtml: string[] = [];
 
   private screenshotsTest: { [testId: string]: { [testAttemptIndex: string]: string[] } } = {};
-  attached: { testMochaId?: string; file: string; retryIndex: number | undefined }[] = [];
 
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
@@ -556,7 +555,7 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      const executable = this.currentExecutable; // currentStep ?? this.currentHook ?? this.currentTest; // todo check
+      const executable = this.currentExecutable;
       const attachTo = forStep && this.currentStep ? this.currentStep : executable;
       // to have it in allure-results directory
 
@@ -679,7 +678,6 @@ export class AllureReporter {
     this.groups.forEach(g => {
       g.endGroup();
     });
-    this.attached = [];
     this.allHooks = [];
   }
 
@@ -1086,17 +1084,8 @@ export class AllureReporter {
       if (exec ?? this.currentExecutable) {
         copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
         (exec ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
-        this.attached.push({
-          // toTest: true
-          retryIndex: this.currentTestAll?.retryIndex,
-          testMochaId: this.currentTestAll?.mochaId,
-          file: arg.file,
-        });
         log(`added attachment: ${fileNew} ${arg.file}`);
       }
-
-      // copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-      // exec.addAttachment(arg.name, arg.type, fileNew);
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
     }

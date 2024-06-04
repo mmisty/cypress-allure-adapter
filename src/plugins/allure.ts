@@ -220,10 +220,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         allureReporter.currentTest.detailsMessage = arg.details?.message;
 
         if (allureReporter.currentTestAll) {
-          console.log(`setting original id ${arg.originalTestId}` ?? arg.id);
-          allureReporter.currentTestAll.mochaId = arg.originalTestId ?? arg.id;
-        } else {
-          console.log('allureReporter.currentTestAll undef');
+          allureReporter.currentTestAll.mochaId = arg.id;
         }
       }
       log('testResult');
@@ -231,9 +228,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
     testEnded: (arg: AllureTaskArgs<'testEnded'>) => {
       log(`testEnded ${JSON.stringify(arg)}`);
-
       allureReporter.endTest(arg);
-
       log('testEnded');
     },
 
