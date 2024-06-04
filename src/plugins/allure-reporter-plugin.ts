@@ -12,7 +12,6 @@ import {
   TestResult,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
-import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
@@ -131,7 +130,14 @@ const getAllAttachments = (item: ExecutableItem): Attachment[] => {
 };
 
 // all tests for session
-const allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
+const allTests: {
+  specRelative: string | undefined;
+  fullTitle: string;
+  uuid: string;
+  mochaId: string;
+  retryIndex: number | undefined;
+  status?: Status;
+}[] = [];
 
 export class AllureReporter {
   // todo config
@@ -142,6 +148,8 @@ export class AllureReporter {
   private allureSkipSteps: RegExp[];
   private videos: string;
   private screenshots: string;
+  // testId -> test attempt index -> screenshots
+  private screenshotsTest: { [key: string]: { [key: string]: string[] } } = {};
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
   steps: AllureStep[] = [];
@@ -150,11 +158,18 @@ export class AllureReporter {
 
   // this is variable for global hooks only
   hooks: { id?: string; hook: ExecutableItemWrapper; nested: number; name: string }[] = [];
-  allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string; nested: number; name: string }[] = [];
+  allHooks: {
+    id?: string;
+    hook: ExecutableItemWrapper;
+    suite: string;
+    nested: number;
+    name: string;
+  }[] = [];
+
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
-  attached: string[] = [];
+  attached: { testMochaId?: string; file: string; retryIndex: number | undefined }[] = [];
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
@@ -171,6 +186,14 @@ export class AllureReporter {
     log('Created reporter');
     log(opts);
     this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
+  }
+
+  get currentTestAll() {
+    if (this.currentTest && allTests[allTests.length - 1]) {
+      return allTests[allTests.length - 1];
+    }
+
+    return undefined;
   }
 
   get currentGroup() {
@@ -436,21 +459,71 @@ export class AllureReporter {
   }
 
   attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+    // attach auto screenshots for fails
     const { screenshots } = arg;
     log('attachScreenshots:');
 
-    screenshots?.forEach(x => {
-      const screenshotContent = readFileSync(x.path);
-      const guidScreenshot = getUuidByString(screenshotContent.toString());
+    if (!screenshots) {
+      // no screenshots
+      return;
+    }
+    log('screenshotsTest:');
+    log(JSON.stringify(this.screenshotsTest));
 
-      if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
-        log(`Already attached: ${x.path}`);
+    screenshots.forEach(x => {
+      console.log(x);
+
+      /*if (
+        !this.screenshotsTest[this.keyWhenNoTest(x.testId)]?.[x.testAttemptIndex ?? 0] ||
+        this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0].length === 0
+      ) {
+        log('no screenshots');
+        // no screenshots
+        return;
+      }
+      const screenshotsForTest = this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0];
+      const lastScreen = screenshotsForTest[screenshotsForTest.length - 1];*/
+
+      log(`attachScreenshots:${x.path}`);
+      console.log(allTests);
+
+      const uuids = allTests
+        .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
+        .map(t => t.uuid);
+
+      const alreadyAttached = []; //this.attached.filter(t => t.file === x.path).filter(t => t.testMochaId === x.testId);
+
+      if (alreadyAttached.length > 0) {
+        log('already attached');
 
         return;
       }
 
-      log(`attachScreenshots:${x.path}`);
-      const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
+      if (uuids.length === 0) {
+        log('no attach auto screens, only for non-success tests tests');
+
+        return;
+      }
+
+      if (!uuids[x.testAttemptIndex ?? 0]) {
+        log(`no attach, cuurenct attampt ${x.testAttemptIndex}`);
+
+        // test passed or no
+        return;
+      }
+
+      // screenshots?.forEach(x => {
+      //   const screenshotContent = readFileSync(x.path);
+      //   const guidScreenshot = getUuidByString(screenshotContent.toString());
+      //
+      //   if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
+      //     log(`Already attached: ${x.path}`);
+      //
+      //     return;
+      //   }
+      //
+      //   log(`attachScreenshots:${x.path}`);
+      // const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
 
       uuids.forEach(uuid => {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
@@ -487,9 +560,32 @@ export class AllureReporter {
     });
   }
 
+  keyWhenNoTest(testId: string | undefined) {
+    return testId ?? 'NoTestId';
+  }
+
+  screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
+    const { testId, path, testAttemptIndex } = arg;
+    console.log(arg);
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
+    }
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
+    }
+    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
+  }
+
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
     const { name, forStep } = arg;
 
+    if (!name) {
+      log('No name specified for screenshot, will not attach');
+
+      return;
+    }
     const pattern = `${this.screenshots}/**/${name}*.png`;
     const files = glob.sync(pattern);
 
@@ -500,8 +596,8 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      const executable = this.currentStep ?? this.currentTest;
-      const attachTo = forStep ? executable : this.currentTest;
+      const executable = this.currentExecutable; // currentStep ?? this.currentHook ?? this.currentTest; // todo check
+      const attachTo = forStep && this.currentStep ? this.currentStep : executable;
       // to have it in allure-results directory
 
       const newUuid = randomUUID();
@@ -519,8 +615,26 @@ export class AllureReporter {
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
       attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      this.attached.push(fileNew);
+      //this.attached.push(fileNew);
     });
+  }
+
+  private testsToAttachBySpec(
+    specPath: string,
+    excludeStatuses: Status[],
+  ): { path: string | undefined; id: string; fullName: string | undefined }[] {
+    const res = parseAllure(this.allureResults);
+
+    const tests = res
+      .filter(t => (this.allureAddVideoOnPass ? true : excludeStatuses.every(s => s !== t.status)))
+      // )t.status !== 'passed' && t.status !== 'skipped'
+      .map(t => ({
+        path: t.labels.find((l: any) => l.name === 'path')?.value,
+        id: t.uuid,
+        fullName: t.fullName,
+      }));
+
+    return tests.filter(t => t.path && t.path.indexOf(specPath) !== -1);
   }
 
   async waitAllTasksToFinish() {
@@ -762,7 +876,13 @@ export class AllureReporter {
     const group = this.currentGroup;
     const test = group!.startTest(title);
 
-    allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
+    allTests.push({
+      retryIndex: currentRetry,
+      specRelative: this.currentSpec?.relative,
+      fullTitle,
+      mochaId: id,
+      uuid: test.uuid,
+    });
     this.tests.push(test);
 
     test.fullName = fullTitle;
@@ -875,6 +995,11 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
+
+    if (this.currentTestAll) {
+      this.currentTestAll.status = result;
+    }
+
     // filter steps here
     this.filterSteps(this.currentTest.wrappedItem);
 
@@ -995,9 +1120,12 @@ export class AllureReporter {
       return;
     }
 
-    if (!exec) {
+    if (!exec && !this.currentExecutable) {
       return;
     }
+    // if (!exec) {
+    //   return;
+    // }
 
     if (!existsSync(arg.file)) {
       console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
@@ -1015,8 +1143,22 @@ export class AllureReporter {
         mkdirSync(this.allureResults, { recursive: true });
       }
 
-      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-      exec.addAttachment(arg.name, arg.type, fileNew);
+      // how to understand where to attach
+
+      if (exec ?? this.currentExecutable) {
+        copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+        (exec ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        this.attached.push({
+          // toTest: true
+          retryIndex: this.currentTestAll?.retryIndex,
+          testMochaId: this.currentTestAll?.mochaId,
+          file: arg.file,
+        });
+        log(`added attachment: ${fileNew} ${arg.file}`);
+      }
+
+      // copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+      // exec.addAttachment(arg.name, arg.type, fileNew);
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
     }

@@ -218,6 +218,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
         allureReporter.currentTest.status = arg.result;
         allureReporter.currentTest.detailsMessage = arg.details?.message;
+
+        if (allureReporter.currentTestAll) {
+          console.log(`setting original id ${arg.originalTestId}` ?? arg.id);
+          allureReporter.currentTestAll.mochaId = arg.originalTestId ?? arg.id;
+        } else {
+          console.log('allureReporter.currentTestAll undef');
+        }
       }
       log('testResult');
     },
@@ -348,7 +355,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.screenshotOne(arg);
       log('screenshotOne');
     },
-
+    screenshotAttachment: (arg: AllureTaskArgs<'screenshotAttachment'>) => {
+      log(`screenshotAttachment ${JSON.stringify(arg)}`);
+      allureReporter.screenshotAttachment(arg);
+      log('screenshotAttachment');
+    },
     // add all screenshots
     attachScreenshots: (arg: AllureTaskArgs<'attachScreenshots'>) => {
       log(`attachScreenshots ${JSON.stringify(arg)}`);
@@ -368,6 +379,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         allureReporter.attachVideoToContainers({ path: video ?? '' });
       } else {
         console.error(`${packageLog} No video path in afterSpec result`);
+      }
+
+      // attach missing screenshots
+      try {
+        allureReporter.attachScreenshots(arg.results);
+      } catch (err) {
+        console.log(`Could not attach screenshots to spec: ${arg.results.spec.relative}:\n${(err as Error).message}`);
       }
 
       await allureReporter.waitAllTasksToFinish();

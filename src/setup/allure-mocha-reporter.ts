@@ -278,16 +278,16 @@ export const registerMochaReporter = (ws: WebSocket) => {
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   const allureEvents = eventsInterfaceInstance(false);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
-  registerScreenshotHandler();
   const startedSuites: Mocha.Suite[] = [];
   const specPathLog = `reports/test-events/${Cypress.spec.name}.log`;
+  const sendMessageTest = sendMessageTestCreator(messageManager, specPathLog);
+  registerScreenshotHandler(messageManager, sendMessageTest);
+
   const debug = logClient(dbg);
 
   if (isJestTest()) {
     messageManager.message({ task: 'delete', arg: { path: specPathLog } });
   }
-
-  const sendMessageTest = sendMessageTestCreator(messageManager, specPathLog);
 
   let createTestsCallb: (() => void) | undefined = undefined;
   registerTestEvents(messageManager, specPathLog);
@@ -511,7 +511,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       message(payload);
     })
 
-    .on(CUSTOM_EVENTS.TEST_FAIL, (test: Mocha.Test) => {
+    .on(CUSTOM_EVENTS.TEST_FAIL, (test: Mocha.Test, originalTestId: string | undefined) => {
       debug(`event ${CUSTOM_EVENTS.TEST_FAIL}: ${test.title}`);
       message({
         task: 'testResult',
@@ -519,6 +519,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
           title: test?.title,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           id: (test as any)?.id,
+          originalTestId,
           result: convertState('failed'),
           details: { message: test?.err?.message, trace: test?.err?.stack },
         },
