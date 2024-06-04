@@ -360,14 +360,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.screenshotAttachment(arg);
       log('screenshotAttachment');
     },
-    // add all screenshots
-    attachScreenshots: (arg: AllureTaskArgs<'attachScreenshots'>) => {
-      log(`attachScreenshots ${JSON.stringify(arg)}`);
-
-      // this goes in after:spec
-      allureReporter.attachScreenshots(arg);
-      log('attachScreenshots');
-    },
 
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);

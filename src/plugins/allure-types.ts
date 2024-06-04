@@ -56,10 +56,8 @@ type AllureTask = {
   parentSuite: { name?: string };
   testMessage: { path: string; message: string };
   delete: { path: string };
-  attachScreenshots: AfterSpecScreenshots;
   screenshotOne: { name: string | undefined; forStep?: boolean };
   screenshotAttachment: AutoScreen;
-  // attachVideoToTests: { path: string };
   testResult: {
     title: string;
     id: string;

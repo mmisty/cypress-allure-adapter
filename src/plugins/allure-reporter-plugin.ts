@@ -20,7 +20,7 @@ import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
-import { AllureTaskArgs, LabelName, Stage, StatusType, UNKNOWN } from './allure-types';
+import { AfterSpecScreenshots, AllureTaskArgs, LabelName, Stage, StatusType, UNKNOWN } from './allure-types';
 import { extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
@@ -148,8 +148,6 @@ export class AllureReporter {
   private allureSkipSteps: RegExp[];
   private videos: string;
   private screenshots: string;
-  // testId -> test attempt index -> screenshots
-  private screenshotsTest: { [key: string]: { [key: string]: string[] } } = {};
   groups: AllureGroup[] = [];
   tests: AllureTest[] = [];
   steps: AllureStep[] = [];
@@ -158,18 +156,15 @@ export class AllureReporter {
 
   // this is variable for global hooks only
   hooks: { id?: string; hook: ExecutableItemWrapper; nested: number; name: string }[] = [];
-  allHooks: {
-    id?: string;
-    hook: ExecutableItemWrapper;
-    suite: string;
-    nested: number;
-    name: string;
-  }[] = [];
+  allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string; nested: number; name: string }[] = [];
 
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
+
+  private screenshotsTest: { [testId: string]: { [testAttemptIndex: string]: string[] } } = {};
   attached: { testMochaId?: string; file: string; retryIndex: number | undefined }[] = [];
+
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
@@ -458,46 +453,24 @@ export class AllureReporter {
     });
   }
 
-  attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+  attachScreenshots(arg: AfterSpecScreenshots) {
     // attach auto screenshots for fails
     const { screenshots } = arg;
     log('attachScreenshots:');
 
     if (!screenshots) {
-      // no screenshots
       return;
     }
+
     log('screenshotsTest:');
     log(JSON.stringify(this.screenshotsTest));
 
     screenshots.forEach(x => {
-      console.log(x);
-
-      /*if (
-        !this.screenshotsTest[this.keyWhenNoTest(x.testId)]?.[x.testAttemptIndex ?? 0] ||
-        this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0].length === 0
-      ) {
-        log('no screenshots');
-        // no screenshots
-        return;
-      }
-      const screenshotsForTest = this.screenshotsTest[this.keyWhenNoTest(x.testId)][x.testAttemptIndex ?? 0];
-      const lastScreen = screenshotsForTest[screenshotsForTest.length - 1];*/
-
       log(`attachScreenshots:${x.path}`);
-      console.log(allTests);
 
       const uuids = allTests
         .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
         .map(t => t.uuid);
-
-      const alreadyAttached = []; //this.attached.filter(t => t.file === x.path).filter(t => t.testMochaId === x.testId);
-
-      if (alreadyAttached.length > 0) {
-        log('already attached');
-
-        return;
-      }
 
       if (uuids.length === 0) {
         log('no attach auto screens, only for non-success tests tests');
@@ -506,24 +479,11 @@ export class AllureReporter {
       }
 
       if (!uuids[x.testAttemptIndex ?? 0]) {
-        log(`no attach, cuurenct attampt ${x.testAttemptIndex}`);
+        log(`no attach, current attempt ${x.testAttemptIndex}`);
 
         // test passed or no
         return;
       }
-
-      // screenshots?.forEach(x => {
-      //   const screenshotContent = readFileSync(x.path);
-      //   const guidScreenshot = getUuidByString(screenshotContent.toString());
-      //
-      //   if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
-      //     log(`Already attached: ${x.path}`);
-      //
-      //     return;
-      //   }
-      //
-      //   log(`attachScreenshots:${x.path}`);
-      // const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
 
       uuids.forEach(uuid => {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
@@ -535,11 +495,11 @@ export class AllureReporter {
           type ParsedAttachment = { name: string; type: ContentType; source: string };
           const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
           const uuidNew = randomUUID();
-          const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same image
-          const newPath = path.join(this.allureResults, nameAttAhc);
+          const nameAttach = `${uuidNew}-attachment${ext}`; // todo not copy same image
+          const newPath = path.join(this.allureResults, nameAttach);
 
           if (!existsSync(newPath)) {
-            copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
+            copyFileSync(x.path, path.join(this.allureResults, nameAttach));
           }
 
           if (!testCon.attachments) {
@@ -549,7 +509,7 @@ export class AllureReporter {
           testCon.attachments.push({
             name: name,
             type: 'image/png',
-            source: nameAttAhc, // todo
+            source: nameAttach, // todo
           });
 
           writeFileSync(testFile, JSON.stringify(testCon));
@@ -615,26 +575,7 @@ export class AllureReporter {
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
       attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      //this.attached.push(fileNew);
     });
-  }
-
-  private testsToAttachBySpec(
-    specPath: string,
-    excludeStatuses: Status[],
-  ): { path: string | undefined; id: string; fullName: string | undefined }[] {
-    const res = parseAllure(this.allureResults);
-
-    const tests = res
-      .filter(t => (this.allureAddVideoOnPass ? true : excludeStatuses.every(s => s !== t.status)))
-      // )t.status !== 'passed' && t.status !== 'skipped'
-      .map(t => ({
-        path: t.labels.find((l: any) => l.name === 'path')?.value,
-        id: t.uuid,
-        fullName: t.fullName,
-      }));
-
-    return tests.filter(t => t.path && t.path.indexOf(specPath) !== -1);
   }
 
   async waitAllTasksToFinish() {
@@ -1123,9 +1064,6 @@ export class AllureReporter {
     if (!exec && !this.currentExecutable) {
       return;
     }
-    // if (!exec) {
-    //   return;
-    // }
 
     if (!existsSync(arg.file)) {
       console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
