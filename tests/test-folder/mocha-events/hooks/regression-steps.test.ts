@@ -93,6 +93,7 @@ describe('hooks test - failed global hook step', () => {
       ...whenNoCoverage('cypress: test:before:run: test 1'),
       'mocha: hook end: "before all" hook: Global Setup Pass',
       'mocha: hook: "before all" hook: Global Setup',
+      'cypress:screenshot:test:test 1 -- before all hook Global Setup (failed).png',
       'mocha: fail: "before all" hook: Global Setup for "test 1"',
       ...whenCoverage(...covergeAfterAllEvent),
       'mocha: hook: "after all" hook: Global teardown',

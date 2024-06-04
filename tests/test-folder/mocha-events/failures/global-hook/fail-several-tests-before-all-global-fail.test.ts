@@ -57,6 +57,7 @@ describe('hello suite', () => {
 
       ...whenCoverage('mocha: hook end: "before all" hook'),
       ...whenCoverage('mocha: hook: "before all" hook'),
+      'cypress:screenshot:test:hello test 1 -- before all hook (failed).png',
       'mocha: fail: "before all" hook for "hello test 1"',
 
       ...whenCoverage(...covergeAfterAllEvent),

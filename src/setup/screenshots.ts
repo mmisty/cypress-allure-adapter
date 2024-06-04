@@ -22,17 +22,20 @@ export const registerScreenshotHandler = (message: MessageManager, testMsg: (msg
 
       if (win.allureAttachToStep) {
         debug(`Attaching to step: ${path}`);
-        Cypress.Allure.fileAttachment(basename(path), path, getContentType(path));
-      } else {
-        debug(`Attaching to test: ${path}`);
         message.message({
           task: 'screenshotAttachment',
           arg: screensArgs,
         });
         Cypress.Allure.fileAttachment(basename(path), path, getContentType(path));
         testMsg(`cypress:screenshot:${basename(path)}`);
-
-        // Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
+      } else {
+        debug(`Attaching to test: ${path}`);
+        message.message({
+          task: 'screenshotAttachment',
+          arg: screensArgs,
+        });
+        Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
+        testMsg(`cypress:screenshot:test:${basename(path)}`);
       }
     } else {
       debug(`No path: ${JSON.stringify(args)}`);
