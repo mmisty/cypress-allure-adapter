@@ -350,6 +350,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       allureReporter.screenshotOne(arg);
       log('screenshotOne');
     },
+    screenshotAttachment: (arg: AllureTaskArgs<'screenshotAttachment'>) => {
+      log(`screenshotAttachment ${JSON.stringify(arg)}`);
+      allureReporter.screenshotAttachment(arg);
+      log('screenshotAttachment');
+    },
 
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);

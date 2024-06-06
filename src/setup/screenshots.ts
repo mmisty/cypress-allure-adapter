@@ -14,32 +14,31 @@ export const registerScreenshotHandler = (message: MessageManager, testMsg: (msg
   (Cypress.Screenshot as any).onAfterScreenshot = (_$el: unknown, ...args: AutoScreen[]) => {
     debug('Screenshot handler');
     // testAttemptIndex, takenAt, name
+    const [screensArgs] = args;
     const [{ path }] = args;
 
-    if (!path) {
-      debug(`No path: ${JSON.stringify(args)}`);
+    if (path) {
+      const win = window as unknown as { allureAttachToStep: boolean };
 
-      originalHandler(_$el, ...args);
-
-      return;
-    }
-
-    if (path.indexOf('(failed)') !== -1) {
-      // will attach in after spec
-      originalHandler(_$el, ...args);
-
-      return;
-    }
-    const win = window as unknown as { allureAttachToStep: boolean };
-
-    if (win.allureAttachToStep) {
-      debug(`Attaching to step: ${path}`);
-      Cypress.Allure.fileAttachment(basename(path), path, getContentType(path));
-      testMsg(`cypress:screenshot:${basename(path)}`);
+      if (win.allureAttachToStep) {
+        debug(`Attaching to step: ${path}`);
+        message.message({
+          task: 'screenshotAttachment',
+          arg: screensArgs,
+        });
+        Cypress.Allure.fileAttachment(basename(path), path, getContentType(path));
+        testMsg(`cypress:screenshot:${basename(path)}`);
+      } else {
+        debug(`Attaching to test: ${path}`);
+        message.message({
+          task: 'screenshotAttachment',
+          arg: screensArgs,
+        });
+        Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
+        testMsg(`cypress:screenshot:test:${basename(path)}`);
+      }
     } else {
-      debug(`Attaching to test: ${path}`);
-      Cypress.Allure.testFileAttachment(basename(path), path, getContentType(path));
-      testMsg(`cypress:screenshot:test:${basename(path)}`);
+      debug(`No path: ${JSON.stringify(args)}`);
     }
 
     originalHandler(_$el, ...args);
