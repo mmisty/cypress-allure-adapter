@@ -192,9 +192,15 @@ export const fullStepAttachment = (
         ?.map(t => ({
           name: t.name,
           status: t.status,
-          attachments: t.attachments.sort((z1, z2) =>
-            z1.name && z2.name && z1.name < z2.name ? -1 : 1,
-          ),
+          attachments: t.attachments
+            .map(t => ({
+              ...t,
+              name: t.name.replace(/\d{5,}/g, 'number'),
+              source: `source${path.extname(t.source)}`,
+            }))
+            .sort((z1, z2) =>
+              z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+            ),
           steps: mapSteps(t.steps, mapStep).filter(x =>
             skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
           ),

@@ -12,7 +12,6 @@ import {
   TestResult,
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
-import getUuidByString from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
@@ -21,7 +20,7 @@ import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
-import { AllureTaskArgs, LabelName, Stage, StatusType, UNKNOWN } from './allure-types';
+import { AfterSpecScreenshots, AllureTaskArgs, LabelName, Stage, StatusType, UNKNOWN } from './allure-types';
 import { extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
@@ -131,7 +130,14 @@ const getAllAttachments = (item: ExecutableItem): Attachment[] => {
 };
 
 // all tests for session
-const allTests: { specRelative: string | undefined; fullTitle: string; uuid: string; mochaId: string }[] = [];
+const allTests: {
+  specRelative: string | undefined;
+  fullTitle: string;
+  uuid: string;
+  mochaId: string;
+  retryIndex: number | undefined;
+  status?: Status;
+}[] = [];
 
 export class AllureReporter {
   // todo config
@@ -151,10 +157,13 @@ export class AllureReporter {
   // this is variable for global hooks only
   hooks: { id?: string; hook: ExecutableItemWrapper; nested: number; name: string }[] = [];
   allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string; nested: number; name: string }[] = [];
+
   currentSpec: Cypress.Spec | undefined;
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
-  attached: string[] = [];
+
+  private screenshotsTest: { [testId: string]: { [testAttemptIndex: string]: string[] } } = {};
+
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
@@ -171,6 +180,14 @@ export class AllureReporter {
     log('Created reporter');
     log(opts);
     this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
+  }
+
+  get currentTestAll() {
+    if (this.currentTest && allTests[allTests.length - 1]) {
+      return allTests[allTests.length - 1];
+    }
+
+    return undefined;
   }
 
   get currentGroup() {
@@ -435,22 +452,37 @@ export class AllureReporter {
     });
   }
 
-  attachScreenshots(arg: AllureTaskArgs<'attachScreenshots'>) {
+  attachScreenshots(arg: AfterSpecScreenshots) {
+    // attach auto screenshots for fails
     const { screenshots } = arg;
     log('attachScreenshots:');
 
-    screenshots?.forEach(x => {
-      const screenshotContent = readFileSync(x.path);
-      const guidScreenshot = getUuidByString(screenshotContent.toString());
+    if (!screenshots) {
+      return;
+    }
 
-      if (this.attached.filter(t => t.indexOf(guidScreenshot) !== -1).length > 0) {
-        log(`Already attached: ${x.path}`);
+    log('screenshotsTest:');
+    log(JSON.stringify(this.screenshotsTest));
+
+    screenshots.forEach(x => {
+      log(`attachScreenshots:${x.path}`);
+
+      const uuids = allTests
+        .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
+        .map(t => t.uuid);
+
+      if (uuids.length === 0) {
+        log('no attach auto screens, only for non-success tests tests');
 
         return;
       }
 
-      log(`attachScreenshots:${x.path}`);
-      const uuids = allTests.filter(t => t.mochaId == x.testId).map(t => t.uuid);
+      if (!uuids[x.testAttemptIndex ?? 0]) {
+        log(`no attach, current attempt ${x.testAttemptIndex}`);
+
+        // test passed or no
+        return;
+      }
 
       uuids.forEach(uuid => {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
@@ -462,11 +494,11 @@ export class AllureReporter {
           type ParsedAttachment = { name: string; type: ContentType; source: string };
           const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
           const uuidNew = randomUUID();
-          const nameAttAhc = `${uuidNew}-attachment${ext}`; // todo not copy same image
-          const newPath = path.join(this.allureResults, nameAttAhc);
+          const nameAttach = `${uuidNew}-attachment${ext}`; // todo not copy same image
+          const newPath = path.join(this.allureResults, nameAttach);
 
           if (!existsSync(newPath)) {
-            copyFileSync(x.path, path.join(this.allureResults, nameAttAhc));
+            copyFileSync(x.path, path.join(this.allureResults, nameAttach));
           }
 
           if (!testCon.attachments) {
@@ -476,7 +508,7 @@ export class AllureReporter {
           testCon.attachments.push({
             name: name,
             type: 'image/png',
-            source: nameAttAhc, // todo
+            source: nameAttach, // todo
           });
 
           writeFileSync(testFile, JSON.stringify(testCon));
@@ -487,9 +519,32 @@ export class AllureReporter {
     });
   }
 
+  keyWhenNoTest(testId: string | undefined) {
+    return testId ?? 'NoTestId';
+  }
+
+  screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
+    const { testId, path, testAttemptIndex } = arg;
+    console.log(arg);
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
+    }
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
+    }
+    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
+  }
+
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
     const { name, forStep } = arg;
 
+    if (!name) {
+      log('No name specified for screenshot, will not attach');
+
+      return;
+    }
     const pattern = `${this.screenshots}/**/${name}*.png`;
     const files = glob.sync(pattern);
 
@@ -500,8 +555,8 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      const executable = this.currentStep ?? this.currentTest;
-      const attachTo = forStep ? executable : this.currentTest;
+      const executable = this.currentExecutable;
+      const attachTo = forStep && this.currentStep ? this.currentStep : executable;
       // to have it in allure-results directory
 
       const newUuid = randomUUID();
@@ -519,7 +574,6 @@ export class AllureReporter {
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
       attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      this.attached.push(fileNew);
     });
   }
 
@@ -624,7 +678,6 @@ export class AllureReporter {
     this.groups.forEach(g => {
       g.endGroup();
     });
-    this.attached = [];
     this.allHooks = [];
   }
 
@@ -762,7 +815,13 @@ export class AllureReporter {
     const group = this.currentGroup;
     const test = group!.startTest(title);
 
-    allTests.push({ specRelative: this.currentSpec?.relative, fullTitle, mochaId: id, uuid: test.uuid }); // to show warning
+    allTests.push({
+      retryIndex: currentRetry,
+      specRelative: this.currentSpec?.relative,
+      fullTitle,
+      mochaId: id,
+      uuid: test.uuid,
+    });
     this.tests.push(test);
 
     test.fullName = fullTitle;
@@ -875,6 +934,11 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
+
+    if (this.currentTestAll) {
+      this.currentTestAll.status = result;
+    }
+
     // filter steps here
     this.filterSteps(this.currentTest.wrappedItem);
 
@@ -995,7 +1059,7 @@ export class AllureReporter {
       return;
     }
 
-    if (!exec) {
+    if (!exec && !this.currentExecutable) {
       return;
     }
 
@@ -1015,8 +1079,13 @@ export class AllureReporter {
         mkdirSync(this.allureResults, { recursive: true });
       }
 
-      copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-      exec.addAttachment(arg.name, arg.type, fileNew);
+      // how to understand where to attach
+
+      if (exec ?? this.currentExecutable) {
+        copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+        (exec ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        log(`added attachment: ${fileNew} ${arg.file}`);
+      }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
     }

@@ -56,6 +56,7 @@ describe('hello suite', { retries: 1 }, () => {
       ...whenCoverage('mocha: hook: "before each" hook'),
       ...whenCoverage('mocha: hook end: "before each" hook'),
 
+      'cypress:screenshot:test:hello suite -- hello test (failed).png',
       'mocha: retry: hello test',
       ...whenCoverage(...coverageAfterEachEvent),
 
@@ -69,6 +70,7 @@ describe('hello suite', { retries: 1 }, () => {
       ...whenCoverage('mocha: hook end: "before each" hook'),
       ...whenCoverage('mocha: hook: "before each" hook'),
       ...whenNoCoverage('cypress: test:before:run: hello test'),
+      'cypress:screenshot:test:hello suite -- hello test -- before each hook (failed) (attempt 2).png',
       'mocha: fail: "before each" hook for "hello test"',
 
       ...whenCoverage(...coverageAfterEachEvent),

@@ -278,16 +278,16 @@ export const registerMochaReporter = (ws: WebSocket) => {
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   const allureEvents = eventsInterfaceInstance(false);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
-  registerScreenshotHandler();
   const startedSuites: Mocha.Suite[] = [];
   const specPathLog = `reports/test-events/${Cypress.spec.name}.log`;
+  const sendMessageTest = sendMessageTestCreator(messageManager, specPathLog);
+  registerScreenshotHandler(messageManager, sendMessageTest);
+
   const debug = logClient(dbg);
 
   if (isJestTest()) {
     messageManager.message({ task: 'delete', arg: { path: specPathLog } });
   }
-
-  const sendMessageTest = sendMessageTestCreator(messageManager, specPathLog);
 
   let createTestsCallb: (() => void) | undefined = undefined;
   registerTestEvents(messageManager, specPathLog);

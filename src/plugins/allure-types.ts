@@ -3,14 +3,17 @@ import type { ContentType } from '../common/types';
 
 export interface AutoScreen {
   screenshotId: string;
-  testId: string;
+  specName?: string;
+  testId: string | undefined;
   testAttemptIndex: number;
   takenAt: string; // date
   path: string; // abs path
   height: number;
   width: number;
 }
-
+export type AfterSpecScreenshots = {
+  screenshots: AutoScreen[];
+};
 export type LinkType = 'issue' | 'tms';
 
 type AllureTask = {
@@ -53,9 +56,8 @@ type AllureTask = {
   parentSuite: { name?: string };
   testMessage: { path: string; message: string };
   delete: { path: string };
-  attachScreenshots: { screenshots: AutoScreen[] };
-  screenshotOne: { name: string; forStep?: boolean };
-  // attachVideoToTests: { path: string };
+  screenshotOne: { name: string | undefined; forStep?: boolean };
+  screenshotAttachment: AutoScreen;
   testResult: {
     title: string;
     id: string;
@@ -63,7 +65,7 @@ type AllureTask = {
     details?: StatusDetails;
   };
   endAll: undefined;
-  afterSpec: { results: CypressCommandLine.RunResult };
+  afterSpec: { results: CypressCommandLine.RunResult & AfterSpecScreenshots };
 };
 
 export type RequestTask = keyof AllureTask;

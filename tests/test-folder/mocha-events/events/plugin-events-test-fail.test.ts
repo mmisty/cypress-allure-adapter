@@ -52,6 +52,7 @@ describe('hello suite', () => {
       'plugin test:started',
       ...whenCoverage(...coverageBeforeEachEvent),
       ...whenNoCoverage('cypress: test:before:run: hello test'),
+      'cypress:screenshot:test:hello suite -- hello test (failed).png',
       'mocha: fail: hello test',
       'mocha: test end: hello test',
       ...whenCoverage(...coverageAfterEachEvent),
