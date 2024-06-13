@@ -78,26 +78,24 @@ describe('should skip hooks steps with asterisk', () => {
       const tests = resAllure.filter(t => t.name === 'test1');
       expect(tests.length).toEqual(1);
 
-      const befores = getParentsArray(tests[0]).flatMap(
-        t =>
-          t.befores?.map(x => ({
-            name: (x as any).name,
-            steps: mapSteps(x.steps, y => ({
-              status: y.status,
-              name: y.name?.replace(/\d{4,}/g, 'number'),
-            })),
+      const befores = getParentsArray(tests[0]).flatMap(t =>
+        t.befores?.map(x => ({
+          name: (x as any).name,
+          steps: mapSteps(x.steps, y => ({
+            status: y.status,
+            name: y.name?.replace(/\d{4,}/g, 'number'),
           })),
+        })),
       );
 
-      const afters = getParentsArray(tests[0]).flatMap(
-        t =>
-          t.afters?.map(x => ({
-            name: (x as any).name,
-            steps: mapSteps(x.steps, y => ({
-              status: y.status,
-              name: y.name?.replace(/\d{4,}/g, 'number'),
-            })),
+      const afters = getParentsArray(tests[0]).flatMap(t =>
+        t.afters?.map(x => ({
+          name: (x as any).name,
+          steps: mapSteps(x.steps, y => ({
+            status: y.status,
+            name: y.name?.replace(/\d{4,}/g, 'number'),
           })),
+        })),
       );
 
       expect({ befores, afters }).toEqual({
