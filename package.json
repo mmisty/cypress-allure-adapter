@@ -126,7 +126,7 @@
     "fast-glob": "3.3.2",
     "uuid": "9.0.1",
     "uuid-by-string": "4.0.0",
-    "ws": "8.17.0"
+    "ws": "8.17.1"
   },
   "cypress-cucumber-preprocessor": {
     "stepDefinitions": [
