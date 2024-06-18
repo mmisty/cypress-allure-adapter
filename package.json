@@ -77,7 +77,7 @@
     "usePathForSuiteName": "true"
   },
   "devDependencies": {
-    "@badeball/cypress-cucumber-preprocessor": "^19.2.0",
+    "@badeball/cypress-cucumber-preprocessor": "^20.0.7",
     "@bahmutov/cypress-esbuild-preprocessor": "^2.2.1",
     "@cypress/code-coverage": "^3.12.39",
     "@ephesoft/webpack.istanbul.loader": "^2.2.0",
