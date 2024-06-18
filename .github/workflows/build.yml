@@ -54,7 +54,7 @@ jobs:
         
         gitmsg="${{ github.event.commits[0].message }}"
         echo "Commit: $gitmsg" 
-        if [[ "$branch" == "main" ]]; then
+        if [[ "$branch" == "refs/heads/main" ]]; then
           if [[ "$gitmsg" =~ "[patch]" ]]; then
             echo "publish patch"
             npm run publish:patch
@@ -126,7 +126,7 @@ jobs:
           echo "Commit: $gitmsg" 
         
         
-          if [[ "$branch" == "main" ]]; then
+          if [[ "$branch" == "refs/heads/main" ]]; then
             echo "main branch published in diff step"
             exit 0;
           fi
