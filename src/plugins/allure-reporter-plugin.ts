@@ -525,7 +525,6 @@ export class AllureReporter {
 
   screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
     const { testId, path, testAttemptIndex } = arg;
-    console.log(arg);
 
     if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
       this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
