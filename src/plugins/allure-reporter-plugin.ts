@@ -528,6 +528,19 @@ export class AllureReporter {
     return testId ?? 'NoTestId';
   }
 
+  screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
+    const { testId, path, testAttemptIndex } = arg;
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
+    }
+
+    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
+      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
+    }
+    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
+  }
+
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
     const { name, forStep } = arg;
 

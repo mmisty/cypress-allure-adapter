@@ -98,8 +98,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
     mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
       log(`mergePrevStep ${JSON.stringify(arg)}`);
-      console.log('mergePrevStep');
-      console.log(arg);
       const steps = allureReporter.currentTest?.wrappedItem.steps ?? [];
       const last = steps[steps?.length - 1];
 
