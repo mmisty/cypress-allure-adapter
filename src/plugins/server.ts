@@ -66,15 +66,15 @@ const checkPortSync = (port: number, timeoutMs = 2000): boolean => {
 };
 
 function retrieveRandomPortNumber(): number {
-  let port;
+  let port = 40000 + Math.round(Math.random() * 25000);
 
   for (let i = 0; i < 30; i++) {
-    port = 40000 + Math.round(Math.random() * 25000);
     const result = checkPortSync(port);
 
     if (result) {
       return port;
     }
+    port = 40000 + Math.round(Math.random() * 25000);
   }
 
   console.log(`${packageLog} could not find free port, will not report`);
