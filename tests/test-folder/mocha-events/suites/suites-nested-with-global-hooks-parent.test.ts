@@ -1,7 +1,10 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  createResTest2,
+  fixResult,
+  readWithRetry,
+} from '../../../cy-helper/utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
-import { readFileSync } from 'fs';
 
 // issue https://github.com/mmisty/cypress-allure-adapter/issues/95
 describe('several nested suites with global hook - hook should be added to all children', () => {
@@ -74,7 +77,7 @@ describe('hello suite', () => {
                     ...t,
                     source: `source${extname(t.source)}`,
                     sourceContentMoreThanZero:
-                      readFileSync(`${res.watch}/${t.source}`).toString()
+                      readWithRetry(`${res.watch}/${t.source}`).toString()
                         .length > 0,
                   })),
                 })),

@@ -22,7 +22,11 @@ jobs:
 
     - uses: volta-cli/action@v4
     - name: Install
-      run: npm ci
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        command: npm ci
 
     - name: Versions
       run: |
@@ -43,49 +47,6 @@ jobs:
       with:
         name: code-coverage-report
         path: ./reports/coverage-jest/lcov-report/
-
-    - name: Publish main
-      if: success()
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: |
-        branch=${{ github.ref }}
-        echo "Branch: $branch" 
-        
-        gitmsg="${{ github.event.commits[0].message }}"
-        echo "Commit: $gitmsg" 
-        if [[ "$branch" == "refs/heads/main" ]]; then
-          if [[ "$gitmsg" =~ "[patch]" ]]; then
-            echo "publish patch"
-            npm run publish:patch
-            git push --tags
-            exit 0
-          fi 
-          
-          if [[ "$gitmsg" =~ "[fix]" ]]; then
-            echo "publish patch"
-            npm run publish:patch
-            git push --tags
-            exit 0
-          fi
-          
-          if [[ "$gitmsg" =~ "[minor]" ]]; then
-            echo "publish minor"
-            npm run publish:minor
-            git push --tags
-            exit 0
-          fi
-          
-          if [[ "$gitmsg" =~ "[major]" ]]; then
-            echo "publish major"
-            npm run publish:major
-            git push --tags
-            exit 0
-          fi
-        else
-          echo "no publish in non-main branch until tests are not finished"
-        fi
-        
 
     - name: Test Cy
       run: npm run test:jest:cy
@@ -124,12 +85,6 @@ jobs:
           
           gitmsg="${{ github.event.commits[0].message }}"
           echo "Commit: $gitmsg" 
-        
-        
-          if [[ "$branch" == "refs/heads/main" ]]; then
-            echo "main branch published in diff step"
-            exit 0;
-          fi
         
           if [[ "$gitmsg" =~ "[patch]" ]]; then
             echo "publish patch"

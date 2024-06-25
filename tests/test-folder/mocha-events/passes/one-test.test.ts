@@ -3,10 +3,10 @@ import {
   createResTest2,
   fixResult,
   fullStepAttachment,
+  readWithRetry,
   whenCoverage,
   whenNoCoverage,
 } from '../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
 describe('one simple passed test should have correct events and allure results', () => {
@@ -24,7 +24,7 @@ describe('hello suite', () => {
   );
 
   it('should have correct events for one test', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

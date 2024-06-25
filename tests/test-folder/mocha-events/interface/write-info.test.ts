@@ -1,6 +1,6 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { createResTest2, readWithRetry } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 
 describe('should be able to write env info and other', () => {
   const res = createResTest2(
@@ -42,7 +42,7 @@ describe('should be able to write env info and other', () => {
       expect(tests[0].status).toEqual('passed');
       expect(existsSync(`${res.watch}/environment.properties`)).toEqual(true);
       expect(
-        readFileSync(`${res.watch}/environment.properties`).toString(),
+        readWithRetry(`${res.watch}/environment.properties`).toString(),
       ).toEqual('endVar = 123\nALLURE = 5');
     });
 
@@ -53,7 +53,7 @@ describe('should be able to write env info and other', () => {
       const file = `${res.watch}/executor.json`;
       expect(existsSync(file)).toEqual(true);
 
-      const contents = readFileSync(file).toString();
+      const contents = readWithRetry(file).toString();
       expect(JSON.parse(contents)).toEqual({
         name: 'Jenkins',
         type: 'CI',

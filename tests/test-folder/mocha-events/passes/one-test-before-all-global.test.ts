@@ -4,9 +4,9 @@ import {
   covergeBeforeAll,
   createResTest2,
   fixResult,
+  readWithRetry,
   whenCoverage,
 } from '../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('one passed test with global before hook', () => {
@@ -25,7 +25,7 @@ describe('one passed test with global before hook', () => {
   ]);
 
   it('should have correct events for one test with before all global', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

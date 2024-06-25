@@ -2,9 +2,9 @@ import {
   checkCyResults,
   createResTest2,
   mapSteps,
+  readWithRetry,
 } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { readFileSync } from 'fs';
 import { extname } from '../../../../src/common';
 
 describe('test screenshot event', () => {
@@ -47,7 +47,7 @@ describe('test screenshot', () => {
           ...t,
           source: `source${extname(t.source)}`,
           length:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       ).toEqual([
         {
@@ -58,7 +58,7 @@ describe('test screenshot', () => {
         },
       ]);
 
-      const steps = mapSteps(test!.steps, t => ({
+      const steps = mapSteps(test!.steps as any, t => ({
         name: t.name,
         attach: t.attachments,
       })).filter(
@@ -90,7 +90,7 @@ describe('test screenshot', () => {
           ...t,
           source: `source${extname(t.source)}`,
           length:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       ).toEqual([
         {
@@ -101,7 +101,7 @@ describe('test screenshot', () => {
         },
       ]);
 
-      const steps = mapSteps(test!.steps, t => ({
+      const steps = mapSteps(test!.steps as any, t => ({
         name: t.name,
         attach: t.attachments,
       })).filter(

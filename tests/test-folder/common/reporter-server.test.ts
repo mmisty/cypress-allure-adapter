@@ -18,7 +18,7 @@ describe('startReporterServer', () => {
     debug: boolean,
     env: any,
   ): Promise<{ serv: undefined | WebSocketServer }> => {
-    process.env.DEBUG = debug ? 'cypress-allure*' : undefined;
+    process.env.DEBUG = debug ? 'cypress-allure*' : '';
 
     // require to enable DEBUG logging
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -34,6 +34,7 @@ describe('startReporterServer', () => {
       videos: 'reports/screens',
       screenshots: 'reports/screens',
       showDuplicateWarn: true,
+      allureSkipSteps: '',
       isTest: false,
     });
     const serv: { serv: undefined | WebSocketServer } = { serv: undefined };

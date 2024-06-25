@@ -2,9 +2,9 @@ import {
   covergeAfterAllEvent,
   createResTest2,
   fixResult,
+  readWithRetry,
   whenCoverage,
 } from '../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
 describe('several nested suites', () => {
@@ -25,7 +25,7 @@ describe('hello suite', () => {
   ]);
 
   it('should have correct events for suites', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

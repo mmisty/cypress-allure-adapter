@@ -1,7 +1,10 @@
-import { createResTest2, mapSteps } from '../../../cy-helper/utils';
+import {
+  createResTest2,
+  mapSteps,
+  readWithRetry,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
-import { readFileSync } from 'fs';
 
 describe('should have requests', () => {
   const res = createResTest2(
@@ -69,7 +72,7 @@ describe('should have requests', () => {
       );
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         name: t.name?.replace(/\d+/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
@@ -82,7 +85,7 @@ describe('should have requests', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -132,7 +135,7 @@ describe('should have requests', () => {
       );
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         name: t.name?.replace(/\d+/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
@@ -145,7 +148,7 @@ describe('should have requests', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -195,7 +198,7 @@ describe('should have requests', () => {
       );
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         name: t.name?.replace(/\d+/g, 'number'),
         params: t.parameters.map(t => ({
           ...t,
@@ -208,7 +211,7 @@ describe('should have requests', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 

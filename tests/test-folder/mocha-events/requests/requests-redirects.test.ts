@@ -1,7 +1,10 @@
-import { createResTest2, mapSteps } from '../../../cy-helper/utils';
+import {
+  createResTest2,
+  mapSteps,
+  readWithRetry,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
-import { readFileSync } from 'fs';
 
 describe('should have requests when redirects', () => {
   const res = createResTest2(
@@ -48,7 +51,7 @@ describe('should have requests when redirects', () => {
       const tests = resAllure.filter(t => t.name === '01 redirects test');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         status: t.status,
         name: t.name?.replace(/\d{4,}/g, 'number'),
         params: t.parameters.map(t => ({
@@ -62,7 +65,7 @@ describe('should have requests when redirects', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       })).filter(t => t.name.startsWith('request'));
 
@@ -150,7 +153,7 @@ describe('should have requests when redirects', () => {
       const tests = resAllure.filter(t => t.name === '02 its status');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         status: t.status,
         name: t.name?.replace(/\d{4,}/g, 'number'),
         params: t.parameters,

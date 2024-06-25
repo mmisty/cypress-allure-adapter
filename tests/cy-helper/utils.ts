@@ -2,8 +2,8 @@ import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest, getParentsArray } from 'allure-js-parser';
-import { ExecutableItem } from 'allure-js-commons';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { StepResult } from 'allure-js-commons';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook } from 'allure-js-parser/types';
 
@@ -11,8 +11,8 @@ jest.setTimeout(120000);
 
 // eslint-disable-next-line jest/no-export
 export const mapSteps = <T>(
-  steps: ExecutableItem[],
-  map?: (m: ExecutableItem) => T,
+  steps: StepResult[],
+  map?: (m: StepResult) => T,
 ): (T & any)[] => {
   if (steps?.length === 0) {
     return [];
@@ -29,7 +29,7 @@ export const mapSteps = <T>(
 export const fixResult = (results: AllureTest[]): AllureTest[] => {
   const date = Date.parse('10 Dec 2011 UTC');
 
-  const replaceSteps = (steps: ExecutableItem[]): any[] => {
+  const replaceSteps = (steps: StepResult[]): any[] => {
     if (!steps || steps.length === 0) {
       return [];
     }
@@ -137,7 +137,7 @@ export const createResTest = (
     let err: Error | undefined;
 
     try {
-      process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
+      process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : '';
 
       await cy.run({
         spec,
@@ -175,7 +175,7 @@ export const sortAttachments = (res: AllureTest[]) => {
 // eslint-disable-next-line jest/no-export
 export const fullStepAttachment = (
   res: AllureTest[],
-  mapStep?: (m: ExecutableItem) => any,
+  mapStep?: (m: StepResult) => any,
 ) => {
   const parents = res
     .map(x => ({
@@ -252,6 +252,17 @@ export const checkCyResults = (
 };
 
 // eslint-disable-next-line jest/no-export
+export const readWithRetry = (path: string, attempt = 0) => {
+  try {
+    return readFileSync(path);
+  } catch (e) {
+    if (attempt < 30) {
+      return readWithRetry(path, attempt + 1);
+    }
+  }
+};
+
+// eslint-disable-next-line jest/no-export
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
@@ -294,6 +305,10 @@ export const createResTest2 = (
     console.log(`running spec: ${pathRel}`);
   });
 
+  const specs = specPaths.map(
+    t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
+  );
+
   const name = basename(specPaths[0], '.test.ts');
   const testname = `${name}.cy.ts`;
   const storeResDir = `allure-results/${testname}`;
@@ -334,7 +349,7 @@ export const createResTest2 = (
     let err: Error | undefined;
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
-    process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
+    process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : '';
     process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
     return cy
@@ -356,14 +371,18 @@ export const createResTest2 = (
       })
       .then(() => {
         expect(err).toBeUndefined();
+
+        if (!specs.every(p => existsSync(p))) {
+          console.log('Not all files were written');
+
+          return delay(1000);
+        }
       });
   });
 
   return {
     watch: env.allureResultsWatchPath ?? storeResDir,
-    specs: specPaths.map(
-      t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
-    ),
+    specs: specs,
     result: result,
   };
 };
