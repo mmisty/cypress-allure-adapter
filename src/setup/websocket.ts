@@ -62,6 +62,19 @@ export const createMessage = (ws: WebSocket): MessageManager => {
     });
   };
 
+  ws.onclose = () => {
+    // process last events
+    process();
+
+    if (idInterval) {
+      clearInterval(idInterval);
+    }
+  };
+
+  ws.onerror = ev => {
+    console.error(`${packageLog} Ws error ${ev}`);
+  };
+
   return {
     stop: () => {
       // process last events
@@ -79,16 +92,6 @@ export const createMessage = (ws: WebSocket): MessageManager => {
 
     message: <T extends RequestTask>(data: AllureTransfer<T> | string) => {
       messageQueue.enqueue(data); // todo add date time for every event
-
-      ws.onclose = () => {
-        if (idInterval) {
-          clearInterval(idInterval);
-        }
-      };
-
-      ws.onerror = ev => {
-        console.error(`${packageLog} Ws error ${ev}`);
-      };
     },
   };
 };
