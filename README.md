@@ -2,8 +2,7 @@
 
 >  This is Allure plugin for Cypress providing realtime results (compatible with Allure TestOps)
 
-![actions](https://github.com/mmisty/cypress-allure-adapter/actions/workflows/build.yml/badge.svg?branch=main)
-[![semantic-release][semantic-image]][semantic-url]  
+![actions](https://github.com/mmisty/cypress-allure-adapter/actions/workflows/build.yml/badge.svg?branch=main) 
 ![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-13.12.0-blue)
 ![supported cypress](https://img.shields.io/badge/cypress-12.x-blue)
 ![supported cypress](https://img.shields.io/badge/cypress-11.x-blue)
