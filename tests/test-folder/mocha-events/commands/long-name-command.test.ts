@@ -3,9 +3,9 @@ import {
   createResTest2,
   fixResult,
   mapSteps,
+  readWithRetry,
 } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { readFileSync } from 'fs';
 
 describe('custom commands', () => {
   const res = createResTest2(
@@ -50,7 +50,7 @@ describe('custom commands', () => {
       const tests = resFixed.filter(t => t.name === 'tasklog1');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         name: t.name,
         attach: t.attachments,
       }))
@@ -82,12 +82,12 @@ describe('custom commands', () => {
       const tests = results.filter(t => t.name === 'tasklog1 long');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         name: t.name,
         attach: t.attachments.map(t => ({
           name: t.name,
           type: t.type,
-          sourceContent: readFileSync(`${res.watch}/${t.source}`).toString(),
+          sourceContent: readWithRetry(`${res.watch}/${t.source}`).toString(),
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
@@ -139,12 +139,12 @@ describe('custom commands', () => {
       const tests = results.filter(t => t.name === 'just long log');
       expect(tests.length).toEqual(1);
 
-      const steps = mapSteps(tests[0].steps, t => ({
+      const steps = mapSteps(tests[0].steps as any, t => ({
         name: t.name,
         attach: t.attachments.map(t => ({
           name: t.name,
           type: t.type,
-          sourceContent: readFileSync(`${res.watch}/${t.source}`).toString(),
+          sourceContent: readWithRetry(`${res.watch}/${t.source}`).toString(),
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)

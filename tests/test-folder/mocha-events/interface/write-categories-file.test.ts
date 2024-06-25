@@ -1,5 +1,5 @@
-import { createResTest2 } from '../../../cy-helper/utils';
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { createResTest2, readWithRetry } from '../../../cy-helper/utils';
+import { existsSync, writeFileSync } from 'fs';
 
 describe('should be able to write categories info and by file path', () => {
   beforeAll(() => {
@@ -35,7 +35,7 @@ describe('should be able to write categories info and by file path', () => {
       const file = `${res.watch}/categories.json`;
       expect(existsSync(file)).toEqual(true);
 
-      const contents = readFileSync(file).toString();
+      const contents = readWithRetry(file).toString();
       expect(JSON.parse(contents)).toEqual([
         {
           description: 'message containing 123 description',

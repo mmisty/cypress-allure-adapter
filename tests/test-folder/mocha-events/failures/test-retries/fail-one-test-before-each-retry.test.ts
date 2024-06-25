@@ -5,11 +5,11 @@ import {
   covergeBeforeAll,
   createResTest2,
   fixResult,
+  readWithRetry,
   sortAttachments,
   whenCoverage,
   whenNoCoverage,
 } from '../../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('mocha events - check failures @oneInconsistency', () => {
@@ -30,7 +30,7 @@ describe('hello suite', { retries: 1 }, () => {
   ]);
 
   it('should have correct events for one test failed with retry', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

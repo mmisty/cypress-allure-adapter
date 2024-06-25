@@ -1,10 +1,10 @@
 import {
   covergeAfterAllEvent,
   createResTest2,
+  readWithRetry,
   whenCoverage,
   whenNoCoverage,
 } from '../../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 
 describe('one failed test in before each hook with after each', () => {
   const res = createResTest2([
@@ -28,7 +28,7 @@ describe('hello suite', { retries: 1 }, () => {
   ]);
 
   it('should have correct events for one test failed with retry with afterEach', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

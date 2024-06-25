@@ -1,7 +1,10 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import {
+  createResTest2,
+  fixResult,
+  readWithRetry,
+} from '../../../cy-helper/utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
-import { readFileSync } from 'fs';
 
 // https://github.com/mmisty/cypress-allure-adapter/issues/7
 describe('several nested suites with global hook - hook should be added to all children', () => {
@@ -64,7 +67,7 @@ describe('hello suite', () => {
           parents: getParentsArray(t).map(t => ({
             name: t.name,
             befores: t.befores
-              ?.filter(x => (x as any).name !== '"before all" hook')
+              ?.filter(x => x.name !== '"before all" hook')
               .map(x => ({
                 name: (x as any).name,
                 status: x.status,
@@ -72,14 +75,14 @@ describe('hello suite', () => {
                   ...t,
                   source: `source${extname(t.source)}`,
                   sourceContentMoreThanZero:
-                    readFileSync(`${res.watch}/${t.source}`).toString().length >
-                    0,
+                    readWithRetry(`${res.watch}/${t.source}`).toString()
+                      .length > 0,
                 })),
               })),
             afters: t.afters
-              ?.filter(x => (x as any).name !== '"after all" hook')
-              ?.filter(x => (x as any).name.indexOf('Coverage') === -1)
-              ?.filter(x => (x as any).name.indexOf('generateReport') === -1)
+              ?.filter(x => x.name !== '"after all" hook')
+              ?.filter(x => x.name.indexOf('Coverage') === -1)
+              ?.filter(x => x.name.indexOf('generateReport') === -1)
               ?.map(x => ({ status: x.status, name: (x as any).name })),
           })),
         })),

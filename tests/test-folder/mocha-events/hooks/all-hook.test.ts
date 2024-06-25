@@ -6,9 +6,9 @@ import {
   covergeBeforeAll,
   createResTest2,
   fixResult,
+  readWithRetry,
   whenCoverage,
 } from '../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('should have all hooks and steps inside', () => {
@@ -50,7 +50,7 @@ describe('hello suite', () => {
   );
 
   it('should have correct events for one test', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

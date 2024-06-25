@@ -1,9 +1,9 @@
 import {
   covergeAfterAllEvent,
   createResTest2,
+  readWithRetry,
   whenCoverage,
 } from '../../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 
 describe('mocha events - check failures', () => {
   const res = createResTest2([
@@ -31,7 +31,7 @@ describe('hello suite', () => {
   ]);
 
   it('should have correct events for one test failed with global hook failure', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

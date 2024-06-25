@@ -3,10 +3,10 @@ import {
   createResTest2,
   fixResult,
   fullStepAttachment,
+  readWithRetry,
   whenCoverage,
   whenNoCoverage,
 } from '../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 import { parseAllure } from 'allure-js-parser';
 
 describe('skipped test by this.skip from inside test', () => {
@@ -25,7 +25,7 @@ describe('hello suite', () => {
   );
 
   it('should have correct events for one skipped test', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()

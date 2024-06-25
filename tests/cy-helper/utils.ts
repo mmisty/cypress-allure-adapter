@@ -3,7 +3,7 @@ import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest, getParentsArray } from 'allure-js-parser';
 import { ExecutableItem } from 'allure-js-commons';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook } from 'allure-js-parser/types';
 
@@ -249,6 +249,17 @@ export const checkCyResults = (
   >,
 ) => {
   expect(res).toEqual(expect.objectContaining(expected));
+};
+
+// eslint-disable-next-line jest/no-export
+export const readWithRetry = (path: string, attempt = 0) => {
+  try {
+    return readFileSync(path);
+  } catch (e) {
+    if (attempt < 30) {
+      return readWithRetry(path, attempt + 1);
+    }
+  }
 };
 
 // eslint-disable-next-line jest/no-export

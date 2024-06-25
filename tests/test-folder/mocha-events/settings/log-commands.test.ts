@@ -1,7 +1,10 @@
-import { createResTest2, mapSteps } from '../../../cy-helper/utils';
+import {
+  createResTest2,
+  mapSteps,
+  readWithRetry,
+} from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
-import { readFileSync } from 'fs';
 
 describe('should not log when allureLogCyCommands setting is false', () => {
   const res = createResTest2(
@@ -67,7 +70,7 @@ describe('should not log when allureLogCyCommands setting is false', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
@@ -94,7 +97,7 @@ describe('should not log when allureLogCyCommands setting is false', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)
@@ -129,7 +132,7 @@ describe('should not log when allureLogCyCommands setting is false', () => {
           ...t,
           source: `source${extname(t.source)}`,
           sourceContentMoreThanZero:
-            readFileSync(`${res.watch}/${t.source}`).toString().length > 0,
+            readWithRetry(`${res.watch}/${t.source}`).toString().length > 0,
         })),
       }))
         .filter(t => t.name.indexOf('"after each"') === -1)

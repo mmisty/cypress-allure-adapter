@@ -1,10 +1,10 @@
 import {
   covergeAfterAllEvent,
   createResTest2,
+  readWithRetry,
   whenCoverage,
   whenNoCoverage,
 } from '../../../cy-helper/utils';
-import { readFileSync } from 'fs';
 
 describe('one passed test with global before hook', () => {
   const res = createResTest2([
@@ -22,7 +22,7 @@ describe('one passed test with global before hook', () => {
   ]);
 
   it('should have correct events for one test with before each global', async () => {
-    const testt = readFileSync(res.specs[0]);
+    const testt = readWithRetry(res.specs[0]);
     expect(
       testt
         .toString()
