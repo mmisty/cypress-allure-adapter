@@ -16,7 +16,7 @@ describe('mocha events - check failures @oneInconsistency', () => {
   const res = createResTest2([
     `
 describe('hello suite', { retries: 1 }, () => {
-  beforeEach(()=> {
+  beforeEach(() => {
      cy.wrap(null).then(() => {
         throw new Error('Test FAIL on purpose');
     });
