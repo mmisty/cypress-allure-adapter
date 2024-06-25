@@ -370,7 +370,7 @@ export const createResTest2 = (
               );
             }
           }
-          resolve();
+          resolve(true);
         };
 
         attempt(retries);
