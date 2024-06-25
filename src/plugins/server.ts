@@ -3,7 +3,6 @@ import { RawData, WebSocketServer } from 'ws';
 import { ENV_WS, packageLog, wsPath } from '../common';
 import Debug from 'debug';
 import { AllureTasks, RequestTask } from '../plugins/allure-types';
-import { execSync } from 'child_process';
 
 const debug = Debug('cypress-allure:server');
 const logMessage = Debug('cypress-allure:server:message');
