@@ -1,4 +1,22 @@
 ## Change Log
+
+### 2.0.5
+* [patch] proper ws events registration by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/145
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.4...v2.0.5
+
+### 2.0.4
+* [patch] fix meta info readme by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/144
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.2...v2.0.4
+
+### 2.0.2
+* [tech] Bump @types/uuid from 9.0.8 to 10.0.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/140
+* [tech] Update issue templates by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/142
+* [patch] fix readme by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/143
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.1...v2.0.2
+
 ### 2.0.1
 * [patch] [tech] added cypress badges by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/141
 
