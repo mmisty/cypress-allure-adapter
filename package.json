@@ -51,7 +51,7 @@
     "cov:check": "COVERAGE_TEMP=reports/coverage-temp nyc check-coverage",
     "all": "npm run pre && npm run cov:check && npm run cov",
     "pre": "rm -rf ./node_modules/.cache lib reports coverage-nyc .nyc_output && npm run lint && npm run build:all && npm run test:cov && npm run cov:merge",
-    "pack": "npm run build && npm run update-badge && cp package.json ./lib/package.json && cp README.pack.md ./lib/README.md && cp CHANGELOG.md ./lib/CHANGELOG.md && sh .scripts/remove.sh && cd lib && npm version $ver --no-git-tag-version ",
+    "pack": "npm run build && npm run update-badge && cp package.json ./lib/package.json && cp README.md ./lib/README.md && cp CHANGELOG.md ./lib/CHANGELOG.md && sh .scripts/remove.sh && cd lib && npm version $ver --no-git-tag-version ",
     "prepublish": "npm run lint",
     "update-badge": "node ./.scripts/update-badge.js",
     "prepublishOnly": "{ echo \"Run script 'npm run publish:pack', 'npm run publish:minor', etc from package.json\n\"; exit 1; }",

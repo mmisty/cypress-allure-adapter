@@ -3,7 +3,7 @@ const packageJson = require('../package.json');
 
 const packageName = 'cypress';
 const prefix = 'latest%20supported%20';
-const readmeFile =  'README.pack.md'
+const readmeFile =  'README.md'
 const version = packageJson.devDependencies[packageName].replace(/^[^0-9]+/, ''); // Extracts version number
 
 const badgeUrl = `https://img.shields.io/badge/${prefix}${packageName}-${version}-blue`;
