@@ -12,6 +12,9 @@ You can watch tests execution when using with Allure TestOps. It adds tests, ste
 
 In the same time you can generate [Allure Report](https://github.com/allure-framework/allure2) from these results, and it will have all necessary fields.
 
+To achieve compatibility with Allure TestOps (watch mode) this plugin has different architecture(based on ws) in comparison with existing plugins
+which allows not to depend on cypress when writing test results.
+
 **Features**: 
  - automatically adds all cypress commands to report (this is configurable)
  - automatically adds videos / screenshots
@@ -23,6 +26,7 @@ In the same time you can generate [Allure Report](https://github.com/allure-fram
  - has [interface](./docs/interface.md#testStatus) to set status message for tests - `cy.allure().testDetails({ message: "This test is skipped because needs to be reviewed" })`
  - wraps custom commands into parent step, so report is cleaner
  - [gherkin support](./docs/gherkin.md)
+ - adding meta information via test or suite title (ex. `@tms("ABC-123")`)
    
 Example report is here - [Allure Report example](https://mmisty.github.io/cypress-allure-adapter-example/)
 
@@ -32,6 +36,7 @@ Example report is here - [Allure Report example](https://mmisty.github.io/cypres
 1. [Environment variables](#environment-variables)
 2. [To see allure report](#to-see-report)
 3. [Allure Interface](#allure-interface)
+4. [Adding meta information](#adding-meta-information)
 4. [Advanced](#advanced)
     - [after:spec event](#afterspec-event)
     - [Before run](#before-run)
@@ -58,7 +63,7 @@ Import `@mmisty/cypress-allure-adapter/support` into your `support/index.ts` fil
    // e2e.ts
 
    // import cypress-allure-adapter first to have all custom
-   // commands being collapsed in report as parent command
+   // commands collapsed in report as parent command
    import '@mmisty/cypress-allure-adapter/support';
    // import other custom commands here
    ```
@@ -162,8 +167,8 @@ That's it! :tada:
 | **tmsPrefix** <br/>_type: string_<br/><br/>ex: `http://jira.com` or `http://jira.com/PROJECT-1/*/browse`                                                                                                                            | You can specify prefix to tms using this. It will be concatenated with value when using cypress interface like `cy.allure().tms('PROJ-01')`.  <br/>Also link can be specified with `*` - it will be replaced with id. <br/><br/>Difference between tms and issue - will have different icons: <br/><br/> ![links](./docs/links.jpg)                                                                                                                                                                           |
 | **issuePrefix** <br/>_type: string_<br/><br/>ex: `http://jira.com` or `http://jira.com/PROJECT-1/*/browse`                                                                                                                          | The same as tmsPrefix - for issue `cy.allure().issue('PROJ-02')`                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **allureShowDuplicateWarn**<br/>_type: boolean_<br/>_default: false_                                                                                                                                                                | Show console warnings about test duplicates.                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| **allureShowTagsInTitle**<br/>_type: boolean_<br/>_default: undefined_                                                                                                                                                              | Whether to show tags in test title or not. When undefined will keep title as is                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| **allureAddNonSpecialTags**<br/>_type: boolean_<br/>_default: true_                                                                                                                                                                 | Whether to add non-special tags to tests                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **allureShowTagsInTitle**<br/>_type: boolean_<br/>_default: undefined_                                                                                                                                                              | Whether to show tags in test title or not. When undefined will keep title as is ([how to add tags?](#adding-meta-information))                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **allureAddNonSpecialTags**<br/>_type: boolean_<br/>_default: true_                                                                                                                                                                 | Whether to add non-special tags to tests. ([what are special tags?](#adding-meta-information))                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 
 ### tmsPrefix and issuePrefix
@@ -178,10 +183,19 @@ That's it! :tada:
  ```
  ```javascript
      // test.spec.ts
-     cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
-     cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
+    it('test', () => {
+      cy.allure().tms('ABC-1'); // http://jira.com/ABC-1
+      cy.allure().issue('ABC-2'); // http://jira.com/PROJECT-1/ABC-2/browse
+      // ...
+    })
   ```
   
+or you can put them as [special tags](#adding-meta-information) in test title
+```javascript
+    it('test @tms("ABC-1") @issue("ABC-2")', () => {
+      // ...
+    })
+  ```
 
 ### To see report
 In order to see Allure Report you need to install the [CLI](https://github.com/allure-framework/allure2#download).
@@ -209,6 +223,17 @@ Report example: [Allure Report](https://mmisty.github.io/cypress-allure-adapter-
 There is allure interface available to use from tests - `cy.allure()` and `Cypress.Allure`.
 
 For details see [interface](./docs/interface.md)
+
+## Adding meta information
+To add meta information to your tests you can either use [allure interface](#allure-interface) or special tags.
+
+Special tags does the same as allure interface with difference that you specify them through test or suite title:
+
+```javascript
+    it('should login @feature("auth") @issue("ABC-2")', ()=> {
+      // ...
+    })
+```
 
 ## Advanced
 
