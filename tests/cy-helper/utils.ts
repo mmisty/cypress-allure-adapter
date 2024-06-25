@@ -371,25 +371,12 @@ export const createResTest2 = (
       })
       .then(() => {
         expect(err).toBeUndefined();
-      })
-      .then(() => {
-        let attempts = 0;
 
-        return new Promise((y, n) => {
-          setInterval(() => {
-            attempts++;
+        if (!specs.every(p => existsSync(p))) {
+          console.log('Not all files were written');
 
-            if (specs.every(p => existsSync(p))) {
-              y(true);
-            }
-
-            if (attempts > 60) {
-              n('Could not wait for all files to be written');
-            }
-          }, 100);
-        }).then(() => {
-          console.log(`Attempts: ${attempts}`);
-        });
+          return delay(1000);
+        }
       });
   });
 
