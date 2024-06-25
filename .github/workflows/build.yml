@@ -22,7 +22,11 @@ jobs:
 
     - uses: volta-cli/action@v4
     - name: Install
-      run: npm ci
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        command: npm ci
 
     - name: Versions
       run: |
