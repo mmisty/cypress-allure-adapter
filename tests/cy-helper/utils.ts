@@ -377,6 +377,15 @@ export const createResTest2 = (
 
           return delay(1000);
         }
+      })
+      .then(() => {
+        expect(err).toBeUndefined();
+
+        if (!specs.every(p => existsSync(p))) {
+          console.log('Not all files were written: attempt 2');
+
+          return delay(1000);
+        }
       });
   });
 
