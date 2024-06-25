@@ -1,6 +1,10 @@
 # cypress-allure-adapter
 
 ![actions](https://github.com/mmisty/cypress-allure-adapter/actions/workflows/build.yml/badge.svg?branch=main)
+![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-13.12.0-blue)
+![supported cypress](https://img.shields.io/badge/cypress-12.x-blue)
+![supported cypress](https://img.shields.io/badge/cypress-11.x-blue)
+![supported cypress](https://img.shields.io/badge/cypress-10.x-blue)
 
 This is allure adapter for Cypress providing realtime results. 
 It is useful when using Allure TestOps - so you can watch tests execution. It adds tests, steps, suites and screenshots during tests execution.
