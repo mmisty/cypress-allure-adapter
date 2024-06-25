@@ -1,4 +1,89 @@
 ## Change Log
+### 2.0.1
+* [patch] [tech] added cypress badges by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/141
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.0...v2.0.1
+
+### 2.0.0
+This is NOT a breaking change - just version bumping to have stable version semantics (>=1.x.x), plus small tech package updates:
+
+* Bump cypress from 13.11.0 to 13.12.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/138
+* Bump nyc from 15.1.0 to 17.0.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/139
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.14...v2.0.0
+
+### 1.16.4
+This is NOT a breaking change - just version bumping to have stable version semantics (>=1.x.x), plus small tech package updates:
+
+* Bump cypress from 13.11.0 to 13.12.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/138
+* Bump nyc from 15.1.0 to 17.0.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/139
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.14...v1.16.4
+
+### 0.16.14
+* [patch] Fix console.log by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/135
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.12...v0.16.14
+
+### 0.16.12
+* add dependabot  by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/128
+* Bump typescript from 4.9.5 to 5.4.5 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/132
+* Bump uuid from 9.0.1 to 10.0.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/129
+* Bump eslint-config-prettier from 8.10.0 to 9.1.0 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/131
+* Bump husky from 8.0.3 to 9.0.11 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/133
+* [patch] fix vulnerability in ws by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/127
+* fix build by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/134
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.11...v0.16.12
+
+### 0.16.10
+* [patch] update packs by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/125
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.9...v0.16.10
+
+### 0.16.9
+* [#11] [patch] Fix attaching screenshots for failures in before hook by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/118
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.8...v0.16.9
+
+### 0.16.8
+* [patch] increase step length by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/109
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.7...v0.16.8
+
+### 0.16.7
+* [patch] add global hooks to child suites by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/117
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.6...v0.16.7
+
+### 0.16.6
+* [tech] Fix server tests for plugins by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/115
+* [patch] nested suites - add Before and After hooks to child suites (#7) by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/116
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.5...v0.16.6
+
+### 0.16.5
+* [#112] all the tests are shown under root suite by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/113
+* [patch] update README.pack.md by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/114
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.4...v0.16.5
+
+### 0.16.4
+* [patch] error handling by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/99
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.3...v0.16.4
+
+### 0.16.3
+* Fix docs testParameter by @DamirPecnik in https://github.com/mmisty/cypress-allure-adapter/pull/93
+* [patch] update history id on updating test title by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/98
+
+**Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.2...v0.16.3
+
+### 0.16.2
+- [patch] Fix attach warning by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/92
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v0.16.1...v0.16.2
+
 ### 0.16.1
 - [patch] fixes for isse #88 - fixed describe.only and describe.skip
 
