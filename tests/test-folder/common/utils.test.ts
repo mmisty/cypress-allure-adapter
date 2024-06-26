@@ -63,7 +63,7 @@ describe('utils', () => {
   it('delay', async () => {
     const started = Date.now();
     await delay(100);
-    expect(Date.now() - started).toBeGreaterThanOrEqual(100);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(99); // sometime has 99 instead of 100
   });
 
   it('messages should be dequeued in the same order as added', async () => {

@@ -266,6 +266,7 @@ export const readWithRetry = (path: string, attempt = 0) => {
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
+  shouldBeResults?: boolean,
 ): {
   watch: string;
   specs: string[];
@@ -352,6 +353,31 @@ export const createResTest2 = (
     process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : '';
     process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
+    const checkFilesExist = retries => {
+      return new Promise((resolve, reject) => {
+        const attempt = remainingRetries => {
+          if (!specs.every(p => existsSync(p))) {
+            console.log(
+              `Not all files were written: attempt ${retries - remainingRetries + 1}`,
+            );
+
+            if (remainingRetries > 0) {
+              return delay(1000)
+                .then(() => attempt(remainingRetries - 1))
+                .catch(reject);
+            } else {
+              return reject(
+                new Error('Files are still missing after all retries'),
+              );
+            }
+          }
+          resolve(true);
+        };
+
+        attempt(retries);
+      });
+    };
+
     return cy
       .run({
         spec,
@@ -377,7 +403,22 @@ export const createResTest2 = (
 
           return delay(1000);
         }
+      })
+      .then(() => {
+        if (shouldBeResults) {
+          return checkFilesExist(10);
+        }
       });
+  });
+
+  afterEach(() => {
+    // to investigate issue with missing
+    if (specs?.some(p => existsSync(p))) {
+      specs.forEach(s => {
+        const content = readFileSync(s);
+        console.log(content.toString());
+      });
+    }
   });
 
   return {
