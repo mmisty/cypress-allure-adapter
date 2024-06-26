@@ -266,6 +266,7 @@ export const readWithRetry = (path: string, attempt = 0) => {
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
+  shouldBeResults?: boolean,
 ): {
   watch: string;
   specs: string[];
@@ -403,7 +404,11 @@ export const createResTest2 = (
           return delay(1000);
         }
       })
-      .then(() => checkFilesExist(10));
+      .then(() => {
+        if (shouldBeResults) {
+          return checkFilesExist(10);
+        }
+      });
   });
 
   afterEach(() => {

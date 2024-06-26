@@ -23,6 +23,7 @@ describe('hello suite', () => {
 `,
     ],
     { allure: 'false' },
+    false,
   );
   it('should be ok', () => {
     checkCyResults(res?.result?.res, {

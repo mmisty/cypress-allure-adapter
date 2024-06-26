@@ -14,6 +14,7 @@ describe('should be no results when allure:false', () => {
 `,
     ],
     { allure: 'false' },
+    false,
   );
 
   describe('check results', () => {
