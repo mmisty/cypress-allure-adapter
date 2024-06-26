@@ -18,68 +18,65 @@ const messageGot = (...args: unknown[]) => {
   logMessage(`${args}`);
 };
 
-import net from 'net';
-
-const checkPortSync = (port: number, timeoutMs = 2000): boolean => {
-  let isAvailable = true;
-  let server: net.Server | null = null;
-  let timeoutReached = false;
-  const startTime = Date.now();
-
-  try {
-    server = net.createServer();
-    server.listen(port);
-
-    server.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE') {
-        isAvailable = false;
-      }
-    });
-
-    const checkTimeout = () => {
-      if (Date.now() - startTime >= timeoutMs) {
-        timeoutReached = true;
-      }
-    };
-
-    const waitForListening = () => {
-      if (!server?.listening && !timeoutReached) {
-        process.nextTick(waitForListening); // Yield to event loop
-        checkTimeout(); // Check if timeout has been reached
-      }
-    };
-
-    waitForListening();
-
-    if (timeoutReached) {
-      throw new Error(`Timeout waiting for port ${port} to become available.`);
-    }
-  } catch (error) {
-    isAvailable = false;
-  } finally {
-    if (server) {
-      server.close();
-    }
-  }
-
-  return isAvailable;
-};
+//
+// const checkPortSync = (port: number, timeoutMs = 2000): boolean => {
+//   let isAvailable = true;
+//   let server: net.Server | null = null;
+//   let timeoutReached = false;
+//   const startTime = Date.now();
+//
+//   try {
+//     server = net.createServer();
+//     server.listen(port);
+//
+//     server.on('error', (err: NodeJS.ErrnoException) => {
+//       if (err.code === 'EADDRINUSE') {
+//         isAvailable = false;
+//       }
+//     });
+//
+//     const checkTimeout = () => {
+//       if (Date.now() - startTime >= timeoutMs) {
+//         timeoutReached = true;
+//       }
+//     };
+//
+//     const waitForListening = () => {
+//       if (!server?.listening && !timeoutReached) {
+//         process.nextTick(waitForListening); // Yield to event loop
+//         checkTimeout(); // Check if timeout has been reached
+//       }
+//     };
+//
+//     waitForListening();
+//
+//     if (timeoutReached) {
+//       throw new Error(`Timeout waiting for port ${port} to become available.`);
+//     }
+//   } catch (error) {
+//     isAvailable = false;
+//   } finally {
+//     if (server) {
+//       server.close();
+//     }
+//   }
+//
+//   return isAvailable;
+// };
 
 function retrieveRandomPortNumber(): number {
-  let port = 40000 + Math.round(Math.random() * 25000);
+  return 40000 + Math.round(Math.random() * 25000);
 
-  for (let i = 0; i < 30; i++) {
-    const result = checkPortSync(port);
-
-    if (result) {
-      return port;
-    }
-    port = 40000 + Math.round(Math.random() * 25000);
-  }
-
-  console.log(`${packageLog} could not find free port, will not report`);
-
-  return port;
+  // for (let i = 0; i < 30; i++) {
+  //   const result = checkPortSync(port);
+  //
+  //   if (result) {
+  //     return port;
+  //   }
+  //   port = 40000 + Math.round(Math.random() * 25000);
+  // }
+  //
+  // console.log(`${packageLog} could not find free port, will not report`);
 }
 
 const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks) => {
