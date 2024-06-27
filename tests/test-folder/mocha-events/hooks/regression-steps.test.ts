@@ -134,7 +134,28 @@ describe('hooks test - failed global hook step', () => {
     });
 
     it('check attachments', async () => {
-      expect(resFixed.flatMap(t => t.attachments).sort()).toEqual([]);
+      expect(resFixed.flatMap(t => t.attachments).sort()).toEqual([
+        {
+          name: 'test 1 -- before all hook Global Setup (failed).png',
+          source: 'source.png',
+          type: 'image/png',
+        },
+        {
+          name: 'test 1 -- before all hook Global Setup (failed).png',
+          source: 'source.png',
+          type: 'image/png',
+        },
+        {
+          name: 'test 1 -- before all hook Global Setup (failed).png',
+          source: 'source.png',
+          type: 'image/png',
+        },
+      ]);
+      expect(
+        resFixed
+          .map(t => t.parent?.befores?.flatMap(x => x.attachments))
+          .sort(),
+      ).toEqual([[], [], []]);
       expect(
         resFixed.map(t => t.parent?.afters?.flatMap(x => x.attachments)).sort(),
       ).toEqual([

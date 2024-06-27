@@ -122,7 +122,8 @@ export class GlobalHooks {
       }
       hook.attachments?.forEach(attach => {
         log('process attach');
-        this.reporter.testFileAttachment({ name: attach.name, file: attach?.file, type: attach.type });
+        this.reporter.testFileAttachment({ name: attach.name, file: attach.file, type: attach.type });
+        this.reporter.setAttached(attach.file);
       });
     });
   }

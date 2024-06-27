@@ -1084,6 +1084,14 @@ export class AllureReporter {
     exec.addAttachment(arg.name, arg.type, file);
   }
 
+  public setAttached(file: string) {
+    const screen = this.screenshotsTest.find(t => t.path === file);
+
+    if (screen) {
+      screen.attached = true;
+    }
+  }
+
   private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
     if (!this.currentExecutable && this.globalHooks.currentHook) {
       log('No current executable, test or hook - add to global hook');
@@ -1118,11 +1126,7 @@ export class AllureReporter {
         copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
         currExec.addAttachment(arg.name, arg.type, fileNew);
         log(`added attachment: ${fileNew} ${arg.file}`);
-        const screen = this.screenshotsTest.find(t => t.path === arg.file);
-
-        if (screen) {
-          screen.attached = true;
-        }
+        this.setAttached(arg.file);
       }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
