@@ -15,7 +15,7 @@ import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
-import path, { basename } from 'path';
+import path, { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
@@ -170,7 +170,7 @@ export class AllureReporter {
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
 
-  private screenshotsTest: AutoScreen[] = [];
+  private screenshotsTest: (AutoScreen & { attached?: boolean })[] = [];
 
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
@@ -475,15 +475,20 @@ export class AllureReporter {
     log('screenshots arg:');
     log(JSON.stringify(screenshots));
 
-    const arr = [...screenshots, ...this.screenshotsTest];
+    const arr = [...screenshots, ...this.screenshotsTest.filter(x => !x.attached)];
 
     const uniqueScreenshotsArr = arr.reduce(
       (acc: { map: Map<string, boolean>; list: AutoScreen[] }, current) => {
-        const key = `${current.path}-${current.testId}-${current.testAttemptIndex}`;
+        const key = `${current.path}`;
 
         if (!acc.map.has(key)) {
           acc.map.set(key, true);
+          current.specName = basename(dirname(current.path));
           acc.list.push(current);
+        } else {
+          const existing = acc.list.find(t => t.path === current.path);
+          const merged = { ...existing, ...current };
+          acc.list = acc.list.map(item => (item.path === current.path ? merged : item));
         }
 
         return acc;
@@ -495,18 +500,13 @@ export class AllureReporter {
       log(`attachScreenshots: ${afterSpecRes.path}`);
 
       const getUuiToAdd = () => {
-        if (afterSpecRes.testId) {
-          return allTests.filter(
-            t =>
-              t.retryIndex === afterSpecRes.testAttemptIndex &&
-              t.mochaId === afterSpecRes.testId &&
-              t.status !== Status.PASSED,
-          );
-        } else {
-          return allTests.filter(
-            t => path.basename(t.specRelative ?? '') === afterSpecRes.specName && t.status !== Status.PASSED,
-          );
-        }
+        return allTests.filter(
+          t =>
+            t.status !== Status.PASSED &&
+            t.retryIndex === afterSpecRes.testAttemptIndex &&
+            basename(t.specRelative ?? '') === afterSpecRes.specName &&
+            (afterSpecRes.testId ? t.mochaId === afterSpecRes.testId : true),
+        );
       };
 
       const uuids = getUuiToAdd().map(t => t.uuid);
@@ -1112,12 +1112,14 @@ export class AllureReporter {
         mkdirSync(this.allureResults, { recursive: true });
       }
 
-      // how to understand where to attach
+      const currExec = exec ?? this.currentExecutable;
 
-      if (exec ?? this.currentExecutable) {
+      if (currExec) {
         copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-        (exec ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        currExec.addAttachment(arg.name, arg.type, fileNew);
         log(`added attachment: ${fileNew} ${arg.file}`);
+        const screen = this.screenshotsTest.find(t => t.path === arg.file);
+        screen.attached = true;
       }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);

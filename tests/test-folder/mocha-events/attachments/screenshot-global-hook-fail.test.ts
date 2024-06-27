@@ -6,7 +6,6 @@ import {
 } from '../../../cy-helper/utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
-// this doesn't work
 describe('test screenshot when global before hook fails', () => {
   const res = createResTest2(
     [
@@ -53,10 +52,15 @@ describe('screenshot when global before hook fails @screen', () => {
         t => !t.name.includes('after each') && !t.name.includes('before each'),
       );
 
-      // todo: expected to have screenshots
       expect(obj).toEqual([
         {
-          attachments: [],
+          attachments: [
+            {
+              name: '01 test -- before all hook (failed).png',
+              source: 'source.png',
+              type: 'image/png',
+            },
+          ],
           name: '01 test',
           parents: [
             {
