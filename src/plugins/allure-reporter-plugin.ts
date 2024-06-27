@@ -475,12 +475,10 @@ export class AllureReporter {
     log('screenshots arg:');
     log(JSON.stringify(screenshots));
 
-    const arr = [...screenshots, ...this.screenshotsTest].sort((a, b) => {
-      return a.path < b.path && a.testId < b.testId ? 1 : -1;
-    });
+    const arr = [...screenshots, ...this.screenshotsTest];
 
     const uniqueScreenshotsArr = arr.reduce(
-      (acc, current) => {
+      (acc: { map: Map<string, boolean>; list: AutoScreen[] }, current) => {
         const key = `${current.path}-${current.testId}-${current.testAttemptIndex}`;
 
         if (!acc.map.has(key)) {
@@ -494,7 +492,7 @@ export class AllureReporter {
     ).list;
 
     uniqueScreenshotsArr.forEach(afterSpecRes => {
-      log(`attachScreenshots:${afterSpecRes.path}`);
+      log(`attachScreenshots: ${afterSpecRes.path}`);
 
       const getUuiToAdd = () => {
         if (afterSpecRes.testId) {
