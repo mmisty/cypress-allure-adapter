@@ -15,12 +15,20 @@ import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
-import path, { basename } from 'path';
+import path, { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
 import Debug from 'debug';
 import { GlobalHooks } from './allure-global-hook';
-import { AfterSpecScreenshots, AllureTaskArgs, LabelName, Stage, StatusType, UNKNOWN } from './allure-types';
+import {
+  AfterSpecScreenshots,
+  AllureTaskArgs,
+  AutoScreen,
+  LabelName,
+  Stage,
+  StatusType,
+  UNKNOWN,
+} from './allure-types';
 import { extname, packageLog } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
@@ -162,7 +170,7 @@ export class AllureReporter {
   allureRuntime: AllureRuntime;
   descriptionHtml: string[] = [];
 
-  private screenshotsTest: { [testId: string]: { [testAttemptIndex: string]: string[] } } = {};
+  private screenshotsTest: (AutoScreen & { attached?: boolean })[] = [];
 
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
@@ -452,6 +460,7 @@ export class AllureReporter {
     });
   }
 
+  // after spec attach
   attachScreenshots(arg: AfterSpecScreenshots) {
     // attach auto screenshots for fails
     const { screenshots } = arg;
@@ -463,13 +472,44 @@ export class AllureReporter {
 
     log('screenshotsTest:');
     log(JSON.stringify(this.screenshotsTest));
+    log('screenshots arg:');
+    log(JSON.stringify(screenshots));
 
-    screenshots.forEach(x => {
-      log(`attachScreenshots:${x.path}`);
+    const arr = [...screenshots, ...this.screenshotsTest.filter(x => !x.attached)];
 
-      const uuids = allTests
-        .filter(t => t.retryIndex === x.testAttemptIndex && t.mochaId === x.testId && t.status !== Status.PASSED)
-        .map(t => t.uuid);
+    const uniqueScreenshotsArr = arr.reduce(
+      (acc: { map: Map<string, boolean>; list: AutoScreen[] }, current) => {
+        const key = `${current.path}`;
+
+        if (!acc.map.has(key)) {
+          acc.map.set(key, true);
+          current.specName = basename(dirname(current.path));
+          acc.list.push(current);
+        } else {
+          const existing = acc.list.find(t => t.path === current.path);
+          const merged = { ...existing, ...current };
+          acc.list = acc.list.map(item => (item.path === current.path ? merged : item));
+        }
+
+        return acc;
+      },
+      { map: new Map(), list: [] },
+    ).list;
+
+    uniqueScreenshotsArr.forEach(afterSpecRes => {
+      log(`attachScreenshots: ${afterSpecRes.path}`);
+
+      const getUuiToAdd = () => {
+        return allTests.filter(
+          t =>
+            t.status !== Status.PASSED &&
+            t.retryIndex === afterSpecRes.testAttemptIndex &&
+            basename(t.specRelative ?? '') === afterSpecRes.specName &&
+            (afterSpecRes.testId ? t.mochaId === afterSpecRes.testId : true),
+        );
+      };
+
+      const uuids = getUuiToAdd().map(t => t.uuid);
 
       if (uuids.length === 0) {
         log('no attach auto screens, only for non-success tests tests');
@@ -477,8 +517,8 @@ export class AllureReporter {
         return;
       }
 
-      if (!uuids[x.testAttemptIndex ?? 0]) {
-        log(`no attach, current attempt ${x.testAttemptIndex}`);
+      if (afterSpecRes.testAttemptIndex && afterSpecRes.testId && !uuids[afterSpecRes.testAttemptIndex ?? 0]) {
+        log(`no attach, current attempt ${afterSpecRes.testAttemptIndex}`);
 
         // test passed or no
         return;
@@ -489,8 +529,9 @@ export class AllureReporter {
 
         try {
           const contents = readFileSync(testFile);
-          const ext = path.extname(x.path);
-          const name = path.basename(x.path);
+          const ext = path.extname(afterSpecRes.path);
+          const name = path.basename(afterSpecRes.path);
+
           type ParsedAttachment = { name: string; type: ContentType; source: string };
           const testCon: { attachments: ParsedAttachment[] } = JSON.parse(contents.toString());
           const uuidNew = randomUUID();
@@ -498,7 +539,7 @@ export class AllureReporter {
           const newPath = path.join(this.allureResults, nameAttach);
 
           if (!existsSync(newPath)) {
-            copyFileSync(x.path, path.join(this.allureResults, nameAttach));
+            copyFileSync(afterSpecRes.path, path.join(this.allureResults, nameAttach));
           }
 
           if (!testCon.attachments) {
@@ -513,7 +554,7 @@ export class AllureReporter {
 
           writeFileSync(testFile, JSON.stringify(testCon));
         } catch (e) {
-          console.log(`${packageLog} Could not attach screenshot ${x.screenshotId}`);
+          console.log(`${packageLog} Could not attach screenshot ${afterSpecRes.screenshotId ?? afterSpecRes.path}`);
         }
       });
     });
@@ -524,16 +565,9 @@ export class AllureReporter {
   }
 
   screenshotAttachment(arg: AllureTaskArgs<'screenshotAttachment'>) {
-    const { testId, path, testAttemptIndex } = arg;
+    const { testId, path, testAttemptIndex, specName, testFailure } = arg;
 
-    if (!this.screenshotsTest[this.keyWhenNoTest(testId)]) {
-      this.screenshotsTest[this.keyWhenNoTest(testId)] = {};
-    }
-
-    if (!this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0]) {
-      this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0] = [];
-    }
-    this.screenshotsTest[this.keyWhenNoTest(testId)][testAttemptIndex ?? 0].push(path);
+    this.screenshotsTest.push({ testId, path, testAttemptIndex, specName, testFailure });
   }
 
   screenshotOne(arg: AllureTaskArgs<'screenshotOne'>) {
@@ -1050,6 +1084,14 @@ export class AllureReporter {
     exec.addAttachment(arg.name, arg.type, file);
   }
 
+  public setAttached(file: string) {
+    const screen = this.screenshotsTest.find(t => t.path === file);
+
+    if (screen) {
+      screen.attached = true;
+    }
+  }
+
   private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
     if (!this.currentExecutable && this.globalHooks.currentHook) {
       log('No current executable, test or hook - add to global hook');
@@ -1078,12 +1120,13 @@ export class AllureReporter {
         mkdirSync(this.allureResults, { recursive: true });
       }
 
-      // how to understand where to attach
+      const currExec = exec ?? this.currentExecutable;
 
-      if (exec ?? this.currentExecutable) {
+      if (currExec) {
         copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-        (exec ?? this.currentExecutable)?.addAttachment(arg.name, arg.type, fileNew);
+        currExec.addAttachment(arg.name, arg.type, fileNew);
         log(`added attachment: ${fileNew} ${arg.file}`);
+        this.setAttached(arg.file);
       }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);

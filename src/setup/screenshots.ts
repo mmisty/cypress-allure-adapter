@@ -13,7 +13,7 @@ export const registerScreenshotHandler = (message: MessageManager, testMsg: (msg
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (Cypress.Screenshot as any).onAfterScreenshot = (_$el: unknown, ...args: AutoScreen[]) => {
     debug('Screenshot handler');
-    // testAttemptIndex, takenAt, name
+    // testAttemptIndex, takenAt, name, specName, testFailure
     const [screensArgs] = args;
     const [{ path }] = args;
 

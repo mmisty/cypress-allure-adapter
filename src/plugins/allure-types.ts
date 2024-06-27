@@ -2,15 +2,17 @@ import type { StatusDetails } from 'allure-js-commons';
 import type { ContentType } from '../common/types';
 
 export interface AutoScreen {
-  screenshotId: string;
+  screenshotId?: string;
   specName?: string;
   testId: string | undefined;
-  testAttemptIndex: number;
-  takenAt: string; // date
+  testAttemptIndex?: number;
+  takenAt?: string; // date
   path: string; // abs path
-  height: number;
-  width: number;
+  height?: number;
+  width?: number;
+  testFailure?: boolean;
 }
+
 export type AfterSpecScreenshots = {
   screenshots: AutoScreen[];
 };
