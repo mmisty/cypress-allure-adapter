@@ -1119,7 +1119,10 @@ export class AllureReporter {
         currExec.addAttachment(arg.name, arg.type, fileNew);
         log(`added attachment: ${fileNew} ${arg.file}`);
         const screen = this.screenshotsTest.find(t => t.path === arg.file);
-        screen.attached = true;
+
+        if (screen) {
+          screen.attached = true;
+        }
       }
     } catch (err) {
       console.error(`${packageLog} Could not attach ${arg.file}`);
