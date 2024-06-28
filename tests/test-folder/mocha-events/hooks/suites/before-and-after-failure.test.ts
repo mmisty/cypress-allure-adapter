@@ -6,7 +6,8 @@ const data: TestData = {
   name: rootSuite,
   rootSuite,
   fileName: __filename,
-  spec: `describe('${rootSuite}', () => {
+  spec: `
+  describe('${rootSuite}', () => {
       before('in suite', () => {
         throw new Error('Failure in before hook');
       });
@@ -22,8 +23,8 @@ const data: TestData = {
       it('test 2', () => {
         cy.log('test 2');
       });
-    });
-    `,
+  });
+  `,
 
   expect: {
     testsNames: [`${rootSuite} test 1`, `${rootSuite} test 2`],

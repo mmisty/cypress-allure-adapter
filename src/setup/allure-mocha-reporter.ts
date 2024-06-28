@@ -201,6 +201,9 @@ const createTestsForFailedBeforeHook = (runner: Mocha.Runner, test: Mocha.Test) 
         ts.state = 'failed';
 
         if (ts.err) {
+          // Cypress error cannot be taken here - it will be updated only on 'test:after:run' event
+          // so to simplify events chain creating own error message
+          // need to watch cypress error text message when it changes - and update it here
           ts.err.message =
             `${ts.err.message}\n\n` +
             `Because this error occurred during a \`before all\` hook we are skipping the remaining tests in the current suite: \`${ts.parent?.title}\` (added by ${packageLog})`;
