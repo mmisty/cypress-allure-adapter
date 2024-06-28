@@ -6,9 +6,11 @@
     "baseUrl": "../src",
     "paths": {
       "@src": ["./index.ts"],
-      "@src/*": ["./*"]
+      "@src/*": ["./*"],
+
+      "@test-utils": ["../tests/cy-helper/utils.ts"],
     }
   },
-  "include": ["./", "../jest.setup.ts"],
+  "include": ["./", "../tests", "../jest.setup.ts"],
 }
 

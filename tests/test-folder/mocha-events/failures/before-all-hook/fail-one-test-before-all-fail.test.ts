@@ -4,7 +4,7 @@ import {
   readWithRetry,
   whenCoverage,
   whenNoCoverage,
-} from '../../../../cy-helper/utils';
+} from '@test-utils';
 
 describe('before all hook from suite should be have correct events', () => {
   const res = createResTest2([
@@ -49,13 +49,13 @@ describe('hello suite', () => {
       ...whenNoCoverage('cypress: test:before:run: hello test'),
       'cypress:screenshot:test:hello suite -- hello test -- before all hook (failed).png',
       'mocha: fail: "before all" hook for "hello test"',
+      'plugin test:ended',
+      'plugin test:started',
+      'plugin test:ended',
       'mocha: suite end: hello suite',
       ...whenCoverage(...covergeAfterAllEvent),
       'cypress: test:after:run: hello test',
       'plugin test:ended', // doesn't do anything
-
-      'plugin test:started',
-      'plugin test:ended',
       'mocha: suite end: ',
       'mocha: end',
     ]);

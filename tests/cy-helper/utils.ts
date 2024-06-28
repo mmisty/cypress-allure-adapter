@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
-import { AllureTest, getParentsArray } from 'allure-js-parser';
+import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 import { StepResult } from 'allure-js-commons';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
-import { AllureHook } from 'allure-js-parser/types';
+import { AllureHook, Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(120000);
 
@@ -13,16 +13,21 @@ jest.setTimeout(120000);
 export const mapSteps = <T>(
   steps: StepResult[],
   map?: (m: StepResult) => T,
+  filter?: (m: StepResult) => boolean,
 ): (T & any)[] => {
   if (steps?.length === 0) {
     return [];
   }
 
-  return steps.map(s => {
-    const obj = map ? map(s) : { name: s.name };
+  return steps
+    .filter(s => {
+      return filter ? filter(s) : true;
+    })
+    .map(s => {
+      const obj = map ? map(s) : { name: s.name };
 
-    return { ...obj, steps: mapSteps(s.steps, map) };
-  });
+      return { ...obj, steps: mapSteps(s.steps, map, filter) };
+    });
 };
 
 // eslint-disable-next-line jest/no-export
@@ -47,21 +52,22 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
     }));
   };
 
-  return results.map(r => {
-    return {
-      ...r,
-      historyId: 'no',
-      uuid: 'no',
-      start: date,
-      stop: date + 10,
-      parent: {
-        ...r.parent,
+  const fixParent = (parent: Parent | undefined) => {
+    if (parent) {
+      return {
+        ...parent,
+        parent: fixParent(parent.parent),
         uuid: 'no',
-        befores: r.parent?.befores?.map(b => ({
+        befores: parent?.befores?.map(b => ({
           ...b,
           steps: replaceSteps(b.steps),
           start: date,
           stop: date + 10,
+          attachments: b.attachments.map(t => ({
+            ...t,
+            name: t.name.replace(/\d{5,}/g, 'number'),
+            source: `source${path.extname(t.source)}`,
+          })),
           statusDetails: b.statusDetails?.message
             ? {
                 message: b.statusDetails.message,
@@ -69,7 +75,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
               }
             : undefined,
         })),
-        afters: r.parent?.afters?.map(b => ({
+        afters: parent?.afters?.map(b => ({
           ...b,
           steps: replaceSteps(b.steps),
           start: date,
@@ -86,7 +92,20 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
               }
             : undefined,
         })),
-      },
+      };
+    }
+
+    return undefined;
+  };
+
+  return results.map(r => {
+    return {
+      ...r,
+      historyId: 'no',
+      uuid: 'no',
+      start: date,
+      stop: date + 10,
+      parent: fixParent(r.parent),
       labels: r.labels.map(l => ({
         name: l.name,
         value: l.value.replace(/\d{5,}/g, 'number'),
@@ -173,9 +192,25 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
+export const labelsForTest = (res: AllureTest[], filterLabels?: string[]) => {
+  return res
+    .map(t => ({ labels: t.labels, name: t.name }))
+    .sort((a, b) => ((a as any).name < (b as any).name ? -1 : 1))
+    .map(t => ({
+      ...t,
+      labels: t.labels.filter(x =>
+        filterLabels && filterLabels.length > 0
+          ? filterLabels.includes(x.name)
+          : true,
+      ),
+    }));
+};
+
+// eslint-disable-next-line jest/no-export
 export const fullStepAttachment = (
   res: AllureTest[],
   mapStep?: (m: StepResult) => any,
+  options?: { noAddParents?: boolean },
 ) => {
   const parents = res
     .map(x => ({
@@ -205,36 +240,61 @@ export const fullStepAttachment = (
             skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
           ),
         }))
+        .filter(x =>
+          skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
+        )
         .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)) ??
       []
     );
   };
 
-  const full = parents.map(t => ({
-    name: t.name,
-    status: t.status,
-    attachments: t.attachments.sort((z1, z2) =>
-      z1.name && z2.name && z1.name < z2.name ? -1 : 1,
-    ),
-    steps: mapSteps(t.steps, mapStep).filter(x =>
-      skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
-    ),
-    parents: t.parents?.map(x => ({
-      suiteName: x.name,
-      befores: mapItem(x.befores)
-        .filter(z =>
-          skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
-        )
-        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)),
-      afters: mapItem(x.afters)
-        .filter(z =>
-          skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
-        )
-        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)),
-    })),
-  }));
+  const full = parents
+    .map(t => ({
+      name: t.name,
+      status: t.status,
+      attachments: t.attachments.sort((z1, z2) =>
+        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+      ),
+      steps: mapSteps(t.steps, mapStep).filter(x =>
+        skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
+      ),
+      ...(!options?.noAddParents
+        ? {
+            parents: t.parents?.map(x => ({
+              suiteName: x.name,
+              befores: mapItem(x.befores)
+                .filter(z =>
+                  skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
+                )
+                .sort((z1, z2) =>
+                  z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                ),
+              afters: mapItem(x.afters)
+                .filter(z =>
+                  skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
+                )
+                .sort((z1, z2) =>
+                  z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                ),
+            })),
+          }
+        : {}),
+    }))
+    .filter(x => skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1));
 
   return full;
+};
+
+// eslint-disable-next-line jest/no-export
+export const fullStepMap = (
+  res: AllureTest,
+  mapStep?: (m: StepResult) => any,
+) => {
+  const skipItems = ['generatereport', 'coverage'];
+
+  return mapSteps(res.steps as StepResult[], mapStep, z =>
+    skipItems.every(y => z.name?.toLowerCase().indexOf(y) === -1),
+  );
 };
 
 // eslint-disable-next-line jest/no-export
@@ -263,11 +323,14 @@ export const readWithRetry = (path: string, attempt = 0) => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const createResTest2 = (
-  specTexts: string[],
-  envConfig?: Record<string, string | undefined>,
-  shouldBeResults?: boolean,
-): {
+export const eventsForFile = (res: Result, fileName: string): string[] => {
+  return readWithRetry(res.specs.filter(x => x.indexOf(fileName) !== -1)[0])
+    ?.toString()
+    .split('\n')
+    .filter(t => t !== '');
+};
+
+type Result = {
   watch: string;
   specs: string[];
   result: {
@@ -276,7 +339,14 @@ export const createResTest2 = (
       | CypressCommandLine.CypressFailedRunResult
       | undefined;
   };
-} => {
+};
+
+// eslint-disable-next-line jest/no-export
+export const createResTest2 = (
+  specTexts: string[],
+  envConfig?: Record<string, string | undefined>,
+  shouldBeResults?: boolean,
+): Result => {
   const result: {
     res:
       | CypressCommandLine.CypressRunResult
@@ -343,6 +413,8 @@ export const createResTest2 = (
   };
 
   it('create results jest', async () => {
+    jest.retryTimes(1);
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
 
@@ -405,7 +477,7 @@ export const createResTest2 = (
         }
       })
       .then(() => {
-        if (shouldBeResults) {
+        if (shouldBeResults !== false) {
           return checkFilesExist(10);
         }
       });
@@ -541,3 +613,305 @@ export const covergeBeforeAll = [
     stop: 1323475200010,
   },
 ];
+
+export type TestData = {
+  name: string;
+  rootSuite: string;
+  spec: string;
+  fileName: string;
+  expect: {
+    labels?: { filter: string[]; expected: any[] };
+    events?: string[];
+    testsNames: string[];
+
+    testStatuses?: {
+      testName: string;
+      status: string;
+      statusDetails?: { message: string[] | undefined };
+    }[];
+
+    testAttachments?: {
+      expectMessage?: string; // message to show in test title
+      testName: string;
+      attachments: any[];
+    }[];
+
+    testParents?: {
+      testName: string;
+      parents: { name: string; parent: string | undefined }[];
+    }[];
+
+    testSteps?: {
+      testName: string;
+      mapStep?: (m: StepResult) => any;
+      expected: any[];
+    }[];
+
+    parents?: {
+      testName: string;
+      containers: {
+        name: string;
+        stepMap?: (x: StepResult) => any;
+        befores?: {
+          name?: string;
+          attachments?: any[];
+          steps?: any[];
+        }[];
+        afters?: {
+          name?: string;
+          attachments?: any[];
+          steps?: any[];
+        }[];
+      }[];
+    }[];
+  };
+};
+
+const wrapExpectCreate = (addition: string) => (fn: () => any) => {
+  try {
+    fn();
+  } catch (e) {
+    const err = e as Error;
+    err.message = addition + err.message;
+    throw err;
+  }
+};
+
+export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
+  testsForRun.forEach((testData, i) => {
+    // path.relative(process.cwd(), testData.fileName)
+    const wrapError = wrapExpectCreate(
+      `Failed test file: ${basename(testData.fileName)}\nRoot suite: ${testData.name}\n\n`,
+    );
+
+    describe(`${testData.name}`, () => {
+      let resFixed: AllureTest[];
+
+      beforeAll(() => {
+        const results = parseAllure(res.watch).filter(
+          t => t.fullName?.indexOf(testData.rootSuite) !== -1,
+        );
+        resFixed = fixResult(results);
+      });
+
+      if (testData.expect.testsNames) {
+        it('check test full names', () => {
+          wrapError(() =>
+            expect(resFixed.map(t => t.fullName).sort()).toEqual(
+              testData.expect.testsNames,
+            ),
+          );
+        });
+      }
+
+      if (testData.expect.testStatuses) {
+        testData.expect.testStatuses.forEach(t => {
+          it(`should have test '${t.testName}' status - ${t.status}`, () => {
+            expect(resFixed.find(x => t.testName === x.name)?.status).toEqual(
+              t.status,
+            );
+          });
+
+          if (t.statusDetails) {
+            it(`should have test '${t.testName}' statusDetails`, () => {
+              wrapError(() =>
+                expect(
+                  resFixed
+                    .find(x => t.testName === x.name)
+                    ?.statusDetails?.message?.split('\n'),
+                ).toEqual(t.statusDetails?.message),
+              );
+            });
+          }
+        });
+      }
+
+      if (testData.expect.labels) {
+        it(`check ${testData.expect.labels?.filter?.join(',') ?? ' all'} labels`, () => {
+          wrapError(() =>
+            expect(
+              labelsForTest(resFixed, testData.expect.labels?.filter),
+            ).toEqual(testData.expect.labels?.expected),
+          );
+        });
+      }
+
+      if (testData.expect.events) {
+        it('should have correct events for spec', () => {
+          const specName = basename(res.specs[i]);
+          const events = eventsForFile(res, specName);
+
+          const skipItems = [
+            'collectBackendCoverage',
+            'mergeUnitTestCoverage',
+            'generateReport',
+          ];
+
+          wrapError(() =>
+            expect(
+              events.filter(x => skipItems.every(z => x.indexOf(z) === -1)),
+            ).toEqual(testData.expect.events),
+          );
+        });
+      }
+
+      if (testData.expect.testAttachments) {
+        testData.expect.testAttachments.forEach(t => {
+          it(`check '${t.testName}' attachments${t.expectMessage ? `: ${t.expectMessage}` : ''}`, () => {
+            wrapError(() =>
+              expect(
+                resFixed.find(x => t.testName === x.name)?.attachments,
+              ).toEqual(t.attachments),
+            );
+          });
+        });
+      }
+
+      if (testData.expect.testParents) {
+        testData.expect.testParents.forEach(testItem => {
+          it(`parents for test ${testItem.testName}`, () => {
+            const test = resFixed.find(x => testItem.testName === x.name);
+            const parents = getParentsArray(test);
+
+            wrapError(() =>
+              expect(
+                parents.map(x => ({ name: x.name, parent: x.parent?.name })),
+              ).toEqual(testItem.parents),
+            );
+          });
+        });
+      }
+
+      if (testData.expect.testSteps) {
+        testData.expect.testSteps.forEach(testItem => {
+          it(`steps for test ${testItem.testName}`, () => {
+            const test = resFixed.find(x => testItem.testName === x.name);
+
+            const obj = fullStepMap(test!, m => ({
+              name: m.name,
+              ...(testItem.mapStep?.(m) ?? {}),
+            }));
+
+            wrapError(() => expect(obj).toEqual(testItem.expected));
+          });
+        });
+      }
+
+      if (testData.expect.parents) {
+        testData.expect.parents.forEach(testData => {
+          describe(`parents for ${testData.testName}`, () => {
+            let test;
+            let parents: Parent[];
+            const skipItems = ['generatereport', 'coverage'];
+
+            beforeAll(() => {
+              test = resFixed.find(x => testData.testName === x.name);
+              parents = getParentsArray(test);
+            });
+
+            describe('before and after hooks', () => {
+              testData.containers.forEach(container => {
+                if (container.befores) {
+                  it(`check befores for '${testData.testName}' parent '${container.name}'`, () => {
+                    const actualParent = parents.find(
+                      pp => pp.name === container.name,
+                    );
+
+                    const actualBefores = (
+                      actualParent?.befores as AllureHook[]
+                    )
+                      ?.filter(z =>
+                        skipItems.every(
+                          y => z.name.toLowerCase().indexOf(y) === -1,
+                        ),
+                      )
+                      ?.filter(z => {
+                        return !z.steps.some(
+                          s => s.name?.indexOf('code-coverage') !== -1,
+                        );
+                      })
+                      .sort((z1, z2) =>
+                        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                      );
+
+                    wrapError(() =>
+                      expect(actualBefores?.map(x => x.name)).toEqual(
+                        container.befores?.map(x => x.name),
+                      ),
+                    );
+
+                    if (container.befores?.some(t => t.attachments)) {
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(actualBefores?.map(x => x.attachments)).toEqual(
+                          container.befores?.map(x => x.attachments),
+                        ),
+                      );
+                    }
+
+                    if (container.befores?.some(t => t.steps)) {
+                      const beforesSteps = actualBefores?.map(x =>
+                        mapSteps(x.steps, container.stepMap),
+                      );
+
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(beforesSteps).toEqual(
+                          container.befores?.map(x => x.steps),
+                        ),
+                      );
+                    }
+                  });
+                }
+
+                if (container.afters) {
+                  it(`check afters for '${testData.testName}' parent '${container.name}'`, () => {
+                    const actualParent = parents.find(
+                      pp => pp.name === container.name,
+                    );
+
+                    const actualAfters = (actualParent?.afters as AllureHook[])
+                      ?.filter(z =>
+                        skipItems.every(
+                          y => z.name.toLowerCase().indexOf(y) === -1,
+                        ),
+                      )
+                      .sort((z1, z2) =>
+                        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                      );
+
+                    expect(actualAfters?.map(x => x.name)).toEqual(
+                      container.afters?.map(x => x.name),
+                    );
+
+                    if (container.afters?.some(t => t.attachments)) {
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(actualAfters?.map(x => x.attachments)).toEqual(
+                          container.afters?.map(x => x.attachments),
+                        ),
+                      );
+                    }
+
+                    if (container.afters?.some(t => t.steps)) {
+                      const aftersSteps = actualAfters?.map(x =>
+                        mapSteps(x.steps, container.stepMap),
+                      );
+
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(aftersSteps).toEqual(
+                          container.afters?.map(x => x.steps),
+                        ),
+                      );
+                    }
+                  });
+                }
+              });
+            });
+          });
+        });
+      }
+    });
+  });
+};

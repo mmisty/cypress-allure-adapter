@@ -42,6 +42,9 @@ export default {
     '!**/tests/test-folder/allure-plugin/**/?(*.)+(spec|test).[tj]s?(x)',
     '!**/lib/**/*.*',
   ],
+  moduleNameMapper: {
+    '^@test-utils$': '<rootDir>/tests/cy-helper/utils.ts',
+  },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tests/tsconfig.json' }],
 

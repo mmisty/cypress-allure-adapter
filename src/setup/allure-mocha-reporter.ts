@@ -8,11 +8,12 @@ import {
   Status,
   Category,
   LabelName,
+  LinkType,
 } from '../plugins/allure-types'; // todo
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient } from './helper';
-import { tmsIssueUrl } from '../common';
+import { packageLog, tmsIssueUrl } from '../common';
 import { EventEmitter } from 'events';
 import AllureEvents = Cypress.AllureEvents;
 
@@ -126,10 +127,22 @@ export const allureInterface = (
     },
 
     link: (url: string, name?: string, type?: 'issue' | 'tms') => fn({ task: 'link', arg: { url, name, type } }),
-    tms: (url: string, name?: string) =>
-      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'tms'), name: name ?? url, type: 'tms' } }),
-    issue: (url: string, name?: string) =>
-      fn({ task: 'link', arg: { url: tmsIssueUrl(env, url, 'issue'), name: name ?? url, type: 'issue' } }),
+    tms: (url: string, name?: string) => {
+      const type: LinkType = 'tms';
+      const fullUrl = tmsIssueUrl(env, url, type);
+      const linkName = name ?? url;
+
+      return fn({ task: 'link', arg: { url: fullUrl, name: linkName, type } });
+    },
+
+    issue: (url: string, name?: string) => {
+      const type: LinkType = 'issue';
+      const fullUrl = tmsIssueUrl(env, url, type);
+      const linkName = name ?? url;
+
+      return fn({ task: 'link', arg: { url: fullUrl, name: linkName, type } });
+    },
+
     label: (name: string, value: string) => fn({ task: 'label', arg: { name, value } }),
     suite: (name: string) => fn({ task: 'suite', arg: { name } }),
     parentSuite: (name: string) => fn({ task: 'parentSuite', arg: { name } }),
@@ -176,7 +189,7 @@ const isHook = (test: Mocha.Test) => {
   return (test as any).type === 'hook';
 };
 
-const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
+const createTestsForFailedBeforeHook = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
   test.parent?.eachTest(ts => {
     ts.err = test.err;
@@ -186,6 +199,15 @@ const createTests = (runner: Mocha.Runner, test: Mocha.Test) => {
     if (ts) {
       if (index === 1) {
         ts.state = 'failed';
+
+        if (ts.err) {
+          // Cypress error cannot be taken here - it will be updated only on 'test:after:run' event
+          // so to simplify events chain creating own error message
+          // need to watch cypress error text message when it changes - and update it here
+          ts.err.message =
+            `${ts.err.message}\n\n` +
+            `Because this error occurred during a \`before all\` hook we are skipping the remaining tests in the current suite: \`${ts.parent?.title}\` (added by ${packageLog})`;
+        }
       }
       runner.emit(CUSTOM_EVENTS.TEST_BEGIN, ts);
       runner.emit(CUSTOM_EVENTS.TEST_FAIL, ts);
@@ -393,7 +415,8 @@ export const registerMochaReporter = (ws: WebSocket) => {
           return;
         }
 
-        createTestsCallb = () => createTests(runner, test);
+        runner.emit(CUSTOM_EVENTS.TEST_END, test);
+        createTestsForFailedBeforeHook(runner, test);
 
         return;
       }

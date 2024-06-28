@@ -12,6 +12,7 @@ module.exports = {
   ignorePatterns: ['*.yaml', '*.yml', '*.csv'],
 
   rules: {
+    'jest/no-export': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
     'prefer-template': 'error',
     quotes: ['error', 'single', { avoidEscape: true }],

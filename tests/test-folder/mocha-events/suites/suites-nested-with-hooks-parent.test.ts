@@ -1,8 +1,4 @@
-import {
-  createResTest2,
-  fixResult,
-  readWithRetry,
-} from '../../../cy-helper/utils';
+import { createResTest2, fixResult, readWithRetry } from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
 import { AllureHook, Parent } from 'allure-js-parser/types';
@@ -44,9 +40,10 @@ describe('hello suite', () => {
 
   describe('check results', () => {
     let resFixed;
+    let results;
 
     beforeAll(() => {
-      const results = parseAllure(res.watch);
+      results = parseAllure(res.watch);
       resFixed = fixResult(results);
     });
 
@@ -62,7 +59,7 @@ describe('hello suite', () => {
 
     it('suites parents', () => {
       expect(
-        resFixed.map(t => ({
+        results.map(t => ({
           name: t.name,
           status: t.status,
           parents: getParentsArray(t).map((y: Parent) => ({
@@ -76,8 +73,8 @@ describe('hello suite', () => {
                   ...z,
                   source: `source${extname(z.source)}`,
                   sourceContentMoreThanZero:
-                    readWithRetry(`${res.watch}/${z.source}`).toString()
-                      .length > 0,
+                    readWithRetry(`${res.watch}/${z.source}`)?.toString()
+                      ?.length > 0,
                 })),
               })),
             afters: (y.afters as AllureHook[])
