@@ -173,6 +173,19 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
+export const labelsForTest = (res: AllureTest[], filterLabels: string[]) => {
+  return res
+    .map(t => ({ labels: t.labels, name: t.name }))
+    .sort((a, b) => ((a as any).name < (b as any).name ? -1 : 1))
+    .map(t => ({
+      ...t,
+      labels: t.labels.filter(x =>
+        filterLabels.length > 0 ? filterLabels.includes(x.name) : true,
+      ),
+    }));
+};
+
+// eslint-disable-next-line jest/no-export
 export const fullStepAttachment = (
   res: AllureTest[],
   mapStep?: (m: StepResult) => any,
@@ -263,11 +276,14 @@ export const readWithRetry = (path: string, attempt = 0) => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const createResTest2 = (
-  specTexts: string[],
-  envConfig?: Record<string, string | undefined>,
-  shouldBeResults?: boolean,
-): {
+export const eventsForFile = (res: Result, fileName: string): string[] => {
+  return readWithRetry(res.specs.filter(x => x.indexOf(fileName) !== -1)[0])
+    ?.toString()
+    .split('\n')
+    .filter(t => t !== '');
+};
+
+type Result = {
   watch: string;
   specs: string[];
   result: {
@@ -276,7 +292,14 @@ export const createResTest2 = (
       | CypressCommandLine.CypressFailedRunResult
       | undefined;
   };
-} => {
+};
+
+// eslint-disable-next-line jest/no-export
+export const createResTest2 = (
+  specTexts: string[],
+  envConfig?: Record<string, string | undefined>,
+  shouldBeResults?: boolean,
+): Result => {
   const result: {
     res:
       | CypressCommandLine.CypressRunResult
@@ -343,6 +366,8 @@ export const createResTest2 = (
   };
 
   it('create results jest', async () => {
+    jest.retryTimes(1);
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
 
@@ -405,7 +430,7 @@ export const createResTest2 = (
         }
       })
       .then(() => {
-        if (shouldBeResults) {
+        if (shouldBeResults !== false) {
           return checkFilesExist(10);
         }
       });
