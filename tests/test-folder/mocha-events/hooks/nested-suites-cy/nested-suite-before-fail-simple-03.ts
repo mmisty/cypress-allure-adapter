@@ -41,7 +41,7 @@ const data: TestData = {
           message: [
             'Failure in hook',
             '',
-            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `child suite`',
+            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `child suite` (added by [cypress-allure-adapter])',
           ],
         },
       },
@@ -52,7 +52,7 @@ const data: TestData = {
           message: [
             'Failure in hook',
             '',
-            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `child suite`',
+            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `child suite` (added by [cypress-allure-adapter])',
           ],
         },
       },
@@ -111,24 +111,23 @@ const data: TestData = {
           {
             name: rootSuite,
             befores: [],
-            afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_2_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
-            ],
+            afters: [],
           },
           {
             name: 'child suite',
             befores: [
               { name: '"before all" hook', attachments: [] },
-              { name: '"before all" hook: in sub suite', attachments: [] },
+              {
+                name: '"before all" hook: in sub suite',
+                attachments: [
+                  {
+                    name: 'Failed before hook in nested suite (simple) -- child suite -- test 1 -- before all hook in sub suite (failed).png',
+                    source:
+                      '9b219b91-a644-47f0-8464-eb0342ded735-attachment.png',
+                    type: 'image/png',
+                  },
+                ],
+              },
             ],
             afters: [
               {
@@ -198,14 +197,14 @@ const data: TestData = {
       'mocha: hook: "before all" hook: in sub suite',
       `cypress:screenshot:test:${rootSuite} -- child suite -- test 1 -- before all hook in sub suite (failed).png`,
       'mocha: fail: "before all" hook: in sub suite for "test 1"',
+      'plugin test:ended',
+      'plugin test:started',
+      'plugin test:ended',
+      'plugin test:started',
+      'plugin test:ended',
       'mocha: suite end: child suite',
       `mocha: suite end: ${rootSuite}`,
       'cypress: test:after:run: test 1',
-      'plugin test:ended',
-      'plugin test:started',
-      'plugin test:ended',
-      'plugin test:started',
-      'plugin test:ended',
       'mocha: suite end: ',
       'mocha: end',
     ],

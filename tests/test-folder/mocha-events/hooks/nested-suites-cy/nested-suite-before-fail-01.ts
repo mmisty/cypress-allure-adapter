@@ -58,7 +58,7 @@ const data: TestData = {
           message: [
             'Failure in hook',
             '',
-            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `hooks test - sub child`',
+            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `hooks test - sub child` (added by [cypress-allure-adapter])',
           ],
         },
       },
@@ -69,7 +69,7 @@ const data: TestData = {
           message: [
             'Failure in hook',
             '',
-            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `hooks test - sub child`',
+            'Because this error occurred during a `before all` hook we are skipping the remaining tests in the current suite: `hooks test - sub child` (added by [cypress-allure-adapter])',
           ],
         },
       },
@@ -160,7 +160,7 @@ const data: TestData = {
                 name: 'video',
                 attachments: [
                   {
-                    name: 'test_0_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4', // video check
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
@@ -168,8 +168,33 @@ const data: TestData = {
               },
             ],
           },
-          { name: 'hooks test - child', befores: [], afters: [] },
-          { name: 'hooks test - sub child', befores: [], afters: [] },
+          {
+            name: 'hooks test - child',
+            befores: [{ name: '"before all" hook', attachments: [] }],
+            afters: [],
+          },
+          {
+            name: 'hooks test - sub child',
+            befores: [
+              {
+                name: '"before all" hook',
+                attachments: [],
+              },
+              { name: '"before all" hook: in sub suite', attachments: [] },
+            ],
+            afters: [
+              {
+                name: 'video',
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4', // video check
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+              },
+            ],
+          },
         ],
       },
       {
@@ -191,8 +216,33 @@ const data: TestData = {
               },
             ],
           },
-          { name: 'hooks test - child', befores: [], afters: [] },
-          { name: 'hooks test - sub child', befores: [], afters: [] },
+          {
+            name: 'hooks test - child',
+            befores: [{ name: '"before all" hook', attachments: [] }],
+            afters: [],
+          },
+          {
+            name: 'hooks test - sub child',
+            befores: [
+              {
+                name: '"before all" hook',
+                attachments: [],
+              },
+              { name: '"before all" hook: in sub suite', attachments: [] },
+            ],
+            afters: [
+              {
+                name: 'video',
+                attachments: [
+                  {
+                    name: 'test_0_number.cy.ts.mp4', // video check
+                    source: 'source.mp4',
+                    type: 'video/mp4',
+                  },
+                ],
+              },
+            ],
+          },
         ],
       },
     ],
@@ -220,15 +270,15 @@ const data: TestData = {
       'cypress: test:before:run: test 1',
       `cypress:screenshot:test:${rootSuite} -- hooks test - child -- hooks test - sub child -- test 1 -- before all hook in sub suite (failed).png`,
       'mocha: fail: "before all" hook: in sub suite for "test 1"',
+      'plugin test:ended',
+      'plugin test:started',
+      'plugin test:ended',
+      'plugin test:started',
+      'plugin test:ended',
       'mocha: suite end: hooks test - sub child',
       'mocha: suite end: hooks test - child',
       `mocha: suite end: ${rootSuite}`,
       'cypress: test:after:run: test 1',
-      'plugin test:ended',
-      'plugin test:started',
-      'plugin test:ended',
-      'plugin test:started',
-      'plugin test:ended',
       'mocha: suite end: ',
       'mocha: end',
     ],
