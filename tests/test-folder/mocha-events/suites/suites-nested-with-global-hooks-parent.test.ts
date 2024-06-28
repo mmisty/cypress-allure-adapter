@@ -1,10 +1,7 @@
-import {
-  createResTest2,
-  fixResult,
-  readWithRetry,
-} from '../../../cy-helper/utils';
+import { createResTest2, fixResult, readWithRetry } from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '../../../../src/common';
+import { AllureHook } from 'allure-js-parser/types';
 
 // issue https://github.com/mmisty/cypress-allure-adapter/issues/95
 describe('several nested suites with global hook - hook should be added to all children', () => {
@@ -41,9 +38,10 @@ describe('hello suite', () => {
 
   describe('check results', () => {
     let resFixed;
+    let results;
 
     beforeAll(() => {
-      const results = parseAllure(res.watch);
+      results = parseAllure(res.watch);
       resFixed = fixResult(results);
     });
 
@@ -60,14 +58,14 @@ describe('hello suite', () => {
 
     it('suites parents', () => {
       expect(
-        resFixed
+        results
           .sort((a, b) => (a.name < b.name ? -1 : 1))
           .map(t => ({
             name: t.name,
             status: t.status,
             parents: getParentsArray(t).map(t => ({
               name: t.name,
-              befores: t.befores
+              befores: (t.befores as AllureHook[])
                 ?.filter(x => (x as any).name !== '"before all" hook')
                 .map(x => ({
                   name: (x as any).name,
@@ -77,7 +75,7 @@ describe('hello suite', () => {
                     ...t,
                     source: `source${extname(t.source)}`,
                     sourceContentMoreThanZero:
-                      readWithRetry(`${res.watch}/${t.source}`).toString()
+                      readWithRetry(`${res.watch}/${t.source}`)?.toString()
                         .length > 0,
                   })),
                 })),
@@ -92,6 +90,7 @@ describe('hello suite', () => {
                 {
                   name: '"before all" hook: glob hook',
                   status: 'passed',
+                  statusDetails: {},
                   attachments: [],
                 },
                 {
@@ -105,11 +104,13 @@ describe('hello suite', () => {
                   ],
                   name: '"before all" hook: parent hook',
                   status: 'passed',
+                  statusDetails: {},
                 },
                 {
                   attachments: [],
                   name: '"before all" hook: child hook',
                   status: 'passed',
+                  statusDetails: {},
                 },
               ],
               name: 'sub sub suite',
@@ -180,6 +181,7 @@ describe('hello suite', () => {
                   attachments: [],
                   name: '"before all" hook: glob hook',
                   status: 'passed',
+                  statusDetails: {},
                 },
                 {
                   attachments: [
@@ -192,6 +194,7 @@ describe('hello suite', () => {
                   ],
                   name: '"before all" hook: parent hook',
                   status: 'passed',
+                  statusDetails: {},
                 },
               ],
               name: 'hello suite',
