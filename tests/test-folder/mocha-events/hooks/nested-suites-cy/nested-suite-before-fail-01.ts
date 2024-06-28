@@ -127,6 +127,19 @@ const data: TestData = {
       ],
     },
 
+    testSteps: [
+      {
+        testName: 'test 1',
+        mapStep: m => ({ status: m.status, attachments: m.attachments }),
+        expected: [],
+      },
+      {
+        testName: 'test 2',
+        mapStep: m => ({ status: m.status, attachments: m.attachments }),
+        expected: [],
+      },
+    ],
+
     parents: [
       {
         testName: 'test 0',

@@ -43,6 +43,57 @@ const data: TestData = {
       },
     ],
 
+    testSteps: [
+      {
+        testName: 'test 1',
+        mapStep: m => ({ status: m.status, attachments: m.attachments }),
+        expected: [
+          {
+            name: '"before each" hook',
+            status: 'passed',
+            steps: [],
+            attachments: [],
+          },
+          {
+            name: 'log: test 1',
+            status: 'passed',
+            steps: [],
+            attachments: [],
+          },
+          {
+            name: '"after each" hook',
+            status: 'passed',
+            steps: [],
+            attachments: [],
+          },
+        ],
+      },
+      {
+        testName: 'test 2',
+        mapStep: m => ({ status: m.status, attachments: m.attachments }),
+        expected: [
+          {
+            name: '"before each" hook',
+            status: 'passed',
+            steps: [],
+            attachments: [],
+          },
+          {
+            name: 'log: test 2',
+            status: 'passed',
+            steps: [],
+            attachments: [],
+          },
+          {
+            name: '"after each" hook',
+            status: 'passed',
+            steps: [],
+            attachments: [],
+          },
+        ],
+      },
+    ],
+
     testAttachments: [
       {
         expectMessage: 'should be no',

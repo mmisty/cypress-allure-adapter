@@ -5,7 +5,7 @@ import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 import { StepResult } from 'allure-js-commons';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
-import { AllureHook, Parent } from 'allure-js-parser/types';
+import { AllureHook, AllureStep, Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(120000);
 
@@ -13,16 +13,21 @@ jest.setTimeout(120000);
 export const mapSteps = <T>(
   steps: StepResult[],
   map?: (m: StepResult) => T,
+  filter?: (m: StepResult) => boolean,
 ): (T & any)[] => {
   if (steps?.length === 0) {
     return [];
   }
 
-  return steps.map(s => {
-    const obj = map ? map(s) : { name: s.name };
+  return steps
+    .filter(s => {
+      return filter ? filter(s) : true;
+    })
+    .map(s => {
+      const obj = map ? map(s) : { name: s.name };
 
-    return { ...obj, steps: mapSteps(s.steps, map) };
-  });
+      return { ...obj, steps: mapSteps(s.steps, map, filter) };
+    });
 };
 
 // eslint-disable-next-line jest/no-export
@@ -205,6 +210,7 @@ export const labelsForTest = (res: AllureTest[], filterLabels?: string[]) => {
 export const fullStepAttachment = (
   res: AllureTest[],
   mapStep?: (m: StepResult) => any,
+  options?: { noAddParents?: boolean },
 ) => {
   const parents = res
     .map(x => ({
@@ -234,36 +240,61 @@ export const fullStepAttachment = (
             skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
           ),
         }))
+        .filter(x =>
+          skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
+        )
         .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)) ??
       []
     );
   };
 
-  const full = parents.map(t => ({
-    name: t.name,
-    status: t.status,
-    attachments: t.attachments.sort((z1, z2) =>
-      z1.name && z2.name && z1.name < z2.name ? -1 : 1,
-    ),
-    steps: mapSteps(t.steps, mapStep).filter(x =>
-      skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
-    ),
-    parents: t.parents?.map(x => ({
-      suiteName: x.name,
-      befores: mapItem(x.befores)
-        .filter(z =>
-          skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
-        )
-        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)),
-      afters: mapItem(x.afters)
-        .filter(z =>
-          skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
-        )
-        .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1)),
-    })),
-  }));
+  const full = parents
+    .map(t => ({
+      name: t.name,
+      status: t.status,
+      attachments: t.attachments.sort((z1, z2) =>
+        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+      ),
+      steps: mapSteps(t.steps, mapStep).filter(x =>
+        skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
+      ),
+      ...(!options?.noAddParents
+        ? {
+            parents: t.parents?.map(x => ({
+              suiteName: x.name,
+              befores: mapItem(x.befores)
+                .filter(z =>
+                  skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
+                )
+                .sort((z1, z2) =>
+                  z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                ),
+              afters: mapItem(x.afters)
+                .filter(z =>
+                  skipItems.every(y => z.name.toLowerCase().indexOf(y) === -1),
+                )
+                .sort((z1, z2) =>
+                  z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                ),
+            })),
+          }
+        : {}),
+    }))
+    .filter(x => skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1));
 
   return full;
+};
+
+// eslint-disable-next-line jest/no-export
+export const fullStepMap = (
+  res: AllureTest,
+  mapStep?: (m: StepResult) => any,
+) => {
+  const skipItems = ['generatereport', 'coverage'];
+
+  return mapSteps(res.steps as StepResult[], mapStep, z =>
+    skipItems.every(y => z.name?.toLowerCase().indexOf(y) === -1),
+  );
 };
 
 // eslint-disable-next-line jest/no-export
@@ -610,22 +641,26 @@ export type TestData = {
       parents: { name: string; parent: string | undefined }[];
     }[];
 
-    steps?: {
-      filter: string[];
+    testSteps?: {
+      testName: string;
+      mapStep?: (m: StepResult) => any;
       expected: any[];
-    };
+    }[];
 
     parents?: {
       testName: string;
       containers: {
         name: string;
+        stepMap?: (x: StepResult) => any;
         befores?: {
           name?: string;
           attachments?: any[];
+          steps?: any[];
         }[];
         afters?: {
           name?: string;
           attachments?: any[];
+          steps?: any[];
         }[];
       }[];
     }[];
@@ -747,6 +782,21 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
         });
       }
 
+      if (testData.expect.testSteps) {
+        testData.expect.testSteps.forEach(testItem => {
+          it(`steps for test ${testItem.testName}`, () => {
+            const test = resFixed.find(x => testItem.testName === x.name);
+
+            const obj = fullStepMap(test!, m => ({
+              name: m.name,
+              ...(testItem.mapStep?.(m) ?? {}),
+            }));
+
+            wrapError(() => expect(obj).toEqual(testItem.expected));
+          });
+        });
+      }
+
       if (testData.expect.parents) {
         testData.expect.parents.forEach(testData => {
           describe(`parents for ${testData.testName}`, () => {
@@ -758,13 +808,6 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
               test = resFixed.find(x => testData.testName === x.name);
               parents = getParentsArray(test);
             });
-
-            // it('check parent names', () => {
-            //
-            //           wrapError(() =>expect(parents.map(x => x.name)).toEqual(
-            //     testData.containers.map(x => x.name),
-            //   ));
-            // });
 
             describe('before and after hooks', () => {
               testData.containers.forEach(container => {
@@ -805,6 +848,19 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                         ),
                       );
                     }
+
+                    if (container.befores?.some(t => t.steps)) {
+                      const beforesSteps = actualBefores?.map(x =>
+                        mapSteps(x.steps, container.stepMap),
+                      );
+
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(beforesSteps).toEqual(
+                          container.befores?.map(x => x.steps),
+                        ),
+                      );
+                    }
                   });
                 }
 
@@ -833,6 +889,19 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                         // eslint-disable-next-line jest/no-conditional-expect
                         expect(actualAfters?.map(x => x.attachments)).toEqual(
                           container.afters?.map(x => x.attachments),
+                        ),
+                      );
+                    }
+
+                    if (container.afters?.some(t => t.steps)) {
+                      const aftersSteps = actualAfters?.map(x =>
+                        mapSteps(x.steps, container.stepMap),
+                      );
+
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(aftersSteps).toEqual(
+                          container.afters?.map(x => x.steps),
                         ),
                       );
                     }
