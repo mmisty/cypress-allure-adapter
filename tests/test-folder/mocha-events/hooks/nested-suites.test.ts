@@ -16,6 +16,9 @@ describe('nested suites', () => {
   const testsForRun = [
     { path: `${__dirname}/nested-suites-cy/nested-suite-before-fail-01.cy.ts` },
     { path: `${__dirname}/nested-suites-cy/nested-suite-before-pass-02.cy.ts` },
+    {
+      path: `${__dirname}/nested-suites-cy/nested-suite-before-fail-simple-03.cy.ts`,
+    },
   ];
 
   const res = createResTest2(
@@ -25,6 +28,7 @@ describe('nested suites', () => {
 
   describe(`Check results for ${basename(testsForRun[0].path)}`, () => {
     let resFixed: AllureTest[];
+    const specName = basename(res.specs[0]);
 
     beforeAll(() => {
       const results = parseAllure(res.watch).filter(
@@ -42,7 +46,7 @@ describe('nested suites', () => {
     });
 
     it('should have correct events for spec', async () => {
-      const events = eventsForFile(res, basename(res.specs[0]));
+      const events = eventsForFile(res, specName);
 
       expect(events).toEqual([
         'mocha: start',
@@ -245,6 +249,7 @@ describe('nested suites', () => {
 
   describe(`Check results for ${basename(testsForRun[1].path)}`, () => {
     let resFixed: AllureTest[];
+    const specName = basename(res.specs[1]);
 
     beforeAll(() => {
       const results = parseAllure(res.watch).filter(
@@ -262,7 +267,7 @@ describe('nested suites', () => {
     });
 
     it('should have correct events for spec', async () => {
-      const events = eventsForFile(res, basename(res.specs[0]));
+      const events = eventsForFile(res, specName);
 
       expect(events).toEqual([
         'mocha: start',
@@ -272,7 +277,7 @@ describe('nested suites', () => {
           'cypress: test:before:run: test 0',
           'mocha: hook end: "before all" hook',
         ),
-        'mocha: suite: Suite01 failure in nested suite before hook, Suite01 failure in nested suite before hook',
+        'mocha: suite: Suite02 before hook passes in nested suite, Suite02 before hook passes in nested suite',
         'mocha: test: test 0',
         'plugin test:started',
         'mocha: hook: "before each" hook',
@@ -283,23 +288,38 @@ describe('nested suites', () => {
         'mocha: hook end: "after each" hook',
         'cypress: test:after:run: test 0',
         'plugin test:ended',
-        'mocha: suite: hooks test - child, Suite01 failure in nested suite before hook hooks test - child',
-        'mocha: suite: hooks test - sub child, Suite01 failure in nested suite before hook hooks test - child hooks test - sub child',
-        'mocha: hook: "before all" hook:  in suite',
+        'mocha: suite: hooks test - child, Suite02 before hook passes in nested suite hooks test - child',
+        'mocha: suite: hooks test - sub child, Suite02 before hook passes in nested suite hooks test - child hooks test - sub child',
+        'mocha: hook: "before all" hook: in suite',
         ...whenNoCoverage('cypress: test:before:run: test 1'),
         'cypress: test:before:run: test 1',
-        'cypress:screenshot:test:Suite01 failure in nested suite before hook -- hooks test - child -- hooks test - sub child -- test 1 -- before all hook  in suite (failed).png',
-        'mocha: fail: "before all" hook:  in suite for "test 1"',
-        'mocha: suite end: hooks test - sub child',
-        'mocha: suite end: hooks test - child',
-        'mocha: suite end: Suite01 failure in nested suite before hook',
-
-        ...whenCoverage(...covergeAfterAllEvent),
+        'mocha: hook end: "before all" hook: in suite',
+        'mocha: test: test 1',
+        'plugin test:started',
+        'mocha: hook: "before each" hook',
+        'mocha: hook end: "before each" hook',
+        'mocha: pass: test 1',
+        'mocha: test end: test 1',
+        'mocha: hook: "after each" hook',
+        'mocha: hook end: "after each" hook',
         'cypress: test:after:run: test 1',
         'plugin test:ended',
+        'mocha: test: test 2',
         'plugin test:started',
-        'plugin test:ended',
-        'plugin test:started',
+        'mocha: hook: "before each" hook',
+        'cypress: test:before:run: test 2',
+        'mocha: hook end: "before each" hook',
+        'mocha: pass: test 2',
+        'mocha: test end: test 2',
+        'mocha: hook: "after each" hook',
+        'mocha: hook end: "after each" hook',
+        'mocha: suite end: hooks test - sub child',
+        'mocha: suite end: hooks test - child',
+        'mocha: suite end: Suite02 before hook passes in nested suite',
+
+        ...whenCoverage(...covergeAfterAllEvent),
+
+        'cypress: test:after:run: test 2',
         'plugin test:ended',
         'mocha: suite end: ',
         'mocha: end',
@@ -610,6 +630,165 @@ describe('nested suites', () => {
               ],
             },
           ],
+        },
+      ]);
+    });
+  });
+
+  describe('Check results for Suite03', () => {
+    let resFixed: AllureTest[];
+    const specName = basename(res.specs[2]);
+
+    beforeAll(() => {
+      const results = parseAllure(res.watch).filter(
+        t => t.fullName?.indexOf('Suite03') !== -1,
+      );
+      resFixed = fixResult(results);
+    });
+
+    it('check tests names', async () => {
+      expect(resFixed.map(t => t.fullName).sort()).toEqual([
+        'Suite03 failure in nested suite before hook hooks test - child test 1',
+        'Suite03 failure in nested suite before hook hooks test - child test 2',
+      ]);
+    });
+
+    it('should have correct events for spec', async () => {
+      const events = eventsForFile(res, specName);
+
+      expect(events).toEqual([
+        'mocha: start',
+        'mocha: suite: , ',
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: test 1',
+        'mocha: hook end: "before all" hook',
+        'mocha: suite: Suite03 failure in nested suite before hook, Suite03 failure in nested suite before hook',
+        'mocha: suite: hooks test - child, Suite03 failure in nested suite before hook hooks test - child',
+        'mocha: hook: "before all" hook:  in suite',
+        'cypress:screenshot:test:Suite03 failure in nested suite before hook -- hooks test - child -- test 1 -- before all hook  in suite (failed).png',
+        'mocha: fail: "before all" hook:  in suite for "test 1"',
+        'mocha: suite end: hooks test - child',
+        'mocha: suite end: Suite03 failure in nested suite before hook',
+        'mocha: hook: "after all" hook: collectBackendCoverage',
+        'mocha: hook end: "after all" hook: collectBackendCoverage',
+        'mocha: hook: "after all" hook: mergeUnitTestCoverage',
+        'mocha: hook end: "after all" hook: mergeUnitTestCoverage',
+        'mocha: hook: "after all" hook: generateReport',
+        'mocha: hook end: "after all" hook: generateReport',
+        'cypress: test:after:run: test 1',
+        'plugin test:ended',
+        'plugin test:started',
+        'plugin test:ended',
+        'plugin test:started',
+        'plugin test:ended',
+        'mocha: suite end: ',
+        'mocha: end',
+      ]);
+    });
+
+    it('check suite labels', async () => {
+      expect(
+        labelsForTest(resFixed, ['suite', 'parentSuite', 'subSuite']),
+      ).toEqual([
+        {
+          labels: [
+            {
+              name: 'parentSuite',
+              value: 'Suite03 failure in nested suite before hook',
+            },
+          ],
+          name: 'test 1',
+        },
+        {
+          labels: [
+            {
+              name: 'parentSuite',
+              value: 'Suite03 failure in nested suite before hook',
+            },
+          ],
+          name: 'test 2',
+        },
+      ]);
+    });
+
+    it('check test with screenshot', async () => {
+      const obj = fullStepAttachment(resFixed, m => ({
+        name: m.name,
+        attachments: m.attachments,
+      }));
+
+      obj[0].steps = obj[0].steps.filter(
+        t =>
+          t.name.indexOf('after each') === -1 &&
+          t.name.indexOf('before each') === -1,
+      );
+
+      expect(obj).toEqual([
+        {
+          attachments: [],
+          name: 'test 1',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_2_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'Suite03 failure in nested suite before hook',
+            },
+          ],
+          status: 'failed',
+          steps: [],
+        },
+        {
+          attachments: [],
+          name: 'test 2',
+          parents: [
+            {
+              afters: [
+                {
+                  attachments: [
+                    {
+                      name: 'test_2_number.cy.ts.mp4',
+                      source: 'source.mp4',
+                      type: 'video/mp4',
+                    },
+                  ],
+                  name: 'video',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              befores: [
+                {
+                  attachments: [],
+                  name: '"before all" hook',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+              suiteName: 'Suite03 failure in nested suite before hook',
+            },
+          ],
+          status: 'unknown',
+          steps: [],
         },
       ]);
     });
