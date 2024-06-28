@@ -121,9 +121,8 @@ const data: TestData = {
                 name: '"before all" hook: in sub suite',
                 attachments: [
                   {
-                    name: 'Failed before hook in nested suite (simple) -- child suite -- test 1 -- before all hook in sub suite (failed).png',
-                    source:
-                      '9b219b91-a644-47f0-8464-eb0342ded735-attachment.png',
+                    name: `${rootSuite} -- child suite -- test 1 -- before all hook in sub suite (failed).png`,
+                    source: 'source.png',
                     type: 'image/png',
                   },
                 ],
@@ -150,24 +149,22 @@ const data: TestData = {
           {
             name: rootSuite,
             befores: [],
-            afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_2_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
-            ],
+            afters: [],
           },
           {
             name: 'child suite',
             befores: [
               { name: '"before all" hook', attachments: [] },
-              { name: '"before all" hook: in sub suite', attachments: [] },
+              {
+                name: '"before all" hook: in sub suite',
+                attachments: [
+                  {
+                    name: `${rootSuite} -- child suite -- test 1 -- before all hook in sub suite (failed).png`,
+                    source: 'source.png',
+                    type: 'image/png',
+                  },
+                ],
+              },
             ],
             afters: [
               {
@@ -205,6 +202,7 @@ const data: TestData = {
       'mocha: suite end: child suite',
       `mocha: suite end: ${rootSuite}`,
       'cypress: test:after:run: test 1',
+      'plugin test:ended', // does nothing
       'mocha: suite end: ',
       'mocha: end',
     ],

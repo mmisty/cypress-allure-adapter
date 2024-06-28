@@ -47,21 +47,22 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
     }));
   };
 
-  return results.map(r => {
-    return {
-      ...r,
-      historyId: 'no',
-      uuid: 'no',
-      start: date,
-      stop: date + 10,
-      parent: {
-        ...r.parent,
+  const fixParent = (parent: Parent | undefined) => {
+    if (parent) {
+      return {
+        ...parent,
+        parent: fixParent(parent.parent),
         uuid: 'no',
-        befores: r.parent?.befores?.map(b => ({
+        befores: parent?.befores?.map(b => ({
           ...b,
           steps: replaceSteps(b.steps),
           start: date,
           stop: date + 10,
+          attachments: b.attachments.map(t => ({
+            ...t,
+            name: t.name.replace(/\d{5,}/g, 'number'),
+            source: `source${path.extname(t.source)}`,
+          })),
           statusDetails: b.statusDetails?.message
             ? {
                 message: b.statusDetails.message,
@@ -69,7 +70,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
               }
             : undefined,
         })),
-        afters: r.parent?.afters?.map(b => ({
+        afters: parent?.afters?.map(b => ({
           ...b,
           steps: replaceSteps(b.steps),
           start: date,
@@ -86,7 +87,20 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
               }
             : undefined,
         })),
-      },
+      };
+    }
+
+    return undefined;
+  };
+
+  return results.map(r => {
+    return {
+      ...r,
+      historyId: 'no',
+      uuid: 'no',
+      start: date,
+      stop: date + 10,
+      parent: fixParent(r.parent),
       labels: r.labels.map(l => ({
         name: l.name,
         value: l.value.replace(/\d{5,}/g, 'number'),

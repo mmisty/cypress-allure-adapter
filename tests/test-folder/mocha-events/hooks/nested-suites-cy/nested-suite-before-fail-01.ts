@@ -180,7 +180,16 @@ const data: TestData = {
                 name: '"before all" hook',
                 attachments: [],
               },
-              { name: '"before all" hook: in sub suite', attachments: [] },
+              {
+                name: '"before all" hook: in sub suite',
+                attachments: [
+                  {
+                    name: `${rootSuite} -- hooks test - child -- hooks test - sub child -- test 1 -- before all hook in sub suite (failed).png`,
+                    source: 'source.png',
+                    type: 'image/png',
+                  },
+                ],
+              },
             ],
             afters: [
               {
@@ -208,7 +217,7 @@ const data: TestData = {
                 name: 'video',
                 attachments: [
                   {
-                    name: 'test_0_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4', // change
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
@@ -228,7 +237,16 @@ const data: TestData = {
                 name: '"before all" hook',
                 attachments: [],
               },
-              { name: '"before all" hook: in sub suite', attachments: [] },
+              {
+                name: '"before all" hook: in sub suite',
+                attachments: [
+                  {
+                    name: `${rootSuite} -- hooks test - child -- hooks test - sub child -- test 1 -- before all hook in sub suite (failed).png`,
+                    source: 'source.png',
+                    type: 'image/png',
+                  },
+                ],
+              },
             ],
             afters: [
               {
@@ -279,6 +297,7 @@ const data: TestData = {
       'mocha: suite end: hooks test - child',
       `mocha: suite end: ${rootSuite}`,
       'cypress: test:after:run: test 1',
+      'plugin test:ended', // does nothing
       'mocha: suite end: ',
       'mocha: end',
     ],
