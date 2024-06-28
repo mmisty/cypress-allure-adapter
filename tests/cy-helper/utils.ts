@@ -5,7 +5,7 @@ import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 import { StepResult } from 'allure-js-commons';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
-import { AllureHook, AllureStep, Parent } from 'allure-js-parser/types';
+import { AllureHook, Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(120000);
 
