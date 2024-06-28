@@ -1,6 +1,9 @@
-import type { StatusDetails } from 'allure-js-commons';
 import type { ContentType } from '../common/types';
 
+export type StatusDetails = {
+  message?: string;
+  trace?: string;
+};
 export interface AutoScreen {
   screenshotId?: string;
   specName?: string;
@@ -61,7 +64,7 @@ type AllureTask = {
   screenshotOne: { name: string | undefined; forStep?: boolean };
   screenshotAttachment: AutoScreen;
   testResult: {
-    title: string;
+    title?: string;
     id: string;
     result: Status;
     details?: StatusDetails;
