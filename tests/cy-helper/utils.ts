@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
-import { AllureTest, getParentsArray } from 'allure-js-parser';
+import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 import { StepResult } from 'allure-js-commons';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
-import { AllureHook } from 'allure-js-parser/types';
+import { AllureHook, Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(120000);
 
@@ -173,14 +173,16 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const labelsForTest = (res: AllureTest[], filterLabels: string[]) => {
+export const labelsForTest = (res: AllureTest[], filterLabels?: string[]) => {
   return res
     .map(t => ({ labels: t.labels, name: t.name }))
     .sort((a, b) => ((a as any).name < (b as any).name ? -1 : 1))
     .map(t => ({
       ...t,
       labels: t.labels.filter(x =>
-        filterLabels.length > 0 ? filterLabels.includes(x.name) : true,
+        filterLabels && filterLabels.length > 0
+          ? filterLabels.includes(x.name)
+          : true,
       ),
     }));
 };
@@ -566,3 +568,267 @@ export const covergeBeforeAll = [
     stop: 1323475200010,
   },
 ];
+
+export type TestData = {
+  name: string;
+  rootSuite: string;
+  spec: string;
+  fileName: string;
+  expect: {
+    labels?: { filter: string[]; expected: any[] };
+    events?: string[];
+    testsNames: string[];
+
+    testStatuses?: {
+      testName: string;
+      status: string;
+      statusDetails?: { message: string[] | undefined };
+    }[];
+
+    testAttachments?: {
+      expectMessage?: string; // message to show in test title
+      testName: string;
+      attachments: any[];
+    }[];
+
+    testParents?: {
+      testName: string;
+      parents: { name: string; parent: string | undefined }[];
+    }[];
+
+    steps?: {
+      filter: string[];
+      expected: any[];
+    };
+
+    parents?: {
+      testName: string;
+      containers: {
+        name: string;
+        befores?: {
+          name?: string;
+          attachments?: any[];
+        }[];
+        afters?: {
+          name?: string;
+          attachments?: any[];
+        }[];
+      }[];
+    }[];
+  };
+};
+
+const wrapExpectCreate = (addition: string) => (fn: () => any) => {
+  try {
+    fn();
+  } catch (e) {
+    const err = e as Error;
+    err.message = addition + err.message;
+    throw err;
+  }
+};
+
+export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
+  testsForRun.forEach((testData, i) => {
+    // path.relative(process.cwd(), testData.fileName)
+    const wrapError = wrapExpectCreate(
+      `Failed test file: ${basename(testData.fileName)}\nRoot suite: ${testData.name}\n\n`,
+    );
+
+    describe(`${testData.name}`, () => {
+      let resFixed: AllureTest[];
+
+      beforeAll(() => {
+        const results = parseAllure(res.watch).filter(
+          t => t.fullName?.indexOf(testData.rootSuite) !== -1,
+        );
+        resFixed = fixResult(results);
+      });
+
+      if (testData.expect.testsNames) {
+        it('check test full names', () => {
+          wrapError(() =>
+            expect(resFixed.map(t => t.fullName).sort()).toEqual(
+              testData.expect.testsNames,
+            ),
+          );
+        });
+      }
+
+      if (testData.expect.testStatuses) {
+        testData.expect.testStatuses.forEach(t => {
+          it(`should have test '${t.testName}' status - ${t.status}`, () => {
+            expect(resFixed.find(x => t.testName === x.name)?.status).toEqual(
+              t.status,
+            );
+          });
+
+          if (t.statusDetails) {
+            it(`should have test '${t.testName}' statusDetails`, () => {
+              wrapError(() =>
+                expect(
+                  resFixed
+                    .find(x => t.testName === x.name)
+                    ?.statusDetails?.message?.split('\n'),
+                ).toEqual(t.statusDetails?.message),
+              );
+            });
+          }
+        });
+      }
+
+      if (testData.expect.labels) {
+        it(`check ${testData.expect.labels?.filter?.join(',') ?? ' all'} labels`, () => {
+          wrapError(() =>
+            expect(
+              labelsForTest(resFixed, testData.expect.labels?.filter),
+            ).toEqual(testData.expect.labels?.expected),
+          );
+        });
+      }
+
+      if (testData.expect.events) {
+        it('should have correct events for spec', () => {
+          const specName = basename(res.specs[i]);
+          const events = eventsForFile(res, specName);
+
+          const skipItems = [
+            'collectBackendCoverage',
+            'mergeUnitTestCoverage',
+            'generateReport',
+          ];
+
+          wrapError(() =>
+            expect(
+              events.filter(x => skipItems.every(z => x.indexOf(z) === -1)),
+            ).toEqual(testData.expect.events),
+          );
+        });
+      }
+
+      if (testData.expect.testAttachments) {
+        testData.expect.testAttachments.forEach(t => {
+          it(`check '${t.testName}' attachments${t.expectMessage ? `: ${t.expectMessage}` : ''}`, () => {
+            wrapError(() =>
+              expect(
+                resFixed.find(x => t.testName === x.name)?.attachments,
+              ).toEqual(t.attachments),
+            );
+          });
+        });
+      }
+
+      if (testData.expect.testParents) {
+        testData.expect.testParents.forEach(testItem => {
+          it(`parents for test ${testItem.testName}`, () => {
+            const test = resFixed.find(x => testItem.testName === x.name);
+            const parents = getParentsArray(test);
+
+            wrapError(() =>
+              expect(
+                parents.map(x => ({ name: x.name, parent: x.parent?.name })),
+              ).toEqual(testItem.parents),
+            );
+          });
+        });
+      }
+
+      if (testData.expect.parents) {
+        testData.expect.parents.forEach(testData => {
+          describe(`parents for ${testData.testName}`, () => {
+            let test;
+            let parents: Parent[];
+            const skipItems = ['generatereport', 'coverage'];
+
+            beforeAll(() => {
+              test = resFixed.find(x => testData.testName === x.name);
+              parents = getParentsArray(test);
+            });
+
+            // it('check parent names', () => {
+            //
+            //           wrapError(() =>expect(parents.map(x => x.name)).toEqual(
+            //     testData.containers.map(x => x.name),
+            //   ));
+            // });
+
+            describe('before and after hooks', () => {
+              testData.containers.forEach(container => {
+                if (container.befores) {
+                  it(`check befores for '${testData.testName}' parent '${container.name}'`, () => {
+                    const actualParent = parents.find(
+                      pp => pp.name === container.name,
+                    );
+
+                    const actualBefores = (
+                      actualParent?.befores as AllureHook[]
+                    )
+                      ?.filter(z =>
+                        skipItems.every(
+                          y => z.name.toLowerCase().indexOf(y) === -1,
+                        ),
+                      )
+                      ?.filter(z => {
+                        return !z.steps.some(
+                          s => s.name?.indexOf('code-coverage') !== -1,
+                        );
+                      })
+                      .sort((z1, z2) =>
+                        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                      );
+
+                    wrapError(() =>
+                      expect(actualBefores?.map(x => x.name)).toEqual(
+                        container.befores?.map(x => x.name),
+                      ),
+                    );
+
+                    if (container.befores?.some(t => t.attachments)) {
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(actualBefores?.map(x => x.attachments)).toEqual(
+                          container.befores?.map(x => x.attachments),
+                        ),
+                      );
+                    }
+                  });
+                }
+
+                if (container.afters) {
+                  it(`check afters for '${testData.testName}' parent '${container.name}'`, () => {
+                    const actualParent = parents.find(
+                      pp => pp.name === container.name,
+                    );
+
+                    const actualAfters = (actualParent?.afters as AllureHook[])
+                      ?.filter(z =>
+                        skipItems.every(
+                          y => z.name.toLowerCase().indexOf(y) === -1,
+                        ),
+                      )
+                      .sort((z1, z2) =>
+                        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+                      );
+
+                    expect(actualAfters?.map(x => x.name)).toEqual(
+                      container.afters?.map(x => x.name),
+                    );
+
+                    if (container.afters?.some(t => t.attachments)) {
+                      wrapError(() =>
+                        // eslint-disable-next-line jest/no-conditional-expect
+                        expect(actualAfters?.map(x => x.attachments)).toEqual(
+                          container.afters?.map(x => x.attachments),
+                        ),
+                      );
+                    }
+                  });
+                }
+              });
+            });
+          });
+        });
+      }
+    });
+  });
+};
