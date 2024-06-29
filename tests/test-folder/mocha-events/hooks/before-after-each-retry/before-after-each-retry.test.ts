@@ -1,9 +1,10 @@
 import { createResTest2, generateChecksTests, TestData } from '@test-utils';
+import { basename } from 'path';
+import { globSync } from 'fast-glob';
 
-describe('suites diff tests', () => {
-  // test
-  const testsForOneCyRun: TestData[] = ['before-and-after-failure.ts'].map(
-    x => require(`${__dirname}/${x}`).default,
+describe(`suite: ${basename(__dirname)}`, () => {
+  const testsForOneCyRun: TestData[] = globSync(`${__dirname}/data-*.ts`).map(
+    x => require(`${x}`).default,
   );
 
   const res = createResTest2(

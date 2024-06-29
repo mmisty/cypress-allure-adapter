@@ -98,26 +98,30 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
     return undefined;
   };
 
-  return results.map(r => {
-    return {
-      ...r,
-      historyId: 'no',
-      uuid: 'no',
-      start: date,
-      stop: date + 10,
-      parent: fixParent(r.parent),
-      labels: r.labels.map(l => ({
-        name: l.name,
-        value: l.value.replace(/\d{5,}/g, 'number'),
-      })),
-      steps: replaceSteps(r.steps),
-      attachments: r.attachments.map(t => ({
-        ...t,
-        name: t.name.replace(/\d{5,}/g, 'number'), // todo check name in one test
-        source: `source${path.extname(t.source)}`,
-      })),
-    };
-  }) as AllureTest[];
+  return results
+    .sort((a, b) =>
+      !!a && !!b && a.start && b.start && a.start < b.start ? -1 : 1,
+    )
+    .map(r => {
+      return {
+        ...r,
+        historyId: 'no',
+        uuid: 'no',
+        start: date,
+        stop: date + 10,
+        parent: fixParent(r.parent),
+        labels: r.labels.map(l => ({
+          name: l.name,
+          value: l.value.replace(/\d{5,}/g, 'number'),
+        })),
+        steps: replaceSteps(r.steps),
+        attachments: r.attachments.map(t => ({
+          ...t,
+          name: t.name.replace(/\d{5,}/g, 'number'), // todo check name in one test
+          source: `source${path.extname(t.source)}`,
+        })),
+      };
+    }) as AllureTest[];
 };
 
 // eslint-disable-next-line jest/no-export
@@ -626,6 +630,7 @@ export type TestData = {
 
     testStatuses?: {
       testName: string;
+      index?: number;
       status: string;
       statusDetails?: { message: string[] | undefined };
     }[];
@@ -633,22 +638,26 @@ export type TestData = {
     testAttachments?: {
       expectMessage?: string; // message to show in test title
       testName: string;
+      index?: number;
       attachments: any[];
     }[];
 
     testParents?: {
       testName: string;
+      index?: number;
       parents: { name: string; parent: string | undefined }[];
     }[];
 
     testSteps?: {
       testName: string;
+      index?: number;
       mapStep?: (m: StepResult) => any;
       expected: any[];
     }[];
 
     parents?: {
       testName: string;
+      index?: number;
       containers: {
         name: string;
         stepMap?: (x: StepResult) => any;
@@ -679,17 +688,27 @@ const wrapExpectCreate = (addition: string) => (fn: () => any) => {
 
 export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
   testsForRun.forEach((testData, i) => {
-    // path.relative(process.cwd(), testData.fileName)
     const wrapError = wrapExpectCreate(
-      `Failed test file: ${basename(testData.fileName)}\nRoot suite: ${testData.name}\n\n` +
+      `Failed test file: ${testData.name}\n\n` +
         `serve report: \`allure serve ${res.watch}\`\n\n`,
     );
 
+    const getTest = (res: AllureTest[], testName: string) => {
+      const tests = res.filter(
+        x =>
+          x.name === testName &&
+          x.fullName?.indexOf(basename(testData.fileName)) !== -1,
+      );
+
+      return tests;
+    };
+
     describe(`${testData.name}`, () => {
       let resFixed: AllureTest[];
+      let results: AllureTest[];
 
       beforeAll(() => {
-        const results = parseAllure(res.watch).filter(
+        results = parseAllure(res.watch).filter(
           t => t.fullName?.indexOf(testData.rootSuite) !== -1,
         );
         resFixed = fixResult(results);
@@ -707,19 +726,23 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
 
       if (testData.expect.testStatuses) {
         testData.expect.testStatuses.forEach(t => {
-          it(`should have test '${t.testName}' status - ${t.status}`, () => {
-            expect(resFixed.find(x => t.testName === x.name)?.status).toEqual(
-              t.status,
+          it(`should have test '${t.testName}' ${t.index ?? ''} status - ${t.status}`, () => {
+            const testAttempts = getTest(resFixed, t.testName);
+
+            wrapError(() =>
+              expect(testAttempts[t.index ?? 0]?.status).toEqual(t.status),
             );
           });
 
           if (t.statusDetails) {
-            it(`should have test '${t.testName}' statusDetails`, () => {
+            it(`should have test '${t.testName}' ${t.index ?? ''} statusDetails message`, () => {
+              const testAttempts = getTest(resFixed, t.testName);
+
               wrapError(() =>
                 expect(
-                  resFixed
-                    .find(x => t.testName === x.name)
-                    ?.statusDetails?.message?.split('\n'),
+                  testAttempts[t.index ?? 0]?.statusDetails?.message?.split(
+                    '\n',
+                  ),
                 ).toEqual(t.statusDetails?.message),
               );
             });
@@ -737,32 +760,15 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
         });
       }
 
-      if (testData.expect.events) {
-        it('should have correct events for spec', () => {
-          const specName = basename(res.specs[i]);
-          const events = eventsForFile(res, specName);
-
-          const skipItems = [
-            'collectBackendCoverage',
-            'mergeUnitTestCoverage',
-            'generateReport',
-          ];
-
-          wrapError(() =>
-            expect(
-              events.filter(x => skipItems.every(z => x.indexOf(z) === -1)),
-            ).toEqual(testData.expect.events),
-          );
-        });
-      }
-
       if (testData.expect.testAttachments) {
         testData.expect.testAttachments.forEach(t => {
-          it(`check '${t.testName}' attachments${t.expectMessage ? `: ${t.expectMessage}` : ''}`, () => {
+          it(`check '${t.testName}' ${t.index ?? ''} attachments${t.expectMessage ? `: ${t.expectMessage}` : ''}`, () => {
+            const testAttempts = getTest(resFixed, t.testName);
+
             wrapError(() =>
-              expect(
-                resFixed.find(x => t.testName === x.name)?.attachments,
-              ).toEqual(t.attachments),
+              expect(testAttempts[t.index ?? 0]?.attachments).toEqual(
+                t.attachments,
+              ),
             );
           });
         });
@@ -770,9 +776,10 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
 
       if (testData.expect.testParents) {
         testData.expect.testParents.forEach(testItem => {
-          it(`parents for test ${testItem.testName}`, () => {
-            const test = resFixed.find(x => testItem.testName === x.name);
-            const parents = getParentsArray(test);
+          it(`parents for test ${testItem.testName} ${testItem.index ?? ''}`, () => {
+            const tests = getTest(resFixed, testItem.testName);
+
+            const parents = getParentsArray(tests[testItem.index ?? 0]);
 
             wrapError(() =>
               expect(
@@ -785,10 +792,10 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
 
       if (testData.expect.testSteps) {
         testData.expect.testSteps.forEach(testItem => {
-          it(`steps for test ${testItem.testName}`, () => {
-            const test = resFixed.find(x => testItem.testName === x.name);
+          it(`steps for test ${testItem.testName} ${testItem.index ?? ''}`, () => {
+            const tests = getTest(resFixed, testItem.testName);
 
-            const obj = fullStepMap(test!, m => ({
+            const obj = fullStepMap(tests[testItem.index ?? 0]!, m => ({
               name: m.name,
               ...(testItem.mapStep?.(m) ?? {}),
             }));
@@ -800,20 +807,20 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
 
       if (testData.expect.parents) {
         testData.expect.parents.forEach(testData => {
-          describe(`parents for ${testData.testName}`, () => {
-            let test;
+          describe(`parents for ${testData.testName} ${testData.index ?? ''}`, () => {
+            let tests;
             let parents: Parent[];
             const skipItems = ['generatereport', 'coverage'];
 
             beforeAll(() => {
-              test = resFixed.find(x => testData.testName === x.name);
-              parents = getParentsArray(test);
+              tests = getTest(resFixed, testData.testName);
+              parents = getParentsArray(tests[testData.index ?? 0]);
             });
 
             describe('before and after hooks', () => {
               testData.containers.forEach(container => {
                 if (container.befores) {
-                  it(`check befores for '${testData.testName}' parent '${container.name}'`, () => {
+                  it(`check befores for '${testData.testName}' ${testData.index ?? ''} parent '${container.name}'`, () => {
                     const actualParent = parents.find(
                       pp => pp.name === container.name,
                     );
@@ -866,7 +873,7 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                 }
 
                 if (container.afters) {
-                  it(`check afters for '${testData.testName}' parent '${container.name}'`, () => {
+                  it(`check afters for '${testData.testName}' ${testData.index ?? ''} parent '${container.name}'`, () => {
                     const actualParent = parents.find(
                       pp => pp.name === container.name,
                     );
@@ -911,6 +918,25 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
               });
             });
           });
+        });
+      }
+
+      if (testData.expect.events) {
+        it('should have correct events for spec', () => {
+          const specName = basename(res.specs[i]);
+          const events = eventsForFile(res, specName);
+
+          const skipItems = [
+            'collectBackendCoverage',
+            'mergeUnitTestCoverage',
+            'generateReport',
+          ];
+
+          wrapError(() =>
+            expect(
+              events.filter(x => skipItems.every(z => x.indexOf(z) === -1)),
+            ).toEqual(testData.expect.events),
+          );
         });
       }
     });

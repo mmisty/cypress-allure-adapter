@@ -220,7 +220,7 @@ describe('${rootSuite}', () => {
       'plugin test:ended',
       'mocha: suite end: child suite',
       `mocha: suite end: ${rootSuite}`,
-      'cypress: test:after:run: test 2',
+      'cypress: test:before:run: test 2',
       'mocha: suite end: ',
       'mocha: end',
     ],
