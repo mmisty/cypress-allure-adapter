@@ -6,6 +6,7 @@ import { StepResult } from 'allure-js-commons';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
+import { globSync } from 'fast-glob';
 
 jest.setTimeout(360000);
 
@@ -684,6 +685,19 @@ const wrapExpectCreate = (addition: string) => (fn: () => any) => {
     err.message = addition + err.message;
     throw err;
   }
+};
+
+export const selectTestsToRun = (dir: string): TestData[] => {
+  const testsOnly = globSync(`${dir}/only-data-*.ts`).map(
+    x => require(`${x}`).default,
+  );
+
+  const testsForOneCyRun: TestData[] =
+    testsOnly.length === 0
+      ? globSync(`${dir}/data-*.ts`).map(x => require(`${x}`).default)
+      : testsOnly;
+
+  return testsForOneCyRun;
 };
 
 export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {

@@ -1,10 +1,11 @@
-import { createResTest2, generateChecksTests, TestData } from '@test-utils';
-import { globSync } from 'fast-glob';
+import {
+  createResTest2,
+  generateChecksTests,
+  selectTestsToRun,
+} from '@test-utils';
 
 describe('nested suites', () => {
-  const testsForOneCyRun: TestData[] = globSync(`${__dirname}/data-*.ts`).map(
-    x => require(`${x}`).default,
-  );
+  const testsForOneCyRun = selectTestsToRun(__dirname);
 
   const res = createResTest2(
     testsForOneCyRun.map(x => x.spec),
