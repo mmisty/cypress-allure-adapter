@@ -184,6 +184,11 @@ const isBeforeEachHook = (test: Mocha.Test) => {
   return (test as any).type === 'hook' && (test as any).hookName === 'before each';
 };
 
+const isAfterEachHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (test as any).type === 'hook' && (test as any).hookName === 'after each';
+};
+
 const isHook = (test: Mocha.Test) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook';
@@ -221,7 +226,7 @@ const createTestsForFailedBeforeHook = (runner: Mocha.Runner, test: Mocha.Test) 
  * @param runner
  * @param test - hook that failed
  */
-const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
+const createTestsBeforeAfterEach = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
   let failedIndex = 0;
   let found = false;
@@ -391,15 +396,15 @@ export const registerMochaReporter = (ws: WebSocket) => {
       debug(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
-      if (isBeforeEachHook(test)) {
+      if (isBeforeEachHook(test) || isAfterEachHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
         // hook end not fired when hook fails
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
 
-        // when before each fails all tests are skipped in current suite
+        // when before/after each fails all tests are skipped in current suite
         // will create synthetic tests after test ends in cypress event
-        createTestsCallb = () => createTestsBeforeEach(runner, test);
+        createTestsCallb = () => createTestsBeforeAfterEach(runner, test);
 
         return;
       }

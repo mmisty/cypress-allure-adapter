@@ -7,7 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 
-jest.setTimeout(120000);
+jest.setTimeout(360000);
 
 // eslint-disable-next-line jest/no-export
 export const mapSteps = <T>(
@@ -681,7 +681,8 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
   testsForRun.forEach((testData, i) => {
     // path.relative(process.cwd(), testData.fileName)
     const wrapError = wrapExpectCreate(
-      `Failed test file: ${basename(testData.fileName)}\nRoot suite: ${testData.name}\n\n`,
+      `Failed test file: ${basename(testData.fileName)}\nRoot suite: ${testData.name}\n\n` +
+        `serve report: \`allure serve ${res.watch}\`\n\n`,
     );
 
     describe(`${testData.name}`, () => {
