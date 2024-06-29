@@ -2,7 +2,6 @@ import { TestData } from '@test-utils';
 import { basename } from 'path';
 
 const rootSuite = `${basename(__filename)}`;
-const tests = 3;
 
 const data: TestData = {
   name: rootSuite,
