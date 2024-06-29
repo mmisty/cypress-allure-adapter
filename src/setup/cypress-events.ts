@@ -443,35 +443,39 @@ export const handleCyLogEvents = (
     events.emit('cmd:started:tech', command);
   });
 
-  const addlogs = (command: CommandT) => {
+  const addLogs = (command: CommandT) => {
     if (!allureLogCyCommands()) {
       return;
     }
 
-    command.attributes?.logs?.slice(0, command.attributes?.logs?.length - 1).forEach((log: any) => {
-      const logName = log.name;
-      const attr = log.attributes;
+    (command.attributes?.logs as any[])
+      ?.filter(c => {
+        return (command.attributes as any).name !== c.attributes.name;
+      })
+      .forEach((log: any) => {
+        const logName = log.name;
+        const attr = log.attributes;
+        console.log(log);
+        const cmdMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
 
-      const cmdMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
-
-      if (
-        !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
-        !ignoreAllCommands().includes(logName) &&
-        logName !== COMMAND_REQUEST
-      ) {
-        Cypress.Allure.startStep(cmdMessage);
-        Cypress.Allure.endStep(attr.err ? 'failed' : 'passed');
-      }
-    });
+        if (
+          !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
+          !ignoreAllCommands().includes(logName) &&
+          logName !== COMMAND_REQUEST
+        ) {
+          Cypress.Allure.startStep(cmdMessage);
+          Cypress.Allure.endStep(attr.err ? 'failed' : 'passed');
+        }
+      });
   };
 
   Cypress.on('command:failed', (command: CommandT) => {
-    addlogs(command);
+    addLogs(command);
     events.emit('cmd:ended:tech', command);
   });
 
   Cypress.on('command:end', (command: CommandT) => {
-    addlogs(command);
+    addLogs(command);
     events.emit('cmd:ended:tech', command);
   });
 
