@@ -168,15 +168,7 @@ describe('should have requests when redirects', () => {
           name: 'wrap: {"status":200}',
           params: [],
           status: 'passed',
-          steps: [
-            {
-              attach: [],
-              name: 'wrap: {status: 200}',
-              params: [],
-              status: 'passed',
-              steps: [],
-            },
-          ],
+          steps: [],
         },
         {
           attach: [],
