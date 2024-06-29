@@ -8,7 +8,7 @@ Then('This step should fail', () => {
 
 Then('This step should fail - long', () => {
   let i = 0;
-  cy.window().should(t => {
+  cy.window().should(() => {
     i++;
     expect(i).eq(500);
   });
