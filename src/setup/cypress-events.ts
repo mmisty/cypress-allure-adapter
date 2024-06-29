@@ -444,6 +444,10 @@ export const handleCyLogEvents = (
   });
 
   const addlogs = (command: CommandT) => {
+    if (!allureLogCyCommands()) {
+      return;
+    }
+
     command.attributes?.logs?.slice(0, command.attributes?.logs?.length - 1).forEach((log: any) => {
       const logName = log.name;
       const attr = log.attributes;
