@@ -376,7 +376,7 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  Cypress.on('log:changed', log => {
+  Cypress.on('log:changed', (log: any) => {
     if (!allureLogCyCommands()) {
       return;
     }
@@ -444,7 +444,7 @@ export const handleCyLogEvents = (
   });
 
   const addlogs = (command: CommandT) => {
-    command.attributes?.logs?.slice(0, command.attributes?.logs?.length - 1).forEach(log => {
+    command.attributes?.logs?.slice(0, command.attributes?.logs?.length - 1).forEach((log: any) => {
       const logName = log.name;
       const attr = log.attributes;
 
