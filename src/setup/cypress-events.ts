@@ -427,12 +427,18 @@ export const handleCyLogEvents = (
       return;
     }
 
-    (command.attributes?.logs as any[])
+    const cmdAttrs = command?.attributes as any;
+
+    (cmdAttrs?.logs as any[])
       ?.filter(log => {
         const attr = log.attributes;
         const logName = attr.name;
 
-        return (command.attributes as any).name !== attr.name && !isGherkin(logName);
+        const cmdMsg = commandParams(command)?.message;
+        const logMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
+
+        // when same args and name for log and current command or when gherkin - do not show
+        return !(cmdAttrs?.name === attr.name && logMessage === cmdMsg) && !isGherkin(logName);
       })
       .forEach((log: any) => {
         const attr = log.attributes;
