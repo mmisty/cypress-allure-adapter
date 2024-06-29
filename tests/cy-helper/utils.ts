@@ -31,6 +31,10 @@ export const mapSteps = <T>(
     });
 };
 
+const fixAttachName = (spec: string) => {
+  return spec.replace(/\d{5,}/g, 'number').replace(/_\d_/, '_0_');
+};
+
 // eslint-disable-next-line jest/no-export
 export const fixResult = (results: AllureTest[]): AllureTest[] => {
   const date = Date.parse('10 Dec 2011 UTC');
@@ -46,7 +50,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
       stop: date + 11,
       attachments: s.attachments.map(t => ({
         ...t,
-        name: t.name.replace(/\d{5,}/g, 'number'),
+        name: fixAttachName(t.name),
         source: `source${path.extname(t.source)}`,
       })),
       steps: replaceSteps(s.steps),
@@ -66,7 +70,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
           stop: date + 10,
           attachments: b.attachments.map(t => ({
             ...t,
-            name: t.name.replace(/\d{5,}/g, 'number'),
+            name: fixAttachName(t.name),
             source: `source${path.extname(t.source)}`,
           })),
           statusDetails: b.statusDetails?.message
@@ -83,7 +87,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
           stop: date + 10,
           attachments: b.attachments.map(t => ({
             ...t,
-            name: t.name.replace(/\d{5,}/g, 'number'), // todo check name in one test
+            name: fixAttachName(t.name),
             source: `source${path.extname(t.source)}`,
           })),
           statusDetails: b.statusDetails?.message
@@ -118,7 +122,7 @@ export const fixResult = (results: AllureTest[]): AllureTest[] => {
         steps: replaceSteps(r.steps),
         attachments: r.attachments.map(t => ({
           ...t,
-          name: t.name.replace(/\d{5,}/g, 'number'), // todo check name in one test
+          name: fixAttachName(t.name), // todo check name in one test
           source: `source${path.extname(t.source)}`,
         })),
       };
@@ -235,7 +239,7 @@ export const fullStepAttachment = (
           attachments: t.attachments
             .map(t => ({
               ...t,
-              name: t.name.replace(/\d{5,}/g, 'number'),
+              name: fixAttachName(t.name),
               source: `source${path.extname(t.source)}`,
             }))
             .sort((z1, z2) =>

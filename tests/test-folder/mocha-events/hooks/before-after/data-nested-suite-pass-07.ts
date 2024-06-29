@@ -1,6 +1,7 @@
 import { TestData } from '@test-utils';
+import { basename } from 'path';
 
-const rootSuite = 'Passed tests in nested suite';
+const rootSuite = `${basename(__filename)}`;
 
 const data: TestData = {
   name: rootSuite,
@@ -145,7 +146,7 @@ const data: TestData = {
                 steps: [],
                 attachments: [
                   {
-                    name: 'test_6_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
@@ -169,7 +170,7 @@ const data: TestData = {
                 steps: [],
                 attachments: [
                   {
-                    name: 'test_6_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
@@ -196,7 +197,7 @@ const data: TestData = {
                 steps: [],
                 attachments: [
                   {
-                    name: 'test_6_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },

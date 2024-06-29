@@ -1,6 +1,7 @@
 import { TestData } from '@test-utils';
+import { basename } from 'path';
 
-const rootSuite = 'Failed after hook in nested suite (simple)';
+const rootSuite = `${basename(__filename)}`;
 
 const data: TestData = {
   name: rootSuite,
@@ -201,7 +202,7 @@ const data: TestData = {
                 name: 'video',
                 attachments: [
                   {
-                    name: 'test_3_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
@@ -253,7 +254,7 @@ const data: TestData = {
                 name: 'video',
                 attachments: [
                   {
-                    name: 'test_3_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },

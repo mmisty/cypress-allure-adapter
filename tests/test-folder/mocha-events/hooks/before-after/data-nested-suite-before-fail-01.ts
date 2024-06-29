@@ -1,6 +1,7 @@
 import { TestData } from '@test-utils';
+import { basename } from 'path';
 
-const rootSuite = 'Failed before hook in nested suite (complex)';
+const rootSuite = `${basename(__filename)}`;
 
 const data: TestData = {
   /**
