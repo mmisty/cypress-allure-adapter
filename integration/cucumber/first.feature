@@ -30,3 +30,7 @@ Feature: test cucumber
   @fail-before
   Scenario: 05 fails in before
     Then I should see a search bar "hello"
+
+  @P1
+  Scenario: 06 fails in test
+    Then This step should fail - long

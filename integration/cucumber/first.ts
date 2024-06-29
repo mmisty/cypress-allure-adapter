@@ -6,6 +6,14 @@ Then('This step should fail', () => {
   });
 });
 
+Then('This step should fail - long', () => {
+  let i = 0;
+  cy.window().should(t => {
+    i++;
+    expect(i).eq(500);
+  });
+});
+
 After({ tags: '@fail-after' }, () => {
   expect(true, 'failed in after each hook').to.be.false;
 });

@@ -376,24 +376,24 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  Cypress.on('log:changed', (log: any) => {
-    if (!allureLogCyCommands()) {
-      return;
-    }
-
-    if (log.state !== 'passed') {
-      failed.push({ name: `${log.name}`, message: log.message });
-    }
-
-    if (log.ended === true && isGherkin(log.name)) {
-      const status = failed.length !== 0 ? Status.FAILED : log.state;
-      emit({ task: 'endAllSteps', arg: { status } });
-
-      if (failed.length > 0) {
-        failed.pop();
-      }
-    }
-  });
+  // Cypress.on('log:changed', (log: any) => {
+  //   if (!allureLogCyCommands()) {
+  //     return;
+  //   }
+  //
+  //   if (log.state !== 'passed') {
+  //     failed.push({ name: `${log.name}`, message: log.message });
+  //   }
+  //
+  //   if (log.ended === true && isGherkin(log.name)) {
+  //     const status = failed.length !== 0 ? Status.FAILED : log.state;
+  //     emit({ task: 'endAllSteps', arg: { status } });
+  //
+  //     if (failed.length > 0) {
+  //       failed.pop();
+  //     }
+  //   }
+  // });
 
   Cypress.on('log:added', log => {
     if (!allureLogCyCommands()) {
@@ -428,14 +428,21 @@ export const handleCyLogEvents = (
     }
 
     (command.attributes?.logs as any[])
-      ?.filter(c => {
-        return (command.attributes as any).name !== c.attributes.name;
+      ?.filter(log => {
+        const attr = log.attributes;
+        const logName = attr.name;
+
+        return (command.attributes as any).name !== attr.name && !isGherkin(logName);
       })
       .forEach((log: any) => {
-        const logName = log.name;
         const attr = log.attributes;
-        console.log(log);
+        const logName = attr.name;
         const cmdMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
+
+        // console.log('logName');
+        // console.log(logName);
+        // console.log('attr');
+        // console.log(attr);
 
         if (
           !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
