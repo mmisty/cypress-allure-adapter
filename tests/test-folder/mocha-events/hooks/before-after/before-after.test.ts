@@ -3,8 +3,9 @@ import {
   generateChecksTests,
   selectTestsToRun,
 } from '@test-utils';
+import { basename } from 'path';
 
-describe('nested suites', () => {
+describe(`suite: ${basename(__dirname)}`, () => {
   const testsForOneCyRun = selectTestsToRun(__dirname);
 
   const res = createResTest2(
