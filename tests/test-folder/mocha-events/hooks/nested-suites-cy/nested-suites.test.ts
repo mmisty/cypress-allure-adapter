@@ -7,6 +7,9 @@ describe('nested suites', () => {
     'nested-suite-before-pass-02.ts',
     'nested-suite-before-fail-simple-03.ts',
     'nested-suite-after-fail-simple-04.ts',
+    'nested-suite-with-global-hook-05.ts',
+    'nested-suite-after-pass-06.ts',
+    'nested-suite-pass-07.ts',
   ].map(x => require(`${__dirname}/${x}`).default);
 
   const res = createResTest2(

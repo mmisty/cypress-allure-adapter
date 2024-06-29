@@ -2,6 +2,7 @@ import { TestData } from '@test-utils';
 
 const rootSuite = 'Failed before and after hook';
 
+// issue #149 https://github.com/mmisty/cypress-allure-adapter/issues/149
 const data: TestData = {
   name: rootSuite,
   rootSuite,

@@ -41,5 +41,7 @@ describe('test video false', () => {
       const test = results.find(t => t.name === 'test pass');
       expect(test).toBeDefined();
     });
+
+    // todo check no video
   });
 });
