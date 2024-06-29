@@ -843,19 +843,17 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                       pp => pp.name === container.name,
                     );
 
+                    // when cov remove first before all
+
                     const actualBefores = (
                       actualParent?.befores as AllureHook[]
                     )
+                      .slice(1)
                       ?.filter(z =>
                         skipItems.every(
                           y => z.name.toLowerCase().indexOf(y) === -1,
                         ),
                       )
-                      ?.filter(z => {
-                        return !z.steps.some(
-                          s => s.name?.indexOf('code-coverage') !== -1,
-                        );
-                      })
                       .sort((z1, z2) =>
                         z1.name && z2.name && z1.name < z2.name ? -1 : 1,
                       );

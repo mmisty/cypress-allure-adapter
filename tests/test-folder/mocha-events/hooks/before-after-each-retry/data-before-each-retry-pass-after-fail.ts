@@ -136,7 +136,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
           {
             attachments: [],
             name: '"before each" hook: Named hook',
-            status: 'passed',
+            status: 'passed', // defect - should be failed
             steps: [
               {
                 attachments: [],
@@ -147,7 +147,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
               {
                 attachments: [],
                 name: 'wrap',
-                status: 'passed',
+                status: 'passed', // defect - should be failed
                 steps: [],
               },
             ],

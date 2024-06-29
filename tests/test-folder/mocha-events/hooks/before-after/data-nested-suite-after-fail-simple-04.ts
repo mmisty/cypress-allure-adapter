@@ -176,9 +176,7 @@ const data: TestData = {
               status: x.status,
               attachments: x.attachments,
             }),
-            befores: [
-              { name: '"before all" hook', attachments: [], steps: [] },
-            ],
+            befores: [],
             afters: [
               {
                 name: '"after all" hook: in sub suite',
@@ -228,9 +226,7 @@ const data: TestData = {
               status: x.status,
               attachments: x.attachments,
             }),
-            befores: [
-              { name: '"before all" hook', attachments: [], steps: [] },
-            ],
+            befores: [],
             afters: [
               {
                 name: '"after all" hook: in sub suite',

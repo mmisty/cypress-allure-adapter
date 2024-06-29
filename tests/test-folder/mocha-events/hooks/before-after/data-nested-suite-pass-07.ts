@@ -161,9 +161,7 @@ const data: TestData = {
               status: x.status,
               attachments: x.attachments,
             }),
-            befores: [
-              { name: '"before all" hook', steps: [], attachments: [] },
-            ],
+            befores: [],
             afters: [
               {
                 name: 'video',

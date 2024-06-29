@@ -149,7 +149,6 @@ const data: TestData = {
           {
             name: 'child suite',
             befores: [
-              { name: '"before all" hook', attachments: [] },
               { name: '"before all" hook: in sub suite', attachments: [] },
             ],
             afters: [
@@ -174,7 +173,6 @@ const data: TestData = {
           {
             name: 'child suite',
             befores: [
-              { name: '"before all" hook', attachments: [] },
               { name: '"before all" hook: in sub suite', attachments: [] },
             ],
             afters: [

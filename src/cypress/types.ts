@@ -116,14 +116,14 @@ declare namespace Cypress {
      * @example
      * cy.allure().startStep('should login');
      */
-    startStep(name: string): T;
+    startStep(name: string, date?: number): T;
 
     /**
      * Ends current step
      * @example
      * cy.allure().endStep();
      */
-    endStep(status?: Status): T;
+    endStep(status?: Status, statusDetails?: StatusDetails, date?: number): T;
     mergeStepMaybe(name: string): T;
 
     /**

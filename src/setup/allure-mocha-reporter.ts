@@ -97,12 +97,18 @@ export const allureInterface = (
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
     writeCategoriesDefinitions: (categories: Category[] | string) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
-    startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
+    startStep: (name: string, date?: number) => fn({ task: 'stepStarted', arg: { name, date: date ?? Date.now() } }),
     // remove from interface
     mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
-    endStep: (status?: Status) => fn({ task: 'stepEnded', arg: { status: status ?? Status.PASSED, date: Date.now() } }),
+    endStep: (status?: Status, statusDetails?: StatusDetails, date?: number) =>
+      fn({
+        task: 'stepEnded',
+        arg: { status: status ?? Status.PASSED, details: statusDetails, date: date ?? Date.now() },
+      }),
+
     step: (name: string, status?: Status) =>
       fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now() } }),
+
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
     historyId: (value: string) => fn({ task: 'historyId', arg: { value } }),

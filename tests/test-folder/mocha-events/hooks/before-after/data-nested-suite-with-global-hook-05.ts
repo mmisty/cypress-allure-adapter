@@ -200,11 +200,6 @@ const data: TestData = {
             }),
             befores: [
               {
-                name: '"before all" hook',
-                attachments: [],
-                steps: [],
-              },
-              {
                 name: '"before all" hook: global before one',
                 attachments: [],
                 steps: [],

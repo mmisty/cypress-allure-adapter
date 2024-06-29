@@ -69,7 +69,7 @@ describe('${rootSuite}', () => {
           {
             attachments: [],
             name: '"before each" hook: named before each',
-            status: 'passed',
+            status: 'failed',
             steps: [
               {
                 attachments: [],
@@ -80,7 +80,7 @@ describe('${rootSuite}', () => {
               {
                 attachments: [],
                 name: 'wrap',
-                status: 'passed',
+                status: 'failed',
                 steps: [],
               },
             ],
@@ -106,7 +106,7 @@ describe('${rootSuite}', () => {
           },
           {
             name: 'child suite',
-            befores: [{ name: '"before all" hook' }],
+            befores: [],
             afters: [{ name: 'video' }],
           },
         ],

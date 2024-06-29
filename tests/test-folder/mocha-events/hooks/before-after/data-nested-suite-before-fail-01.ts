@@ -184,16 +184,12 @@ const data: TestData = {
           },
           {
             name: 'hooks test - child',
-            befores: [{ name: '"before all" hook', attachments: [] }],
+            befores: [],
             afters: [],
           },
           {
             name: 'hooks test - sub child',
             befores: [
-              {
-                name: '"before all" hook',
-                attachments: [],
-              },
               {
                 name: '"before all" hook: in sub suite',
                 attachments: [
@@ -241,16 +237,12 @@ const data: TestData = {
           },
           {
             name: 'hooks test - child',
-            befores: [{ name: '"before all" hook', attachments: [] }],
+            befores: [],
             afters: [],
           },
           {
             name: 'hooks test - sub child',
             befores: [
-              {
-                name: '"before all" hook',
-                attachments: [],
-              },
               {
                 name: '"before all" hook: in sub suite',
                 attachments: [

@@ -376,74 +376,143 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  Cypress.on('log:changed', log => {
-    if (!allureLogCyCommands()) {
-      return;
-    }
+  // Cypress.on('log:changed', log => {
+  //   if (!allureLogCyCommands()) {
+  //     return;
+  //   }
+  //
+  //   if (log.ended || log.end) {
+  //     // console.log('update');
+  //     // console.log(log);
+  //     const state = log.err ? 'failed' : 'passed';
+  //     const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
+  //     const logName = log.name;
+  //     const lastAllLoggedCommand = allLogged[allLogged.length - 1];
+  //
+  //     const { message: cmdMessage3 } = commandParams(Cypress.state().current);
+  //
+  //     if (
+  //       cmdMessage3 !== cmdMessage &&
+  //       cmdMessage !== lastAllLoggedCommand &&
+  //       !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
+  //       !ignoreAllCommands().includes(logName) &&
+  //       logName !== COMMAND_REQUEST
+  //     ) {
+  //       debug(`step: ${cmdMessage}`);
+  //       allLogged.push(cmdMessage);
+  //       console.log(`current ${cmdMessage3}`);
+  //       console.log(`step ${cmdMessage}`);
+  //       Cypress.Allure.startStep(cmdMessage);
+  //       Cypress.Allure.endStep(state, { message: log.err?.message });
+  //     }
+  //     //Cypress.Allure.mergeStepMaybe(cmdMessage);
+  //     //Cypress.Allure.step('failed', Date.now(), { message: log.err }, log.id);
+  //   }
+  //
+  //   if (log.state !== 'passed') {
+  //     failed.push({ name: `${log.name}`, message: log.message });
+  //   }
+  //
+  //   if (log.ended === true && isGherkin(log.name)) {
+  //     const status = failed.length !== 0 ? Status.FAILED : log.state;
+  //     emit({ task: 'endAllSteps', arg: { status } });
+  //
+  //     if (failed.length > 0) {
+  //       failed.pop();
+  //     }
+  //   }
+  // });
 
-    if (log.state !== 'passed') {
-      failed.push({ name: `${log.name}`, message: log.message });
-    }
+  // Cypress.on('log:added', log => {
+  //   if (!allureLogCyCommands()) {
+  //     return;
+  //   }
+  //   console.log(log);
+  //   //log.started = Date.now();
+  // });
+  // Cypress.on('log:changed', log => {
+  //   if (!allureLogCyCommands()) {
+  //     return;
+  //   }
+  //
+  //   if (log.end || log.ended) {
+  //     console.log(log);
+  //   }
+  // });
 
-    if (log.ended === true && isGherkin(log.name)) {
-      const status = failed.length !== 0 ? Status.FAILED : log.state;
-      emit({ task: 'endAllSteps', arg: { status } });
-
-      if (failed.length > 0) {
-        failed.pop();
-      }
-    }
-  });
-
-  Cypress.on('log:added', log => {
-    if (!allureLogCyCommands()) {
-      return;
-    }
-
-    withTry('report log:added', () => {
-      const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
-      const logName = log.name;
-      const lastAllLoggedCommand = allLogged[allLogged.length - 1];
-
-      if (isGherkin(logName)) {
-        if (gherkinLog.current) {
-          // gherkins step should be parent all the time
-          emit({ task: 'endAllSteps', arg: { status: failed.length !== 0 ? Status.FAILED : Status.PASSED } });
-        }
-        const msg = cmdMessage.replace(/\*\*/g, '');
-        Cypress.Allure.startStep(msg);
-        gherkinLog.current = msg;
-
-        return;
-      }
-
-      // const isEnded = log.end;
-
-      // logs are being added for all from command log, need to exclude same items
-      if (
-        cmdMessage !== lastAllLoggedCommand &&
-        !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
-        !ignoreAllCommands().includes(logName) &&
-        logName !== COMMAND_REQUEST
-      ) {
-        allLogged.push(cmdMessage);
-        debug(`step: ${cmdMessage}`);
-
-        Cypress.Allure.startStep(cmdMessage);
-
-        if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
-          Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
-        }
-        Cypress.Allure.endStep(Status.PASSED);
-      }
-    });
-  });
+  // Cypress.on('log:added', log => {
+  //   if (!allureLogCyCommands()) {
+  //     return;
+  //   }
+  //
+  //   withTry('report log:added', () => {
+  //     const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
+  //     const logName = log.name;
+  //     const lastAllLoggedCommand = allLogged[allLogged.length - 1];
+  //
+  //     if (isGherkin(logName)) {
+  //       if (gherkinLog.current) {
+  //         // gherkins step should be parent all the time
+  //         emit({ task: 'endAllSteps', arg: { status: failed.length !== 0 ? Status.FAILED : Status.PASSED } });
+  //       }
+  //       const msg = cmdMessage.replace(/\*\*/g, '');
+  //       Cypress.Allure.startStep(msg);
+  //       gherkinLog.current = msg;
+  //
+  //       return;
+  //     }
+  //
+  //     // const isEnded = log.end;
+  //     //!(log.end || log.ended)
+  //     // logs are being added for all from command log, need to exclude same items
+  //     if (
+  //       cmdMessage !== lastAllLoggedCommand &&
+  //       !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
+  //       !ignoreAllCommands().includes(logName) &&
+  //       logName !== COMMAND_REQUEST
+  //     ) {
+  //       allLogged.push(cmdMessage);
+  //       debug(`step: ${cmdMessage}`);
+  //
+  //       Cypress.Allure.startStep(cmdMessage);
+  //
+  //       if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
+  //         Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
+  //       }
+  //       Cypress.Allure.endStep(Status.BROKEN);
+  //     }
+  //   });
+  // });
 
   Cypress.on('command:start', (command: CommandT) => {
     events.emit('cmd:started:tech', command);
   });
 
+  const addlogs = (command: CommandT) => {
+    command.attributes?.logs?.slice(0, command.attributes?.logs?.length - 1).forEach(log => {
+      const logName = log.name;
+      const attr = log.attributes;
+
+      const cmdMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
+
+      if (
+        !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
+        !ignoreAllCommands().includes(logName) &&
+        logName !== COMMAND_REQUEST
+      ) {
+        Cypress.Allure.startStep(cmdMessage);
+        Cypress.Allure.endStep(attr.err ? 'failed' : 'passed');
+      }
+    });
+  };
+
+  Cypress.on('command:failed', (command: CommandT) => {
+    addlogs(command);
+    events.emit('cmd:ended:tech', command);
+  });
+
   Cypress.on('command:end', (command: CommandT) => {
+    addlogs(command);
     events.emit('cmd:ended:tech', command);
   });
 

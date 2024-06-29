@@ -136,11 +136,6 @@ const data: TestData = {
             }),
             befores: [
               {
-                name: '"before all" hook',
-                attachments: [],
-                steps: [],
-              },
-              {
                 name: '"before all" hook: in sub suite',
                 attachments: [
                   {
@@ -197,11 +192,6 @@ const data: TestData = {
               attachments: x.attachments,
             }),
             befores: [
-              {
-                name: '"before all" hook',
-                attachments: [],
-                steps: [],
-              },
               {
                 name: '"before all" hook: in sub suite',
                 steps: [

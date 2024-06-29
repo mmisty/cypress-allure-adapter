@@ -88,7 +88,7 @@ describe('${rootSuite}', () => {
           {
             attachments: [],
             name: '"after each" hook',
-            status: 'passed',
+            status: 'failed',
             steps: [
               {
                 attachments: [],
@@ -99,7 +99,7 @@ describe('${rootSuite}', () => {
               {
                 attachments: [],
                 name: 'wrap',
-                status: 'passed',
+                status: 'failed',
                 steps: [],
               },
             ],
