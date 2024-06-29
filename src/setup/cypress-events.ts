@@ -403,7 +403,6 @@ export const handleCyLogEvents = (
     withTry('report log:added', () => {
       const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
       const logName = log.name;
-      //const lastAllLoggedCommand = allLogged[allLogged.length - 1];
 
       if (isGherkin(logName)) {
         if (gherkinLog.current) {
@@ -416,26 +415,6 @@ export const handleCyLogEvents = (
 
         return;
       }
-
-      // // // const isEnded = log.end;
-      // // //!(log.end || log.ended)
-      // // // logs are being added for all from command log, need to exclude same items
-      // // if (
-      // //   cmdMessage !== lastAllLoggedCommand &&
-      // //   !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
-      // //   !ignoreAllCommands().includes(logName) &&
-      // //   logName !== COMMAND_REQUEST
-      // // ) {
-      // //   allLogged.push(cmdMessage);
-      // //   debug(`step: ${cmdMessage}`);
-      // //
-      // //   Cypress.Allure.startStep(cmdMessage);
-      // //
-      // //   if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
-      // //     Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
-      // //   }
-      // //   Cypress.Allure.endStep(Status.BROKEN);
-      // }
     });
   });
 
@@ -464,6 +443,11 @@ export const handleCyLogEvents = (
           logName !== COMMAND_REQUEST
         ) {
           Cypress.Allure.startStep(cmdMessage);
+
+          if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
+            Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
+          }
+
           Cypress.Allure.endStep(attr.err ? 'failed' : 'passed');
         }
       });
