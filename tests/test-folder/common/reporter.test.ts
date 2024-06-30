@@ -97,7 +97,7 @@ describe('reporter', () => {
             steps: [
               {
                 name: 'assert',
-                status: 'failed',
+                status: 'passed',
                 steps: [],
               },
             ],
