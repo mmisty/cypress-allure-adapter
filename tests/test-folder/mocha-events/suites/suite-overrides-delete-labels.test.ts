@@ -1,4 +1,4 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import { createResTest2, fixResult } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('suite overrides - delete labels', () => {

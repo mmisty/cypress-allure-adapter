@@ -1,4 +1,4 @@
-import { createResTest2 } from '../../../cy-helper/utils';
+import { createResTest2 } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('should have full name by using cy.allure() interface', () => {

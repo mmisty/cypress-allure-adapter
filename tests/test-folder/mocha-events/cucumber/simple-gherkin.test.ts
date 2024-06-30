@@ -1,4 +1,4 @@
-import { checkCyResults, mapSteps } from '../../../cy-helper/utils';
+import { checkCyResults, mapSteps } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { createCucumberTestRes } from '../../../cy-helper/cucumber-utils';
 

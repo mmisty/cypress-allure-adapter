@@ -8,7 +8,7 @@ import {
   fixResult,
   readWithRetry,
   whenCoverage,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('should have all hooks and steps inside', () => {

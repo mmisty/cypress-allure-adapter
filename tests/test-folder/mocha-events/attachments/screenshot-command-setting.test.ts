@@ -3,7 +3,7 @@ import {
   createResTest2,
   fixResult,
   fullStepAttachment,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('test screenshot event (no element)', () => {

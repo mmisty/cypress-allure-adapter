@@ -4,7 +4,7 @@ import {
   readWithRetry,
   whenCoverage,
   whenNoCoverage,
-} from '../../../../cy-helper/utils';
+} from '@test-utils';
 
 describe('one failed test in before each hook with after each', () => {
   const res = createResTest2([

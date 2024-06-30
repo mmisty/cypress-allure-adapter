@@ -6,7 +6,7 @@ import {
   fixResult,
   readWithRetry,
   whenCoverage,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('one passed test with global before hook', () => {

@@ -1,4 +1,4 @@
-import { createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import { createResTest2, fixResult, mapSteps } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('should have parameters by using cy.allure() interface', () => {

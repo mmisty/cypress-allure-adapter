@@ -1,4 +1,4 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import { createResTest2, fixResult } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('should have labels by using Cypress.Allure interface', () => {

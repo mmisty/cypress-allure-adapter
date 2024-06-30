@@ -3,7 +3,7 @@ import {
   createResTest2,
   readWithRetry,
   whenCoverage,
-} from '../../../../cy-helper/utils';
+} from '@test-utils';
 
 describe('mocha events - check failures', () => {
   const res = createResTest2([

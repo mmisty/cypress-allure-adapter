@@ -1,4 +1,4 @@
-import { createResTest2, readWithRetry } from '../../../cy-helper/utils';
+import { createResTest2, readWithRetry } from '@test-utils';
 import { existsSync, writeFileSync } from 'fs';
 
 describe('should be able to write categories info and by file path', () => {

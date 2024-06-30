@@ -4,7 +4,7 @@ import {
   readWithRetry,
   whenCoverage,
   whenNoCoverage,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 
 describe('one passed test with global before hook', () => {
   const res = createResTest2([

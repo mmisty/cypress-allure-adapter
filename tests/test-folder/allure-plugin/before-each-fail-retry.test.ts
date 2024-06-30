@@ -1,5 +1,5 @@
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { createResTest, fixResult } from '../../cy-helper/utils';
+import { createResTest, fixResult } from '@test-utils';
 
 describe('run before-each-fail-retry', () => {
   // todo create test right in code
