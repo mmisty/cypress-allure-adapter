@@ -7,14 +7,12 @@ describe('uncaught error', () => {
       // failing the test
       return false;
     });
+
     visitHtml({
       script: `
     throw new Error('UNCAUGHT 1');
     `,
     });
-    // setTimeout(() => {
-    //   throw new Error('UNCAUGHT ERR ');
-    // }, 100);
 
     cy.get('div').should('exist');
   });

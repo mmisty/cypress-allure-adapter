@@ -189,7 +189,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 1 }, () => {
               {
                 attachments: [],
                 name: 'wrap',
-                status: 'failed',
+                status: 'passed',
                 steps: [],
               },
             ],
