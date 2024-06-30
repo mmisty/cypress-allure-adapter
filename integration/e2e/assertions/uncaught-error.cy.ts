@@ -2,7 +2,7 @@ import { visitHtml } from '../../common/helper';
 
 describe('uncaught error', () => {
   it('#1 test pass', function () {
-    cy.on('uncaught:exception', (err, runnable) => {
+    cy.on('uncaught:exception', () => {
       // returning false here prevents Cypress from
       // failing the test
       return false;
@@ -18,7 +18,7 @@ describe('uncaught error', () => {
   });
 
   it('#1 test pass with parent', function () {
-    cy.on('uncaught:exception', (err, runnable) => {
+    cy.on('uncaught:exception', () => {
       // returning false here prevents Cypress from
       // failing the test
       return false;
@@ -36,7 +36,7 @@ describe('uncaught error', () => {
   });
 
   it('#2 test fail', function () {
-    cy.on('uncaught:exception', (err, runnable) => {
+    cy.on('uncaught:exception', () => {
       // returning false here prevents Cypress from
       // failing the test
       return false;
