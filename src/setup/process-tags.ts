@@ -88,9 +88,7 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         if (!name) {
           Cypress.log({
             message: `WARN: tag @${tagNoAt} tag should have name and/or value: @${tagNoAt}("myLabel","value")`,
-          })
-            .error(new Error())
-            .warning();
+          }).error(new Error());
           break;
         }
         Cypress.Allure.label(name, value);
