@@ -21,7 +21,7 @@ const withTry = (message: string, callback: () => void) => {
 
 const stepMessage = (name: string, args: string | undefined) => {
   const argsLine =
-    args && args.length > ARGS_TRIM_AT && name !== 'assert' ? '' : args && args.length > 0 ? `: ${args}` : '';
+    args && args.length > ARGS_TRIM_AT && name !== 'assert' ? '' : args && args.length > 0 ? `: ${stringify(args)}` : '';
 
   return `${name}${argsLine}`;
 };
