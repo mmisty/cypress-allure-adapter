@@ -117,7 +117,7 @@ declare namespace Cypress {
      * @example
      * cy.allure().step('should login');
      */
-    step(name: string, status?: Status): T;
+    step(name: string, status?: Status, details?: StatusDetails): T;
 
     /**
      * Adds tags to test

@@ -41,7 +41,7 @@ type AllureTask = {
   mergeStepMaybe: { name: string };
   // stepEndedAll: { status: string; date?: number; details?: StatusDetails };
   stepStarted: { name: string; date?: number };
-  step: { name: string; status?: string; date?: number };
+  step: { name: string; status?: string; date?: number; details?: StatusDetails };
   parameter: { name: string; value: string };
   fullName: { value: string };
   historyId: { value: string };
