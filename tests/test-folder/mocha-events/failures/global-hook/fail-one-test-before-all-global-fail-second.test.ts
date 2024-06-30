@@ -5,7 +5,7 @@ import {
   createResTest2,
   fixResult,
   whenCoverage,
-} from '../../../../cy-helper/utils';
+} from '@test-utils';
 import { readFileSync } from 'fs';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 

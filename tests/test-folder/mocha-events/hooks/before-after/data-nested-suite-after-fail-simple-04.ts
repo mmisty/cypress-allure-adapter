@@ -1,6 +1,7 @@
 import { TestData } from '@test-utils';
+import { basename } from 'path';
 
-const rootSuite = 'Passed before hook in nested suite';
+const rootSuite = `${basename(__filename)}`;
 
 const data: TestData = {
   name: rootSuite,
@@ -9,8 +10,11 @@ const data: TestData = {
   spec: `
   describe('${rootSuite}', () => {
       describe('child suite', () => {
-          before('in sub suite', () => {
+          after('in sub suite', () => {
             cy.log('hook pass');
+            cy.wrap(null).then(() => {
+              throw new Error('Failure in hook');
+            });
           });
 
           it('test 1', () => {
@@ -38,8 +42,33 @@ const data: TestData = {
       },
       {
         testName: 'test 2',
-        status: 'passed',
-        statusDetails: { message: undefined },
+        status: 'failed',
+        statusDetails: {
+          message: [
+            'Failure in hook',
+            '',
+            'Because this error occurred during a `after all` hook we are skipping the remaining tests in the current suite: `child suite`',
+          ],
+        },
+      },
+    ],
+
+    testAttachments: [
+      {
+        expectMessage: 'should be no',
+        testName: 'test 1',
+        attachments: [],
+      },
+      {
+        expectMessage: 'should be screenshot of failure',
+        testName: 'test 2',
+        attachments: [
+          {
+            name: `${rootSuite} -- child suite -- test 2 -- after all hook in sub suite (failed).png`,
+            source: 'source.png',
+            type: 'image/png',
+          },
+        ],
       },
     ],
 
@@ -94,15 +123,6 @@ const data: TestData = {
       },
     ],
 
-    testAttachments: [
-      {
-        expectMessage: 'should be no',
-        testName: 'test 1',
-        attachments: [],
-      },
-      { expectMessage: 'should be no', testName: 'test 2', attachments: [] },
-    ],
-
     testParents: [
       {
         testName: 'test 1',
@@ -144,23 +164,48 @@ const data: TestData = {
       {
         testName: 'test 1',
         containers: [
-          { name: rootSuite, befores: [], afters: [] },
+          {
+            name: rootSuite,
+            befores: [],
+            afters: [],
+          },
           {
             name: 'child suite',
-            befores: [
-              { name: '"before all" hook', attachments: [] },
-              { name: '"before all" hook: in sub suite', attachments: [] },
-            ],
+            stepMap: x => ({
+              name: x.name,
+              status: x.status,
+              attachments: x.attachments,
+            }),
+            befores: [],
             afters: [
+              {
+                name: '"after all" hook: in sub suite',
+                attachments: [],
+                steps: [
+                  {
+                    name: 'log: hook pass',
+                    status: 'passed',
+                    steps: [],
+                    attachments: [],
+                  },
+                  {
+                    name: 'wrap',
+                    status: 'passed',
+                    steps: [],
+                    attachments: [],
+                  },
+                ],
+              },
               {
                 name: 'video',
                 attachments: [
                   {
-                    name: 'test_1_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
                 ],
+                steps: [],
               },
             ],
           },
@@ -169,23 +214,48 @@ const data: TestData = {
       {
         testName: 'test 2',
         containers: [
-          { name: rootSuite, befores: [], afters: [] },
+          {
+            name: rootSuite,
+            befores: [],
+            afters: [],
+          },
           {
             name: 'child suite',
-            befores: [
-              { name: '"before all" hook', attachments: [] },
-              { name: '"before all" hook: in sub suite', attachments: [] },
-            ],
+            stepMap: x => ({
+              name: x.name,
+              status: x.status,
+              attachments: x.attachments,
+            }),
+            befores: [],
             afters: [
+              {
+                name: '"after all" hook: in sub suite',
+                attachments: [],
+                steps: [
+                  {
+                    name: 'log: hook pass',
+                    steps: [],
+                    status: 'passed',
+                    attachments: [],
+                  },
+                  {
+                    name: 'wrap',
+                    status: 'passed',
+                    steps: [],
+                    attachments: [],
+                  },
+                ],
+              },
               {
                 name: 'video',
                 attachments: [
                   {
-                    name: 'test_1_number.cy.ts.mp4',
+                    name: 'test_0_number.cy.ts.mp4',
                     source: 'source.mp4',
                     type: 'video/mp4',
                   },
                 ],
+                steps: [],
               },
             ],
           },
@@ -201,8 +271,6 @@ const data: TestData = {
       'mocha: hook end: "before all" hook',
       `mocha: suite: ${rootSuite}, ${rootSuite}`,
       `mocha: suite: child suite, ${rootSuite} child suite`,
-      'mocha: hook: "before all" hook: in sub suite',
-      'mocha: hook end: "before all" hook: in sub suite',
       'mocha: test: test 1',
       'plugin test:started',
       'mocha: hook: "before each" hook',
@@ -213,6 +281,7 @@ const data: TestData = {
       'mocha: hook end: "after each" hook',
       'cypress: test:after:run: test 1',
       'plugin test:ended',
+
       'mocha: test: test 2',
       'plugin test:started',
       'mocha: hook: "before each" hook',
@@ -222,10 +291,13 @@ const data: TestData = {
       'mocha: test end: test 2',
       'mocha: hook: "after each" hook',
       'mocha: hook end: "after each" hook',
+      'mocha: hook: "after all" hook: in sub suite',
+      `cypress:screenshot:test:${rootSuite} -- child suite -- test 2 -- after all hook in sub suite (failed).png`,
+      'mocha: fail: "after all" hook: in sub suite for "test 2"',
       'mocha: suite end: child suite',
       `mocha: suite end: ${rootSuite}`,
       'cypress: test:after:run: test 2',
-      'plugin test:ended',
+      'plugin test:ended', // does nothing
       'mocha: suite end: ',
       'mocha: end',
     ],

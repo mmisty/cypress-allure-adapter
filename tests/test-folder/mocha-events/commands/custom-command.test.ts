@@ -3,7 +3,7 @@ import {
   createResTest2,
   fixResult,
   mapSteps,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands', () => {

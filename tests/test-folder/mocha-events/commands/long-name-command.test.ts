@@ -4,7 +4,7 @@ import {
   fixResult,
   mapSteps,
   readWithRetry,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands', () => {
@@ -65,13 +65,7 @@ describe('custom commands', () => {
             {
               name: 'task: log, hello',
               attach: [],
-              steps: [
-                {
-                  name: 'task: log, "hello"',
-                  attach: [],
-                  steps: [],
-                },
-              ],
+              steps: [],
             },
           ],
         },
@@ -95,6 +89,7 @@ describe('custom commands', () => {
 
       expect(steps).toEqual([
         {
+          name: 'tasklog1',
           attach: [
             {
               name: 'tasklog1 args',
@@ -103,7 +98,6 @@ describe('custom commands', () => {
               type: 'application/json',
             },
           ],
-          name: 'tasklog1',
           steps: [
             {
               attach: [
@@ -115,20 +109,7 @@ describe('custom commands', () => {
                 },
               ],
               name: 'task: log',
-              steps: [
-                {
-                  attach: [
-                    {
-                      name: 'task args',
-                      sourceContent:
-                        'log, "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"',
-                      type: 'application/json',
-                    },
-                  ],
-                  name: 'task',
-                  steps: [],
-                },
-              ],
+              steps: [],
             },
           ],
         },

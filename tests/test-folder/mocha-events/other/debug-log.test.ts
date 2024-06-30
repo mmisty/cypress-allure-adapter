@@ -1,4 +1,4 @@
-import { checkCyResults, createResTest2 } from '../../../cy-helper/utils';
+import { checkCyResults, createResTest2 } from '@test-utils';
 
 describe('test debug log event', () => {
   describe('debug true', () => {

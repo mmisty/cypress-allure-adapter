@@ -70,21 +70,59 @@ const isRootSuiteTest = (test: Mocha.Test) => {
 };
 
 const allureEventsEmitter = new EventEmitter();
+const evListeners: Map<string, ((test: Mocha.Test) => void)[]> = new Map();
+
+const allureEvents = [USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START];
+
+const startEvents = () => {
+  const debug = logClient(dbg);
+  debug('start events');
+  allureEvents.forEach(event => {
+    const existingHandler = evListeners.get(event);
+
+    if (!existingHandler) {
+      return;
+    }
+    debug(`event ${event} has ${existingHandler.length} handlers`);
+
+    const merged = (test: Mocha.Test) => {
+      let errExisting: Error | undefined;
+
+      debug(`Registered listeners for '${event}': ${allureEventsEmitter.listeners(event).length}`);
+
+      existingHandler.forEach(handler => {
+        try {
+          handler(test);
+        } catch (err) {
+          errExisting = err as Error;
+        }
+      });
+
+      if (errExisting) {
+        throw errExisting;
+      }
+    };
+    allureEventsEmitter.removeListener(event, merged);
+    allureEventsEmitter.addListener(event, merged);
+  });
+};
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
     const debug = logClient(dbg);
 
-    if (
-      isStub &&
-      ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START].includes(event)
-    ) {
+    if (isStub && !allureEvents.includes(event)) {
       return;
     }
+    const existingHandler = evListeners.get(event);
 
-    debug(`ADD LISTENER: ${event}`);
-
-    allureEventsEmitter.addListener(event, testHandler);
+    if (!existingHandler) {
+      debug(`ADD LISTENER: ${event}`);
+      evListeners.set(event, [testHandler]);
+    } else {
+      debug(`MERGE LISTENERS: ${event}`);
+      existingHandler.push(testHandler);
+    }
   },
 });
 
@@ -97,12 +135,18 @@ export const allureInterface = (
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
     writeCategoriesDefinitions: (categories: Category[] | string) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
-    startStep: (name: string) => fn({ task: 'stepStarted', arg: { name, date: Date.now() } }),
+    startStep: (name: string, date?: number) => fn({ task: 'stepStarted', arg: { name, date: date ?? Date.now() } }),
     // remove from interface
     mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
-    endStep: (status?: Status) => fn({ task: 'stepEnded', arg: { status: status ?? Status.PASSED, date: Date.now() } }),
+    endStep: (status?: Status, statusDetails?: StatusDetails, date?: number) =>
+      fn({
+        task: 'stepEnded',
+        arg: { status: status ?? Status.PASSED, details: statusDetails, date: date ?? Date.now() },
+      }),
+
     step: (name: string, status?: Status) =>
       fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now() } }),
+
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
     historyId: (value: string) => fn({ task: 'historyId', arg: { value } }),
@@ -184,6 +228,11 @@ const isBeforeEachHook = (test: Mocha.Test) => {
   return (test as any).type === 'hook' && (test as any).hookName === 'before each';
 };
 
+const isAfterEachHook = (test: Mocha.Test) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (test as any).type === 'hook' && (test as any).hookName === 'after each';
+};
+
 const isHook = (test: Mocha.Test) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (test as any).type === 'hook';
@@ -221,7 +270,7 @@ const createTestsForFailedBeforeHook = (runner: Mocha.Runner, test: Mocha.Test) 
  * @param runner
  * @param test - hook that failed
  */
-const createTestsBeforeEach = (runner: Mocha.Runner, test: Mocha.Test) => {
+const createTestsBeforeAfterEach = (runner: Mocha.Runner, test: Mocha.Test) => {
   let index = 0;
   let failedIndex = 0;
   let found = false;
@@ -296,6 +345,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   const messageManager = createMessage(ws);
   const message = messageManager.message;
   allureEventsEmitter.removeAllListeners();
+  evListeners.clear();
 
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   const allureEvents = eventsInterfaceInstance(false);
@@ -316,6 +366,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, () => {
+      startEvents();
       debug(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_BEGIN}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
@@ -391,15 +442,15 @@ export const registerMochaReporter = (ws: WebSocket) => {
       debug(`event ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.TEST_FAIL}: ${test?.title}`);
 
-      if (isBeforeEachHook(test)) {
+      if (isBeforeEachHook(test) || isAfterEachHook(test)) {
         runner.emit(CUSTOM_EVENTS.TEST_FAIL, test);
 
         // hook end not fired when hook fails
         runner.emit(CUSTOM_EVENTS.HOOK_END, test);
 
-        // when before each fails all tests are skipped in current suite
+        // when before/after each fails all tests are skipped in current suite
         // will create synthetic tests after test ends in cypress event
-        createTestsCallb = () => createTestsBeforeEach(runner, test);
+        createTestsCallb = () => createTestsBeforeAfterEach(runner, test);
 
         return;
       }

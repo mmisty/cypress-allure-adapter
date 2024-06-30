@@ -1,75 +1,23 @@
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { baseUrlFromUrl, packageLog, swapItems } from '../common';
+import { baseUrlFromUrl, swapItems } from '../common';
+import type { CommandT } from '../common/command-names';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
-import CommandT = Cypress.CommandT;
+import {
+  ARGS_TRIM_AT,
+  COMMAND_REQUEST,
+  commandParams,
+  filterCommandLog,
+  ignoreAllCommands,
+  isGherkin,
+  stepMessage,
+  stringify,
+  withTry,
+} from '../common/command-names';
 
 const dbg = 'cypress-allure:cy-events';
-const ARGS_TRIM_AT = 200;
-
-const withTry = (message: string, callback: () => void) => {
-  try {
-    callback();
-  } catch (err) {
-    const e = err as Error;
-    console.error(`${packageLog} could do '${message}': ${e.message}`);
-    console.error(e.stack);
-  }
-};
-
-const stepMessage = (name: string, args: string | undefined) => {
-  const argsLine =
-    args && args.length > ARGS_TRIM_AT && name !== 'assert' ? '' : args && args.length > 0 ? `: ${args}` : '';
-
-  return `${name}${argsLine}`;
-};
-
-const convertEmptyObj = (obj: Record<string, unknown>, indent?: string): string => {
-  if (obj == null) {
-    return '';
-  }
-
-  if (Object.keys(obj).length > 0) {
-    try {
-      return !indent ? JSON.stringify(obj) : JSON.stringify(obj, null, indent);
-    } catch (e) {
-      return 'could not stringify';
-    }
-  }
-
-  return '';
-};
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const stringify = (args: any, indent?: string): string => {
-  const getArr = () => {
-    try {
-      if (Array.isArray(args)) {
-        return args.map(a => stringify(a, indent)).join(',');
-      } else {
-        return convertEmptyObj(args, indent);
-      }
-    } catch (err) {
-      return 'could not stringify';
-    }
-  };
-
-  if (typeof args === 'string') {
-    try {
-      return stringify(JSON.parse(args), indent);
-    } catch (err) {
-      return `${args}`;
-    }
-  }
-
-  return typeof args === 'string' || typeof args === 'number' || typeof args === 'boolean' ? `${args}` : getArr();
-};
-
-const requestName = (url: string, method: string) => {
-  return `${method}, ${url}`;
-};
 
 type OneRequestConsoleProp = {
   'Request Body': unknown;
@@ -79,7 +27,6 @@ type OneRequestConsoleProp = {
   'Response Headers'?: unknown;
   'Response Status'?: number;
 };
-const COMMAND_REQUEST = 'request';
 
 const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: { compactAttachments: boolean }) => {
   const debug = logClient(dbg);
@@ -141,7 +88,7 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
 
     const attaches = [reqBody, reqHeaders, resBody, resHeaders].map(t => ({
       ...t,
-      stringified: stringify(t.obj, indent),
+      stringified: stringify(t.obj, true, indent),
     }));
 
     const shortAttaches = attaches.filter(a => a.stringified.length < maxParamLength);
@@ -167,55 +114,6 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   });
 };
 
-const commandParams = (command: CommandT) => {
-  const name = command.attributes?.name ?? 'no name';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const commandArgs = command.attributes?.args as any;
-  const state = (command.state ?? Status.PASSED) as Status;
-
-  // exclude command logs with Cypress options isLog = false
-  const isLog = () => {
-    try {
-      if (commandArgs && Array.isArray(commandArgs)) {
-        return !commandArgs.some(a => a && a.log === false);
-      }
-
-      return commandArgs.log !== false;
-    } catch (err) {
-      return false; // 'could not get log';
-    }
-  };
-
-  const getArgs = (): string[] => {
-    try {
-      if (Array.isArray(commandArgs)) {
-        return commandArgs
-          .map(arg => {
-            if (name === COMMAND_REQUEST && typeof arg === 'object' && arg.method && arg.url) {
-              return requestName(arg.url, arg.method);
-            }
-
-            return stringify(arg);
-          })
-          .filter(x => x.trim() !== '');
-      }
-
-      return [convertEmptyObj(commandArgs)];
-    } catch (err) {
-      return ['could not parse args'];
-    }
-  };
-  const args = getArgs();
-
-  return {
-    name,
-    args,
-    message: stepMessage(name, args.filter(t => t.length < ARGS_TRIM_AT).join(', ')),
-    isLog: isLog(),
-    state,
-  };
-};
-
 const createEmitEvent =
   (runner: Mocha.Runner) =>
   <T extends RequestTask>(args: AllureTransfer<T>) => {
@@ -234,25 +132,8 @@ export const handleCyLogEvents = (
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
-  const ignoreAllCommands = () => {
-    const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand']
-      .filter(t => t.trim() !== '')
-      .map(x => new RegExp(`^${x.replace(/\*/g, '.*')}$`));
-
-    return {
-      includes(ttl: string): boolean {
-        return cmds.some(t => t.test(ttl));
-      },
-    };
-  };
-
   const customCommands: string[] = [];
-  const allLogged: string[] = [];
   const emit = createEmitEvent(runner);
-
-  Cypress.Allure.on('test:started', () => {
-    allLogged.splice(0, allLogged.length);
-  });
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
@@ -263,7 +144,7 @@ export const handleCyLogEvents = (
     : true;
 
   const isLogCommand = (isLog: boolean, name: string) => {
-    return isLog && !ignoreAllCommands().includes(name) && !Object.keys(Cypress.Allure).includes(name);
+    return isLog && !ignoreAllCommands(ignoreCommands).includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
 
   const wrapCustomCommandsFn = (commands: string[], isExclude: boolean) => {
@@ -298,7 +179,7 @@ export const handleCyLogEvents = (
       if (
         !fnName ||
         typeof fnName !== 'string' ||
-        ignoreAllCommands().includes(fnName) ||
+        ignoreAllCommands(ignoreCommands).includes(fnName) ||
         // wrap only specified commands
         (commands.length > 0 && commands.includes(fnName) && isExclude) ||
         (commands.length > 0 && !commands.includes(fnName) && !isExclude)
@@ -364,35 +245,10 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
-  const isGherkin = (logName: string) => {
-    return logName && ['When', 'Given', 'Then', 'And', 'After', 'Before'].some(t => logName.startsWith(t));
-  };
-
-  const failed: { name: string; message: string }[] = [];
   const gherkinLog: { current: string | undefined } = { current: undefined };
 
   Cypress.Allure.on('test:started', () => {
-    failed.splice(0, failed.length);
     gherkinLog.current = undefined;
-  });
-
-  Cypress.on('log:changed', log => {
-    if (!allureLogCyCommands()) {
-      return;
-    }
-
-    if (log.state !== 'passed') {
-      failed.push({ name: `${log.name}`, message: log.message });
-    }
-
-    if (log.ended === true && isGherkin(log.name)) {
-      const status = failed.length !== 0 ? Status.FAILED : log.state;
-      emit({ task: 'endAllSteps', arg: { status } });
-
-      if (failed.length > 0) {
-        failed.pop();
-      }
-    }
   });
 
   Cypress.on('log:added', log => {
@@ -403,12 +259,11 @@ export const handleCyLogEvents = (
     withTry('report log:added', () => {
       const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
       const logName = log.name;
-      const lastAllLoggedCommand = allLogged[allLogged.length - 1];
 
       if (isGherkin(logName)) {
         if (gherkinLog.current) {
           // gherkins step should be parent all the time
-          emit({ task: 'endAllSteps', arg: { status: failed.length !== 0 ? Status.FAILED : Status.PASSED } });
+          emit({ task: 'endAllSteps', arg: { status: Status.PASSED } });
         }
         const msg = cmdMessage.replace(/\*\*/g, '');
         Cypress.Allure.startStep(msg);
@@ -416,34 +271,45 @@ export const handleCyLogEvents = (
 
         return;
       }
-
-      // const isEnded = log.end;
-
-      // logs are being added for all from command log, need to exclude same items
-      if (
-        cmdMessage !== lastAllLoggedCommand &&
-        !cmdMessage.match(/its:\s*\..*/) && // its already logged as command
-        !ignoreAllCommands().includes(logName) &&
-        logName !== COMMAND_REQUEST
-      ) {
-        allLogged.push(cmdMessage);
-        debug(`step: ${cmdMessage}`);
-
-        Cypress.Allure.startStep(cmdMessage);
-
-        if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
-          Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
-        }
-        Cypress.Allure.endStep(Status.PASSED);
-      }
     });
   });
+
+  const addCommandLogs = (command: CommandT) => {
+    if (!allureLogCyCommands()) {
+      return;
+    }
+
+    filterCommandLog(command, ignoreCommands).forEach((log: any) => {
+      const attr = log.attributes;
+      const logName = attr.name;
+      const cmdMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
+
+      // console.log('logName');
+      // console.log(logName);
+      // console.log('attr');
+      // console.log(attr);
+
+      Cypress.Allure.startStep(cmdMessage);
+
+      if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
+        Cypress.Allure.attachment(`${cmdMessage} args`, log.message, 'application/json');
+      }
+
+      Cypress.Allure.endStep(attr.err ? 'failed' : 'passed');
+    });
+  };
 
   Cypress.on('command:start', (command: CommandT) => {
     events.emit('cmd:started:tech', command);
   });
 
+  Cypress.on('command:failed', (command: CommandT) => {
+    addCommandLogs(command);
+    events.emit('cmd:ended:tech', command);
+  });
+
   Cypress.on('command:end', (command: CommandT) => {
+    addCommandLogs(command);
     events.emit('cmd:ended:tech', command);
   });
 
@@ -473,8 +339,6 @@ export const handleCyLogEvents = (
     debug(`started: ${cmdMessage}`);
     Cypress.Allure.startStep(cmdMessage);
 
-    allLogged.push(cmdMessage);
-
     withTry('report command:attachment', () => {
       const requestAndLogRequests = allureAttachRequests && name === COMMAND_REQUEST;
 
@@ -502,6 +366,7 @@ export const handleCyLogEvents = (
 
   Cypress.Allure.on('cmd:ended', (command: CommandT, isCustom) => {
     const { name, isLog, state, message: cmdMessage } = commandParams(command);
+    const status = state as Status;
 
     if (!isLogCommand(isLog, name)) {
       return;
@@ -517,6 +382,6 @@ export const handleCyLogEvents = (
       return;
     }
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
-    Cypress.Allure.endStep(state);
+    Cypress.Allure.endStep(status);
   });
 };

@@ -1,6 +1,7 @@
 import { TestData } from '@test-utils';
+import { basename } from 'path';
 
-const rootSuite = 'Failed before hook in nested suite (complex)';
+const rootSuite = `${basename(__filename)}`;
 
 const data: TestData = {
   /**
@@ -183,16 +184,12 @@ const data: TestData = {
           },
           {
             name: 'hooks test - child',
-            befores: [{ name: '"before all" hook', attachments: [] }],
+            befores: [],
             afters: [],
           },
           {
             name: 'hooks test - sub child',
             befores: [
-              {
-                name: '"before all" hook',
-                attachments: [],
-              },
               {
                 name: '"before all" hook: in sub suite',
                 attachments: [
@@ -240,16 +237,12 @@ const data: TestData = {
           },
           {
             name: 'hooks test - child',
-            befores: [{ name: '"before all" hook', attachments: [] }],
+            befores: [],
             afters: [],
           },
           {
             name: 'hooks test - sub child',
             befores: [
-              {
-                name: '"before all" hook',
-                attachments: [],
-              },
               {
                 name: '"before all" hook: in sub suite',
                 attachments: [

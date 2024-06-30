@@ -1,4 +1,4 @@
-import { createResTest2, readWithRetry } from '../../../cy-helper/utils';
+import { createResTest2, readWithRetry } from '@test-utils';
 import { existsSync } from 'fs';
 
 describe('should be able to write env info and other', () => {

@@ -8,22 +8,8 @@ declare namespace Cypress {
   }
 
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
-  export type CommandT = {
-    state?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    attributes?: {
-      name?: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args?: any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      logs?: { attributes?: { consoleProps?: () => any } }[];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      subject?: any;
-      prev?: CommandT;
-      next?: CommandT;
-    };
-  };
+  export type CommandT = import('../common/command-names').CommandT;
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../common/types').ContentType;
@@ -116,14 +102,14 @@ declare namespace Cypress {
      * @example
      * cy.allure().startStep('should login');
      */
-    startStep(name: string): T;
+    startStep(name: string, date?: number): T;
 
     /**
      * Ends current step
      * @example
      * cy.allure().endStep();
      */
-    endStep(status?: Status): T;
+    endStep(status?: Status, statusDetails?: StatusDetails, date?: number): T;
     mergeStepMaybe(name: string): T;
 
     /**

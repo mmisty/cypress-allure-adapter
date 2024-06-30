@@ -1,10 +1,6 @@
-import {
-  createResTest2,
-  mapSteps,
-  readWithRetry,
-} from '../../../cy-helper/utils';
+import { createResTest2, mapSteps, readWithRetry } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../src/common';
+import { extname } from '@src/common';
 
 describe('should have requests', () => {
   const res = createResTest2(
@@ -231,7 +227,7 @@ describe('should have requests', () => {
               type: 'application/json',
             },
           ],
-          name: 'request: POST, http://localhost:number/hello, {"data":"should"}',
+          name: 'request: POST, http://localhost:number/hello, {data: "should"}',
           params: [
             {
               name: 'Response Status',

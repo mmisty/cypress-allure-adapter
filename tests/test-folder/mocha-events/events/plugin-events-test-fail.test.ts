@@ -10,7 +10,7 @@ import {
   readWithRetry,
   whenCoverage,
   whenNoCoverage,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('plugin events', () => {

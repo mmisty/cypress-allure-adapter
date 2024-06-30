@@ -1,4 +1,4 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import { createResTest2, fixResult } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 // https://github.com/mmisty/cypress-allure-adapter/issues/112

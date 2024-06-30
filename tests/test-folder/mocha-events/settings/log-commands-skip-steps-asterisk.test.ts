@@ -1,4 +1,4 @@
-import { createResTest2, mapSteps } from '../../../cy-helper/utils';
+import { createResTest2, mapSteps } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('should skip hooks steps with asterisk', () => {

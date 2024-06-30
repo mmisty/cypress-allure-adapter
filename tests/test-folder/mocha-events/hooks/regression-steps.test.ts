@@ -6,7 +6,7 @@ import {
   readWithRetry,
   whenCoverage,
   whenNoCoverage,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('should have all hooks and steps inside', () => {
@@ -230,12 +230,7 @@ describe('hooks test - failed global hook step', () => {
         parents[0].map(t => t.befores?.map(x => mapSteps(x.steps))),
       ).toEqual([
         [
-          ...whenCoverage([
-            {
-              name: 'Coverage: Reset [@cypress/code-coverage]',
-              steps: [],
-            },
-          ]),
+          [],
           [
             {
               name: 'global setup',
@@ -263,12 +258,7 @@ describe('hooks test - failed global hook step', () => {
         parents[1].map(t => t.befores?.map(x => mapSteps(x.steps))),
       ).toEqual([
         [
-          ...whenCoverage([
-            {
-              name: 'Coverage: Reset [@cypress/code-coverage]',
-              steps: [],
-            },
-          ]),
+          [],
           [
             {
               name: 'global setup',
@@ -304,12 +294,7 @@ describe('hooks test - failed global hook step', () => {
                 steps: [],
               },
             ],
-            [
-              {
-                name: 'Coverage: Generating report [@cypress/code-coverage]',
-                steps: [],
-              },
-            ],
+            [],
           ),
           [
             {

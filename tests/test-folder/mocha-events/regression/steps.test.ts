@@ -1,4 +1,4 @@
-import { createResTest2, fixResult, mapSteps } from '../../../cy-helper/utils';
+import { createResTest2, fixResult, mapSteps } from '@test-utils';
 import { parseAllure } from 'allure-js-parser';
 
 describe('test with steps - failure inside steps', () => {

@@ -1,5 +1,5 @@
 import { parseAllure } from 'allure-js-parser';
-import { createResTest, fixResult } from '../../cy-helper/utils';
+import { createResTest, fixResult } from '@test-utils';
 
 describe('run retries test - fails', () => {
   const storeResDir = createResTest(__filename);

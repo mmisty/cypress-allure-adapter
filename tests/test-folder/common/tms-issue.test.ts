@@ -1,4 +1,4 @@
-import { tmsIssueUrl } from '../../../src/common';
+import { tmsIssueUrl } from '@src/common';
 
 describe('tmsIssueUrl', () => {
   it('issuePrefix not set', () => {

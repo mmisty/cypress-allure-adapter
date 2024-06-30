@@ -1058,7 +1058,7 @@ export class AllureReporter {
     }
 
     if (!this.currentStep) {
-      this.setLastStepStatus(this.currentExecutable.wrappedItem.steps, status, details);
+      //this.setLastStepStatus(this.currentExecutable.wrappedItem.steps, status, details);
 
       return;
     }

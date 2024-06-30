@@ -6,7 +6,7 @@ import {
   getContentType,
   swapItems,
   baseUrlFromUrl,
-} from '../../../src/common';
+} from '@src/common';
 
 describe('utils', () => {
   it('extname should get ext name', () => {

@@ -1,4 +1,4 @@
-import { checkCyResults, createResTest2 } from '../../../cy-helper/utils';
+import { checkCyResults, createResTest2 } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('test duration event', () => {

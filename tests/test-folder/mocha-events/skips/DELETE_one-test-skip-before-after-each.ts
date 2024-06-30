@@ -6,7 +6,7 @@ import {
   readWithRetry,
   whenCoverage,
   whenNoCoverage,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { parseAllure } from 'allure-js-parser';
 
 describe('skipped test by .skip with before each and after each hooks', () => {

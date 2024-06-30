@@ -1,10 +1,6 @@
-import {
-  createResTest2,
-  mapSteps,
-  readWithRetry,
-} from '../../../cy-helper/utils';
+import { createResTest2, mapSteps, readWithRetry } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../src/common';
+import { extname } from '@src/common';
 
 describe('should have requests when redirects', () => {
   const res = createResTest2(
@@ -165,18 +161,10 @@ describe('should have requests when redirects', () => {
       expect(steps).toEqual([
         {
           attach: [],
-          name: 'wrap: {"status":200}',
+          name: 'wrap: {status: 200}',
           params: [],
           status: 'passed',
-          steps: [
-            {
-              attach: [],
-              name: 'wrap: {status: 200}',
-              params: [],
-              status: 'passed',
-              steps: [],
-            },
-          ],
+          steps: [],
         },
         {
           attach: [],

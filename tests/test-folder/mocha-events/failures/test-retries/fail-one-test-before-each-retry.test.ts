@@ -9,7 +9,7 @@ import {
   sortAttachments,
   whenCoverage,
   whenNoCoverage,
-} from '../../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
 describe('mocha events - check failures @oneInconsistency', () => {

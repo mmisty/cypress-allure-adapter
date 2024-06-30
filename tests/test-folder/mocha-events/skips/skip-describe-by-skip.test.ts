@@ -1,4 +1,4 @@
-import { createResTest2, fixResult } from '../../../cy-helper/utils';
+import { createResTest2, fixResult } from '@test-utils';
 import { parseAllure } from 'allure-js-parser';
 
 describe('several tests skipped by describe.skip', () => {

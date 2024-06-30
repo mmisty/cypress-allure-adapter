@@ -1,6 +1,7 @@
 import { TestData } from '@test-utils';
+import { basename } from 'path';
 
-const rootSuite = 'Failed before and after hook';
+const rootSuite = `${basename(__filename)}`;
 
 // issue #149 https://github.com/mmisty/cypress-allure-adapter/issues/149
 const data: TestData = {
