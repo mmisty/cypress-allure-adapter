@@ -1044,12 +1044,11 @@ export class AllureReporter {
     const step = steps[stepsCount - 1];
     const stepStatus = step?.status;
 
-    if (
-      stepStatus &&
-      stepsCount > 0 &&
-      ![Status.FAILED, Status.PASSED, Status.SKIPPED, Status.BROKEN].includes(stepStatus)
-    ) {
+    if (stepsCount > 0) {
       this.setLastStepStatus(step.steps, status, details);
+    }
+
+    if (!stepStatus || ![Status.FAILED, Status.PASSED, Status.SKIPPED, Status.BROKEN].includes(stepStatus)) {
       this.setExecutableItemStatus(step, status, details);
     }
   }
