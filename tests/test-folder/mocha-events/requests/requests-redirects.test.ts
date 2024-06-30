@@ -161,7 +161,7 @@ describe('should have requests when redirects', () => {
       expect(steps).toEqual([
         {
           attach: [],
-          name: 'wrap: {"status":200}',
+          name: 'wrap: {status: 200}',
           params: [],
           status: 'passed',
           steps: [],

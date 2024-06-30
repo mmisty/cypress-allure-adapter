@@ -227,7 +227,7 @@ describe('should have requests', () => {
               type: 'application/json',
             },
           ],
-          name: 'request: POST, http://localhost:number/hello, {"data":"should"}',
+          name: 'request: POST, http://localhost:number/hello, {data: "should"}',
           params: [
             {
               name: 'Response Status',

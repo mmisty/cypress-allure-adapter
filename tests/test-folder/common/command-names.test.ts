@@ -82,7 +82,7 @@ describe('Command names unit tests', () => {
         },
         {
           command: { attributes: { name: 'cmd name', args: [{ obj: 1 }] } },
-          expected: 'cmd name: { obj: 1 }',
+          expected: 'cmd name: {obj: 1}',
           expectedIsLog: true,
         },
         {
@@ -109,14 +109,14 @@ describe('Command names unit tests', () => {
               args: ['hello', [{ obj: 'a' }, 'b', 'c']],
             },
           },
-          expected: 'cmd name: hello, [{ obj: "a" },b,c]',
+          expected: 'cmd name: hello, [{obj: "a"},b,c]',
           expectedIsLog: true,
         },
         {
           command: {
             attributes: { name: 'cmd name', args: ['{"obj":1}'] },
           },
-          expected: 'cmd name: { obj: 1 }',
+          expected: 'cmd name: {obj: 1}',
           expectedIsLog: true,
         },
         {
@@ -148,7 +148,7 @@ describe('Command names unit tests', () => {
               args: [{ a: 1 }, { log: false }],
             },
           },
-          expected: 'myCommand: { a: 1 }, { log: false }',
+          expected: 'myCommand: {a: 1}, {log: false}',
           expectedIsLog: false,
         },
       ])
@@ -258,7 +258,7 @@ describe('Command names unit tests', () => {
               name: 'wrap',
               args: [{ status: 200 }],
               logs: [
-                { attributes: { name: 'wrap', message: '{ status: 200 }' } },
+                { attributes: { name: 'wrap', message: '{status: 200}' } },
               ],
             },
           },
@@ -284,6 +284,30 @@ describe('Command names unit tests', () => {
               name: 'its',
               args: ['.status 345'],
               logs: [{ attributes: { name: 'request', message: 'POST 123' } }],
+            },
+          },
+          ignoreCommands: [],
+          expected: [],
+        },
+        {
+          desc: 'should ignore its log',
+          command: {
+            attributes: {
+              name: 'its',
+              args: ['status'],
+              logs: [{ attributes: { name: 'its', message: '.status' } }],
+            },
+          },
+          ignoreCommands: [],
+          expected: [],
+        },
+        {
+          desc: 'should ignore same log as cmd without args',
+          command: {
+            attributes: {
+              name: 'task',
+              args: ['log'],
+              logs: [{ attributes: { name: 'task', message: undefined } }],
             },
           },
           ignoreCommands: [],

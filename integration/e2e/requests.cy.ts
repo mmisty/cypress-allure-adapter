@@ -34,4 +34,8 @@ describe('requests', () => {
       data: [{ chicken: 'Zina' }, { chicken: 'Marta' }, { chicken: 'Galya' }, { chicken: 'Zoya' }],
     });
   });
+
+  it('02 its status', () => {
+    cy.wrap({ status: 200 }).its('status').should('eq', 200);
+  });
 });

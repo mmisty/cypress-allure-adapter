@@ -52,16 +52,19 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
 
       // console.log(`cmdMsg     ${cmdMsg}`);
       // console.log(`logMessage ${logMessage}`);
-      // console.log('----');
 
       const gherkin = isGherkin(logName);
       const equalMessages = logMessage === cmdMsg;
       const isRequest = logName === COMMAND_REQUEST;
-      const isIts = cmdMsg.match(/its:\s*\..*/); // its already logged as command
+      const isIts = /its:\s*\..*/.test(logMessage); // its already logged as command
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);
+      const isLogMsgEqCommandName = logMessage === cmdAttrs?.name;
+      const noLogConditions = [gherkin, equalMessages, isRequest, isIts, ignoredLog, isLogMsgEqCommandName];
 
-      // when same args and name for log and current command or when gherkin - do not show
-      return !equalMessages && !gherkin && !isRequest && !isIts && !ignoredLog;
+      // console.log(noLogConditions);
+      // console.log('----');
+
+      return noLogConditions.every(c => !c);
     }) ?? []
   );
 };
@@ -135,13 +138,13 @@ function formatObject(obj: Record<string, any>, indent?: string): string {
         }
       }
     })
-    .join(', ');
+    .join(',');
 
   if (indent) {
     return `{\n${entries}\n${indent}}`;
   }
 
-  return `{ ${entries} }`;
+  return `{${entries}}`;
 }
 
 const convertEmptyObj = (obj: Record<string, unknown>, isJSON: boolean, indent?: string): string => {
