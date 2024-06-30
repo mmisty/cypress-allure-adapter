@@ -70,6 +70,7 @@ const isRootSuiteTest = (test: Mocha.Test) => {
 };
 
 const allureEventsEmitter = new EventEmitter();
+const evListeners: Map<string, (test: Mocha.Test) => void> = new Map();
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
@@ -82,9 +83,41 @@ const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
       return;
     }
 
-    debug(`ADD LISTENER: ${event}`);
+    if (!evListeners.get(event)) {
+      debug(`ADD LISTENER: ${event}`);
+      allureEventsEmitter.addListener(event, testHandler);
+      evListeners.set(event, testHandler);
+    } else {
+      debug(`MERGE LISTENERS: ${event}`);
+      const existingHandler = evListeners.get(event);
+      allureEventsEmitter.removeListener(event, () => {
+        debug(`Remove LISTENER: ${event}`);
+      });
+      allureEventsEmitter.addListener(event, test => {
+        let errExisting: Error;
+        let errNew: Error;
 
-    allureEventsEmitter.addListener(event, testHandler);
+        try {
+          existingHandler(test);
+        } catch (err) {
+          errExisting = err;
+        }
+
+        try {
+          testHandler(test);
+        } catch (err2) {
+          errNew = err2;
+        }
+
+        if (errExisting) {
+          throw errExisting;
+        }
+
+        if (errNew) {
+          throw errNew;
+        }
+      });
+    }
   },
 });
 
@@ -307,6 +340,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   const messageManager = createMessage(ws);
   const message = messageManager.message;
   allureEventsEmitter.removeAllListeners();
+  evListeners.clear();
 
   const allureInterfaceInstance = allureInterface(Cypress.env(), message);
   const allureEvents = eventsInterfaceInstance(false);

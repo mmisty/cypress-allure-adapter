@@ -133,12 +133,7 @@ export const handleCyLogEvents = (
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
   const customCommands: string[] = [];
-  const allLogged: string[] = [];
   const emit = createEmitEvent(runner);
-
-  Cypress.Allure.on('test:started', () => {
-    allLogged.splice(0, allLogged.length);
-  });
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
@@ -343,8 +338,6 @@ export const handleCyLogEvents = (
 
     debug(`started: ${cmdMessage}`);
     Cypress.Allure.startStep(cmdMessage);
-
-    allLogged.push(cmdMessage);
 
     withTry('report command:attachment', () => {
       const requestAndLogRequests = allureAttachRequests && name === COMMAND_REQUEST;

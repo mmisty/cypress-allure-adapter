@@ -49,9 +49,10 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
 
       const cmdMsg = commandParams(command)?.message ?? '';
       const logMessage = stepMessage(logName, logMessageAttr === 'null' ? '' : logMessageAttr);
-      console.log(`cmdMsg     ${cmdMsg}`);
-      console.log(`logMessage ${logMessage}`);
-      console.log('----');
+
+      // console.log(`cmdMsg     ${cmdMsg}`);
+      // console.log(`logMessage ${logMessage}`);
+      // console.log('----');
 
       const gherkin = isGherkin(logName);
       const equalMessages = logMessage === cmdMsg;
