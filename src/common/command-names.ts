@@ -87,13 +87,13 @@ export const stepMessage = (name: string, args: string | undefined) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const stringify = (args: any, indent?: string): string => {
+export const stringify = (args: any, isJSON: boolean, indent?: string): string => {
   const getArr = () => {
     try {
       if (Array.isArray(args)) {
-        return `[${args.map(a => stringify(a, indent)).join(',')}]`;
+        return `[${args.map(a => stringify(a, isJSON, indent)).join(',')}]`;
       } else {
-        return convertEmptyObj(args, indent);
+        return convertEmptyObj(args, isJSON, indent);
       }
     } catch (err) {
       return 'could not stringify';
@@ -102,7 +102,7 @@ export const stringify = (args: any, indent?: string): string => {
 
   if (typeof args === 'string') {
     try {
-      return stringify(JSON.parse(args), indent);
+      return stringify(JSON.parse(args), isJSON, indent);
     } catch (err) {
       return `${args}`;
     }
@@ -117,30 +117,45 @@ export const requestName = (url: string, method: string) => {
 
 function formatObject(obj: Record<string, any>, indent?: string): string {
   const keys = Object.keys(obj);
+  const indStr = indent ?? '';
 
   const entries = keys
     .map(key => {
       const value = obj[key];
 
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        return `${key}: ${formatObject(value, indent?.repeat(2))}`;
+        return `${indStr}${key}: ${formatObject(value, indent?.repeat(2))}`;
+      } else if (value !== null && Array.isArray(value)) {
+        `${indStr}${key}: [${value.map(v => formatObject(v, indent))}]`;
       } else {
-        return `${key}: ${value}`;
+        if (typeof value === 'string') {
+          return `${indStr}${key}: "${value}"`;
+        } else {
+          return `${indStr}${key}: ${value}`;
+        }
       }
     })
     .join(', ');
 
+  if (indent) {
+    return `{\n${entries}\n${indent}}`;
+  }
+
   return `{ ${entries} }`;
 }
 
-const convertEmptyObj = (obj: Record<string, unknown>, indent?: string): string => {
+const convertEmptyObj = (obj: Record<string, unknown>, isJSON: boolean, indent?: string): string => {
   if (obj == null) {
     return '';
   }
 
   if (Object.keys(obj).length > 0) {
     try {
-      return !indent ? formatObject(obj) : formatObject(obj, indent);
+      if (isJSON) {
+        return !indent ? JSON.stringify(obj) : JSON.stringify(obj, null, indent);
+      } else {
+        return formatObject(obj, indent);
+      }
     } catch (e) {
       return 'could not stringify';
     }
@@ -177,12 +192,12 @@ export const commandParams = (command: CommandT) => {
               return requestName(arg.url, arg.method);
             }
 
-            return stringify(arg);
+            return stringify(arg, false);
           })
           .filter(x => x.trim() !== '');
       }
 
-      return [convertEmptyObj(commandArgs)];
+      return [convertEmptyObj(commandArgs, false)];
     } catch (err) {
       return ['could not parse args'];
     }

@@ -88,7 +88,7 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
 
     const attaches = [reqBody, reqHeaders, resBody, resHeaders].map(t => ({
       ...t,
-      stringified: stringify(t.obj, indent),
+      stringified: stringify(t.obj, true, indent),
     }));
 
     const shortAttaches = attaches.filter(a => a.stringified.length < maxParamLength);

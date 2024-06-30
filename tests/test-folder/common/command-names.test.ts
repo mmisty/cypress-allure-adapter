@@ -109,7 +109,7 @@ describe('Command names unit tests', () => {
               args: ['hello', [{ obj: 'a' }, 'b', 'c']],
             },
           },
-          expected: 'cmd name: hello, [{ obj: a },b,c]',
+          expected: 'cmd name: hello, [{ obj: "a" },b,c]',
           expectedIsLog: true,
         },
         {
