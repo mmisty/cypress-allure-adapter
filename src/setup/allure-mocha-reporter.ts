@@ -70,55 +70,58 @@ const isRootSuiteTest = (test: Mocha.Test) => {
 };
 
 const allureEventsEmitter = new EventEmitter();
-const evListeners: Map<string, (test: Mocha.Test) => void> = new Map();
+const evListeners: Map<string, ((test: Mocha.Test) => void)[]> = new Map();
+
+const allureEvents = [USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START];
+
+const startEvents = () => {
+  const debug = logClient(dbg);
+  debug('start events');
+  allureEvents.forEach(event => {
+    const existingHandler = evListeners.get(event);
+
+    if (!existingHandler) {
+      return;
+    }
+    debug(`event ${event} has ${existingHandler.length} handlers`);
+
+    const merged = (test: Mocha.Test) => {
+      let errExisting: Error | undefined;
+
+      debug(`Registered listeners for '${event}': ${allureEventsEmitter.listeners(event).length}`);
+
+      existingHandler.forEach(handler => {
+        try {
+          handler(test);
+        } catch (err) {
+          errExisting = err as Error;
+        }
+      });
+
+      if (errExisting) {
+        throw errExisting;
+      }
+    };
+    allureEventsEmitter.removeListener(event, merged);
+    allureEventsEmitter.addListener(event, merged);
+  });
+};
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
   on: (event, testHandler) => {
     const debug = logClient(dbg);
 
-    if (
-      isStub &&
-      ![USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START].includes(event)
-    ) {
+    if (isStub && !allureEvents.includes(event)) {
       return;
     }
     const existingHandler = evListeners.get(event);
 
     if (!existingHandler) {
       debug(`ADD LISTENER: ${event}`);
-      allureEventsEmitter.addListener(event, testHandler);
-      evListeners.set(event, testHandler);
+      evListeners.set(event, [testHandler]);
     } else {
       debug(`MERGE LISTENERS: ${event}`);
-
-      allureEventsEmitter.removeListener(event, () => {
-        debug(`Remove LISTENER: ${event}`);
-      });
-
-      allureEventsEmitter.addListener(event, test => {
-        let errExisting: Error | undefined;
-        let errNew: Error | undefined;
-
-        try {
-          existingHandler(test);
-        } catch (err) {
-          errExisting = err as Error;
-        }
-
-        try {
-          testHandler(test);
-        } catch (err2) {
-          errNew = err2 as Error;
-        }
-
-        if (errExisting) {
-          throw errExisting;
-        }
-
-        if (errNew) {
-          throw errNew;
-        }
-      });
+      existingHandler.push(testHandler);
     }
   },
 });
@@ -363,6 +366,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
 
   runner
     .once(MOCHA_EVENTS.RUN_BEGIN, () => {
+      startEvents();
       debug(`event ${MOCHA_EVENTS.RUN_BEGIN}`);
       sendMessageTest(`mocha: ${MOCHA_EVENTS.RUN_BEGIN}`);
       runner.emit(CUSTOM_EVENTS.TASK, { task: 'endAll', arg: {} });
