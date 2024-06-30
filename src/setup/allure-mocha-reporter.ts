@@ -82,31 +82,33 @@ const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
     ) {
       return;
     }
+    const existingHandler = evListeners.get(event);
 
-    if (!evListeners.get(event)) {
+    if (!existingHandler) {
       debug(`ADD LISTENER: ${event}`);
       allureEventsEmitter.addListener(event, testHandler);
       evListeners.set(event, testHandler);
     } else {
       debug(`MERGE LISTENERS: ${event}`);
-      const existingHandler = evListeners.get(event);
+
       allureEventsEmitter.removeListener(event, () => {
         debug(`Remove LISTENER: ${event}`);
       });
+
       allureEventsEmitter.addListener(event, test => {
-        let errExisting: Error;
-        let errNew: Error;
+        let errExisting: Error | undefined;
+        let errNew: Error | undefined;
 
         try {
           existingHandler(test);
         } catch (err) {
-          errExisting = err;
+          errExisting = err as Error;
         }
 
         try {
           testHandler(test);
         } catch (err2) {
-          errNew = err2;
+          errNew = err2 as Error;
         }
 
         if (errExisting) {
