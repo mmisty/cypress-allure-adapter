@@ -1,4 +1,35 @@
 ## Change Log
+### 2.1.0
+* [tech] Added test for issue 119 and 152 by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/153
+* [minor] Tests refactoring and fix tests creation for failure in afterEach hook by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/154 (fixes issue #71 )
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.10...v2.1.0
+
+### 2.0.10
+* [patch] Fix suite structure when before hook fails in nested suite - fixes issue #95 and issue #149 by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/151
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.9...v2.0.10
+
+### 2.0.9
+* [#120] [patch] Fix: screenshots are not being added for tests with failed global hooks (i.e. before hook used without describe) by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/150
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.8...v2.0.9
+
+### 2.0.9
+* [#120] [patch] Fix: screenshots are not being added for tests with failed global hooks (i.e. before hook used without describe) by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/150
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.8...v2.0.9
+
+### 2.0.8
+* More test fixes by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/148
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.7...v2.0.8
+
+### 2.0.7
+* [tech] Fix unstable tests by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/146
+* [tech] fix changelog by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/147
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.5...v2.0.7
 
 ### 2.0.5
 * [patch] proper ws events registration by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/145

@@ -93,7 +93,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     step: (arg: AllureTaskArgs<'step'>) => {
       log(`step ${JSON.stringify(arg)}`);
       allureReporter.startStep(arg);
-      allureReporter.endStep({ ...arg, status: (arg.status as Status) ?? Status.PASSED });
+      allureReporter.endStep({ date: arg.date, status: (arg.status as Status) ?? Status.PASSED, details: arg.details });
       log('step');
     },
     mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
