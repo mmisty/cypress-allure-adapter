@@ -105,7 +105,7 @@ describe('${rootSuite}', () => {
               {
                 attachments: [],
                 name: 'wrap',
-                status: 'passed',
+                status: 'failed',
                 steps: [],
               },
             ],
