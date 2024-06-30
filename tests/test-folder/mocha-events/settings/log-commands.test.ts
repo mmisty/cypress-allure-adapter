@@ -1,10 +1,6 @@
-import {
-  createResTest2,
-  mapSteps,
-  readWithRetry,
-} from '../../../cy-helper/utils';
+import { createResTest2, mapSteps, readWithRetry } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../src/common';
+import { extname } from '@src/common';
 
 describe('should not log when allureLogCyCommands setting is false', () => {
   const res = createResTest2(

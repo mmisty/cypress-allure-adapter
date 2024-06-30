@@ -44,6 +44,7 @@ export default {
   ],
   moduleNameMapper: {
     '^@test-utils$': '<rootDir>/tests/cy-helper/utils.ts',
+    '^@src/(.*)': '<rootDir>/src/$1',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tests/tsconfig.json' }],

@@ -3,9 +3,9 @@ import {
   createResTest2,
   mapSteps,
   readWithRetry,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../src/common';
+import { extname } from '@src/common';
 
 describe('test screenshot event', () => {
   const res = createResTest2(

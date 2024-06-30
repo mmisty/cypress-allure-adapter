@@ -8,22 +8,7 @@ declare namespace Cypress {
   }
 
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
-  export type CommandT = {
-    state?: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    attributes?: {
-      name?: string;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      args?: any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      logs?: { attributes?: { consoleProps?: () => any } }[];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      subject?: any;
-      prev?: CommandT;
-      next?: CommandT;
-    };
-  };
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../common/types').ContentType;

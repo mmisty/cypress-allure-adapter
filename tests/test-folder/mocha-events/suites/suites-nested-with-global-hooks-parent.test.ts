@@ -1,6 +1,6 @@
 import { createResTest2, fixResult, readWithRetry } from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../src/common';
+import { extname } from '@src/common';
 import { AllureHook } from 'allure-js-parser/types';
 
 // issue https://github.com/mmisty/cypress-allure-adapter/issues/95

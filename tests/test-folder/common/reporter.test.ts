@@ -1,8 +1,8 @@
 import { Status } from 'allure-js-commons';
 import { parseAllure } from 'allure-js-parser';
 import { existsSync, rmSync } from 'fs';
-import { mapSteps } from '../../cy-helper/utils';
-import type { ReporterOptions } from '../../../src/plugins/allure';
+import { mapSteps } from '@test-utils';
+import type { ReporterOptions } from '@src/plugins/allure';
 
 /**
  * Test for issue that some steps had unknown status
