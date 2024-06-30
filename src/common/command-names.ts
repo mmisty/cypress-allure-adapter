@@ -38,15 +38,17 @@ export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
 };
 
 export const filterCommandLog = (command: CommandT, ignoreCommands: () => string[]): CommandLog[] => {
-  const cmdAttrs = command?.attributes as any;
+  const cmdAttrs = command?.attributes;
+  const cmdLogs = cmdAttrs?.logs ?? [];
 
   return (
-    cmdAttrs?.logs?.filter(log => {
+    cmdLogs.filter(log => {
       const attr = log.attributes;
-      const logName = attr.name;
+      const logName = attr?.name ?? '';
+      const logMessageAttr = attr?.message ?? '';
 
       const cmdMsg = commandParams(command)?.message ?? '';
-      const logMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
+      const logMessage = stepMessage(logName, logMessageAttr === 'null' ? '' : logMessageAttr);
       console.log(`cmdMsg     ${cmdMsg}`);
       console.log(`logMessage ${logMessage}`);
       console.log('----');

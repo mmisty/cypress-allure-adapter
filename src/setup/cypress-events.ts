@@ -373,6 +373,7 @@ export const handleCyLogEvents = (
 
   Cypress.Allure.on('cmd:ended', (command: CommandT, isCustom) => {
     const { name, isLog, state, message: cmdMessage } = commandParams(command);
+    const status = state as Status;
 
     if (!isLogCommand(isLog, name)) {
       return;
@@ -388,6 +389,6 @@ export const handleCyLogEvents = (
       return;
     }
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
-    Cypress.Allure.endStep(state);
+    Cypress.Allure.endStep(status);
   });
 };

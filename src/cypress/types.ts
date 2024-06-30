@@ -9,6 +9,7 @@ declare namespace Cypress {
 
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
 
+  export type CommandT = import('../common/command-names').CommandT;
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../common/types').ContentType;

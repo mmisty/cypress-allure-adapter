@@ -63,10 +63,12 @@ describe('Command names unit tests', () => {
       .each<{
         command: CommandT;
         expected: string;
+        expectedIsLog: boolean;
       }>([
         {
           command: { attributes: { name: 'cmd name', args: [] } },
           expected: 'cmd name',
+          expectedIsLog: true,
         },
         {
           command: {
@@ -76,24 +78,29 @@ describe('Command names unit tests', () => {
             },
           },
           expected: 'cmd name',
+          expectedIsLog: true,
         },
         {
           command: { attributes: { name: 'cmd name', args: [{ obj: 1 }] } },
           expected: 'cmd name: { obj: 1 }',
+          expectedIsLog: true,
         },
         {
           command: { attributes: { name: 'cmd name', args: ['hello', 'buy'] } },
           expected: 'cmd name: hello, buy',
+          expectedIsLog: true,
         },
         {
           command: { attributes: { name: 'cmd name', args: ['hello', 1] } },
           expected: 'cmd name: hello, 1',
+          expectedIsLog: true,
         },
         {
           command: {
             attributes: { name: 'cmd name', args: ['hello', ['a', 'b', 'c']] },
           },
           expected: 'cmd name: hello, [a,b,c]',
+          expectedIsLog: true,
         },
         {
           command: {
@@ -103,17 +110,53 @@ describe('Command names unit tests', () => {
             },
           },
           expected: 'cmd name: hello, [{ obj: a },b,c]',
+          expectedIsLog: true,
         },
         {
           command: {
             attributes: { name: 'cmd name', args: ['{"obj":1}'] },
           },
           expected: 'cmd name: { obj: 1 }',
+          expectedIsLog: true,
+        },
+        {
+          command: {
+            attributes: {
+              name: 'request',
+              args: [{ method: 'POST', url: 'http://' }],
+            },
+          },
+          expected: 'request: POST, http://',
+          expectedIsLog: true,
+        },
+        {
+          desc: 'args not array',
+          command: {
+            attributes: {
+              name: 'request',
+              args: undefined,
+            },
+          },
+          expected: 'request',
+          expectedIsLog: false,
+        },
+        {
+          desc: 'no log attribute',
+          command: {
+            attributes: {
+              name: 'myCommand',
+              args: [{ a: 1 }, { log: false }],
+            },
+          },
+          expected: 'myCommand: { a: 1 }, { log: false }',
+          expectedIsLog: false,
         },
       ])
       .run(t => {
         const cmdMessage = commandParams(t.command).message;
+        const isLog = commandParams(t.command).isLog;
         expect(cmdMessage).toEqual(t.expected);
+        expect(isLog).toEqual(t.expectedIsLog);
       });
 
     describe('stepMessage', () => {
@@ -185,6 +228,18 @@ describe('Command names unit tests', () => {
           expected: [{ attributes: { name: 'LOG' } }],
         },
         {
+          desc: 'should keep log when diff args',
+          command: {
+            attributes: {
+              name: 'cmd name',
+              args: ['A'],
+              logs: [{ attributes: { name: 'cmd name', message: 'B' } }],
+            },
+          },
+          ignoreCommands: [],
+          expected: [{ attributes: { name: 'cmd name', message: 'B' } }],
+        },
+        {
           desc: 'should ignore log when same messages',
           command: {
             attributes: {
@@ -205,6 +260,30 @@ describe('Command names unit tests', () => {
               logs: [
                 { attributes: { name: 'wrap', message: '{ status: 200 }' } },
               ],
+            },
+          },
+          ignoreCommands: [],
+          expected: [],
+        },
+        {
+          desc: 'should ignore request',
+          command: {
+            attributes: {
+              name: 'request',
+              args: [{ status: 200 }],
+              logs: [{ attributes: { name: 'request', message: 'POST 123' } }],
+            },
+          },
+          ignoreCommands: [],
+          expected: [],
+        },
+        {
+          desc: 'should ignore its',
+          command: {
+            attributes: {
+              name: 'its',
+              args: ['.status 345'],
+              logs: [{ attributes: { name: 'request', message: 'POST 123' } }],
             },
           },
           ignoreCommands: [],
