@@ -7,6 +7,14 @@ Some of these is under construction.
 - [x] proper tests
 - [ ] tests for plugins
 
+#### Defects / enhancements
+- [ ] #41 - Do not attach files with long arguments to child commands - only for parent enhancement
+- [ ] #77 - Mark parent step non-success when some steps have non-success status enhancement
+- [ ] #64 - Uncaught:exception step is marked as passed step and all its parents as well bug minor
+- [ ] #152 - Global hook doesn't have steps for tests in nested suites bug minor
+- [ ] #119 - Global After hooks are not being added to test when it has more than one parent suite bug minor
+- [ ] #156 - Before/after each are not marked as failed for failed attempts of test when retries >0
+
 ### Contribution
 Feel free to create a PRs.
 

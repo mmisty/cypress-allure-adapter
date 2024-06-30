@@ -86,7 +86,7 @@ const startEvents = () => {
     debug(`event ${event} has ${existingHandler.length} handlers`);
 
     const merged = (test: Mocha.Test) => {
-      let errExisting: Error | undefined;
+      const errsExisting: Error[] = [];
 
       debug(`Registered listeners for '${event}': ${allureEventsEmitter.listeners(event).length}`);
 
@@ -94,12 +94,16 @@ const startEvents = () => {
         try {
           handler(test);
         } catch (err) {
-          errExisting = err as Error;
+          errsExisting.push(err as Error);
         }
       });
 
-      if (errExisting) {
-        throw errExisting;
+      if (errsExisting && errsExisting.length > 0) {
+        errsExisting.forEach(errExisting => {
+          const errMsg = `Error in handler for '${event}': ${errExisting.message}`;
+          Cypress.log({ message: errMsg }).error(errExisting);
+          Cypress.Allure.step(errMsg, Status.FAILED, { message: errMsg, trace: errExisting.stack });
+        });
       }
     };
     allureEventsEmitter.removeListener(event, merged);
@@ -144,8 +148,8 @@ export const allureInterface = (
         arg: { status: status ?? Status.PASSED, details: statusDetails, date: date ?? Date.now() },
       }),
 
-    step: (name: string, status?: Status) =>
-      fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now() } }),
+    step: (name: string, status?: Status, details?: StatusDetails) =>
+      fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now(), details } }),
 
     deleteResults: () => fn({ task: 'deleteResults', arg: {} }),
     fullName: (value: string) => fn({ task: 'fullName', arg: { value } }),
