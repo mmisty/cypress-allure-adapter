@@ -54,7 +54,7 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       // console.log(`logMessage ${logMessage}`);
 
       const gherkin = isGherkin(logName);
-      const equalMessages = logMessage === cmdMsg;
+      const equalMessages = logMessage === cmdMsg || logMessage.replace(/"/g, '') == cmdMsg.replace(/"/g, '');
       const isRequest = logName === COMMAND_REQUEST;
       const isIts = /its:\s*\..*/.test(logMessage); // its already logged as command
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);

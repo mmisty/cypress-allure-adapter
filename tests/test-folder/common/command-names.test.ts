@@ -313,6 +313,18 @@ describe('Command names unit tests', () => {
           ignoreCommands: [],
           expected: [],
         },
+        {
+          desc: 'should ignore same log but with quotes',
+          command: {
+            attributes: {
+              name: 'task',
+              args: ['log'],
+              logs: [{ attributes: { name: 'task', message: '"log"' } }],
+            },
+          },
+          ignoreCommands: [],
+          expected: [],
+        },
       ])
       //.only(t => (t as any).only)
       .run(t => {

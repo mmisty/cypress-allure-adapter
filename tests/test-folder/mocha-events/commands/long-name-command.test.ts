@@ -4,7 +4,7 @@ import {
   fixResult,
   mapSteps,
   readWithRetry,
-} from '../../../cy-helper/utils';
+} from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 
 describe('custom commands', () => {
