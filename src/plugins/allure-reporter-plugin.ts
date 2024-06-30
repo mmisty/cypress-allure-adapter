@@ -421,6 +421,7 @@ export class AllureReporter {
       executableItem.statusDetails.message = dtls?.message;
     }
 
+    // unknown
     if (res !== Status.FAILED && res !== Status.BROKEN && res !== Status.PASSED && res !== Status.SKIPPED) {
       executableItem.statusDetails.message = dtls?.message;
     }
@@ -1037,14 +1038,38 @@ export class AllureReporter {
     }
   }
 
-  // set status to last step recursively
+  // set status to last step recursively when unknown status
   setLastStepStatus(steps: ExecutableItem[], status: Status, details?: StatusDetails) {
     const stepsCount = steps.length;
+    const step = steps[stepsCount - 1];
+    const stepStatus = step?.status;
 
-    if (stepsCount > 0) {
-      this.setLastStepStatus(steps[stepsCount - 1].steps, status, details);
-      this.setExecutableItemStatus(steps[stepsCount - 1], status, details);
+    if (
+      stepStatus &&
+      stepsCount > 0 &&
+      ![Status.FAILED, Status.PASSED, Status.SKIPPED, Status.BROKEN].includes(stepStatus)
+    ) {
+      this.setLastStepStatus(step.steps, status, details);
+      this.setExecutableItemStatus(step, status, details);
     }
+  }
+
+  hasChildrenWith(steps: ExecutableItem[], statuses: Status[]) {
+    const stepsCount = steps.length;
+    let hasError = false;
+    steps.forEach(step => {
+      const stepStatus = step.status as Status;
+
+      if (stepStatus && stepsCount > 0 && statuses.includes(stepStatus)) {
+        hasError = true;
+      }
+
+      if (stepsCount > 0) {
+        return this.hasChildrenWith(step.steps, statuses);
+      }
+    });
+
+    return hasError;
   }
 
   endStep(arg: AllureTaskArgs<'stepEnded'>) {
@@ -1063,9 +1088,23 @@ export class AllureReporter {
       return;
     }
 
+    const markBrokenStatuses = ['failed' as Status, 'broken' as Status];
+    const passedStatuses = ['passed' as Status];
+
+    // when unknown
     this.setLastStepStatus(this.currentStep.wrappedItem.steps, status, details);
-    this.setExecutableStatus(this.currentStep, status, details);
-    this.currentStep.endStep(date);
+
+    if (
+      passedStatuses.includes(status as Status) &&
+      this.hasChildrenWith(this.currentStep.wrappedItem.steps, markBrokenStatuses)
+    ) {
+      this.setExecutableStatus(this.currentStep, Status.BROKEN);
+    } else {
+      this.setLastStepStatus(this.currentStep.wrappedItem.steps, status, details);
+      this.setExecutableStatus(this.currentStep, status, details);
+    }
+
+    this.currentStep.endStep(date ?? Date.now());
 
     this.steps.pop();
   }
