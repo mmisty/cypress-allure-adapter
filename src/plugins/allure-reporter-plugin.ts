@@ -1038,7 +1038,7 @@ export class AllureReporter {
     }
   }
 
-  // set status to last step recursively when unknown status
+  // set status to last step recursively when unknown or passed statuses
   setLastStepStatus(steps: ExecutableItem[], status: Status, details?: StatusDetails) {
     const stepsCount = steps.length;
     const step = steps[stepsCount - 1];
@@ -1048,7 +1048,7 @@ export class AllureReporter {
       this.setLastStepStatus(step.steps, status, details);
     }
 
-    if (!stepStatus || ![Status.FAILED, Status.PASSED, Status.SKIPPED, Status.BROKEN].includes(stepStatus)) {
+    if (!stepStatus || ![Status.FAILED, Status.SKIPPED, Status.BROKEN].includes(stepStatus)) {
       this.setExecutableItemStatus(step, status, details);
     }
   }
@@ -1090,7 +1090,7 @@ export class AllureReporter {
     const markBrokenStatuses = ['failed' as Status, 'broken' as Status];
     const passedStatuses = ['passed' as Status];
 
-    // when unknown
+    // when unknown or passed
     this.setLastStepStatus(this.currentStep.wrappedItem.steps, status, details);
 
     if (
@@ -1099,7 +1099,6 @@ export class AllureReporter {
     ) {
       this.setExecutableStatus(this.currentStep, Status.BROKEN);
     } else {
-      this.setLastStepStatus(this.currentStep.wrappedItem.steps, status, details);
       this.setExecutableStatus(this.currentStep, status, details);
     }
 
