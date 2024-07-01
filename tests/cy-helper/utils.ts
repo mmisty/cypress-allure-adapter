@@ -304,11 +304,18 @@ export const fullStepMap = (
 ) => {
   const skipItems = ['generatereport', 'coverage'];
 
-  return mapSteps(res.steps as StepResult[], mapStep, z =>
-    skipItems.every(y => z.name?.toLowerCase().indexOf(y) === -1) && filterStep
-      ? filterStep(z)
-      : true,
-  );
+  return mapSteps(res.steps as StepResult[], mapStep, z => {
+    const includesNoSkippedSteps = skipItems.every(
+      y => z.name?.toLowerCase().indexOf(y) === -1,
+    );
+    const isFiltered = filterStep?.(z);
+
+    if (isFiltered === undefined) {
+      return includesNoSkippedSteps;
+    }
+
+    return includesNoSkippedSteps && isFiltered;
+  });
 };
 
 // eslint-disable-next-line jest/no-export
