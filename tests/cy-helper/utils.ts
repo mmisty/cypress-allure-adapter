@@ -7,8 +7,6 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 import { globSync } from 'fast-glob';
-import { commonConfig } from '../../cypress.config';
-import expect from 'expect';
 
 jest.setTimeout(360000);
 
@@ -473,11 +471,6 @@ export const createResTest2 = (
     const video = parseBoolean(envConfig?.video ?? `${true}`);
     // todo fix video
     console.log(`video:${video}`);
-    const config = commonConfig;
-
-    if (!video) {
-      config.video = false;
-    }
 
     return cy
       .run({
@@ -486,11 +479,12 @@ export const createResTest2 = (
         port,
         browser: 'chrome',
         env,
-        quiet: `${process.env.QUIET}` === 'true',
-        config: {
-          ...config,
-          trashAssetsBeforeRuns: true,
-        },
+        quiet: `${process.env.QUIET}` === 'true'
+        video,
+        // config: {
+        //   ...config,
+        //   trashAssetsBeforeRuns: true,
+        // },
       })
       .catch(e => {
         err = e as Error;
