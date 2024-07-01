@@ -70,7 +70,7 @@ describe('should have requests when redirects', () => {
           attach: [],
           name: 'request: /api/test',
           params: [],
-          status: 'passed',
+          status: 'broken',
           steps: [
             {
               attach: [
