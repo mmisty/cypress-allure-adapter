@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import { basename } from 'path';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
+import expect from 'expect';
 
 type Res = {
   res:
