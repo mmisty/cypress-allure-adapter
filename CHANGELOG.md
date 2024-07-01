@@ -15,11 +15,6 @@
 
 > **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.8...v2.0.9
 
-### 2.0.9
-* [#120] [patch] Fix: screenshots are not being added for tests with failed global hooks (i.e. before hook used without describe) by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/150
-
-> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.0.8...v2.0.9
-
 ### 2.0.8
 * More test fixes by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/148
 
