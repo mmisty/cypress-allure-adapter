@@ -12,7 +12,7 @@ import {
   filterCommandLog,
   ignoreAllCommands,
   isGherkin,
-  LogEvent,
+  CyLog,
   stepMessage,
   stringify,
   withTry,
@@ -257,7 +257,7 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  Cypress.on('log:added', (log: LogEvent) => {
+  Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
       return;
     }

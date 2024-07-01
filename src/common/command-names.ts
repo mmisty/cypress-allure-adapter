@@ -7,7 +7,7 @@ export type CommandLog = {
   attributes?: { name?: string; commandLogId?: string; consoleProps?: () => any; message?: string; error?: any };
 };
 
-export type LogEvent = {
+export type CyLog = {
   name?: string;
   commandLogId?: string;
   consoleProps?: () => any;
