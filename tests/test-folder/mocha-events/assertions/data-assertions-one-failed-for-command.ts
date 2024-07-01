@@ -65,7 +65,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
         expected: [
           {
             attachments: [],
-            name: 'get: div',
+            name: 'get: [data-test-id="item"]',
             status: 'failed',
             statusDetails: {},
             steps: [
