@@ -1,4 +1,3 @@
-import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
 import { baseUrlFromUrl, swapItems } from '../common';
@@ -11,7 +10,6 @@ import {
   commandParams,
   filterCommandLog,
   ignoreAllCommands,
-  isGherkin,
   CyLog,
   stepMessage,
   stringify,
@@ -120,12 +118,6 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   });
 };
 
-const createEmitEvent =
-  (runner: Mocha.Runner) =>
-  <T extends RequestTask>(args: AllureTransfer<T>) => {
-    runner.emit('task', args);
-  };
-
 export const handleCyLogEvents = (
   runner: Mocha.Runner,
   events: EventEmitter,
@@ -139,7 +131,6 @@ export const handleCyLogEvents = (
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
   const customCommands: string[] = [];
-  const emit = createEmitEvent(runner);
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
@@ -271,7 +262,21 @@ export const handleCyLogEvents = (
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
 
+      // console.log('log added');
       // console.log(log);
+
+      if (log.groupStart || log.groupEnd) {
+        if (log.groupStart) {
+          const msg = cmdMessage.replace(/\*\*/g, '');
+          Cypress.Allure.startStep(msg);
+        }
+
+        if (log.groupEnd) {
+          Cypress.Allure.endStep();
+        }
+
+        return;
+      }
 
       if (!chainerId && end) {
         // synchronous log without commands
@@ -288,18 +293,6 @@ export const handleCyLogEvents = (
         }
 
         Cypress.Allure.endStep(status);
-      }
-
-      if (isGherkin(logName)) {
-        if (gherkinLog.current) {
-          // gherkins step should be parent all the time
-          emit({ task: 'endAllSteps', arg: { status: Status.PASSED } });
-        }
-        const msg = cmdMessage.replace(/\*\*/g, '');
-        Cypress.Allure.startStep(msg);
-        gherkinLog.current = msg;
-
-        return;
       }
     });
   });

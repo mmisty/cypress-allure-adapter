@@ -4,7 +4,15 @@ export const ARGS_TRIM_AT = 200;
 export const COMMAND_REQUEST = 'request';
 
 export type CommandLog = {
-  attributes?: { name?: string; commandLogId?: string; consoleProps?: () => any; message?: string; error?: any };
+  attributes?: {
+    name?: string;
+    commandLogId?: string;
+    consoleProps?: () => any;
+    message?: string;
+    error?: any;
+    groupStart?: boolean;
+    groupEnd?: boolean;
+  };
 };
 
 export type CyLog = {
@@ -18,6 +26,8 @@ export type CyLog = {
   end?: boolean;
   ended?: boolean;
   state?: string;
+  groupStart?: boolean;
+  groupEnd?: boolean;
 };
 
 export type CommandT = {
@@ -35,10 +45,6 @@ export type CommandT = {
     prev?: CommandT;
     next?: CommandT;
   };
-};
-
-export const isGherkin = (logName: string): boolean => {
-  return logName ? ['When', 'Given', 'Then', 'And', 'After', 'Before'].some(t => logName.startsWith(t)) : false;
 };
 
 export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
@@ -69,13 +75,13 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       // console.log(`cmdMsg     ${cmdMsg}`);
       // console.log(`logMessage ${logMessage}`);
 
-      const gherkin = isGherkin(logName);
       const equalMessages = logMessage === cmdMsg || logMessage.replace(/"/g, '') == cmdMsg.replace(/"/g, '');
       const isRequest = logName === COMMAND_REQUEST;
       const isIts = /its:\s*\..*/.test(logMessage); // its already logged as command
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);
       const isLogMsgEqCommandName = logMessage === cmdAttrs?.name;
-      const noLogConditions = [gherkin, equalMessages, isRequest, isIts, ignoredLog, isLogMsgEqCommandName];
+      const isGroupStartOrEnd = attr?.groupStart || attr?.groupEnd;
+      const noLogConditions = [isGroupStartOrEnd, equalMessages, isRequest, isIts, ignoredLog, isLogMsgEqCommandName];
 
       // console.log(noLogConditions);
       // console.log('----');
