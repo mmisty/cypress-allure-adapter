@@ -1,4 +1,3 @@
-import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
 import { baseUrlFromUrl, swapItems } from '../common';
@@ -119,12 +118,6 @@ const attachRequests = (allureAttachRequests: boolean, command: CommandT, opts: 
   });
 };
 
-const createEmitEvent =
-  (runner: Mocha.Runner) =>
-  <T extends RequestTask>(args: AllureTransfer<T>) => {
-    runner.emit('task', args);
-  };
-
 export const handleCyLogEvents = (
   runner: Mocha.Runner,
   events: EventEmitter,
@@ -138,7 +131,6 @@ export const handleCyLogEvents = (
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
 
   const customCommands: string[] = [];
-  const emit = createEmitEvent(runner);
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
