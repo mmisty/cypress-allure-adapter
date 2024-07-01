@@ -20,6 +20,8 @@ import {
 const dbg = 'cypress-allure:cy-events';
 const UNCAUGHT_EXCEPTION_NAME = 'uncaught exception';
 const UNCAUGHT_EXCEPTION_STATUS = 'broken' as Status;
+const failedStatus = 'failed' as Status;
+const passedStatus = 'passed' as Status;
 
 type OneRequestConsoleProp = {
   'Request Body': unknown;
@@ -281,38 +283,52 @@ export const handleCyLogEvents = (
       return;
     }
 
-    filterCommandLog(command, ignoreCommands).forEach((log: any) => {
-      const attr = log.attributes;
-      const logName = attr.name;
-      const logMessage = stepMessage(attr.name, attr.message === 'null' ? '' : attr.message);
+    filterCommandLog(command, ignoreCommands)
+      .sort((aLog, bLog) => {
+        const attrA = aLog?.attributes?.commandLogId;
+        const attrB = bLog?.attributes?.commandLogId;
 
-      // console.log('logName');
-      // console.log(logName);
-      // console.log('attr');
-      // console.log(attr);
+        if (!attrA || !attrB) {
+          return 0;
+        }
 
-      Cypress.Allure.startStep(logMessage);
+        return attrA < attrB ? -1 : 1;
+      })
+      .forEach(log => {
+        const attr = log.attributes;
+        const logName = attr?.name ?? 'no name';
+        const logErr = attr?.error;
+        const message = attr?.message;
+        const logMessage = stepMessage(logName, message === 'null' ? '' : message);
+        const consoleProps = attr?.consoleProps?.();
 
-      if (logName !== 'assert' && log.message && log.message.length > ARGS_TRIM_AT) {
-        Cypress.Allure.attachment(`${logMessage} args`, log.message, 'application/json');
-      }
+        // console.log('logName');
+        // console.log(logName);
+        // console.log('attr');
+        // console.log(attr);
+        // console.log('consoleProps');
+        // console.log(consoleProps);
 
-      let state: Status = (attr.err ? 'failed' : 'passed') as Status;
-      let details: { message?: string; trace?: string } | undefined = undefined;
+        Cypress.Allure.startStep(logMessage);
 
-      if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1) {
-        const consoleProps = attr.consoleProps();
-        const err = consoleProps?.props?.Error as Error | undefined;
-        const isCommandFailed = command.state === 'failed';
-        const failedStatus = 'failed' as Status;
-        // when command failed we mark uncaught exception log as error,
-        // in other cases it will be marked as broken
-        state = isCommandFailed ? failedStatus : UNCAUGHT_EXCEPTION_STATUS;
-        details = { message: err?.message, trace: err?.stack };
-      }
+        if (logName !== 'assert' && message && message.length > ARGS_TRIM_AT) {
+          Cypress.Allure.attachment(`${logMessage} args`, message, 'application/json');
+        }
 
-      Cypress.Allure.endStep(state, details);
-    });
+        let state: Status = consoleProps?.error ?? logErr ? failedStatus : passedStatus;
+        let details: { message?: string; trace?: string } | undefined = undefined;
+
+        if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1) {
+          const err = consoleProps?.props?.Error as Error | undefined;
+          const isCommandFailed = command.state === 'failed';
+          // when command failed we mark uncaught exception log as error,
+          // in other cases it will be marked as broken
+          state = isCommandFailed ? failedStatus : UNCAUGHT_EXCEPTION_STATUS;
+          details = { message: err?.message, trace: err?.stack };
+        }
+
+        Cypress.Allure.endStep(state, details);
+      });
   };
 
   Cypress.on('command:start', (command: CommandT) => {

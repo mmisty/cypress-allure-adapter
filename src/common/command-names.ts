@@ -3,7 +3,9 @@ import { packageLog } from './';
 export const ARGS_TRIM_AT = 200;
 export const COMMAND_REQUEST = 'request';
 
-export type CommandLog = { attributes?: { name?: string; consoleProps?: () => any; message?: string } };
+export type CommandLog = {
+  attributes?: { name?: string; commandLogId?: string; consoleProps?: () => any; message?: string; error?: any };
+};
 export type CommandT = {
   state?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
