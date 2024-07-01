@@ -256,11 +256,6 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  // Cypress.on('log:change', (log: CyLog) => {
-  //   if ((log.end || log.ended) && log.groupEnd) {
-  //     Cypress.Allure.endStep();
-  //   }
-  // });
   Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
       return;
