@@ -17,9 +17,8 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [urlOrId, name] = t.info ?? [];
 
         if (!urlOrId) {
-          Cypress.log({ message: `WARN: tag @${tagNoAt} tag should have id: @${tagNoAt}("idOrUrl")` }).error(
-            new Error(),
-          );
+          const message = `tag @${tagNoAt} tag should have id: @${tagNoAt}("idOrUrl")`;
+          Cypress.log({ name: 'WARNING', message }).error(new Error());
           break;
         }
         Cypress.Allure[tagNoAt](urlOrId, name);
@@ -31,9 +30,8 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [urlOrId, name, type] = t.info ?? [];
 
         if (!urlOrId) {
-          Cypress.log({ message: `WARN: Tag @${tagNoAt} should have id or url: @${tagNoAt}("idOrUrl")` }).error(
-            new Error(),
-          );
+          const message = `tag @${tagNoAt} should have id or url: @${tagNoAt}("idOrUrl")`;
+          Cypress.log({ name: 'WARNING', message }).error(new Error());
 
           break;
         }
@@ -72,9 +70,8 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [singleValue] = t.info ?? [];
 
         if (!singleValue) {
-          Cypress.log({ message: `WARN: tag @${tagNoAt} tag should have value: @${tagNoAt}("value")` }).error(
-            new Error(),
-          );
+          const message = `tag @${tagNoAt} tag should have value: @${tagNoAt}("value")`;
+          Cypress.log({ name: 'WARNING', message }).error(new Error());
           break;
         }
         Cypress.Allure[tagNoAt](singleValue as Severity);
@@ -86,9 +83,8 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
         const [name, value] = t.info ?? [];
 
         if (!name) {
-          Cypress.log({
-            message: `WARN: tag @${tagNoAt} tag should have name and/or value: @${tagNoAt}("myLabel","value")`,
-          }).error(new Error());
+          const message = `tag @${tagNoAt} tag should have name and/or value: @${tagNoAt}("myLabel","value")`;
+          Cypress.log({ name: 'WARNING', message }).error(new Error());
           break;
         }
         Cypress.Allure.label(name, value);

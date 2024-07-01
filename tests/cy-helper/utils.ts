@@ -7,6 +7,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 import { globSync } from 'fast-glob';
+import { commonConfig } from '../../cypress.config';
+import expect from 'expect';
 
 jest.setTimeout(360000);
 
@@ -298,11 +300,14 @@ export const fullStepAttachment = (
 export const fullStepMap = (
   res: AllureTest,
   mapStep?: (m: StepResult) => any,
+  filterStep?: (m: StepResult) => boolean,
 ) => {
   const skipItems = ['generatereport', 'coverage'];
 
   return mapSteps(res.steps as StepResult[], mapStep, z =>
-    skipItems.every(y => z.name?.toLowerCase().indexOf(y) === -1),
+    skipItems.every(y => z.name?.toLowerCase().indexOf(y) === -1) && filterStep
+      ? filterStep(z)
+      : true,
   );
 };
 
@@ -458,17 +463,27 @@ export const createResTest2 = (
         attempt(retries);
       });
     };
+    const video = parseBoolean(envConfig?.video ?? `${true}`);
+    // todo fix video
+    console.log(`video:${video}`);
+    const config = commonConfig;
+
+    if (!video) {
+      config.video = false;
+    }
 
     return cy
       .run({
-        spec,
+        spec: spec as string,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
         port,
         browser: 'chrome',
-        trashAssetsBeforeRuns: true,
         env,
         quiet: `${process.env.QUIET}` === 'true',
-        video: parseBoolean(envConfig?.video ?? `${true}`),
+        config: {
+          ...config,
+          trashAssetsBeforeRuns: true,
+        },
       })
       .catch(e => {
         err = e as Error;
@@ -657,6 +672,7 @@ export type TestData = {
       testName: string;
       index?: number;
       mapStep?: (m: StepResult) => any;
+      filterStep?: (m: StepResult) => boolean;
       expected: any[];
     }[];
 
@@ -813,10 +829,14 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
           it(`steps for test ${testItem.testName} ${testItem.index ?? ''}`, () => {
             const tests = getTest(resFixed, testItem.testName);
 
-            const obj = fullStepMap(tests[testItem.index ?? 0]!, m => ({
-              name: m.name,
-              ...(testItem.mapStep?.(m) ?? {}),
-            }));
+            const obj = fullStepMap(
+              tests[testItem.index ?? 0]!,
+              m => ({
+                name: m.name,
+                ...(testItem.mapStep?.(m) ?? {}),
+              }),
+              testItem.filterStep,
+            );
 
             wrapError(() => expect(obj).toEqual(testItem.expected));
           });
