@@ -479,7 +479,7 @@ export const createResTest2 = (
         port,
         browser: 'chrome',
         env,
-        quiet: `${process.env.QUIET}` === 'true'
+        quiet: `${process.env.QUIET}` === 'true',
         video,
         // config: {
         //   ...config,
