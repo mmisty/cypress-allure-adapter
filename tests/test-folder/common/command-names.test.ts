@@ -5,39 +5,10 @@ import {
   CommandT,
   filterCommandLog,
   ignoreAllCommands,
-  isGherkin,
   stepMessage,
 } from '@src/common/command-names';
 
 describe('Command names unit tests', () => {
-  describe('isGherkin', () => {
-    its()
-      .each<{ name: string | undefined; expected: boolean }>([
-        { name: 'When', expected: true },
-        { name: 'Given', expected: true },
-        { name: 'Then', expected: true },
-        { name: 'And', expected: true },
-        { name: 'After', expected: true },
-        { name: 'Before', expected: true },
-        { name: 'here goes When', expected: false },
-        { name: 'here goes Given', expected: false },
-        { name: 'here goes Then', expected: false },
-        { name: 'here goes And', expected: false },
-        { name: 'here goes After', expected: false },
-        { name: 'here goes Before', expected: false },
-        { name: 'when he comes', expected: false },
-        { name: 'given he comes', expected: false },
-        { name: 'then he comes', expected: false },
-        { name: 'and he comes', expected: false },
-        { name: 'after he comes', expected: false },
-        { name: 'before he comes', expected: false },
-        { name: undefined, expected: false },
-      ])
-      .run(t => {
-        expect(isGherkin(t.name as any)).toEqual(t.expected);
-      });
-  });
-
   describe('ignoreAllCommands', () => {
     its()
       .each([

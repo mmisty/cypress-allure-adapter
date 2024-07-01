@@ -59,6 +59,17 @@ describe('assertions', () => {
     });
   });
 
+  it('test several fails', () => {
+    let i = 0;
+    cy.get('div').should(() => {
+      i++;
+
+      expect(i < 10 ? 1 : 0).eq(0);
+      expect(1, ' 1 should eq 1').eq(1);
+      expect(1, ' 1 should eq 2').eq(2);
+    });
+  });
+
   it('assertion: synchronous asserts', () => {
     expect(1).eq(1);
     expect(1, 'sync assert').eq(1);
@@ -139,6 +150,9 @@ describe('assertions', () => {
 
   it('assertion: should contain after some time', () => {
     cy.get('div').should('contain', 'Tropical Fruit').and('contain', 'Lichi');
+  });
+  it('assertion: should not contain after some time', () => {
+    cy.get('div').should('contain', 'Tropical Fruit').and('contain', 'Lichi').and('not.contain', 'Tropical');
   });
 
   it('assertion: url should', () => {
