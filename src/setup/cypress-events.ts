@@ -11,7 +11,6 @@ import {
   commandParams,
   filterCommandLog,
   ignoreAllCommands,
-  isGherkin,
   CyLog,
   stepMessage,
   stringify,
@@ -257,6 +256,11 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
+  // Cypress.on('log:change', (log: CyLog) => {
+  //   if ((log.end || log.ended) && log.groupEnd) {
+  //     Cypress.Allure.endStep();
+  //   }
+  // });
   Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
       return;
@@ -271,7 +275,21 @@ export const handleCyLogEvents = (
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
 
+      // console.log('log added');
       // console.log(log);
+
+      if (log.groupStart || log.groupEnd) {
+        if (log.groupStart) {
+          const msg = cmdMessage.replace(/\*\*/g, '');
+          Cypress.Allure.startStep(msg);
+        }
+
+        if (log.groupEnd) {
+          Cypress.Allure.endStep();
+        }
+
+        return;
+      }
 
       if (!chainerId && end) {
         // synchronous log without commands
@@ -288,18 +306,6 @@ export const handleCyLogEvents = (
         }
 
         Cypress.Allure.endStep(status);
-      }
-
-      if (isGherkin(logName)) {
-        if (gherkinLog.current) {
-          // gherkins step should be parent all the time
-          emit({ task: 'endAllSteps', arg: { status: Status.PASSED } });
-        }
-        const msg = cmdMessage.replace(/\*\*/g, '');
-        Cypress.Allure.startStep(msg);
-        gherkinLog.current = msg;
-
-        return;
       }
     });
   });

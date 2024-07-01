@@ -18,6 +18,8 @@ export type CyLog = {
   end?: boolean;
   ended?: boolean;
   state?: string;
+  groupStart?: boolean;
+  groupEnd?: boolean;
 };
 
 export type CommandT = {
@@ -35,10 +37,6 @@ export type CommandT = {
     prev?: CommandT;
     next?: CommandT;
   };
-};
-
-export const isGherkin = (logName: string): boolean => {
-  return logName ? ['When', 'Given', 'Then', 'And', 'After', 'Before'].some(t => logName.startsWith(t)) : false;
 };
 
 export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
