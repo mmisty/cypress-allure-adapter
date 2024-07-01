@@ -6,6 +6,7 @@ export const COMMAND_REQUEST = 'request';
 export type CommandLog = {
   attributes?: { name?: string; commandLogId?: string; consoleProps?: () => any; message?: string; error?: any };
 };
+
 export type LogEvent = {
   name?: string;
   commandLogId?: string;
@@ -18,6 +19,7 @@ export type LogEvent = {
   ended?: boolean;
   state?: string;
 };
+
 export type CommandT = {
   state?: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
