@@ -12,6 +12,7 @@ import {
   filterCommandLog,
   ignoreAllCommands,
   isGherkin,
+  CyLog,
   stepMessage,
   stringify,
   withTry,
@@ -22,6 +23,7 @@ const UNCAUGHT_EXCEPTION_NAME = 'uncaught exception';
 const UNCAUGHT_EXCEPTION_STATUS = 'broken' as Status;
 const failedStatus = 'failed' as Status;
 const passedStatus = 'passed' as Status;
+const brokenStatus = 'broken' as Status;
 
 type OneRequestConsoleProp = {
   'Request Body': unknown;
@@ -255,14 +257,38 @@ export const handleCyLogEvents = (
     gherkinLog.current = undefined;
   });
 
-  Cypress.on('log:added', log => {
+  Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
       return;
     }
 
     withTry('report log:added', () => {
-      const cmdMessage = stepMessage(log.name, log.message === 'null' ? '' : log.message);
-      const logName = log.name;
+      const logName = log.name ?? 'no-log-name';
+      const logMessage = log.message;
+      const chainerId = log.chainerId;
+      const end = log.end || log.ended;
+      const logState = log.state;
+
+      const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
+
+      // console.log(log);
+
+      if (!chainerId && end) {
+        // synchronous log without commands
+        Cypress.Allure.startStep(cmdMessage);
+
+        let status = passedStatus;
+
+        if (logName === 'WARNING') {
+          status = brokenStatus;
+        }
+
+        if (logState === 'failed') {
+          status = failedStatus;
+        }
+
+        Cypress.Allure.endStep(status);
+      }
 
       if (isGherkin(logName)) {
         if (gherkinLog.current) {
@@ -325,6 +351,10 @@ export const handleCyLogEvents = (
           // in other cases it will be marked as broken
           state = isCommandFailed ? failedStatus : UNCAUGHT_EXCEPTION_STATUS;
           details = { message: err?.message, trace: err?.stack };
+        }
+
+        if (logName === 'WARNING') {
+          state = brokenStatus;
         }
 
         Cypress.Allure.endStep(state, details);

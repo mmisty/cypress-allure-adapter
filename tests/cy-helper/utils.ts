@@ -298,12 +298,22 @@ export const fullStepAttachment = (
 export const fullStepMap = (
   res: AllureTest,
   mapStep?: (m: StepResult) => any,
+  filterStep?: (m: StepResult) => boolean,
 ) => {
   const skipItems = ['generatereport', 'coverage'];
 
-  return mapSteps(res.steps as StepResult[], mapStep, z =>
-    skipItems.every(y => z.name?.toLowerCase().indexOf(y) === -1),
-  );
+  return mapSteps(res.steps as StepResult[], mapStep, z => {
+    const includesNoSkippedSteps = skipItems.every(
+      y => z.name?.toLowerCase().indexOf(y) === -1,
+    );
+    const isFiltered = filterStep?.(z);
+
+    if (isFiltered === undefined) {
+      return includesNoSkippedSteps;
+    }
+
+    return includesNoSkippedSteps && isFiltered;
+  });
 };
 
 // eslint-disable-next-line jest/no-export
@@ -458,17 +468,23 @@ export const createResTest2 = (
         attempt(retries);
       });
     };
+    const video = parseBoolean(envConfig?.video ?? `${true}`);
+    // todo fix video
+    console.log(`video:${video}`);
 
     return cy
       .run({
-        spec,
+        spec: spec as string,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
         port,
         browser: 'chrome',
-        trashAssetsBeforeRuns: true,
         env,
         quiet: `${process.env.QUIET}` === 'true',
-        video: parseBoolean(envConfig?.video ?? `${true}`),
+        video,
+        // config: {
+        //   ...config,
+        //   trashAssetsBeforeRuns: true,
+        // },
       })
       .catch(e => {
         err = e as Error;
@@ -582,17 +598,17 @@ export const covergeAfterAll = [
     start: 1323475200000,
     status: 'passed',
     steps: [
-      // {
-      //   attachments: [],
-      //   name: 'Coverage: Generating report [@cypress/code-coverage]',
-      //   parameters: [],
-      //   stage: 'finished',
-      //   start: 1323475200000,
-      //   status: 'passed',
-      //   statusDetails: {},
-      //   steps: [],
-      //   stop: 1323475200011,
-      // },
+      {
+        attachments: [],
+        name: 'Coverage: Generating report [@cypress/code-coverage]',
+        parameters: [],
+        stage: 'finished',
+        start: 1323475200000,
+        status: 'passed',
+        statusDetails: {},
+        steps: [],
+        stop: 1323475200011,
+      },
     ],
     stop: 1323475200010,
   },
@@ -607,17 +623,17 @@ export const covergeBeforeAll = [
     start: 1323475200000,
     status: 'passed',
     steps: [
-      // {
-      //   attachments: [],
-      //   name: 'Coverage: Reset [@cypress/code-coverage]',
-      //   parameters: [],
-      //   stage: 'finished',
-      //   start: 1323475200000,
-      //   status: 'passed',
-      //   statusDetails: {},
-      //   steps: [],
-      //   stop: 1323475200011,
-      // },
+      {
+        attachments: [],
+        name: 'Coverage: Reset [@cypress/code-coverage]',
+        parameters: [],
+        stage: 'finished',
+        start: 1323475200000,
+        status: 'passed',
+        statusDetails: {},
+        steps: [],
+        stop: 1323475200011,
+      },
     ],
     stop: 1323475200010,
   },
@@ -657,6 +673,7 @@ export type TestData = {
       testName: string;
       index?: number;
       mapStep?: (m: StepResult) => any;
+      filterStep?: (m: StepResult) => boolean;
       expected: any[];
     }[];
 
@@ -813,10 +830,14 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
           it(`steps for test ${testItem.testName} ${testItem.index ?? ''}`, () => {
             const tests = getTest(resFixed, testItem.testName);
 
-            const obj = fullStepMap(tests[testItem.index ?? 0]!, m => ({
-              name: m.name,
-              ...(testItem.mapStep?.(m) ?? {}),
-            }));
+            const obj = fullStepMap(
+              tests[testItem.index ?? 0]!,
+              m => ({
+                name: m.name,
+                ...(testItem.mapStep?.(m) ?? {}),
+              }),
+              testItem.filterStep,
+            );
 
             wrapError(() => expect(obj).toEqual(testItem.expected));
           });
