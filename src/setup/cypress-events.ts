@@ -2,7 +2,7 @@ import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
 import { baseUrlFromUrl, swapItems } from '../common';
-import type { CommandLog, CommandT } from '../common/command-names';
+import type { CommandT } from '../common/command-names';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
 import {
