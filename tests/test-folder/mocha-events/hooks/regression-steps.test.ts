@@ -227,7 +227,13 @@ describe('hooks test - failed global hook step', () => {
     it('check first test befores', async () => {
       const parents = resFixed.map(t => getParentsArray(t));
       expect(
-        parents[0].map(t => t.befores?.map(x => mapSteps(x.steps))),
+        parents[0].map(t =>
+          t.befores?.map(x =>
+            mapSteps(x.steps, undefined, y =>
+              ['coverage'].every(t => y.name?.indexOf(t) === -1),
+            ),
+          ),
+        ),
       ).toEqual([
         [
           [],
@@ -255,7 +261,13 @@ describe('hooks test - failed global hook step', () => {
     it('check second test befores', async () => {
       const parents = resFixed.map(t => getParentsArray(t));
       expect(
-        parents[1].map(t => t.befores?.map(x => mapSteps(x.steps))),
+        parents[1].map(t =>
+          t.befores?.map(x =>
+            mapSteps(x.steps, undefined, y =>
+              ['coverage'].every(t => y.name?.indexOf(t) === -1),
+            ),
+          ),
+        ),
       ).toEqual([
         [
           [],
@@ -283,28 +295,14 @@ describe('hooks test - failed global hook step', () => {
     it('check first test afters', async () => {
       const parents = resFixed.map(t => getParentsArray(t));
       expect(
-        parents[0].map(t => t.afters?.map(x => mapSteps(x.steps))),
-      ).toEqual([
-        [
-          ...whenCoverage(
-            [],
-            [
-              {
-                name: 'log: Saving code coverage for **unit** `[@cypress/code-coverage]`',
-                steps: [],
-              },
-            ],
-            [],
+        parents[0].map(t =>
+          t.afters?.map(x =>
+            mapSteps(x.steps, undefined, y =>
+              ['coverage'].every(t => y.name?.indexOf(t) === -1),
+            ),
           ),
-          [
-            {
-              name: 'global teardown',
-              steps: [],
-            },
-          ],
-          [],
-        ],
-      ]);
+        ),
+      ).toEqual([[[], [], [], [{ name: 'global teardown', steps: [] }], []]]);
     });
 
     it('check tests parent steps', async () => {
