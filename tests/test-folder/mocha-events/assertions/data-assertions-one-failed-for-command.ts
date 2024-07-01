@@ -13,7 +13,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
   ${visitHtmlCode}
   
   it('test 1', () => {
-    cy.get('div').should('contain', 'NonExistent');
+    cy.get('[data-test-id="item"]').should('contain', 'NonExistent');
   });
 });
     `,
@@ -28,7 +28,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
         status: 'failed',
         statusDetails: {
           message: [
-            "Timed out retrying after 300ms: expected '[ <div>, 18 more... ]' to contain 'NonExistent'",
+            "Timed out retrying after 300ms: expected '[ <div>, 4 more... ]' to contain 'NonExistent'",
           ],
         },
       },
@@ -71,7 +71,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
             steps: [
               {
                 attachments: [],
-                name: 'assert: expected **[ <div>, 18 more... ]** to contain **NonExistent**',
+                name: 'assert: expected **[ <div>, 4 more... ]** to contain **NonExistent**',
                 status: 'failed',
                 statusDetails: {},
                 steps: [],
