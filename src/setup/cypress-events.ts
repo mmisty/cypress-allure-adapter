@@ -242,12 +242,6 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
-  const gherkinLog: { current: string | undefined } = { current: undefined };
-
-  Cypress.Allure.on('test:started', () => {
-    gherkinLog.current = undefined;
-  });
-
   Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
       return;
