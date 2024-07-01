@@ -302,12 +302,12 @@ export const handleCyLogEvents = (
         const logMessage = stepMessage(logName, message === 'null' ? '' : message);
         const consoleProps = attr?.consoleProps?.();
 
-        console.log('logName');
-        console.log(logName);
-        console.log('attr');
-        console.log(attr);
-        console.log('consoleProps');
-        console.log(consoleProps);
+        // console.log('logName');
+        // console.log(logName);
+        // console.log('attr');
+        // console.log(attr);
+        // console.log('consoleProps');
+        // console.log(consoleProps);
 
         Cypress.Allure.startStep(logMessage);
 
