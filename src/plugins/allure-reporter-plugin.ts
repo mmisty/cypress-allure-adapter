@@ -998,22 +998,12 @@ export class AllureReporter {
     this.testDetailsStored = undefined;
     this.labels = [];
 
-    const waitResultWritten = (results: string, file: string) => {
-      const started = Date.now();
-
-      while (!(Date.now() - started > 10000 || existsSync(file))) {
-        // do sync
-      }
-
-      if (!existsSync(file)) {
-        console.error(`${packageLog} Result file doesn't exist: ${file}`);
-      }
-    };
     const testFile = `${this.allureResults}/${uid}-result.json`;
 
-    waitResultWritten(this.allureResults, testFile);
+    if (!existsSync(testFile)) {
+      console.error(`${packageLog} Result file doesn't exist: ${testFile}`);
+    }
 
-    // move to watch
     log('testEnded: will move result to watch folder');
     copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
   }
