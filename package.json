@@ -57,6 +57,7 @@
     "prepublishOnly": "{ echo \"Run script 'npm run publish:pack', 'npm run publish:minor', etc from package.json\n\"; exit 1; }",
     "publishPack": "npm run pack && cd lib && npm publish --tag $TAG",
     "publish:alpha": "export TAG=alpha && export ver=$(semver $(npm show . version --tag alpha || npm show . version) --increment -i prerelease  --preid 'alpha') && npm run publishPack && npm run postpublish",
+    "publish:beta": "export TAG=beta && export ver=$(semver $(npm show . version --tag beta || npm show . version) --increment -i prerelease  --preid 'beta') && npm run publishPack && npm run postpublish && npm deprecate -f \"@mmisty/cypress-allure-adapter@$ver\" \"this package version has been deprecated\"",
     "publish:alpha:init": "export TAG=alpha && export ver=$(semver $(npm show . version) --increment -i prerelease  --preid 'alpha') && npm run publishPack && npm run postpublish",
     "publish:patch": "export TAG=latest && export ver=$(semver $(npm show . version) --increment -i patch) && npm run publishPack && npm run postpublish",
     "publish:minor": "export TAG=latest && export ver=$(semver $(npm show . version) --increment -i minor) && npm run publishPack && npm run postpublish",
