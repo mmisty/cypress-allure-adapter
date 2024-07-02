@@ -1,4 +1,26 @@
 ## Change Log
+### 2.3.0
+* [minor] support log groups by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/165
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.2.2...v2.3.0
+
+### 2.2.2
+* [patch] fixed synchronous logs addition plus added tests for assertions by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/164
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.2.1...v2.2.2
+
+### 2.2.1
+* [tech] Bump webpack from 5.92.0 to 5.92.1 by @dependabot in https://github.com/mmisty/cypress-allure-adapter/pull/158
+* [patch] fix steps statuses when several assertions for one command by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/163
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.2.0...v2.2.1
+
+### 2.2.0
+* do not throw within test events by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/155
+* [minor] mark parent step as broken when children have errors and uncaught exception support by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/157
+
+> **Full Changelog**: https://github.com/mmisty/cypress-allure-adapter/compare/v2.1.0...v2.2.0
+
 ### 2.1.0
 * [tech] Added test for issue 119 and 152 by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/153
 * [minor] Tests refactoring and fix tests creation for failure in afterEach hook by @mmisty in https://github.com/mmisty/cypress-allure-adapter/pull/154 (fixes issue #71 )
