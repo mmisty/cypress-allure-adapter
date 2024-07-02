@@ -116,6 +116,6 @@ jobs:
           
           echo "publishing beta, for other commit message should contain [minor], [major] or [patch]/[fix]"
           npm run publish:beta || true
-          git push --tags || true
+          # git push --tags || true
 
 
