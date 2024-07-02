@@ -508,16 +508,6 @@ export const createResTest2 = (
       });
   });
 
-  afterEach(() => {
-    // to investigate issue with missing
-    if (specs?.some(p => existsSync(p))) {
-      specs.forEach(s => {
-        const content = readFileSync(s);
-        console.log(content.toString());
-      });
-    }
-  });
-
   return {
     watch: env.allureResultsWatchPath ?? storeResDir,
     specs: specs,
