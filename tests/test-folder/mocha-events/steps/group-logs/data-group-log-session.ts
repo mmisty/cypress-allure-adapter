@@ -9,6 +9,9 @@ const data: TestData = {
   fileName: __filename,
   spec: `
 describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
+  before(()=> {
+    Cypress.session.clearAllSavedSessions();
+  })
   it('test 1 - pass - create session', () => {
     cy.session('user', () => {
       cy.log('1');
@@ -28,7 +31,10 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
     `,
 
   expect: {
-    testsNames: [`${rootSuite} test 1 - pass - create session`, `${rootSuite} test 2 - pass - restore session`],
+    testsNames: [
+      `${rootSuite} test 1 - pass - create session`,
+      `${rootSuite} test 2 - pass - restore session`,
+    ],
 
     testStatuses: [
       {
