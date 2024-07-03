@@ -9,18 +9,15 @@ const data: TestData = {
   fileName: __filename,
   spec: `
 describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
-
+  
   it('test 1 - create new and restore', () => {
     Cypress.session.clearAllSavedSessions();
-    cy.session('user', () => {
+    cy.session('user123', () => {
       cy.log('1');
       cy.setCookie('A', 'AAA');
     });
 
-    cy.session('user', () => {
-      cy.log('1');
-      cy.setCookie('A', 'AAA');
-    });
+    // tod restore
 
     cy.log('next step 2');
   });
@@ -57,13 +54,13 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
         expected: [
           {
             attachments: [],
-            name: 'session: user',
+            name: 'session: user123',
             status: 'passed',
             statusDetails: {},
             steps: [
               {
                 attachments: [],
-                name: 'session: user',
+                name: 'session: user123',
                 status: 'passed',
                 statusDetails: {},
                 steps: [],
@@ -113,49 +110,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
               },
             ],
           },
-          {
-            attachments: [],
-            name: 'session: user',
-            status: 'passed',
-            statusDetails: {},
-            steps: [
-              {
-                attachments: [],
-                name: 'session: user',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
-              {
-                attachments: [],
-                name: 'Clear page',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
-              {
-                attachments: [],
-                name: 'Clear cookies, localStorage and sessionStorage',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
-              {
-                attachments: [],
-                name: 'Restore saved session',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
-              {
-                attachments: [],
-                name: 'Clear page',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
-            ],
-          },
+
           {
             attachments: [],
             name: 'log: next step 2',
