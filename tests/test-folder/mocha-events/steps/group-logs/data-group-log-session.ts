@@ -9,44 +9,30 @@ const data: TestData = {
   fileName: __filename,
   spec: `
 describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
-  before(()=> {
-    Cypress.session.clearAllSavedSessions();
-  })
-  it('test 1 - pass - create session', () => {
-    cy.session('user', () => {
-      cy.log('1');
-      cy.setCookie('A', 'AAA');
-    });
-    cy.log('next step');
-  });
 
-  it('test 2 - pass - restore session', () => {
+  it('test 1 - create new and restore', () => {
+    Cypress.session.clearAllSavedSessions();
     cy.session('user', () => {
       cy.log('1');
       cy.setCookie('A', 'AAA');
     });
+
+    cy.session('user', () => {
+      cy.log('1');
+      cy.setCookie('A', 'AAA');
+    });
+
     cy.log('next step 2');
   });
 });
     `,
 
   expect: {
-    testsNames: [
-      `${rootSuite} test 1 - pass - create session`,
-      `${rootSuite} test 2 - pass - restore session`,
-    ],
+    testsNames: [`${rootSuite} test 1 - create new and restore`],
 
     testStatuses: [
       {
-        testName: 'test 1 - pass - create session',
-        index: 0,
-        status: 'passed',
-        statusDetails: {
-          message: undefined,
-        },
-      },
-      {
-        testName: 'test 2 - pass - restore session',
+        testName: 'test 1 - create new and restore',
         index: 0,
         status: 'passed',
         statusDetails: {
@@ -57,7 +43,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
 
     testSteps: [
       {
-        testName: 'test 1 - pass - create session',
+        testName: 'test 1 - create new and restore',
         index: 0,
         mapStep: m => ({
           status: m.status,
@@ -127,29 +113,6 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
               },
             ],
           },
-          {
-            attachments: [],
-            name: 'log: next step',
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
-          },
-        ],
-      },
-
-      {
-        testName: 'test 2 - pass - restore session',
-        index: 0,
-        mapStep: m => ({
-          status: m.status,
-          attachments: m.attachments,
-          statusDetails: m.statusDetails,
-        }),
-        filterStep: m =>
-          ['before each', 'after each'].every(
-            x => m.name && m.name.indexOf(x) === -1,
-          ),
-        expected: [
           {
             attachments: [],
             name: 'session: user',
