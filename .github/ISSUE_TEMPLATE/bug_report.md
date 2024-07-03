@@ -39,6 +39,7 @@ If applicable, add screenshots to help explain your problem.
  - `cypress.env.json` (if any) 
  
 **Workaround**
+
 Does the issue have workaround? [ yes / no ]
 
 If yes, please describe how to avoid the issue.
