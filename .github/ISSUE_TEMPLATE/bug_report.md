@@ -32,6 +32,7 @@ If applicable, add screenshots to help explain your problem.
  - OS: [e.g. iOS]
 
 **Attachments**
+ - test or spec file where the issue occurs
  - setup file [`e2e.js` / `e2e.ts`/ `setup/index.ts`, `setup/index.js`]
  - plugins file [`cypress.config.js` / `cypress.config.ts` /  `plugins/index.ts`/`plugins/index.js`]
  - `package.json`
