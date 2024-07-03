@@ -29,7 +29,7 @@ import {
   StatusType,
   UNKNOWN,
 } from './allure-types';
-import { extname, packageLog } from '../common';
+import { extname, logWithPackage } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
@@ -51,7 +51,7 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
     try {
       return JSON.parse(existingContents.toString());
     } catch (e) {
-      console.error(`${packageLog} Could not parse the contents of attachment ${nameAttAhc}`);
+      logWithPackage('error', `Could not parse the contents of attachment ${nameAttAhc}`);
 
       return {};
     }
@@ -555,7 +555,7 @@ export class AllureReporter {
 
           writeFileSync(testFile, JSON.stringify(testCon));
         } catch (e) {
-          console.log(`${packageLog} Could not attach screenshot ${afterSpecRes.screenshotId ?? afterSpecRes.path}`);
+          logWithPackage('error', `Could not attach screenshot ${afterSpecRes.screenshotId ?? afterSpecRes.path}`);
         }
       });
     });
@@ -601,7 +601,7 @@ export class AllureReporter {
       }
 
       if (!existsSync(file)) {
-        console.log(`${packageLog} file ${file} doesnt exist`);
+        logWithPackage('log', `file ${file} doesnt exist`);
 
         return;
       }
@@ -617,7 +617,9 @@ export class AllureReporter {
         log(`All tasks completed (${allTasks.length})`);
       })
       .catch(err => {
-        console.error(`${packageLog} Some of tasks (${allTasks.length}) failed:`, err);
+        logWithPackage('error', `Some of tasks (${allTasks.length}) failed:`);
+        // eslint-disable-next-line no-console
+        console.log(err);
       });
 
     log('All files / video copying tasks finished!');
@@ -652,7 +654,7 @@ export class AllureReporter {
     try {
       readFileSync(videoPath);
     } catch (errVideo) {
-      console.error(`${packageLog} Could not read video: ${errVideo}`);
+      logWithPackage('error', `Could not read video: ${errVideo}`);
 
       return;
     }
@@ -660,7 +662,7 @@ export class AllureReporter {
     allTasks.push(
       ...testsAttach.map(test => {
         if (!test.parent) {
-          console.error(`${packageLog} not writing videos since test has no parent suite: ${test.fullName}`);
+          logWithPackage('error', `not writing videos since test has no parent suite: ${test.fullName}`);
 
           return Promise.resolve();
         }
@@ -838,7 +840,7 @@ export class AllureReporter {
       `test full title:  ${fullTitle}`;
 
     if (duplicates.length > 0 && currentRetry === 0 && this.showDuplicateWarn) {
-      console.warn(`${packageLog} ${warn}`);
+      logWithPackage('warn', warn);
     }
 
     if (!this.currentGroup) {
@@ -1001,7 +1003,7 @@ export class AllureReporter {
     const testFile = `${this.allureResults}/${uid}-result.json`;
 
     if (!existsSync(testFile)) {
-      console.error(`${packageLog} Result file doesn't exist: ${testFile}`);
+      logWithPackage('error', ` Result file doesn't exist: ${testFile}`);
     }
 
     log('testEnded: will move result to watch folder');
@@ -1132,7 +1134,7 @@ export class AllureReporter {
     }
 
     if (!existsSync(arg.file)) {
-      console.log(`${packageLog} Attaching file: file ${arg.file} doesnt exist`);
+      logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
 
       return;
     }
@@ -1156,7 +1158,7 @@ export class AllureReporter {
         this.setAttached(arg.file);
       }
     } catch (err) {
-      console.error(`${packageLog} Could not attach ${arg.file}`);
+      logWithPackage('error', `Could not attach ${arg.file}`);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { packageLog } from './';
+import { logWithPackage } from './';
 
 export const ARGS_TRIM_AT = 200;
 export const COMMAND_REQUEST = 'request';
@@ -53,7 +53,7 @@ export type CommandT = {
 };
 
 export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
-  const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand']
+  const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand', 'end-logGroup']
     .filter(t => t.trim() !== '')
     .map(x => new RegExp(`^${x.replace(/\*/g, '.*')}$`));
 
@@ -88,7 +88,7 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);
       const isLogMsgEqCommandName = logMessage === cmdAttrs?.name;
       const isGroupStart = !!attr?.groupStart;
-      const isGroupEnd = attr?.groupEnd;
+      const isGroupEnd = !!attr?.groupEnd;
       const isEmitOnly = attr?.emitOnly;
 
       const noLogConditions = [
@@ -100,11 +100,15 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
         ignoredLog,
         isLogMsgEqCommandName,
       ];
+      const logCondition = isGroupEnd && isEmitOnly;
+      const result = noLogConditions.every(c => !c) || logCondition;
 
       // console.log(noLogConditions);
+      // console.log(`logCondition: ${logCondition}`);
+      // console.log(`result: ${result}`);
       // console.log('----');
 
-      return noLogConditions.every(c => !c) || (isGroupEnd && isEmitOnly);
+      return result;
     }) ?? []
   );
 };
@@ -114,7 +118,8 @@ export const withTry = (message: string, callback: () => void) => {
     callback();
   } catch (err) {
     const e = err as Error;
-    console.error(`${packageLog} could do '${message}': ${e.message}`);
+    logWithPackage('error', `could do '${message}': ${e.message}`);
+    // eslint-disable-next-line no-console
     console.error(e.stack);
   }
 };
@@ -208,7 +213,7 @@ const convertEmptyObj = (obj: Record<string, unknown>, isJSON: boolean, indent?:
 };
 
 export const commandParams = (command: CommandT) => {
-  const name = command.attributes?.name ?? 'no name';
+  const name = logNameFn(command.attributes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const commandArgs = command.attributes?.args as any;
   const state = command.state ?? 'passed';

@@ -2,7 +2,7 @@ import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { packageLog } from '../common';
+import { logWithPackage } from '../common';
 import { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
@@ -153,7 +153,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       try {
         writeFileSync(`${allureResults}/executor.json`, JSON.stringify(arg.info));
       } catch (err) {
-        console.error(`${packageLog} Could not write executor info`);
+        logWithPackage('error', `Could not write executor info ${(err as Error).message}`);
       }
     },
 
@@ -167,7 +167,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
           const file = arg.categories;
 
           if (!existsSync(file)) {
-            console.error(`${packageLog} Categories file doesn't exist '${file}'`);
+            logWithPackage('error', `Categories file doesn't exist '${file}'`);
 
             return undefined;
           }
@@ -183,7 +183,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
         writeFileSync(`${allureResults}/categories.json`, contents);
       } catch (err) {
-        console.error(`${packageLog} Could not write categories definitions info`);
+        logWithPackage('error', 'Could not write categories definitions info');
       }
     },
 
@@ -363,14 +363,17 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
         allureReporter.attachVideoToContainers({ path: video ?? '' });
       } else {
-        console.error(`${packageLog} No video path in afterSpec result`);
+        logWithPackage('error', 'No video path in afterSpec result');
       }
 
       // attach missing screenshots
       try {
         allureReporter.attachScreenshots(arg.results);
       } catch (err) {
-        console.log(`Could not attach screenshots to spec: ${arg.results.spec.relative}:\n${(err as Error).message}`);
+        logWithPackage(
+          'error',
+          `Could not attach screenshots to spec: ${arg.results.spec.relative}:\n${(err as Error).message}`,
+        );
       }
 
       await allureReporter.waitAllTasksToFinish();

@@ -1,7 +1,7 @@
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { RawData, WebSocketServer } from 'ws';
 import net from 'net';
-import { ENV_WS, packageLog, wsPath } from '../common';
+import { ENV_WS, logWithPackage, wsPath } from '../common';
 import Debug from 'debug';
 import { AllureTasks, RequestTask } from '../plugins/allure-types';
 
@@ -77,7 +77,7 @@ function retrieveRandomPortNumber(): number {
     port = getRandomPort();
   }
 
-  console.log(`${packageLog} could not find free port, will not report`);
+  logWithPackage('error', 'could not find free port, will not report');
 
   return port;
 }
@@ -131,7 +131,7 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
     });
 
     ws.onerror = function () {
-      console.log(`${packageLog} websocket error`);
+      logWithPackage('error', 'websocket error');
     };
   });
 };
@@ -142,7 +142,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
   let sockserver: WebSocketServer | undefined = new WebSocketServer({ port: wsPort, path: wsPath }, () => {
     configOptions.env[ENV_WS] = wsPort;
     const attemptMessage = attempt > 0 ? ` from ${attempt} attempt` : '';
-    console.log(`${packageLog} running on ${wsPort} port${attemptMessage}`);
+    logWithPackage('log', `running on ${wsPort} port${attemptMessage}`);
     socketLogic(sockserver, tasks);
   });
 
@@ -153,13 +153,13 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
           sockserver = startReporterServer(configOptions, tasks, attempt + 1);
         });
       } else {
-        console.error(`${packageLog} Could not find free port, will not report: ${err.message}`);
+        logWithPackage('error', `Could not find free port, will not report: ${err.message}`);
       }
 
       return;
     }
 
-    console.error(`${packageLog} Error on ws server: ${(err as Error).message}`);
+    logWithPackage('error', `Error on ws server: ${(err as Error).message}`);
   });
 
   return sockserver;
@@ -184,7 +184,9 @@ const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boole
       log(`No such task: ${data.task}`);
     }
   } catch (err) {
-    console.error(`${packageLog} Error running task: '${data.task}': ${(err as Error).message}`);
+    logWithPackage('error', `Error running task: '${data.task}': ${(err as Error).message}`);
+
+    // eslint-disable-next-line no-console
     console.log((err as Error).stack);
   }
 

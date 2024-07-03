@@ -3,7 +3,7 @@ import { copyFile, writeFile } from 'fs/promises';
 import Debug from 'debug';
 import { Attachment } from 'allure-js-commons';
 import { basename, dirname } from 'path';
-import { packageLog } from '../common';
+import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:fs-tools');
 
@@ -40,7 +40,7 @@ export const copyFileCp = (from: string, to: string, isRemoveSource: boolean) =>
       }
     })
     .catch(err => {
-      console.error(`${packageLog} Failed to copy ${from} to ${to}: ${err}`);
+      logWithPackage('error', `Failed to copy ${from} to ${to}: ${err}`);
     });
 };
 

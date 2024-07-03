@@ -1,6 +1,6 @@
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { baseUrlFromUrl, swapItems } from '../common';
+import { baseUrlFromUrl, logWithPackage, swapItems } from '../common';
 import type { CommandT } from '../common/command-names';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
@@ -141,7 +141,7 @@ export const handleCyLogEvents = (
     ? Cypress.env('allureCompactAttachments') === 'true' || Cypress.env('allureCompactAttachments') === true
     : true;
 
-  const isEndLogCommand = (name: string) => {
+  const isEndLogCommand = (name?: string) => {
     return name === 'end-logGroup';
   };
 
@@ -236,7 +236,7 @@ export const handleCyLogEvents = (
     let commadsFixed = commands;
 
     if (!commands?.every(c => c.startsWith('!')) || !commands?.every(c => !c.startsWith('!'))) {
-      console.warn('wrapCustomCommands env var - should either all start from "!" or not');
+      logWithPackage('warn', 'wrapCustomCommands environment variable - should either all start from "!" or not');
     }
 
     if (commands?.every(c => c.startsWith('!'))) {
@@ -260,9 +260,6 @@ export const handleCyLogEvents = (
       const logState = log.state;
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
-
-      // console.log('log added');
-      // console.log(log);
 
       if (log.groupStart || log.groupEnd) {
         if (log.groupStart) {
@@ -299,6 +296,10 @@ export const handleCyLogEvents = (
   const addCommandLogs = (command: CommandT) => {
     if (!allureLogCyCommands()) {
       return;
+    }
+
+    if (isEndLogCommand(command.attributes?.name)) {
+      Cypress.Allure.endStep();
     }
 
     filterCommandLog(command, ignoreCommands)
@@ -393,7 +394,7 @@ export const handleCyLogEvents = (
   Cypress.Allure.on('cmd:started', (command: CommandT) => {
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
 
-    if (!isLogCommand(isLog, name) || !allureLogCyCommands() || isEndLogCommand(name)) {
+    if (!isLogCommand(isLog, name) || !allureLogCyCommands()) {
       return;
     }
 
@@ -429,7 +430,7 @@ export const handleCyLogEvents = (
     const { name, isLog, state, message: cmdMessage } = commandParams(command);
     const status = state as Status;
 
-    if (!isLogCommand(isLog, name) || isEndLogCommand(name)) {
+    if (!isLogCommand(isLog, name)) {
       return;
     }
 

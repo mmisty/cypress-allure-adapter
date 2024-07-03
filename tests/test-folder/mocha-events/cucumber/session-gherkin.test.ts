@@ -109,28 +109,28 @@ Feature: test cucumber
                       status: 'passed',
                       steps: [],
                     },
-                    {
-                      duration: false,
-                      name: 'Clear page',
-                      status: 'passed',
-                      steps: [],
-                    },
                   ],
                 },
-              ],
-            },
-            {
-              duration: true,
-              name: 'Then : I should see a search bar "hello"',
-              status: 'passed',
-              steps: [
                 {
-                  duration: true,
-                  name: 'log: hello',
+                  duration: false,
+                  name: 'Clear page',
                   status: 'passed',
                   steps: [],
                 },
               ],
+            },
+          ],
+        },
+        {
+          duration: true,
+          name: 'Then : I should see a search bar "hello"',
+          status: 'passed',
+          steps: [
+            {
+              duration: true,
+              name: 'log: hello',
+              status: 'passed',
+              steps: [],
             },
           ],
         },
