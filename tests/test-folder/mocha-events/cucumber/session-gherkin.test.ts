@@ -43,7 +43,6 @@ Feature: test cucumber
       const steps = mapSteps(test!.steps, t => ({
         name: t.name,
         status: t.status,
-        duration: t.stop && t.start && t.stop - t.start > 0,
       })).filter(
         t =>
           t.name.indexOf('before each') === -1 &&
@@ -52,12 +51,10 @@ Feature: test cucumber
 
       expect(steps).toEqual([
         {
-          duration: true,
           name: 'Given : I visit site',
           status: 'passed',
           steps: [
             {
-              duration: true,
               name: 'log: visit site',
               status: 'passed',
               steps: [],
@@ -65,46 +62,38 @@ Feature: test cucumber
           ],
         },
         {
-          duration: true,
           name: 'Given : I login with session',
           status: 'passed',
           steps: [
             {
-              duration: true,
               name: 'session: user',
               status: 'passed',
               steps: [
                 {
-                  duration: false,
                   name: 'session: user',
                   status: 'passed',
                   steps: [],
                 },
                 {
-                  duration: true,
                   name: 'Create new session',
                   status: 'passed',
                   steps: [
                     {
-                      duration: false,
                       name: 'Clear page',
                       status: 'passed',
                       steps: [],
                     },
                     {
-                      duration: false,
                       name: 'Clear cookies, localStorage and sessionStorage',
                       status: 'passed',
                       steps: [],
                     },
                     {
-                      duration: true,
                       name: 'log: 1',
                       status: 'passed',
                       steps: [],
                     },
                     {
-                      duration: true,
                       name: 'setCookie: A, AAA',
                       status: 'passed',
                       steps: [],
@@ -112,7 +101,6 @@ Feature: test cucumber
                   ],
                 },
                 {
-                  duration: false,
                   name: 'Clear page',
                   status: 'passed',
                   steps: [],
@@ -122,12 +110,10 @@ Feature: test cucumber
           ],
         },
         {
-          duration: true,
           name: 'Then : I should see a search bar "hello"',
           status: 'passed',
           steps: [
             {
-              duration: true,
               name: 'log: hello',
               status: 'passed',
               steps: [],
