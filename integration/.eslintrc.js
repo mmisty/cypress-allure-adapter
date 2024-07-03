@@ -5,6 +5,7 @@ module.exports = {
   ...orig,
   rules: {
     ...orig.rules,
+    'no-console': 'off',
     'no-restricted-imports': [
       'error',
       {

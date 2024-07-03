@@ -1,4 +1,4 @@
-import { packageLog } from './';
+import { logWithPackage } from './';
 
 export const ARGS_TRIM_AT = 200;
 export const COMMAND_REQUEST = 'request';
@@ -6,17 +6,20 @@ export const COMMAND_REQUEST = 'request';
 export type CommandLog = {
   attributes?: {
     name?: string;
+    displayName?: string;
     commandLogId?: string;
     consoleProps?: () => any;
     message?: string;
     error?: any;
     groupStart?: boolean;
     groupEnd?: boolean;
+    emitOnly?: boolean;
   };
 };
 
 export type CyLog = {
   name?: string;
+  displayName?: string;
   commandLogId?: string;
   consoleProps?: () => any;
   message?: string;
@@ -26,8 +29,10 @@ export type CyLog = {
   end?: boolean;
   ended?: boolean;
   state?: string;
+  groupLevel?: number;
   groupStart?: boolean;
   groupEnd?: boolean;
+  emitOnly?: boolean;
 };
 
 export type CommandT = {
@@ -48,7 +53,7 @@ export type CommandT = {
 };
 
 export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
-  const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand']
+  const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand', 'end-logGroup']
     .filter(t => t.trim() !== '')
     .map(x => new RegExp(`^${x.replace(/\*/g, '.*')}$`));
 
@@ -59,6 +64,8 @@ export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
   };
 };
 
+export const logNameFn = (attribute: any) => attribute?.displayName ?? attribute?.name ?? 'no-log';
+
 export const filterCommandLog = (command: CommandT, ignoreCommands: () => string[]): CommandLog[] => {
   const cmdAttrs = command?.attributes;
   const cmdLogs = cmdAttrs?.logs ?? [];
@@ -66,7 +73,7 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
   return (
     cmdLogs.filter(log => {
       const attr = log.attributes;
-      const logName = attr?.name ?? '';
+      const logName = logNameFn(attr);
       const logMessageAttr = attr?.message ?? '';
 
       const cmdMsg = commandParams(command)?.message ?? '';
@@ -80,13 +87,28 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       const isIts = /its:\s*\..*/.test(logMessage); // its already logged as command
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);
       const isLogMsgEqCommandName = logMessage === cmdAttrs?.name;
-      const isGroupStartOrEnd = attr?.groupStart || attr?.groupEnd;
-      const noLogConditions = [isGroupStartOrEnd, equalMessages, isRequest, isIts, ignoredLog, isLogMsgEqCommandName];
+      const isGroupStart = !!attr?.groupStart;
+      const isGroupEnd = !!attr?.groupEnd;
+      const isEmitOnly = attr?.emitOnly;
+
+      const noLogConditions = [
+        isGroupStart,
+        isGroupEnd,
+        equalMessages,
+        isRequest,
+        isIts,
+        ignoredLog,
+        isLogMsgEqCommandName,
+      ];
+      const logCondition = isGroupEnd && isEmitOnly;
+      const result = noLogConditions.every(c => !c) || logCondition;
 
       // console.log(noLogConditions);
+      // console.log(`logCondition: ${logCondition}`);
+      // console.log(`result: ${result}`);
       // console.log('----');
 
-      return noLogConditions.every(c => !c);
+      return result;
     }) ?? []
   );
 };
@@ -96,7 +118,8 @@ export const withTry = (message: string, callback: () => void) => {
     callback();
   } catch (err) {
     const e = err as Error;
-    console.error(`${packageLog} could do '${message}': ${e.message}`);
+    logWithPackage('error', `could do '${message}': ${e.message}`);
+    // eslint-disable-next-line no-console
     console.error(e.stack);
   }
 };
@@ -190,7 +213,7 @@ const convertEmptyObj = (obj: Record<string, unknown>, isJSON: boolean, indent?:
 };
 
 export const commandParams = (command: CommandT) => {
-  const name = command.attributes?.name ?? 'no name';
+  const name = logNameFn(command.attributes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const commandArgs = command.attributes?.args as any;
   const state = command.state ?? 'passed';

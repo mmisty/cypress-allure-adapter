@@ -6,6 +6,7 @@ module.exports = {
   extends: [...original.extends, 'plugin:jest/recommended'],
   rules: {
     ...original.rules,
+    'no-console': 'warn',
 
     '@typescript-eslint/no-var-requires': 'off',
     '@typescript-eslint/no-explicit-any': 'off',

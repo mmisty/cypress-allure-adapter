@@ -4,6 +4,11 @@ export const wsPath = '/__cypress/allure_messages/';
 export const ENV_WS = 'allureWsPort';
 export const packageLog = '[cypress-allure-adapter]';
 
+export const logWithPackage = (level: 'log' | 'error' | 'warn', message: string) => {
+  // eslint-disable-next-line no-console
+  console[level](`${packageLog} ${message}`);
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Message = { data: any; id: number };
 

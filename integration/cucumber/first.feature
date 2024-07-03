@@ -34,3 +34,11 @@ Feature: test cucumber
   @P1
   Scenario: 06 fails in test
     Then This step should fail - long
+
+
+  @P1
+  Scenario: 07 session
+    Given I login with session
+    When I visit site
+    Then I should see a search bar "hello"
+

@@ -1,4 +1,4 @@
-import { ENV_WS, MessageQueue, packageLog, wsPath } from '../common';
+import { ENV_WS, MessageQueue, logWithPackage, packageLog, wsPath } from '../common';
 import type { AllureTransfer, RequestTask } from '../plugins/allure-types';
 import { logClient } from './helper';
 
@@ -10,8 +10,9 @@ export const startWsClient = (): WebSocket | undefined => {
   const port = Cypress.env(ENV_WS);
 
   if (!port) {
-    console.log(
-      `${packageLog} No existing ws server started. Will not report to allure. Set "allure" env variable to "true" to generate allure-results`,
+    logWithPackage(
+      'log',
+      'No existing ws server started. Will not report to allure. Set "allure" env variable to "true" to generate allure-results',
     );
 
     return undefined;
@@ -72,7 +73,7 @@ export const createMessage = (ws: WebSocket): MessageManager => {
   };
 
   ws.onerror = ev => {
-    console.error(`${packageLog} Ws error ${ev}`);
+    logWithPackage('error', `Ws error ${ev}`);
   };
 
   return {

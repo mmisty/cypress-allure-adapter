@@ -13,6 +13,7 @@ module.exports = {
 
   rules: {
     'jest/no-export': 'off',
+    'no-console': 'error',
     '@typescript-eslint/no-explicit-any': 'warn',
     'prefer-template': 'error',
     quotes: ['error', 'single', { avoidEscape: true }],

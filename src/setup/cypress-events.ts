@@ -1,6 +1,6 @@
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { baseUrlFromUrl, swapItems } from '../common';
+import { baseUrlFromUrl, logWithPackage, swapItems } from '../common';
 import type { CommandT } from '../common/command-names';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
@@ -14,6 +14,7 @@ import {
   stepMessage,
   stringify,
   withTry,
+  logNameFn,
 } from '../common/command-names';
 
 const dbg = 'cypress-allure:cy-events';
@@ -140,6 +141,10 @@ export const handleCyLogEvents = (
     ? Cypress.env('allureCompactAttachments') === 'true' || Cypress.env('allureCompactAttachments') === true
     : true;
 
+  const isEndLogCommand = (name?: string) => {
+    return name === 'end-logGroup';
+  };
+
   const isLogCommand = (isLog: boolean, name: string) => {
     return isLog && !ignoreAllCommands(ignoreCommands).includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
@@ -231,7 +236,7 @@ export const handleCyLogEvents = (
     let commadsFixed = commands;
 
     if (!commands?.every(c => c.startsWith('!')) || !commands?.every(c => !c.startsWith('!'))) {
-      console.warn('wrapCustomCommands env var - should either all start from "!" or not');
+      logWithPackage('warn', 'wrapCustomCommands environment variable - should either all start from "!" or not');
     }
 
     if (commands?.every(c => c.startsWith('!'))) {
@@ -248,16 +253,13 @@ export const handleCyLogEvents = (
     }
 
     withTry('report log:added', () => {
-      const logName = log.name ?? 'no-log-name';
+      const logName = logNameFn(log);
       const logMessage = log.message;
       const chainerId = log.chainerId;
       const end = log.end || log.ended;
       const logState = log.state;
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
-
-      // console.log('log added');
-      // console.log(log);
 
       if (log.groupStart || log.groupEnd) {
         if (log.groupStart) {
@@ -296,6 +298,10 @@ export const handleCyLogEvents = (
       return;
     }
 
+    if (isEndLogCommand(command.attributes?.name)) {
+      Cypress.Allure.endStep();
+    }
+
     filterCommandLog(command, ignoreCommands)
       .sort((aLog, bLog) => {
         const attrA = aLog?.attributes?.commandLogId;
@@ -309,9 +315,11 @@ export const handleCyLogEvents = (
       })
       .forEach(log => {
         const attr = log.attributes;
-        const logName = attr?.name ?? 'no name';
+        const logName = logNameFn(attr);
         const logErr = attr?.error;
         const message = attr?.message;
+        const groupEnd = attr?.groupEnd;
+        const isEmitOnly = attr?.emitOnly;
         const logMessage = stepMessage(logName, message === 'null' ? '' : message);
         const consoleProps = attr?.consoleProps?.();
 
@@ -322,6 +330,11 @@ export const handleCyLogEvents = (
         // console.log('consoleProps');
         // console.log(consoleProps);
 
+        if (groupEnd && isEmitOnly) {
+          Cypress.Allure.endStep();
+
+          return;
+        }
         Cypress.Allure.startStep(logMessage);
 
         if (logName !== 'assert' && message && message.length > ARGS_TRIM_AT) {

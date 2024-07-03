@@ -11,3 +11,10 @@ Then('I should see a search bar {string}', (text: string) => {
 Given('I log message {string}', (text: string) => {
   cy.log(text);
 });
+
+Given('I login with session', () => {
+  cy.session('user', () => {
+    cy.log('1');
+    cy.setCookie('A', 'AAA');
+  });
+});
