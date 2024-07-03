@@ -38,6 +38,10 @@ If applicable, add screenshots to help explain your problem.
  - `package.json`
  - `cypress.env.json` (if any) 
  
+**Workaround**
+Does the issue have workaround? [ yes / no ]
+
+If yes, please describe how to avoid the issue.
 
 **Additional context**
 Add any other context about the problem here.
