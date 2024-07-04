@@ -1027,6 +1027,7 @@ export class AllureReporter {
       if (step.steps.length === 1 && step.steps[0].name === step.name) {
         const mergedChild = mergeSteps(step.steps[0]);
         step.steps = mergedChild.steps;
+        step.attachments.push(...mergedChild.attachments);
 
         return step;
       }
