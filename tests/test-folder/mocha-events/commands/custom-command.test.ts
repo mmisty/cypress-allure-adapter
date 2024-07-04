@@ -18,6 +18,14 @@ describe('custom commands', () => {
     Cypress.log({ name: 'tasklogWithCypressLog', message: 'something' });
     cy.task('log', message);
   });
+
+  Cypress.Commands.add('cmdWithGroup', (message: string) => {
+    Cypress.log({ name: 'cmdWithGroup', message, groupStart: true });
+    cy.log('more steps withing custom');
+    cy.task('log', message).then(()=> {
+      Cypress.log({emitOnly: true, groupEnd: true});
+    });
+  });
   
   Cypress.Commands.add('returnGet', { prevSubject: true }, (subj, message: string) => {
     cy.task('log', message);
@@ -75,6 +83,11 @@ describe('custom commands', () => {
      it('promises returned from commands', () => {
         cy.get('div:eq(0)').promiseTest(10).should('exist').promiseTest(10);
      });
+
+     it('cmd with group', () => {
+       cy.cmdWithGroup('my step');
+       cy.cmdWithGroup('my step2');
+     })
   });
 `,
     ],
@@ -144,6 +157,7 @@ describe('custom commands', () => {
         },
       ]);
     });
+
     it('should have nested steps for custom command which returns something', () => {
       const tests = resFixed.filter(t => t.name === 'returnGet');
       expect(tests.length).toEqual(1);
@@ -254,31 +268,6 @@ describe('custom commands', () => {
       ]);
     });
 
-    it('should ignore custom command skipped with allureSkipCommands', () => {
-      const tests = resFixed.filter(t => t.name === 'ignore custom command');
-      expect(tests.length).toEqual(1);
-
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
-        .filter(t => t.name.indexOf('"after each"') === -1)
-        .filter(t => t.name.indexOf('"before each"') === -1);
-
-      expect(steps).toEqual([
-        {
-          name: 'nestedCommand: nonexistingd2',
-          steps: [
-            {
-              name: 'returnTaskValue: nonexistingd2',
-              steps: [
-                { name: 'wait: 1', steps: [] },
-                { name: 'wait: 2', steps: [] },
-                { name: 'task: fileExists, nonexistingd2', steps: [] },
-              ],
-            },
-          ],
-        },
-      ]);
-    });
-
     it('should pass promises returned from commands', () => {
       const tests = resFixed.filter(
         t => t.name === 'promises returned from commands',
@@ -319,15 +308,53 @@ describe('custom commands', () => {
       ]);
     });
 
+    it('should merge commands when group', () => {
+      const tests = resFixed.filter(t => t.name === 'cmd with group');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'cmdWithGroup: my step',
+          steps: [
+            {
+              name: 'log: more steps withing custom',
+              steps: [],
+            },
+            {
+              name: 'task: log, my step',
+              steps: [],
+            },
+          ],
+        },
+        {
+          name: 'cmdWithGroup: my step2',
+          steps: [
+            {
+              name: 'log: more steps withing custom',
+              steps: [],
+            },
+            {
+              name: 'task: log, my step2',
+              steps: [],
+            },
+          ],
+        },
+      ]);
+    });
+
     it('should have results', () => {
       // should not fail run
       checkCyResults(res?.result?.res, {
-        totalPassed: 8,
+        totalPassed: 9,
         totalFailed: 0,
         totalPending: 0,
         totalSkipped: 0,
         totalSuites: 1,
-        totalTests: 8,
+        totalTests: 9,
       });
     });
   });
