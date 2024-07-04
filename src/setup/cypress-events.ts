@@ -261,10 +261,7 @@ export const handleCyLogEvents = (
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
 
-      const currCmd = (Cypress as any).state?.().current;
-      const currCommandMsg = commandParams(currCmd).message;
-
-      if ((log.groupStart || log.groupEnd) && currCommandMsg !== cmdMessage) {
+      if (log.groupStart || log.groupEnd) {
         if (log.groupStart) {
           const msg = cmdMessage.replace(/\*\*/g, '');
           Cypress.Allure.startStep(msg);
