@@ -252,6 +252,31 @@ describe('custom commands', () => {
       ]);
     });
 
+    it('should ignore custom command skipped with allureSkipCommands', () => {
+      const tests = resFixed.filter(t => t.name === 'ignore custom command');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'nestedCommand: nonexistingd2',
+          steps: [
+            {
+              name: 'returnTaskValue: nonexistingd2',
+              steps: [
+                { name: 'wait: 1', steps: [] },
+                { name: 'wait: 2', steps: [] },
+                { name: 'task: fileExists, nonexistingd2', steps: [] },
+              ],
+            },
+          ],
+        },
+      ]);
+    });
+
     it('should have not have steps with log false', () => {
       const tests = resFixed.filter(t => t.name === 'not log command');
       expect(tests.length).toEqual(1);
