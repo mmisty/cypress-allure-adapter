@@ -252,6 +252,22 @@ describe('custom commands', () => {
       ]);
     });
 
+    it('should have not have steps with log false', () => {
+      const tests = resFixed.filter(t => t.name === 'not log command');
+      expect(tests.length).toEqual(1);
+
+      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
+        .filter(t => t.name.indexOf('"after each"') === -1)
+        .filter(t => t.name.indexOf('"before each"') === -1);
+
+      expect(steps).toEqual([
+        {
+          name: 'assert: expected **<div.inner-container>** to exist in the DOM',
+          steps: [],
+        },
+      ]);
+    });
+
     it('should ignore custom command skipped with allureSkipCommands', () => {
       const tests = resFixed.filter(t => t.name === 'ignore custom command');
       expect(tests.length).toEqual(1);
@@ -273,22 +289,6 @@ describe('custom commands', () => {
               ],
             },
           ],
-        },
-      ]);
-    });
-
-    it('should have not have steps with log false', () => {
-      const tests = resFixed.filter(t => t.name === 'not log command');
-      expect(tests.length).toEqual(1);
-
-      const steps = mapSteps(tests[0].steps, t => ({ name: t.name }))
-        .filter(t => t.name.indexOf('"after each"') === -1)
-        .filter(t => t.name.indexOf('"before each"') === -1);
-
-      expect(steps).toEqual([
-        {
-          name: 'assert: expected **<div.inner-container>** to exist in the DOM',
-          steps: [],
         },
       ]);
     });
