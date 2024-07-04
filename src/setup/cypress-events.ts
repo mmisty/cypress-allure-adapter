@@ -197,10 +197,10 @@ export const handleCyLogEvents = (
       const newFn = (...fnargs: any[]) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const currentCmd = (Cypress as any).state?.().current;
-        events.emit('cmd:started:tech', currentCmd, true);
+        events.emit('cmd:started', currentCmd, true);
 
         const res = fn(...fnargs);
-        const end = () => events.emit('cmd:ended:tech', currentCmd, true);
+        const end = () => events.emit('cmd:ended', currentCmd, true);
 
         if (res?.then && !res?.should) {
           // for promises returned from commands
@@ -362,32 +362,6 @@ export const handleCyLogEvents = (
   };
 
   Cypress.on('command:start', (command: CommandT) => {
-    events.emit('cmd:started:tech', command);
-  });
-
-  Cypress.on('command:failed', (command: CommandT) => {
-    addCommandLogs(command);
-    events.emit('cmd:ended:tech', command);
-  });
-
-  Cypress.on('command:end', (command: CommandT) => {
-    addCommandLogs(command);
-    events.emit('cmd:ended:tech', command);
-  });
-
-  events.on('cmd:started:tech', (command: CommandT, isCustom) => {
-    const { message: cmdMessage } = commandParams(command);
-
-    debug(`started tech: ${cmdMessage}`);
-
-    if (isCustom) {
-      customCommands.push(cmdMessage);
-
-      // not start when custom because cypress already
-      // fired event command:start
-      return;
-    }
-
     events.emit('cmd:started', command);
   });
 
@@ -412,23 +386,19 @@ export const handleCyLogEvents = (
     });
   });
 
-  events.on('cmd:ended:tech', (command: CommandT, isCustom) => {
-    const { message: cmdMessage } = commandParams(command);
-    const last = customCommands[customCommands.length - 1];
-
-    if (last && last === cmdMessage) {
-      customCommands.pop();
-
-      // cypress ends custom commands right away
-      // not end when custom started
-      return;
-    }
-    events.emit('cmd:ended', command, isCustom);
+  Cypress.on('command:failed', (command: CommandT) => {
+    events.emit('cmd:ended', command);
   });
 
-  Cypress.Allure.on('cmd:ended', (command: CommandT, isCustom) => {
+  Cypress.on('command:end', (command: CommandT) => {
+    events.emit('cmd:ended', command);
+  });
+
+  Cypress.Allure.on('cmd:ended', (command: CommandT) => {
     const { name, isLog, state, message: cmdMessage } = commandParams(command);
     const status = state as Status;
+
+    addCommandLogs(command);
 
     if (!isLogCommand(isLog, name)) {
       return;
@@ -443,7 +413,8 @@ export const handleCyLogEvents = (
     if (!allureLogCyCommands()) {
       return;
     }
-    debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
+
+    debug(`ended ${cmdMessage}`);
     Cypress.Allure.endStep(status);
   });
 };
