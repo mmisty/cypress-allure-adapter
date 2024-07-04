@@ -70,11 +70,6 @@ Feature: test cucumber
               status: 'passed',
               steps: [
                 {
-                  name: 'session: user',
-                  status: 'passed',
-                  steps: [],
-                },
-                {
                   name: 'Create new session',
                   status: 'passed',
                   steps: [

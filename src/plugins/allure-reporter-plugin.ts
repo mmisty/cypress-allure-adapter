@@ -448,6 +448,7 @@ export class AllureReporter {
       this.filterSteps(this.currentHook.wrappedItem);
       this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.setExecutableStatus(this.currentHook, result, details);
+      this.mergeStepsWithSingleChild(this.currentHook.wrappedItem.steps);
 
       this.hooks.pop();
 
@@ -970,6 +971,7 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
+    this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
       this.currentTestAll.status = result;
@@ -1008,6 +1010,41 @@ export class AllureReporter {
 
     log('testEnded: will move result to watch folder');
     copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
+  }
+
+  /**
+   * Recursively merge the steps when a step has single child with the same name
+   * Delete first child when it has the same name as parent
+   * @param steps
+   */
+  mergeStepsWithSingleChild(steps: ExecutableItem[]): void {
+    function mergeSteps(step: ExecutableItem): ExecutableItem {
+      if (!step.steps || step.steps.length === 0) {
+        return step;
+      }
+
+      // If the step has exactly one child with the same name, merge them
+      if (step.steps.length === 1 && step.steps[0].name === step.name) {
+        const mergedChild = mergeSteps(step.steps[0]);
+        step.steps = mergedChild.steps;
+        step.attachments.push(...mergedChild.attachments);
+
+        return step;
+      }
+
+      step.steps = step.steps.map(mergeSteps);
+
+      // If the first child has the same name as the parent, delete it
+      if (step.steps.length > 0 && step.steps[0].name === step.name) {
+        step.steps.shift();
+      }
+
+      return step;
+    }
+
+    for (let i = 0; i < steps.length; i++) {
+      steps[i] = mergeSteps(steps[i]);
+    }
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
