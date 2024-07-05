@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import '../cypress/cypress';
 import { registerTags } from '@mmisty/cypress-tags/register';
 import { registerCommands } from '../commands';
 import { registerMochaReporter, registerStubReporter } from './allure-mocha-reporter';
