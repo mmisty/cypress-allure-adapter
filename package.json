@@ -120,7 +120,7 @@
     "webpack": "^5.92.0"
   },
   "dependencies": {
-    "@mmisty/cypress-tags": "1.0.16",
+    "@mmisty/cypress-tags": "^1.0.17",
     "allure-js-commons": "2.15.1",
     "allure-js-parser": "^0.0.10",
     "debug": "4.3.5",
