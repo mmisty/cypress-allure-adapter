@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "cypress allure adapter to generate allure results during tests execution (Allure TestOps compatible)",
   "main": "index.js",
+  "types": "./index.d.ts",
   "repository": "git@github.com:mmisty/cypress-allure-adapter.git",
   "homepage": "https://github.com/mmisty/cypress-allure-adapter#readme",
   "publishConfig": {
