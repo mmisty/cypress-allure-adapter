@@ -674,7 +674,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
       return Cypress.env('allureWrapCustomCommands').split(',');
     },
     spyOnRequests: () => {
-      return Cypress.env('allureSpyOnRequests')?.split(',') ?? [];
+      return Cypress.env('allureAddBodiesToRequests')?.split(',') ?? [];
     },
   });
 };

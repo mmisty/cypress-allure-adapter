@@ -35,7 +35,7 @@ export const commonConfig: Cypress.ConfigOptions = {
       // allureWrapCustomCommands: '!qaId,!cust',
       // allureWrapCustomCommands: 'qaId,cust',
       // allureLogCyCommands: 'false',
-      allureSpyOnRequests: '**/hello,**',
+      // allureAddBodiesToRequests: '**/hello,**',
 
       tmsPrefix: 'http://jira',
       issuePrefix: 'http://jira/*',
