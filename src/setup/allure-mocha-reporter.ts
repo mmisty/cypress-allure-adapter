@@ -122,7 +122,7 @@ const startEvents = () => {
 };
 
 const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
-  on: (event, testHandler) => {
+  on: (event: string, handler: (...args: any[]) => void) => {
     const debug = logClient(dbg);
 
     if (isStub && !allureEvents.includes(event)) {
@@ -132,10 +132,10 @@ const eventsInterfaceInstance = (isStub: boolean): AllureEvents => ({
 
     if (!existingHandler) {
       debug(`ADD LISTENER: ${event}`);
-      evListeners.set(event, [testHandler]);
+      evListeners.set(event, [handler]);
     } else {
       debug(`MERGE LISTENERS: ${event}`);
-      existingHandler.push(testHandler);
+      existingHandler.push(handler);
     }
   },
 });
