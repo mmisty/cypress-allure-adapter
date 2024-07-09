@@ -349,6 +349,14 @@ const registerTestEvents = (messageManager: MessageManager, specPathLog: string)
     Cypress.Allure.on('test:ended', () => {
       msg('plugin test:ended');
     });
+
+    Cypress.Allure.on('request:started', req => {
+      msg(`plugin request:started ${req.method}`);
+    });
+
+    Cypress.Allure.on('request:ended', req => {
+      msg(`plugin request:ended ${req.method}`);
+    });
   }
 };
 
