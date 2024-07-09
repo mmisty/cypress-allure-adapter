@@ -64,7 +64,7 @@ export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
   };
 };
 
-export const logNameFn = (attribute: any) => attribute?.displayName ?? attribute?.name ?? 'no-log';
+export const logNameFn = (attribute: any) => attribute?.name ?? 'no-log';
 
 export const filterCommandLog = (command: CommandT, ignoreCommands: () => string[]): CommandLog[] => {
   const cmdAttrs = command?.attributes;
