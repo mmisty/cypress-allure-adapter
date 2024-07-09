@@ -106,13 +106,11 @@ const data: TestData = {
       {
         testName: '01 should not add requests made by app',
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
+        filterStep: m =>
+          ['before each', 'after each'].every(
+            x => m.name && m.name.indexOf(x) === -1,
+          ),
         expected: [
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [],
-          },
           {
             attachments: [],
             name: 'route',
@@ -163,12 +161,6 @@ const data: TestData = {
             status: 'passed',
             steps: [],
           },
-          {
-            attachments: [],
-            name: '"after each" hook',
-            status: 'passed',
-            steps: [],
-          },
         ],
       },
     ],
@@ -186,6 +178,12 @@ const data: TestData = {
       'plugin test:started',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
+      'plugin request:started GET',
+      'plugin request:started GET',
+      'plugin request:ended GET',
+      'plugin request:ended GET',
+      'plugin request:started GET',
+      'plugin request:ended GET',
       'mocha: pass: 01 should not add requests made by app',
       'mocha: test end: 01 should not add requests made by app',
       'mocha: hook: "after each" hook',

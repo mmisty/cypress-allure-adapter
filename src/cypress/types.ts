@@ -8,8 +8,19 @@ declare namespace Cypress {
   }
 
   export type Status = 'passed' | 'failed' | 'skipped' | 'broken' | 'unknown';
+  export type RequestEvent = {
+    isFromCypress?: boolean;
+    method?: string;
+    url: string;
+    body?: any;
+    headers?: any;
+    responseHeaders?: any;
+    responseBody?: any;
+    status?: string;
+  };
 
   export type CommandT = import('../common/command-names').CommandT;
+  export type CyLog = import('../common/command-names').CyLog;
   export type StatusDetails = import('allure-js-commons').StatusDetails;
   export type Category = import('../plugins/allure-types').Category;
   export type ContentType = import('../common/types').ContentType;
@@ -75,6 +86,20 @@ declare namespace Cypress {
      * @param handler
      */
     on(event: 'cmd:started', handler: (cmd: CommandT) => void): void;
+
+    /**
+     * Fired when request is started
+     * @param event
+     * @param handler
+     */
+    on(event: 'request:started', handler: (request: RequestEvent, log: CyLog) => void): void;
+
+    /**
+     * Fired when request is ended
+     * @param event
+     * @param handler
+     */
+    on(event: 'request:ended', handler: (request: RequestEvent, log: CyLog) => void): void;
   }
 
   interface Cypress {

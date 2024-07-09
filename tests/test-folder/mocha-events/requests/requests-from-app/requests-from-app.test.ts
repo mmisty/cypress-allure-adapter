@@ -10,7 +10,7 @@ describe(`suite: ${basename(__dirname)}`, () => {
 
   const res = createResTest2(
     testsForOneCyRun.map(x => x.spec),
-    { allureAddVideoOnPass: 'true' /* DEBUG: 'true'*/ },
+    { allureAddVideoOnPass: 'false' /* DEBUG: 'true'*/ },
   );
 
   generateChecksTests(res, testsForOneCyRun);
