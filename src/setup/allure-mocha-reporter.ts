@@ -51,6 +51,9 @@ const USER_EVENTS = {
   TEST_END: 'test:ended',
   CMD_END: 'cmd:ended',
   CMD_START: 'cmd:started',
+
+  REQUEST_START: 'request:started',
+  REQUEST_END: 'request:ended',
 };
 
 const convertState = (state: string): Status => {
@@ -70,9 +73,16 @@ const isRootSuiteTest = (test: Mocha.Test) => {
 };
 
 const allureEventsEmitter = new EventEmitter();
-const evListeners: Map<string, ((test: Mocha.Test) => void)[]> = new Map();
+const evListeners: Map<string, ((...args: unknown[]) => void)[]> = new Map();
 
-const allureEvents = [USER_EVENTS.TEST_START, USER_EVENTS.TEST_END, USER_EVENTS.CMD_END, USER_EVENTS.CMD_START];
+const allureEvents = [
+  USER_EVENTS.TEST_START,
+  USER_EVENTS.TEST_END,
+  USER_EVENTS.CMD_END,
+  USER_EVENTS.CMD_START,
+  USER_EVENTS.REQUEST_START,
+  USER_EVENTS.REQUEST_END,
+];
 
 const startEvents = () => {
   const debug = logClient(dbg);
@@ -85,14 +95,14 @@ const startEvents = () => {
     }
     debug(`event ${event} has ${existingHandler.length} handlers`);
 
-    const merged = (test: Mocha.Test) => {
+    const merged = (...args: unknown[]) => {
       const errsExisting: Error[] = [];
 
       debug(`Registered listeners for '${event}': ${allureEventsEmitter.listeners(event).length}`);
 
       existingHandler.forEach(handler => {
         try {
-          handler(test);
+          handler(...args);
         } catch (err) {
           errsExisting.push(err as Error);
         }
@@ -662,6 +672,9 @@ export const registerMochaReporter = (ws: WebSocket) => {
       }
 
       return Cypress.env('allureWrapCustomCommands').split(',');
+    },
+    spyOnRequests: () => {
+      return Cypress.env('allureSpyOnRequests')?.split(',') ?? [];
     },
   });
 };

@@ -33,6 +33,7 @@ export type CyLog = {
   groupStart?: boolean;
   groupEnd?: boolean;
   emitOnly?: boolean;
+  snapshot?: boolean;
 };
 
 export type CommandT = {

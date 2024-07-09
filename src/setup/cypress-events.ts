@@ -126,10 +126,12 @@ export const handleCyLogEvents = (
     wrapCustomCommands: () => boolean | string[];
     ignoreCommands: () => string[];
     allureLogCyCommands: () => boolean;
+    spyOnRequests: () => string[];
   },
 ) => {
   const debug = logClient(dbg);
-  const { ignoreCommands, wrapCustomCommands, allureLogCyCommands } = config;
+  const { ignoreCommands, wrapCustomCommands, allureLogCyCommands, spyOnRequests } = config;
+  const requestsToSpy = spyOnRequests?.() ?? [];
 
   const customCommands: string[] = [];
 
@@ -247,6 +249,65 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
+  if (requestsToSpy.length > 0) {
+    before(() => {
+      // this way can save bodies for intercepted requests
+      requestsToSpy.forEach(r => {
+        cy.intercept(r).as('allure');
+      });
+    });
+  }
+
+  const convertToRequests = (log: any): Partial<Cypress.RequestEvent> => {
+    const consoleProps = log?.consoleProps?.props;
+    debug('consoleProps:');
+    debug(consoleProps);
+
+    if (!consoleProps) {
+      return {};
+    }
+
+    let requestProps = consoleProps;
+
+    if (consoleProps['Request']) {
+      requestProps = consoleProps['Request'];
+    }
+
+    const res = {
+      method: requestProps['Method'] ?? '?',
+      isFromCypress: false,
+      url: requestProps['URL'] ?? requestProps['Request URL'],
+      headers: requestProps['Request Headers'],
+      body: requestProps['Request Body'],
+      status: requestProps['Response Status Code'] ?? requestProps['Response Status'],
+      responseHeaders: requestProps['Response Headers'],
+      responseBody: requestProps['Response Body'],
+    };
+
+    return res;
+  };
+
+  const emitRequestEvent = (event: 'request:started' | 'request:ended', log: CyLog) => {
+    const converted = convertToRequests(log);
+
+    if (!converted.url) {
+      return;
+    }
+    events.emit(event, converted, log);
+  };
+
+  Cypress.on('log:changed', (log: CyLog) => {
+    const logName = logNameFn(log);
+
+    // when intercepterd several times - then this called several times
+    // as workaround check snapshot prop (cypress doesn't maek snapshow for same request)
+    if ((log.end || log.ended) && logName === COMMAND_REQUEST) {
+      if (log.snapshot !== false) {
+        emitRequestEvent('request:ended', log);
+      }
+    }
+  });
+
   Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
       return;
@@ -272,6 +333,10 @@ export const handleCyLogEvents = (
         }
 
         return;
+      }
+
+      if (logName === COMMAND_REQUEST) {
+        emitRequestEvent('request:started', log);
       }
 
       if (!chainerId && end) {
@@ -335,6 +400,7 @@ export const handleCyLogEvents = (
 
           return;
         }
+
         Cypress.Allure.startStep(logMessage);
 
         if (logName !== 'assert' && message && message.length > ARGS_TRIM_AT) {
