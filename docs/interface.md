@@ -468,6 +468,24 @@ cy.allure().writeEnvironmentInfo({
  })
 ```
 
+
+### addEnvironmentInfo
+**addEnvironmentInfo(info: EnvironmentInfo)**
+- info - dictionary with environment variables
+
+Adds environment info into existing environment info file (environment.properties) into allure results path
+
+May be useful when you need to add some info which can be retrieved only durin test.
+
+Environment info will be shown in report on overview tab in Environment widget
+
+```javascript
+cy.allure().addEnvironmentInfo({
+    OS: 'ubuntu',
+    commit: 'fix of defect 1'
+ })
+```
+
 ### writeExecutorInfo
 **writeExecutorInfo(info: ExecutorInfo)**
 - info -  executor info object
