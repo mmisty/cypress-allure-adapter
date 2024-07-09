@@ -60,6 +60,7 @@ export const registerCommands = () => {
     //description: (allure, markdown) => allure.description(markdown),
     tag: (allure, ...tags) => allure.tag(...tags),
     writeEnvironmentInfo: (allure, info) => allure.writeEnvironmentInfo(info),
+    addEnvironmentInfo: (allure, info) => allure.addEnvironmentInfo(info),
     writeExecutorInfo: (allure, info) => allure.writeExecutorInfo(info),
     writeCategoriesDefinitions: (allure, categories) => allure.writeCategoriesDefinitions(categories),
   };

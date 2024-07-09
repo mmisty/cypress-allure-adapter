@@ -136,6 +136,7 @@ export const allureInterface = (
 ): Cypress.AllureReporter<void> => {
   return {
     writeEnvironmentInfo: (info: EnvironmentInfo) => fn({ task: 'writeEnvironmentInfo', arg: { info } }),
+    addEnvironmentInfo: (info: EnvironmentInfo) => fn({ task: 'addEnvironmentInfo', arg: { info } }),
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
     writeCategoriesDefinitions: (categories: Category[] | string) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),

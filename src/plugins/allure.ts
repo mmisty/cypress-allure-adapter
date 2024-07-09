@@ -146,7 +146,30 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
-      allureReporter.allureRuntime.writer.writeEnvironmentInfo(arg.info);
+      try {
+        if (!existsSync(allureResults)) {
+          mkdirSync(allureResults);
+        }
+        allureReporter.allureRuntime.writer.writeEnvironmentInfo(arg.info);
+      } catch (err) {
+        logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
+      }
+    },
+
+    addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
+      const additionalInfo = arg.info;
+      const existing = allureReporter.getEnvInfo(allureResults);
+      // be careful with parallelization, todo
+
+      // do not override values when it is different from additional
+      for (const key in existing) {
+        if (additionalInfo[key] && additionalInfo[key] !== existing[key]) {
+          additionalInfo[key] += `,${existing[key]}`;
+        }
+      }
+      const newInfo = { ...existing, ...additionalInfo };
+
+      allureReporter.allureRuntime.writer.writeEnvironmentInfo(newInfo);
     },
 
     writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {

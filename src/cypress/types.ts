@@ -354,6 +354,17 @@ declare namespace Cypress {
     writeEnvironmentInfo(info: EnvironmentInfo): T;
 
     /**
+     * Adds environment info to existing info
+     * @param info - dictionary
+     * @example
+     * cy.allure().addEnvironmentInfo({
+     *    OS: 'ubuntu',
+     *    commit: 'fix of defect 1'
+     * })
+     */
+    addEnvironmentInfo(info: EnvironmentInfo): T;
+
+    /**
      * Writes executor info file into allure results path
      * @param info - dictionary
      * @example
