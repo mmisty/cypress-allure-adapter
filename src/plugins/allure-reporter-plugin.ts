@@ -24,6 +24,7 @@ import {
   AfterSpecScreenshots,
   AllureTaskArgs,
   AutoScreen,
+  EnvironmentInfo,
   LabelName,
   Stage,
   StatusType,
@@ -1197,5 +1198,33 @@ export class AllureReporter {
     } catch (err) {
       logWithPackage('error', `Could not attach ${arg.file}`);
     }
+  }
+
+  getEnvInfo(resultsFolder: string): EnvironmentInfo {
+    const fileName = 'environment.properties';
+    const envPropsFile = `${resultsFolder}/${fileName}`;
+
+    if (!existsSync(envPropsFile)) {
+      return {};
+    }
+
+    if (existsSync(envPropsFile)) {
+      try {
+        const env = readFileSync(envPropsFile)?.toString();
+        const res = {};
+        env?.split('\n').forEach(line => {
+          const keyValue = line.split(' = ');
+          res[keyValue[0]] = keyValue[1];
+        });
+
+        return res;
+      } catch (err) {
+        logWithPackage('error', 'could not get exisitng environemnt info');
+
+        return {};
+      }
+    }
+
+    return {};
   }
 }

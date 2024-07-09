@@ -24,6 +24,7 @@ export type LinkType = 'issue' | 'tms';
 type AllureTask = {
   specStarted: { spec: Cypress.Spec };
   writeEnvironmentInfo: { info: EnvironmentInfo };
+  addEnvironmentInfo: { info: EnvironmentInfo };
   writeExecutorInfo: { info: ExecutorInfo };
   writeCategoriesDefinitions: { categories: Category[] | string };
   testEnded: { result: Status; details?: StatusDetails };
