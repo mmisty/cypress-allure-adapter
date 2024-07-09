@@ -1211,7 +1211,7 @@ export class AllureReporter {
     if (existsSync(envPropsFile)) {
       try {
         const env = readFileSync(envPropsFile)?.toString();
-        const res = {};
+        const res: EnvironmentInfo = {};
         env?.split('\n').forEach(line => {
           const keyValue = line.split(' = ');
           res[keyValue[0]] = keyValue[1];
