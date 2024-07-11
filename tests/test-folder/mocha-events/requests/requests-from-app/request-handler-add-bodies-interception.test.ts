@@ -22,6 +22,7 @@ describe('${rootSuite}', () => {
   Cypress.Allure.on('request:started', (req, log) => {
     Cypress.Allure.startStep('started:' + req.method  + ' ' + req.url.replace(port, '<port>'));
     // Cypress.Allure.attachment('name', JSON.stringify(log, null, '  '), 'application/json');
+    // Cypress.Allure.attachment('req', JSON.stringify(req, null, '  '), 'application/json');
     Cypress.Allure.endStep();
 
   });
@@ -29,6 +30,7 @@ describe('${rootSuite}', () => {
   Cypress.Allure.on('request:ended', (req, log) => {
     Cypress.Allure.startStep('ended:' + req.method  + ' ' + req.url.replace(port, '<port>'));
     // Cypress.Allure.attachment('name', JSON.stringify(log, null, '  '), 'application/json');
+    // Cypress.Allure.attachment('req', JSON.stringify(req, null, '  '), 'application/json');
     if(req.responseBody!==undefined){
       Cypress.Allure.parameter("responseBody", req.responseBody);
     }
