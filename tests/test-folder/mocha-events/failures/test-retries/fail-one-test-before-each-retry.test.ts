@@ -49,6 +49,8 @@ describe('hello suite', { retries: 1 }, () => {
 
       'mocha: test: hello test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
 
       'mocha: hook: "before each" hook',
       ...whenNoCoverage('cypress: test:before:run: hello test'),
@@ -65,6 +67,9 @@ describe('hello suite', { retries: 1 }, () => {
 
       'mocha: test: hello test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'cypress: test:before:run: hello test',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       ...whenCoverage('cypress: test:before:run: hello test'),
       ...whenCoverage('mocha: hook end: "before each" hook'),
@@ -163,10 +168,12 @@ describe('hello suite', { retries: 1 }, () => {
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
         [
+          '"before each" hook: [cypress-allure-adapter]',
           '"before each" hook',
           ...whenCoverage('"before each" hook', '"after each" hook'),
         ],
         [
+          '"before each" hook: [cypress-allure-adapter]',
           '"before each" hook',
           ...whenCoverage('"before each" hook', '"after each" hook'),
         ],
