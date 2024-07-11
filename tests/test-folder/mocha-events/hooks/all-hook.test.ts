@@ -69,6 +69,8 @@ describe('hello suite', () => {
       'mocha: hook end: "before all" hook: Named Hook',
       'mocha: test: hello test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       ...whenCoverage(...coverageBeforeEachEvent),
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
@@ -274,6 +276,7 @@ describe('hello suite', () => {
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
         [
+          '"before each" hook: [cypress-allure-adapter]',
           ...whenCoverage('"before each" hook'),
           '"before each" hook',
           'log: message',
