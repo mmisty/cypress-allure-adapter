@@ -8,7 +8,6 @@ import {
   readWithRetry,
   sortAttachments,
   whenCoverage,
-  whenNoCoverage,
 } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 
@@ -40,11 +39,10 @@ describe('hello suite', { retries: 1 }, () => {
       'mocha: start',
       'mocha: suite: , ',
 
-      ...whenCoverage(
-        'mocha: hook: "before all" hook',
-        'cypress: test:before:run: hello test',
-        'mocha: hook end: "before all" hook',
-      ),
+      'mocha: hook: "before all" hook',
+      'cypress: test:before:run: hello test',
+      'mocha: hook end: "before all" hook',
+
       'mocha: suite: hello suite, hello suite',
 
       'mocha: test: hello test',
@@ -53,10 +51,9 @@ describe('hello suite', { retries: 1 }, () => {
       'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
 
       'mocha: hook: "before each" hook',
-      ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: hook end: "before each" hook',
-      ...whenCoverage('mocha: hook: "before each" hook'),
-      ...whenCoverage('mocha: hook end: "before each" hook'),
+      'mocha: hook: "before each" hook',
+      'mocha: hook end: "before each" hook',
 
       'cypress:screenshot:test:hello suite -- hello test (failed).png',
       'mocha: retry: hello test',
@@ -68,12 +65,11 @@ describe('hello suite', { retries: 1 }, () => {
       'mocha: test: hello test',
       'plugin test:started',
       'mocha: hook: "before each" hook: [cypress-allure-adapter]',
-      ...whenNoCoverage('cypress: test:before:run: hello test'),
+      'cypress: test:before:run: hello test',
       'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
-      ...whenCoverage('cypress: test:before:run: hello test'),
-      ...whenCoverage('mocha: hook end: "before each" hook'),
-      ...whenCoverage('mocha: hook: "before each" hook'),
+      'mocha: hook end: "before each" hook',
+      'mocha: hook: "before each" hook',
       'cypress:screenshot:test:hello suite -- hello test -- before each hook (failed) (attempt 2).png',
       'mocha: fail: "before each" hook for "hello test"',
 

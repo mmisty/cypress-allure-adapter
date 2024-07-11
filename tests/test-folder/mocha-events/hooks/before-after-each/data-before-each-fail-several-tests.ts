@@ -81,6 +81,7 @@ describe('${rootSuite}', () => {
           {
             name: '"before each" hook: [cypress-allure-adapter]',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 attachments: [],
@@ -147,6 +148,8 @@ describe('${rootSuite}', () => {
       `mocha: suite: ${rootSuite}, ${rootSuite}`,
       'mocha: test: test 1',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: hook: "before each" hook: named before each',

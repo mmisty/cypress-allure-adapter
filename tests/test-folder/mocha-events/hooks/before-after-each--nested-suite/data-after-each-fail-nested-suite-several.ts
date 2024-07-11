@@ -118,6 +118,7 @@ describe('${rootSuite}', () => {
           {
             name: '"before each" hook: [cypress-allure-adapter]',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 attachments: [],

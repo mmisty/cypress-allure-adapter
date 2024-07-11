@@ -117,6 +117,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
           {
             name: '"before each" hook: [cypress-allure-adapter]',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 attachments: [],
@@ -180,6 +181,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
           {
             name: '"before each" hook: [cypress-allure-adapter]',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 attachments: [],
