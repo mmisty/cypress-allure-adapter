@@ -1,6 +1,6 @@
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { baseUrlFromUrl, logWithPackage, swapItems } from '../common';
+import { baseUrlFromUrl, logWithPackage, packageLog, swapItems } from '../common';
 import type { CommandT } from '../common/command-names';
 import Chainable = Cypress.Chainable;
 import { EventEmitter } from 'events';
@@ -131,8 +131,6 @@ export const handleCyLogEvents = (
 ) => {
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands, spyOnRequests } = config;
-  const requestsToSpy = spyOnRequests?.() ?? [];
-
   const customCommands: string[] = [];
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
@@ -248,15 +246,32 @@ export const handleCyLogEvents = (
 
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
+  const currentRequestLogs: string[] = [];
 
-  if (requestsToSpy.length > 0) {
-    before(() => {
-      // this way can save bodies for intercepted requests
+  // should be beforeEach (not before) to get env variable value from test config
+  beforeEach(`${packageLog}`, () => {
+    // this way can save bodies for intercepted requests
+
+    const requestsToSpy = spyOnRequests?.() ?? [];
+
+    cy.allure().parameter(
+      'To access request bodies',
+      "add environment variable: `allureAddBodiesToRequests`\n(value is requests split by comma that you wish to save, to save all set '*')",
+    );
+    cy.allure().parameter(
+      'To skip this message',
+      "add environment variable `allureSkipSteps: '*\\[cypress-allure-adapter\\]*' `",
+    );
+
+    if (requestsToSpy.length > 0) {
       requestsToSpy.forEach(r => {
         cy.intercept(r).as('allure');
       });
-    });
-  }
+    } else {
+      cy.allure().step('will not intercept requests to save bodies');
+    }
+    currentRequestLogs.splice(0, currentRequestLogs.length);
+  });
 
   const convertToRequests = (log: any): Partial<Cypress.RequestEvent> => {
     const consoleProps = log?.consoleProps?.props;
@@ -272,16 +287,20 @@ export const handleCyLogEvents = (
     if (consoleProps['Request']) {
       requestProps = consoleProps['Request'];
     }
+    const url = requestProps['URL'] ?? requestProps['Request URL'];
+    const method = requestProps['Method'] ?? log?.method ?? '?';
+    const status = requestProps['Response Status Code'] ?? requestProps['Response Status'];
 
-    const res = {
-      method: requestProps['Method'] ?? '?',
+    const res: Cypress.RequestEvent = {
+      method: method,
       isFromCypress: false,
-      url: requestProps['URL'] ?? requestProps['Request URL'],
-      headers: requestProps['Request Headers'],
-      body: requestProps['Request Body'],
-      status: requestProps['Response Status Code'] ?? requestProps['Response Status'],
+      url,
+      requestHeaders: requestProps['Request Headers'],
+      requestBody: requestProps['Request Body'],
+      status,
       responseHeaders: requestProps['Response Headers'],
       responseBody: requestProps['Response Body'],
+      message: log?.renderProps?.message ?? `${method} ${status} ${url}`,
     };
 
     return res;
@@ -293,18 +312,28 @@ export const handleCyLogEvents = (
     if (!converted.url) {
       return;
     }
-    events.emit(event, converted, log);
+
+    if (log.id && event === 'request:started' && !currentRequestLogs.includes(log.id)) {
+      currentRequestLogs.push(log.id);
+      events.emit(event, converted, log);
+
+      return;
+    }
+
+    // when intercepterd several times - then ended log is called several times
+    if (log.id && event === 'request:ended' && currentRequestLogs.includes(log.id)) {
+      events.emit(event, converted, log);
+      currentRequestLogs.splice(currentRequestLogs.indexOf(log.id), 1);
+
+      return;
+    }
   };
 
   Cypress.on('log:changed', (log: CyLog) => {
     const logName = logNameFn(log);
 
-    // when intercepterd several times - then this called several times
-    // as workaround check snapshot prop (cypress doesn't maek snapshow for same request)
     if ((log.end || log.ended) && logName === COMMAND_REQUEST) {
-      if (log.snapshot !== false) {
-        emitRequestEvent('request:ended', log);
-      }
+      emitRequestEvent('request:ended', log);
     }
   });
 

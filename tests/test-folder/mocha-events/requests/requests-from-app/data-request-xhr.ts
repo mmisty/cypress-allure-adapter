@@ -82,7 +82,9 @@ const data: TestData = {
     });
 
     cy.get('#toClickFetch').should('exist').click();
+    cy.get('#result').should('not.be.empty');
     cy.get('#toClickXhr').should('exist').click();
+    cy.get('#result').should('not.be.empty');
   });
 });
 `,
@@ -144,6 +146,19 @@ const data: TestData = {
           },
           {
             attachments: [],
+            name: 'get: #result',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'assert: expected **<div#result>** not to be **empty**',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
+            attachments: [],
             name: 'get: #toClickXhr',
             status: 'passed',
             steps: [
@@ -161,6 +176,19 @@ const data: TestData = {
             status: 'passed',
             steps: [],
           },
+          {
+            attachments: [],
+            name: 'get: #result',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'assert: expected **<div#result>** not to be **empty**',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
         ],
       },
     ],
@@ -168,16 +196,16 @@ const data: TestData = {
     events: [
       'mocha: start',
       'mocha: suite: , ',
-      'mocha: hook: "before all" hook',
-      'cypress: test:before:run: 01 should not add requests made by app',
-      'mocha: hook end: "before all" hook',
       `mocha: suite: ${rootSuite}, ${rootSuite}`,
       'mocha: hook: "before all" hook',
+      'cypress: test:before:run: 01 should not add requests made by app',
       'mocha: hook end: "before all" hook',
       'mocha: test: 01 should not add requests made by app',
       'plugin test:started',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter] requests',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter] requests',
       'plugin request:started GET',
       'plugin request:started GET',
       'plugin request:ended GET',

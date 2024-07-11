@@ -18,6 +18,7 @@ export type CommandLog = {
 };
 
 export type CyLog = {
+  id?: string;
   name?: string;
   displayName?: string;
   commandLogId?: string;
