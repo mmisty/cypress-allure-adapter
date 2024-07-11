@@ -18,6 +18,7 @@ declare namespace Cypress {
     responseBody?: any;
     status?: string;
     message?: string;
+    duration?: number;
   };
 
   export type CommandT = import('../common/command-names').CommandT;

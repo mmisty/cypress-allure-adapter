@@ -246,7 +246,7 @@ export const handleCyLogEvents = (
 
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
-  const currentRequestLogs: string[] = [];
+  const currentRequestLogs: { id: string; started: number }[] = [];
 
   // should be beforeEach (not before) to get env variable value from test config
   beforeEach(`${packageLog}`, () => {
@@ -313,17 +313,21 @@ export const handleCyLogEvents = (
       return;
     }
 
-    if (log.id && event === 'request:started' && !currentRequestLogs.includes(log.id)) {
-      currentRequestLogs.push(log.id);
+    if (log.id && event === 'request:started' && !currentRequestLogs.map(t => t.id).includes(log.id)) {
+      currentRequestLogs.push({ id: log.id, started: Date.now() });
       events.emit(event, converted, log);
 
       return;
     }
 
     // when intercepterd several times - then ended log is called several times
-    if (log.id && event === 'request:ended' && currentRequestLogs.includes(log.id)) {
+    if (log.id && event === 'request:ended' && currentRequestLogs.map(t => t.id).includes(log.id)) {
+      const started = currentRequestLogs.find(t => t.id === log.id)?.started;
+      const duration = started ? Date.now() - started : 0;
+      converted.duration = duration;
+
       events.emit(event, converted, log);
-      currentRequestLogs.splice(currentRequestLogs.indexOf(log.id), 1);
+      currentRequestLogs.splice(currentRequestLogs.map(t => t.id).indexOf(log.id), 1);
 
       return;
     }
