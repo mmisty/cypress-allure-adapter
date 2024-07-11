@@ -79,6 +79,19 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
             attachments: [],
             name: '"before each" hook',
             status: 'passed',
@@ -135,6 +148,8 @@ describe('${rootSuite}', () => {
       `mocha: suite: ${rootSuite}, ${rootSuite}`,
       'mocha: test: test 1',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: hook: "before each" hook: named before each',

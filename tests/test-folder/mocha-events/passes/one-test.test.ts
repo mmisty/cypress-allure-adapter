@@ -41,6 +41,8 @@ describe('hello suite', () => {
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       ...whenCoverage('mocha: hook: "before each" hook'),
       ...whenCoverage('mocha: hook end: "before each" hook'),
       ...whenNoCoverage('cypress: test:before:run: hello test'),

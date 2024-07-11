@@ -50,6 +50,8 @@ describe('hello suite', () => {
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       ...whenCoverage(...coverageBeforeEachEvent),
       ...whenNoCoverage('cypress: test:before:run: hello test'),
       'cypress:screenshot:test:hello suite -- hello test (failed).png',
@@ -118,6 +120,7 @@ describe('hello suite', () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
         [
           'step right after start',
+          '"before each" hook: [cypress-allure-adapter]',
           ...whenCoverage('"before each" hook'),
           'wrap',
           ...whenCoverage('"after each" hook'),

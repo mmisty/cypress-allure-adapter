@@ -78,6 +78,19 @@ const data: TestData = {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
             name: '"before each" hook',
             status: 'passed',
             steps: [],
@@ -101,6 +114,19 @@ const data: TestData = {
         testName: 'test 2',
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
+          {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
           {
             name: '"before each" hook',
             status: 'passed',
@@ -273,6 +299,8 @@ const data: TestData = {
       `mocha: suite: child suite, ${rootSuite} child suite`,
       'mocha: test: test 1',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: pass: test 1',
@@ -284,8 +312,10 @@ const data: TestData = {
 
       'mocha: test: test 2',
       'plugin test:started',
-      'mocha: hook: "before each" hook',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
       'cypress: test:before:run: test 2',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: pass: test 2',
       'mocha: test end: test 2',

@@ -12,11 +12,13 @@ declare namespace Cypress {
     isFromCypress?: boolean;
     method?: string;
     url: string;
-    body?: any;
-    headers?: any;
+    requestBody?: any;
+    requestHeaders?: any;
     responseHeaders?: any;
     responseBody?: any;
     status?: string;
+    message?: string;
+    duration?: number;
   };
 
   export type CommandT = import('../common/command-names').CommandT;

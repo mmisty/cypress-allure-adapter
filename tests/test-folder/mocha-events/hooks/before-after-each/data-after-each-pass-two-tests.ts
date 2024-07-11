@@ -86,6 +86,19 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
             attachments: [],
             name: '"before each" hook',
             status: 'passed',
@@ -122,6 +135,19 @@ describe('${rootSuite}', () => {
         testName: 'test 2',
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
+          {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
           {
             attachments: [],
             name: '"before each" hook',
@@ -189,6 +215,8 @@ describe('${rootSuite}', () => {
       `mocha: suite: ${rootSuite}, ${rootSuite}`,
       'mocha: test: test 1',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: pass: test 1',
@@ -201,8 +229,10 @@ describe('${rootSuite}', () => {
       'plugin test:ended',
       'mocha: test: test 2',
       'plugin test:started',
-      'mocha: hook: "before each" hook',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
       'cypress: test:before:run: test 2',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: pass: test 2',
       'mocha: test end: test 2',

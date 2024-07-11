@@ -132,6 +132,19 @@ describe('${rootSuite} @beforeEachRetry', { retries: 1 }, () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
             attachments: [],
             name: '"before each" hook',
             status: 'passed',
@@ -169,6 +182,19 @@ describe('${rootSuite} @beforeEachRetry', { retries: 1 }, () => {
         index: 1,
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
+          {
+            name: '"before each" hook: [cypress-allure-adapter]',
+            status: 'passed',
+            attachments: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'will not intercept requests to save bodies',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
           {
             attachments: [],
             name: '"before each" hook',
@@ -289,6 +315,8 @@ describe('${rootSuite} @beforeEachRetry', { retries: 1 }, () => {
       'mocha: suite: data-before-each-retry-fail.ts, data-before-each-retry-fail.ts',
       'mocha: test: test 01',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: hook: "before each" hook: Named hook',
@@ -301,8 +329,10 @@ describe('${rootSuite} @beforeEachRetry', { retries: 1 }, () => {
       'plugin test:ended',
       'mocha: test: test 01',
       'plugin test:started',
-      'mocha: hook: "before each" hook',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
       'cypress: test:before:run: test 01',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook: "before each" hook',
       'mocha: hook end: "before each" hook',
       'mocha: hook: "before each" hook: Named hook',
       'cypress:screenshot:test:data-before-each-retry-fail.ts -- test 01 -- before each hook Named hook (failed) (attempt 2).png',

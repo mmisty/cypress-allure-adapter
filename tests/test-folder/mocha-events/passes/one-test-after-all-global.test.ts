@@ -39,6 +39,8 @@ describe('one simple passed test with global after all hook', () => {
       'mocha: suite: hello suite, hello suite',
       'mocha: test: hello test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       ...whenNoCoverage('cypress: test:before:run: hello test'),
       ...whenCoverage('mocha: hook: "before each" hook'),
       ...whenCoverage('mocha: hook end: "before each" hook'),

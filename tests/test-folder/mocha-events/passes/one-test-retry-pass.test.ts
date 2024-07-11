@@ -40,6 +40,8 @@ describe('hello suite', { retries: 2 }, () => {
 
       'mocha: test: hello retry test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       ...whenNoCoverage('cypress: test:before:run: hello retry test'),
       ...whenCoverage('mocha: hook: "before each" hook'),
       ...whenCoverage('mocha: hook end: "before each" hook'),
@@ -52,9 +54,11 @@ describe('hello suite', { retries: 2 }, () => {
 
       'mocha: test: hello retry test',
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'cypress: test:before:run: hello retry test',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
 
       ...whenCoverage('mocha: hook: "before each" hook'),
-      'cypress: test:before:run: hello retry test',
       ...whenCoverage('mocha: hook end: "before each" hook'),
       'mocha: pass: hello retry test',
       'mocha: test end: hello retry test',

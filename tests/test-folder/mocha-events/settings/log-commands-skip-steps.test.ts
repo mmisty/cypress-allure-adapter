@@ -66,6 +66,17 @@ describe('should skip hooks steps', () => {
 
       expect(steps).toEqual([
         {
+          name: '"before each" hook: [cypress-allure-adapter]',
+          status: 'passed',
+          steps: [
+            {
+              name: 'will not intercept requests to save bodies',
+              status: 'passed',
+              steps: [],
+            },
+          ],
+        },
+        {
           name: '"before each" hook: Named',
           status: 'passed',
           steps: [

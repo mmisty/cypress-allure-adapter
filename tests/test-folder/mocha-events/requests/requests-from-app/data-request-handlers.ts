@@ -79,10 +79,12 @@ const data: TestData = {
 
   it('01 should register request events - fetch', () => {
     cy.get('#toClickFetch').should('exist').click();
+    cy.get('#result').should('not.be.empty'); // wait request to finish
   });
 
    it('02 should register request events - xhr', () => {
     cy.get('#toClickXhr').should('exist').click();
+    cy.get('#result').should('not.be.empty'); // wait request to finish
   });
 });
 `,
@@ -153,6 +155,19 @@ const data: TestData = {
               },
             ],
           },
+          {
+            attachments: [],
+            name: 'get: #result',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'assert: expected **<div#result>** not to be **empty**',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
         ],
       },
 
@@ -191,6 +206,19 @@ const data: TestData = {
               {
                 attachments: [],
                 name: 'ended:GET http://localhost:<port>/',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
+            attachments: [],
+            name: 'get: #result',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'assert: expected **<div#result>** not to be **empty**',
                 status: 'passed',
                 steps: [],
               },
