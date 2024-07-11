@@ -48,6 +48,7 @@ Example report is here - [Allure Report example](https://mmisty.github.io/cypres
     - [after:spec event](#afterspec-event)
     - [Before run](#before-run)
     - [Start/End test events](#startend-test-events)
+    - [Start/End request events](#startend-request-events)
     - [Add environment info](#add-environment-info)
 5. [Examples](#examples)
 5. [Allure TestOps](#allure-testops)
@@ -169,6 +170,7 @@ That's it! :tada:
 | **allureWrapCustomCommands**<br/>_type: true/false/string_<br/>_default: true_ <br/><br/>ex:<br/> -  `allureWrapCustomCommands: 'true'`<br/> - `allureWrapCustomCommands:'qaId,login'`<br/> - `allureWrapCustomCommands:'!qaValue'` | will wrap custom commands, so custom command will have child steps in report<br/>When value has string with commands split by comma will wrap only these commands. <br/>To exclude commands specify them starting with `!` - all commands specified in this variable should have either `!` or not have it <br/><br/>For this to work you should register allure plugin in setup files before any new commands are added.<br/><br/>![wrap-cmd](./docs/wrap_cmd.jpg)                                           |
 | **allureCleanResults**<br/>_type: boolean_<br/>_default: false_                                                                                                                                                                     | Will remove allure results on cypress start (it will be done once, after plugins are loaded)                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | **allureAttachRequests**<br/>_type: boolean_<br/>_default: false_                                                                                                                                                                   | Attach request/response body and status as files to request step<br/><br/>Several requests:<br/>![requests](./docs/requests.jpg)<br/>One request: <br/>![request](./docs/request.jpg)                                                                                                                                                                                                                                                                                                                         |
+| **allureAddBodiesToRequests**<br/>_type: string_<br/>_default: undefined_                                                                                                                                                                   | Add request/response bodies to request object of `request:started`/ `request:ended` custom events, [see more](#startend-request-events)                                                                                                                                                                                                                                                                                                                     |
 | **allureCompactAttachments**<br/>*type: boolea*n<br/>_default: true_                                                                                                                                                                | Stringify requests attachments with spaces or not                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | **allureAddVideoOnPass**<br/>_type: boolean_<br/>_default: false_                                                                                                                                                                   | When true - will attach video for all tests (including passed), otherwise will attach videos only for failed, broken, unknown                                                                                                                                                                                                                                                                                                                                                                                 |
 | **tmsPrefix** <br/>_type: string_<br/><br/>ex: `http://jira.com` or `http://jira.com/PROJECT-1/*/browse`                                                                                                                            | You can specify prefix to tms using this. It will be concatenated with value when using cypress interface like `cy.allure().tms('PROJ-01')`.  <br/>Also link can be specified with `*` - it will be replaced with id. <br/><br/>Difference between tms and issue - will have different icons: <br/><br/> ![links](./docs/links.jpg)                                                                                                                                                                           |
@@ -328,6 +330,60 @@ Cypress.Allure.on('test:ended', test => {
 
 ```
 You can put this into your `support/index.ts` file.
+
+#### Start/End request events
+
+This plugin provides custom events for start and end request(xhr/fetch) events (`request:started`, `request:ended`)
+
+Using these events you can create your own handlers for requests - saving request bodies, adding specific attachemnts and etc.
+
+Exmpale below:
+
+```javascript
+// this can be added to e2e.ts / e2e.js / support file
+
+  Cypress.Allure.on('request:started', (req, log) => {
+    Cypress.Allure.startStep(`started ${req.method} ${req.url}`);
+    Cypress.Allure.attachment('request', JSON.stringify(req, null, '  '), 'application/json');
+    Cypress.Allure.endStep();
+
+  });
+
+  Cypress.Allure.on('request:ended', (req, log) => {
+    Cypress.Allure.startStep(`ended ${req.method} ${req.status} ${req.url}`);
+    Cypress.Allure.attachment('request', JSON.stringify(req, null, '  '), 'application/json');
+    if(req.responseBody){
+      Cypress.Allure.parameter("responseBody", req.responseBody);
+    }
+    Cypress.Allure.endStep();
+  });
+
+```
+
+By default requests made by app do not store request/response bodies unless you intercept them. 
+
+So to access request bodies within custom events you need to add environemt variable `allureAddBodiesToRequests` with requests like you are interceptin them by cy.intercept: 
+
+```javascript
+// cypress.config.ts
+env: {
+  // ...
+  allureAddBodiesToRequests: '*', // will add bodies to all requests
+}  
+// ...
+```
+
+or 
+
+```javascript
+// cypress.config.ts
+env: {
+  // ...
+  allureAddBodiesToRequests: '**/endpoint1,**/endpoint2**', // will add bodies only to requests with endpoint1 and endpoint2
+}  
+// ...
+```
+
 
 #### Add environment info
 To add environment information into Allure Report Environment section you need to update cypress config - setup node events:
