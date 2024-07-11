@@ -222,7 +222,12 @@ describe('${rootSuite}', () => {
                 {
                   attachments: [],
                   name: 'ended:GET http://localhost:<port>/',
-                  parameters: [],
+                  parameters: [
+                    {
+                      name: 'responseBody',
+                      value: 'Hello World!',
+                    },
+                  ],
                   status: 'passed',
                   steps: [],
                 },
