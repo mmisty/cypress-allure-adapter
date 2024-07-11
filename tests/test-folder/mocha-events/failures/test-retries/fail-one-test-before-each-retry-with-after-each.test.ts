@@ -46,6 +46,8 @@ describe('hello suite', { retries: 1 }, () => {
       'mocha: test: hello test',
 
       'plugin test:started',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
       'mocha: hook: "before each" hook',
       ...whenNoCoverage('cypress: test:before:run: hello test'),
       'mocha: hook end: "before each" hook',
@@ -62,8 +64,10 @@ describe('hello suite', { retries: 1 }, () => {
 
       'mocha: test: hello test',
       'plugin test:started',
-      'mocha: hook: "before each" hook',
+      'mocha: hook: "before each" hook: [cypress-allure-adapter]',
       'cypress: test:before:run: hello test',
+      'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
+      'mocha: hook: "before each" hook',
       ...whenCoverage('mocha: hook end: "before each" hook'),
       ...whenCoverage('mocha: hook: "before each" hook'),
       'cypress:screenshot:test:hello suite -- hello test -- before each hook (failed) (attempt 2).png',
