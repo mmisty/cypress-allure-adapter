@@ -16,6 +16,8 @@ import {
   withTry,
   logNameFn,
 } from '../common/command-names';
+import { FullRequest } from '../common/utils';
+import { lgoRequestEvents } from './request-events';
 
 const dbg = 'cypress-allure:cy-events';
 const UNCAUGHT_EXCEPTION_NAME = 'uncaught exception';
@@ -246,7 +248,7 @@ export const handleCyLogEvents = (
 
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
-  const currentRequestLogs: { id: string; started: number }[] = [];
+  const requests: FullRequest[] = [];
 
   // should be beforeEach (not before) to get env variable value from test config
   beforeEach(`${packageLog}`, () => {
@@ -270,76 +272,10 @@ export const handleCyLogEvents = (
     } else {
       cy.allure().step('will not intercept requests to save bodies');
     }
-    currentRequestLogs.splice(0, currentRequestLogs.length);
+    requests.splice(0, requests.length);
   });
 
-  const convertToRequests = (log: any): Partial<Cypress.RequestEvent> => {
-    const consoleProps = log?.consoleProps?.props;
-    debug('consoleProps:');
-    debug(consoleProps);
-
-    if (!consoleProps) {
-      return {};
-    }
-
-    let requestProps = consoleProps;
-
-    if (consoleProps['Request']) {
-      requestProps = consoleProps['Request'];
-    }
-    const url = requestProps['URL'] ?? requestProps['Request URL'];
-    const method = requestProps['Method'] ?? log?.method ?? '?';
-    const status = requestProps['Response Status Code'] ?? requestProps['Response Status'];
-
-    const res: Cypress.RequestEvent = {
-      method: method,
-      isFromCypress: false,
-      url,
-      requestHeaders: requestProps['Request Headers'],
-      requestBody: requestProps['Request Body'],
-      status,
-      responseHeaders: requestProps['Response Headers'],
-      responseBody: requestProps['Response Body'],
-      message: log?.renderProps?.message ?? `${method} ${status} ${url}`,
-    };
-
-    return res;
-  };
-
-  const emitRequestEvent = (event: 'request:started' | 'request:ended', log: CyLog) => {
-    const converted = convertToRequests(log);
-
-    if (!converted.url) {
-      return;
-    }
-
-    if (log.id && event === 'request:started' && !currentRequestLogs.map(t => t.id).includes(log.id)) {
-      currentRequestLogs.push({ id: log.id, started: Date.now() });
-      events.emit(event, converted, log);
-
-      return;
-    }
-
-    // when intercepterd several times - then ended log is called several times
-    if (log.id && event === 'request:ended' && currentRequestLogs.map(t => t.id).includes(log.id)) {
-      const started = currentRequestLogs.find(t => t.id === log.id)?.started;
-      const duration = started ? Date.now() - started : 0;
-      converted.duration = duration;
-
-      events.emit(event, converted, log);
-      currentRequestLogs.splice(currentRequestLogs.map(t => t.id).indexOf(log.id), 1);
-
-      return;
-    }
-  };
-
-  Cypress.on('log:changed', (log: CyLog) => {
-    const logName = logNameFn(log);
-
-    if ((log.end || log.ended) && logName === COMMAND_REQUEST) {
-      emitRequestEvent('request:ended', log);
-    }
-  });
+  lgoRequestEvents(requests, events);
 
   Cypress.on('log:added', (log: CyLog) => {
     if (!allureLogCyCommands()) {
@@ -364,12 +300,6 @@ export const handleCyLogEvents = (
         if (log.groupEnd) {
           Cypress.Allure.endStep();
         }
-
-        return;
-      }
-
-      if (logName === COMMAND_REQUEST) {
-        emitRequestEvent('request:started', log);
 
         return;
       }
