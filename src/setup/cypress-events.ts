@@ -370,6 +370,8 @@ export const handleCyLogEvents = (
 
       if (logName === COMMAND_REQUEST) {
         emitRequestEvent('request:started', log);
+
+        return;
       }
 
       if (!chainerId && end) {
