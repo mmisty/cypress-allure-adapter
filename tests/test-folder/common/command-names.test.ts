@@ -122,6 +122,17 @@ describe('Command names unit tests', () => {
           expected: 'myCommand: {a: 1}, {log: false}',
           expectedIsLog: false,
         },
+        {
+          desc: 'no name',
+          command: {
+            attributes: {
+              name: ' ',
+              args: ['step message'],
+            },
+          },
+          expected: 'step message',
+          expectedIsLog: true,
+        },
       ])
       .run(t => {
         const cmdMessage = commandParams(t.command).message;

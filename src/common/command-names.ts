@@ -134,12 +134,15 @@ export const withTry = (message: string, callback: () => void) => {
 
 export const stepMessage = (name: string, args: string | undefined) => {
   const isLong = args && args.length > ARGS_TRIM_AT;
-  const stringArgs = args && args.length > 0 ? `: ${args}` : '';
   const isAssertLog = name === 'assert';
+  const isNonZeroArgs = args && args.length > 0;
+  const stringArgs = isNonZeroArgs ? `${args}` : '';
 
   const argsLine = isLong && !isAssertLog ? '' : stringArgs;
+  const argsAndName = argsLine === '' ? `${name}` : `${name}: ${argsLine}`;
+  const message = name.trim() === '' ? `${argsLine}` : argsAndName;
 
-  return `${name}${argsLine}`;
+  return message;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
