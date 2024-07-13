@@ -330,6 +330,8 @@ export const handleCyLogEvents = (
 
     if (isEndLogCommand(command.attributes?.name)) {
       Cypress.Allure.endStep();
+
+      return;
     }
 
     filterCommandLog(command, ignoreCommands)
