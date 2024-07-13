@@ -17,7 +17,19 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
       log.end();
     });
   });
+
+  Cypress.Commands.add('endLogGroup', { prevSubject: 'optional' }, subject => {
+    Cypress.log({ groupEnd: true, emitOnly: true });
+    cy.wrap(subject, {log:false});
+  });
   
+  Cypress.Commands.add('withGroupping', (cyCommands) => {
+    const log = Cypress.log({ name: 'withGroupping', groupStart: true, autoEnd: false });
+    cyCommands();
+    cy.wrap(null, {log:false}).then(()=> {
+      log.error(new Error('TestE'));
+    }).endLogGroup();
+  });
   
   it('test 1 - pass', () => {
     cy.group(() => {
@@ -30,11 +42,30 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
       expect(0).eq(1);
     });
   });
+
+
+   it('test 4 - more nested', () => {
+    
+    cy.withGroupping(() => {
+      cy.log('level 1');
+      cy.withGroupping(() => {
+        cy.log('level 2');
+      });
+    });
+
+    cy.withGroupping(() => {
+      cy.log('level 1 again');
+    });
+  });
 });
     `,
 
   expect: {
-    testsNames: [`${rootSuite} test 1 - pass`, `${rootSuite} test 2 - fail`],
+    testsNames: [
+      `${rootSuite} test 1 - pass`,
+      `${rootSuite} test 2 - fail`,
+      `${rootSuite} test 4 - more nested`,
+    ],
 
     testStatuses: [
       {
@@ -51,6 +82,14 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
         status: 'failed',
         statusDetails: {
           message: ['expected 0 to equal 1'],
+        },
+      },
+      {
+        testName: 'test 4 - more nested',
+        index: 0,
+        status: 'passed',
+        statusDetails: {
+          message: undefined,
         },
       },
     ],
@@ -123,6 +162,112 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
                     attachments: [],
                     name: 'assert: expected **0** to equal **1**',
                     status: 'failed',
+                    steps: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+
+      {
+        testName: 'test 4 - more nested',
+        index: 0,
+        mapStep: m => ({
+          status: m.status,
+          attachments: m.attachments,
+          statusDetailsMsg: m.statusDetails?.message,
+        }),
+        filterStep: m =>
+          ['before each', 'after each'].every(
+            x => m.name && m.name.indexOf(x) === -1,
+          ),
+        expected: [
+          {
+            attachments: [],
+            name: 'withGroupping',
+            status: 'passed',
+            statusDetailsMsg: undefined,
+            steps: [
+              {
+                attachments: [],
+                name: 'withGroupping: function(){}',
+                status: 'passed',
+                statusDetailsMsg: undefined,
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: level 1',
+                    status: 'passed',
+                    statusDetailsMsg: undefined,
+                    steps: [],
+                  },
+                  {
+                    attachments: [],
+                    name: 'withGroupping',
+                    status: 'passed',
+                    statusDetailsMsg: undefined,
+                    steps: [
+                      {
+                        attachments: [],
+                        name: 'withGroupping: function(){}',
+                        status: 'passed',
+                        statusDetailsMsg: undefined,
+                        steps: [
+                          {
+                            attachments: [],
+                            name: 'log: level 2',
+                            status: 'passed',
+                            statusDetailsMsg: undefined,
+                            steps: [],
+                          },
+                          {
+                            attachments: [],
+                            name: 'endLogGroup',
+                            status: 'passed',
+                            statusDetailsMsg: undefined,
+                            steps: [],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    attachments: [],
+                    name: 'endLogGroup',
+                    status: 'passed',
+                    statusDetailsMsg: undefined,
+                    steps: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            attachments: [],
+            name: 'withGroupping',
+            status: 'passed',
+            statusDetailsMsg: undefined,
+            steps: [
+              {
+                attachments: [],
+                name: 'withGroupping: function(){}',
+                status: 'passed',
+                statusDetailsMsg: undefined,
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: level 1 again',
+                    status: 'passed',
+                    statusDetailsMsg: undefined,
+                    steps: [],
+                  },
+                  {
+                    attachments: [],
+                    name: 'endLogGroup',
+                    status: 'passed',
+                    statusDetailsMsg: undefined,
                     steps: [],
                   },
                 ],

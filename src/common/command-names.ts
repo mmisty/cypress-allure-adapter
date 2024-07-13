@@ -95,19 +95,10 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       const isIts = /its:\s*\..*/.test(logMessage); // its already logged as command
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);
       const isLogMsgEqCommandName = logMessage === cmdAttrs?.name;
-      const isGroupStart = !!attr?.groupStart;
       const isGroupEnd = !!attr?.groupEnd;
       const isEmitOnly = attr?.emitOnly;
 
-      const noLogConditions = [
-        isGroupStart,
-        isGroupEnd,
-        equalMessages,
-        isRequest,
-        isIts,
-        ignoredLog,
-        isLogMsgEqCommandName,
-      ];
+      const noLogConditions = [equalMessages, isRequest, isIts, ignoredLog, isLogMsgEqCommandName];
       const logCondition = isGroupEnd && isEmitOnly;
       const result = noLogConditions.every(c => !c) || logCondition;
 
@@ -142,7 +133,7 @@ export const stepMessage = (name: string, args: string | undefined) => {
   const argsAndName = argsLine === '' ? `${name}` : `${name}: ${argsLine}`;
   const message = name.trim() === '' ? `${argsLine}` : argsAndName;
 
-  return message;
+  return isAssertLog ? message : message.replace(/\*\*/g, '');
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

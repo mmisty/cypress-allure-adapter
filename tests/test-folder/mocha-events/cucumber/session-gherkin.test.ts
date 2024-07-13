@@ -68,39 +68,38 @@ Feature: test cucumber
             {
               name: 'session: user',
               status: 'passed',
+              steps: [],
+            },
+            {
+              name: 'Clear page',
+              status: 'passed',
+              steps: [],
+            },
+            {
+              name: 'Clear cookies, localStorage and sessionStorage',
+              status: 'passed',
+              steps: [],
+            },
+            {
+              name: 'Create new session',
+              status: 'passed',
               steps: [
                 {
-                  name: 'Create new session',
+                  name: 'log: 1',
                   status: 'passed',
-                  steps: [
-                    {
-                      name: 'Clear page',
-                      status: 'passed',
-                      steps: [],
-                    },
-                    {
-                      name: 'Clear cookies, localStorage and sessionStorage',
-                      status: 'passed',
-                      steps: [],
-                    },
-                    {
-                      name: 'log: 1',
-                      status: 'passed',
-                      steps: [],
-                    },
-                    {
-                      name: 'setCookie: A, AAA',
-                      status: 'passed',
-                      steps: [],
-                    },
-                  ],
+                  steps: [],
                 },
                 {
-                  name: 'Clear page',
+                  name: 'setCookie: A, AAA',
                   status: 'passed',
                   steps: [],
                 },
               ],
+            },
+            {
+              name: 'Clear page',
+              status: 'passed',
+              steps: [],
             },
           ],
         },
