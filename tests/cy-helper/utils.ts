@@ -568,7 +568,7 @@ export const covergeAfterAll = [
     steps: [
       {
         attachments: [],
-        name: 'log: Saving code coverage for **unit** `[@cypress/code-coverage]`',
+        name: 'log: Saving code coverage for unit `[@cypress/code-coverage]`',
         parameters: [],
         stage: 'finished',
         start: 1323475200000,
