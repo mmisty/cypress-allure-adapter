@@ -153,7 +153,7 @@ export const handleCyLogEvents = (
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const wrappedFn =
-    originalFn =>
+    (originalFn: (...args: any[]) => any) =>
     (...fnargs: any[]) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const currentCmd = (Cypress as any).state?.().current;
