@@ -2,7 +2,7 @@ import { checkCyResults, mapSteps } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { createCucumberTestRes } from '../../../cy-helper/cucumber-utils';
 
-describe('cucumber test to check groupping with session', () => {
+describe('cucumber test to check grouping with session', () => {
   const res = createCucumberTestRes(
     [
       `
@@ -68,38 +68,39 @@ Feature: test cucumber
             {
               name: 'session: user',
               status: 'passed',
-              steps: [],
-            },
-            {
-              name: 'Clear page',
-              status: 'passed',
-              steps: [],
-            },
-            {
-              name: 'Clear cookies, localStorage and sessionStorage',
-              status: 'passed',
-              steps: [],
-            },
-            {
-              name: 'Create new session',
-              status: 'passed',
               steps: [
                 {
-                  name: 'log: 1',
+                  name: 'Clear page',
                   status: 'passed',
                   steps: [],
                 },
                 {
-                  name: 'setCookie: A, AAA',
+                  name: 'Clear cookies, localStorage and sessionStorage',
+                  status: 'passed',
+                  steps: [],
+                },
+                {
+                  name: 'Create new session',
+                  status: 'passed',
+                  steps: [
+                    {
+                      name: 'log: 1',
+                      status: 'passed',
+                      steps: [],
+                    },
+                    {
+                      name: 'setCookie: A, AAA',
+                      status: 'passed',
+                      steps: [],
+                    },
+                  ],
+                },
+                {
+                  name: 'Clear page',
                   status: 'passed',
                   steps: [],
                 },
               ],
-            },
-            {
-              name: 'Clear page',
-              status: 'passed',
-              steps: [],
             },
           ],
         },

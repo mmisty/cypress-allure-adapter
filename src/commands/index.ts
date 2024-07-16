@@ -1,5 +1,6 @@
 import Chainable = Cypress.Chainable;
 import AllureReporter = Cypress.AllureReporter;
+import { wrapSessionCmd } from './session';
 
 export const registerCommands = () => {
   Cypress.Commands.add('allure', () => {
@@ -124,4 +125,6 @@ export const registerCommands = () => {
 
     return prevSubj;
   });
+
+  wrapSessionCmd();
 };
