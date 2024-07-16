@@ -151,6 +151,31 @@ export const handleCyLogEvents = (
     return isLog && !ignoreAllCommands(ignoreCommands).includes(name) && !Object.keys(Cypress.Allure).includes(name);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const wrappedFn =
+    originalFn =>
+    (...fnargs: any[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentCmd = (Cypress as any).state?.().current;
+      events.emit('cmd:started:tech', currentCmd, true);
+
+      const res = originalFn(...fnargs);
+      const end = () => events.emit('cmd:ended:tech', currentCmd, true);
+
+      if (res?.then && !res?.should) {
+        // for promises returned from commands
+        res.then(() => {
+          end();
+        });
+      } else {
+        cy.doSyncCommand(() => {
+          end();
+        });
+      }
+
+      return res;
+    };
+
   const wrapCustomCommandsFn = (commands: string[], isExclude: boolean) => {
     const origAdd = Cypress.Commands.add;
 
@@ -195,33 +220,10 @@ export const handleCyLogEvents = (
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newFn = (...fnargs: any[]) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const currentCmd = (Cypress as any).state?.().current;
-        events.emit('cmd:started:tech', currentCmd, true);
-
-        const res = fn(...fnargs);
-        const end = () => events.emit('cmd:ended:tech', currentCmd, true);
-
-        if (res?.then && !res?.should) {
-          // for promises returned from commands
-          res.then(() => {
-            end();
-          });
-        } else {
-          cy.doSyncCommand(() => {
-            end();
-          });
-        }
-
-        return res;
-      };
-
       if (fn && opts) {
-        origAdd(fnName as keyof Chainable, opts, newFn);
+        origAdd(fnName as keyof Chainable, opts, wrappedFn(fn));
       } else if (fn) {
-        origAdd(fnName as keyof Chainable, newFn);
+        origAdd(fnName as keyof Chainable, wrappedFn(fn));
       } else {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
@@ -248,6 +250,29 @@ export const handleCyLogEvents = (
 
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
+
+  const wrapCypressGroupCommands = () => {
+    const groupedCommands: (keyof typeof cy)[] = ['session', 'within'];
+
+    groupedCommands.forEach(cmd => {
+      Cypress.Commands.overwrite(cmd as any, function (originalFn, ...args) {
+        const fn = originalFn;
+
+        if (ignoreAllCommands(ignoreCommands).includes(cmd)) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          return fn(...args);
+        }
+
+        return wrappedFn(fn)(...args);
+      });
+    });
+  };
+
+  if (allureLogCyCommands()) {
+    wrapCypressGroupCommands();
+  }
+
   const requests: FullRequest[] = [];
 
   // should be beforeEach (not before) to get env variable value from test config

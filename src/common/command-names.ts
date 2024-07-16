@@ -55,7 +55,7 @@ export type CommandT = {
 };
 
 export const ignoreAllCommands = (ignoreCommands: () => string[]) => {
-  const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand', 'end-logGroup']
+  const cmds = [...ignoreCommands(), 'should', 'then', 'allure', 'doSyncCommand', 'end-logGroup', 'within-restore']
     .filter(t => t.trim() !== '')
     .map(x => new RegExp(`^${x.replace(/\*/g, '.*')}$`));
 
