@@ -9,7 +9,7 @@ export const wrapSessionCmd = () => {
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      return sess(id, setup, options, ...args).should(() => {
+      return sess(id, setup, options, ...args).doSyncCommand(() => {
         Cypress.Allure.endStep();
       });
     } else {
