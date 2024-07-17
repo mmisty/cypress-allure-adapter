@@ -37,7 +37,7 @@ export const lgoRequestEvents = (requests: FullRequest[], events: EventEmitter) 
         current.response.data = eventData.data;
         const result = convertToRequestsResponse(current);
 
-        events.emit('request:ended', result);
+        events.emit('request:ended', result, eventData);
         // remove here for no emitting again in on 'response:received' event
         requests.splice(requests.map(r => r.id).indexOf(current.id), 1);
         break;
@@ -71,7 +71,7 @@ export const lgoRequestEvents = (requests: FullRequest[], events: EventEmitter) 
 
         const result = convertToRequestsIncoming(current.request);
 
-        events.emit('request:started', result);
+        events.emit('request:started', result, res);
         break;
       }
 
@@ -91,7 +91,7 @@ export const lgoRequestEvents = (requests: FullRequest[], events: EventEmitter) 
         current.response.data.headers = res.headers;
 
         const result = convertToRequestsResponse(current);
-        events.emit('request:ended', result);
+        events.emit('request:ended', result, res);
         requests.splice(requests.map(r => r.id).indexOf(current.id), 1);
         break;
       }
