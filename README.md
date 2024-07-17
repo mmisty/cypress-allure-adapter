@@ -9,7 +9,7 @@
 ![latest version](https://img.shields.io/npm/v/@mmisty/cypress-allure-adapter.svg)
 
 
-![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-13.13.0-blue)
+![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-13.13.1-blue)
 ![supported cypress](https://img.shields.io/badge/cypress-12.x-blue)
 ![supported cypress](https://img.shields.io/badge/cypress-11.x-blue)
 ![supported cypress](https://img.shields.io/badge/cypress-10.x-blue)
