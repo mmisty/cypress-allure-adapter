@@ -316,20 +316,7 @@ export const handleCyLogEvents = (
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
 
-      // if (log.groupStart || log.groupEnd) {
-      //   if (log.groupStart) {
-      //     const msg = cmdMessage.replace(/\*\*/g, '');
-      //     Cypress.Allure.startStep(msg);
-      //   }
-
-      //   if (log.groupEnd) {
-      //     Cypress.Allure.endStep();
-      //   }
-
-      //   return;
-      // }
-
-      if (!chainerId && end) {
+      if (!chainerId && end && logName !== COMMAND_REQUEST) {
         // synchronous log without commands
         Cypress.Allure.startStep(cmdMessage);
 
