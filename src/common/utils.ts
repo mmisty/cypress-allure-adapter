@@ -1,5 +1,6 @@
 export type CypressDataStub = {
   browserRequestId?: string;
+  statusCode?: number;
   data?: {
     headers?: any;
     body?: any;
