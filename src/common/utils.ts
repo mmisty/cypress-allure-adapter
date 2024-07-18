@@ -1,5 +1,6 @@
 export type CypressDataStub = {
   browserRequestId?: string;
+  statusCode?: number;
   data?: {
     headers?: any;
     body?: any;
@@ -25,7 +26,7 @@ export type FullRequest = { id: string; request: CypressDataRequest; response: C
 export const convertToRequestsResponse = (data: FullRequest): Cypress.RequestEvent => {
   const url = data.request.url;
   const method = data.request.method;
-  const status = data.response?.data?.statusCode;
+  const status = data.response?.data?.statusCode ?? data.response?.statusCode;
 
   const ended = Date.now(),
     duration = ended - data.started;
