@@ -389,7 +389,7 @@ export const handleCyLogEvents = (
         const prev = previousGroup();
         const current = currentGroup();
 
-        // for group logs in commands
+        // for group logs within commands
         if (prev !== current) {
           // console.log(`start HERE (group 1) ${logMessage}`);
           Cypress.Allure.startStep(logMessage);
