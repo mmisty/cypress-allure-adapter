@@ -311,6 +311,25 @@ export const handleCyLogEvents = (
     requests.splice(0, requests.length);
   });
 
+  const endGroups = () => {
+    const prev = previousGroup();
+    const current = currentGroup();
+
+    if (current !== prev?.id) {
+      const all = currentGroups();
+      const toEnd = groups.filter(g => (all.length > 0 ? !all.includes(g.id) : true));
+      toEnd.forEach(() => {
+        // console.log(`end here (group 11) ${logMessage}`);
+        Cypress.Allure.endStep();
+        groups.pop();
+      });
+
+      return true;
+    }
+
+    return false;
+  };
+
   lgoRequestEvents(requests, events);
 
   Cypress.on('log:added', (log: CyLog) => {
@@ -385,6 +404,11 @@ export const handleCyLogEvents = (
       // console.log(attr);
       // console.log('consoleProps');
       // console.log(consoleProps);
+
+      if (groupStart || groupEnd) {
+        endGroups();
+      }
+
       if (groupStart) {
         const prev = previousGroup();
         const current = currentGroup();
@@ -522,22 +546,10 @@ export const handleCyLogEvents = (
       return;
     }
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
-    const current = currentGroup();
-    const previous = previousGroup();
 
-    // console.log('current', current);
-    // console.log('previous', previous);
+    const isGroups = endGroups();
 
-    if (current !== previous?.id) {
-      const all = currentGroups();
-      const toEnd = groups.filter(g => (all.length > 0 ? !all.includes(g.id) : true));
-
-      toEnd.forEach(() => {
-        // console.log(`end here (group 3) ${cmdMessage}`);
-        Cypress.Allure.endStep(status);
-        groups.pop();
-      });
-    } else {
+    if (!isGroups) {
       Cypress.Allure.endStep(status);
       // console.log(`end here (simple 4) ${cmdMessage}`);
     }

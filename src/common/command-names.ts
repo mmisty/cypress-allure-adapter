@@ -13,6 +13,7 @@ export type CommandLog = {
     error?: any;
     groupStart?: boolean;
     groupEnd?: boolean;
+    group?: string;
     emitOnly?: boolean;
   };
 };
