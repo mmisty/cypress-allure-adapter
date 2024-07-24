@@ -663,9 +663,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   handleCyLogEvents(runner, allureEventsEmitter, {
     ignoreCommands: () => (Cypress.env('allureSkipCommands') ?? '').split(','),
     allureLogCyCommands: () =>
-      Cypress.env('allureLogCyCommands') === undefined ||
-      Cypress.env('allureLogCyCommands') === 'true' ||
-      Cypress.env('allureLogCyCommands') === true,
+      Cypress.env('allureLogCyCommands') === undefined || `${Cypress.env('allureLogCyCommands')}` === 'true',
     wrapCustomCommands: () => {
       if (
         Cypress.env('allureWrapCustomCommands') === undefined ||
@@ -683,6 +681,13 @@ export const registerMochaReporter = (ws: WebSocket) => {
     },
     spyOnRequests: () => {
       return Cypress.env('allureAddBodiesToRequests')?.split(',') ?? [];
+    },
+    allureSkipSteps: () => {
+      return (
+        Cypress.env('allureSkipSteps')
+          ?.split(',')
+          .map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? []
+      );
     },
   });
 };

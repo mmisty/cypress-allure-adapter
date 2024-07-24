@@ -7,7 +7,7 @@ import {
   convertToRequestsResponse,
 } from '../common/utils';
 
-export const lgoRequestEvents = (requests: FullRequest[], events: EventEmitter) => {
+export const logRequestEvents = (requests: FullRequest[], events: EventEmitter) => {
   const isLogRequests = () => ['request:started', 'request:ended'].some(x => events.eventNames().includes(x));
 
   Cypress.on('net:stubbing:event', (message: string, eventData: CypressDataStub) => {

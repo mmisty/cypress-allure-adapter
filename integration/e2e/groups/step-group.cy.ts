@@ -7,6 +7,19 @@ describe('suite name todo', () => {
   };
 
   it('test name todo', () => {
+    cy.session('user123', () => {
+      cy.log('1');
+      cy.setCookie('A', 'AAA');
+    });
+
+    // tod restore
+
+    cy.log('next step 2');
+
+    cy.session('123', () => {
+      cy.get('div');
+      cy.log('step');
+    });
     visitHtml({ body: '<div datatest="divel">Hello</div>', script: '' });
 
     cy.steps('do smth', 'input 1');
@@ -14,7 +27,11 @@ describe('suite name todo', () => {
       cy.steps('do smth', 'input 2');
       cy.get('div');
     });
-    cy.steps('do smth', 'input 3');
+    //  cy.steps('do smth', 'input 3');
     cy.get('div');
+
+    cy.get('[datatest="divel"]').within(() => {
+      cy.log('divel');
+    });
   });
 });

@@ -11,13 +11,12 @@ const data: TestData = {
 describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
   
   it('test 1 - create new and restore', () => {
-    Cypress.session.clearAllSavedSessions();
     cy.session('user123', () => {
       cy.log('1');
       cy.setCookie('A', 'AAA');
     });
 
-    // tod restore
+    // todo restore
 
     cy.log('next step 2');
   });
@@ -94,16 +93,15 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
                   },
                 ],
               },
-              {
-                attachments: [],
-                name: 'Clear page',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
             ],
           },
-
+          {
+            attachments: [],
+            name: 'Clear page',
+            status: 'passed',
+            statusDetails: {},
+            steps: [],
+          },
           {
             attachments: [],
             name: 'log: next step 2',

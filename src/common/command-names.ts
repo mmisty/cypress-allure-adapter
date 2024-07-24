@@ -5,6 +5,7 @@ export const COMMAND_REQUEST = 'request';
 
 export type CommandLog = {
   attributes?: {
+    id?: string;
     name?: string;
     displayName?: string;
     commandLogId?: string;
@@ -13,6 +14,8 @@ export type CommandLog = {
     error?: any;
     groupStart?: boolean;
     groupEnd?: boolean;
+    group?: string;
+    groupLevel?: number;
     emitOnly?: boolean;
   };
 };
@@ -74,7 +77,7 @@ export const logNameFn = (attribute: any) => {
   return attribute?.displayName ?? attribute?.name ?? 'no-log';
 };
 
-export const filterCommandLog = (command: CommandT, ignoreCommands: () => string[]): CommandLog[] => {
+export const filterCommandLog = (command: CommandT | undefined, ignoreCommands: () => string[]): CommandLog[] => {
   const cmdAttrs = command?.attributes;
   const cmdLogs = cmdAttrs?.logs ?? [];
 
@@ -214,11 +217,11 @@ const convertEmptyObj = (obj: Record<string, unknown>, isJSON: boolean, indent?:
   return '';
 };
 
-export const commandParams = (command: CommandT) => {
-  const name = logNameFn(command.attributes);
+export const commandParams = (command: CommandT | undefined) => {
+  const name = logNameFn(command?.attributes);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const commandArgs = command.attributes?.args as any;
-  const state = command.state ?? 'passed';
+  const commandArgs = command?.attributes?.args as any;
+  const state = command?.state ?? 'passed';
 
   // exclude command logs with Cypress options isLog = false
   const isLog = () => {
