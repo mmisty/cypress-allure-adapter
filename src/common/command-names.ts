@@ -129,7 +129,9 @@ export const stepMessage = (name: string, args: string | undefined) => {
   const isNonZeroArgs = args && args.length > 0;
   const stringArgs = isNonZeroArgs ? `${args}` : '';
 
-  const argsLine = isLong && !isAssertLog ? '' : stringArgs;
+  const argsLineDarft = isLong && !isAssertLog ? '' : stringArgs;
+  const argsLine = argsLineDarft.replace('function(){}', '').trim();
+
   const argsAndName = argsLine === '' ? `${name}` : `${name}: ${argsLine}`;
   const message = name.trim() === '' ? `${argsLine}` : argsAndName;
 
@@ -240,6 +242,10 @@ export const commandParams = (command: CommandT) => {
           .map(arg => {
             if (name === COMMAND_REQUEST && typeof arg === 'object' && arg.method && arg.url) {
               return requestName(arg.url, arg.method);
+            }
+
+            if (typeof arg === 'function') {
+              return '';
             }
 
             return stringify(arg, false);

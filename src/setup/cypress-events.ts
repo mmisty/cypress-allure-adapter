@@ -530,7 +530,7 @@ export const handleCyLogEvents = (
 
     if (current !== previous?.id) {
       const all = currentGroups();
-      const toEnd = groups.filter(g => (all.length > 0 ? all.includes(g.id) : true));
+      const toEnd = groups.filter(g => (all.length > 0 ? !all.includes(g.id) : true));
 
       toEnd.forEach(() => {
         // console.log(`end here (group 3) ${cmdMessage}`);
