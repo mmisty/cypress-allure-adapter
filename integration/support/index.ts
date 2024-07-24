@@ -3,6 +3,8 @@ import { registerCypressGrep } from '@mmisty/cypress-grep';
 import { COVERAGE } from '../common/constants';
 import { allureAdapterSetup } from '@src';
 import { delay } from '@src/common';
+import './step-lib';
+import './support-index';
 import Chainable = Cypress.Chainable;
 
 console.log('====SUPPORT INDEX STARTED');
