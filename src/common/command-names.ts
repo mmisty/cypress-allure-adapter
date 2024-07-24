@@ -244,10 +244,6 @@ export const commandParams = (command: CommandT) => {
               return requestName(arg.url, arg.method);
             }
 
-            if (typeof arg === 'function') {
-              return '';
-            }
-
             return stringify(arg, false);
           })
           .filter(x => x.trim() !== '');
