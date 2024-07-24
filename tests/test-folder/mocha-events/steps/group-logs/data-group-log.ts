@@ -27,7 +27,7 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
     const log = Cypress.log({ name: 'withGroupping', groupStart: true, autoEnd: false });
     cyCommands();
     cy.wrap(null, {log:false}).then(()=> {
-      log.error(new Error('TestE'));
+      log.error(new Error('TestE')); // error ends group in cypress
     }).endLogGroup();
   });
   
@@ -188,56 +188,28 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
             attachments: [],
             name: 'withGroupping',
             status: 'passed',
-            statusDetailsMsg: undefined,
             steps: [
               {
                 attachments: [],
-                name: 'withGroupping: function(){}',
+                name: 'log: level 1',
                 status: 'passed',
-                statusDetailsMsg: undefined,
+                steps: [],
+              },
+              {
+                attachments: [],
+                name: 'withGroupping',
+                status: 'passed',
                 steps: [
                   {
                     attachments: [],
-                    name: 'log: level 1',
+                    name: 'log: level 2',
                     status: 'passed',
-                    statusDetailsMsg: undefined,
                     steps: [],
-                  },
-                  {
-                    attachments: [],
-                    name: 'withGroupping',
-                    status: 'passed',
-                    statusDetailsMsg: undefined,
-                    steps: [
-                      {
-                        attachments: [],
-                        name: 'withGroupping: function(){}',
-                        status: 'passed',
-                        statusDetailsMsg: undefined,
-                        steps: [
-                          {
-                            attachments: [],
-                            name: 'log: level 2',
-                            status: 'passed',
-                            statusDetailsMsg: undefined,
-                            steps: [],
-                          },
-                          {
-                            attachments: [],
-                            name: 'endLogGroup',
-                            status: 'passed',
-                            statusDetailsMsg: undefined,
-                            steps: [],
-                          },
-                        ],
-                      },
-                    ],
                   },
                   {
                     attachments: [],
                     name: 'endLogGroup',
                     status: 'passed',
-                    statusDetailsMsg: undefined,
                     steps: [],
                   },
                 ],
@@ -246,31 +218,26 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
           },
           {
             attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
+          },
+          {
+            attachments: [],
             name: 'withGroupping',
             status: 'passed',
-            statusDetailsMsg: undefined,
             steps: [
               {
                 attachments: [],
-                name: 'withGroupping: function(){}',
+                name: 'log: level 1 again',
                 status: 'passed',
-                statusDetailsMsg: undefined,
-                steps: [
-                  {
-                    attachments: [],
-                    name: 'log: level 1 again',
-                    status: 'passed',
-                    statusDetailsMsg: undefined,
-                    steps: [],
-                  },
-                  {
-                    attachments: [],
-                    name: 'endLogGroup',
-                    status: 'passed',
-                    statusDetailsMsg: undefined,
-                    steps: [],
-                  },
-                ],
+                steps: [],
+              },
+              {
+                attachments: [],
+                name: 'endLogGroup',
+                status: 'passed',
+                steps: [],
               },
             ],
           },

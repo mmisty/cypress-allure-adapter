@@ -134,6 +134,7 @@ export const handleCyLogEvents = (
   const debug = logClient(dbg);
   const { ignoreCommands, wrapCustomCommands, allureLogCyCommands, spyOnRequests } = config;
   const customCommands: string[] = [];
+  const groups: { id: string; message: string }[] = [];
 
   const allureAttachRequests = Cypress.env('allureAttachRequests')
     ? Cypress.env('allureAttachRequests') === 'true' || Cypress.env('allureAttachRequests') === true
@@ -149,6 +150,16 @@ export const handleCyLogEvents = (
 
   const isLogCommand = (isLog: boolean, name: string) => {
     return isLog && !ignoreAllCommands(ignoreCommands).includes(name) && !Object.keys(Cypress.Allure).includes(name);
+  };
+
+  const currentGroups = () => (Cypress as any).state('logGroupIds') || [];
+
+  const previousGroup = () => groups[groups.length - 1];
+
+  const currentGroup = () => {
+    const currGroups = currentGroups();
+
+    return currGroups[currGroups.length - 1];
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -300,6 +311,25 @@ export const handleCyLogEvents = (
     requests.splice(0, requests.length);
   });
 
+  const endGroups = () => {
+    const prev = previousGroup();
+    const current = currentGroup();
+
+    if (current !== prev?.id) {
+      const all = currentGroups();
+      const toEnd = groups.filter(g => (all.length > 0 ? !all.includes(g.id) : true));
+      toEnd.forEach(() => {
+        // console.log(`end here (group 11) ${logMessage}`);
+        Cypress.Allure.endStep();
+        groups.pop();
+      });
+
+      return true;
+    }
+
+    return false;
+  };
+
   lgoRequestEvents(requests, events);
 
   Cypress.on('log:added', (log: CyLog) => {
@@ -374,17 +404,24 @@ export const handleCyLogEvents = (
       // console.log(attr);
       // console.log('consoleProps');
       // console.log(consoleProps);
+
+      if (groupStart || groupEnd) {
+        endGroups();
+      }
+
       if (groupStart) {
-        Cypress.Allure.startStep(logMessage);
+        const prev = previousGroup();
+        const current = currentGroup();
+
+        // for group logs within commands
+        if (prev !== current) {
+          // console.log(`start HERE (group 1) ${logMessage}`);
+          Cypress.Allure.startStep(logMessage);
+          groups.push({ id: current, message: logMessage });
+        }
 
         return;
       }
-
-      // if (groupEnd) {
-      //   Cypress.Allure.endStep();
-
-      //   return;
-      // }
 
       if (!groupEnd) {
         Cypress.Allure.startStep(logMessage);
@@ -450,8 +487,20 @@ export const handleCyLogEvents = (
     if (!isLogCommand(isLog, name) || !allureLogCyCommands()) {
       return;
     }
+    const current = currentGroup();
+    const previous = previousGroup();
+    // console.log(current);
+
+    if (current && current !== previous?.id) {
+      // console.log(`start here (group 5) ${cmdMessage}`);
+      Cypress.Allure.startStep(cmdMessage);
+      groups.push({ id: current, message: cmdMessage });
+
+      return;
+    }
 
     debug(`started: ${cmdMessage}`);
+    // console.log(`start here simple cmd 6 ${cmdMessage}`);
     Cypress.Allure.startStep(cmdMessage);
 
     withTry('report command:attachment', () => {
@@ -497,6 +546,12 @@ export const handleCyLogEvents = (
       return;
     }
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
-    Cypress.Allure.endStep(status);
+
+    const isGroups = endGroups();
+
+    if (!isGroups) {
+      Cypress.Allure.endStep(status);
+      // console.log(`end here (simple 4) ${cmdMessage}`);
+    }
   });
 };
