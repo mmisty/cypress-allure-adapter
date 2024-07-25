@@ -104,6 +104,19 @@ declare namespace Cypress {
      * @param handler
      */
     on(event: 'request:ended', handler: (request: RequestEvent, log: CyLog) => void): void;
+    /**
+     * Fired when group is started
+     * @param event
+     * @param handler
+     */
+    on(event: 'group:started', handler: (name: string, id: string) => void): void;
+
+    /**
+     * Fired when group is ended
+     * @param event
+     * @param handler
+     */
+    on(event: 'group:ended', handler: (name: string, id: string) => void): void;
   }
 
   interface Cypress {
