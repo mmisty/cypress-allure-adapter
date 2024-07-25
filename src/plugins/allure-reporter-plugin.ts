@@ -185,7 +185,7 @@ export class AllureReporter {
     this.screenshots = opts.screenshots;
     this.allureSkipSteps =
       opts.allureSkipSteps?.split(',').map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
-
+    this.allureSkipSteps.push(/^allure-group$/);
     log('Created reporter');
     log(opts);
     this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
@@ -446,7 +446,7 @@ export class AllureReporter {
     }
 
     if (this.currentHook) {
-      this.filterSteps(this.currentHook.wrappedItem);
+      this.filterSteps(this.currentHook.wrappedItem, this.allureSkipSteps);
       this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.setExecutableStatus(this.currentHook, result, details);
       this.mergeStepsWithSingleChild(this.currentHook.wrappedItem.steps);
@@ -940,13 +940,11 @@ export class AllureReporter {
     applyLabel(LabelName.SUB_SUITE);
   }
 
-  filterSteps(result: FixtureResult | TestResult | undefined) {
-    const skipSteps = this.allureSkipSteps;
-
+  filterSteps(result: FixtureResult | TestResult | undefined, skipSteps: RegExp[]) {
     if (result && result.steps.length > 0) {
       result.steps = result.steps.filter(t => !skipSteps.some(x => x.test(t.name ?? '')));
       result.steps.forEach(res => {
-        this.filterSteps(res);
+        this.filterSteps(res, skipSteps);
       });
     }
   }
@@ -972,6 +970,7 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
+    this.mergeGroupCommands(this.currentTest.wrappedItem.steps);
     this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
@@ -979,7 +978,7 @@ export class AllureReporter {
     }
 
     // filter steps here
-    this.filterSteps(this.currentTest.wrappedItem);
+    this.filterSteps(this.currentTest.wrappedItem, this.allureSkipSteps);
 
     this.setExecutableStatus(this.currentTest, result, details);
 
@@ -1039,6 +1038,35 @@ export class AllureReporter {
       if (step.steps.length > 0 && step.steps[0].name === step.name) {
         step.steps.shift();
       }
+
+      return step;
+    }
+
+    for (let i = 0; i < steps.length; i++) {
+      steps[i] = mergeSteps(steps[i]);
+    }
+  }
+
+  /**
+   * Recursively merge the steps for groupping
+   * @param steps
+   */
+  mergeGroupCommands(steps: ExecutableItem[]): void {
+    const specialStep = 'allure-group';
+
+    function mergeSteps(step: ExecutableItem): ExecutableItem {
+      if (!step.steps || step.steps.length === 0) {
+        return step;
+      }
+
+      if (step.name && step.name === specialStep && step.steps.length >= 1) {
+        step.name = step.steps[0].name;
+        step.steps = step.steps.splice(1, step.steps.length - 1).map(s => mergeSteps(s));
+
+        return step;
+      }
+
+      step.steps = step.steps.map(mergeSteps);
 
       return step;
     }
