@@ -15,7 +15,6 @@ import {
   stringify,
   withTry,
   logNameFn,
-  commandLogs,
 } from '../common/command-names';
 import { FullRequest } from '../common/utils';
 import { lgoRequestEvents } from './request-events';
@@ -249,23 +248,23 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
-  const wrapCypressGroupCommands = () => {
-    const groupedCommands: (keyof typeof cy)[] = ['session', 'within'];
-
-    groupedCommands.forEach(cmd => {
-      Cypress.Commands.overwrite(cmd as any, function (originalFn, ...args) {
-        const fn = originalFn;
-
-        if (ignoreAllCommands(ignoreCommands).includes(cmd)) {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          return fn(...args);
-        }
-
-        return wrappedFn(fn)(...args);
-      });
-    });
-  };
+  // const wrapCypressGroupCommands = () => {
+  //   const groupedCommands: (keyof typeof cy)[] = ['session', 'within'];
+  //
+  //   groupedCommands.forEach(cmd => {
+  //     Cypress.Commands.overwrite(cmd as any, function (originalFn, ...args) {
+  //       const fn = originalFn;
+  //
+  //       if (ignoreAllCommands(ignoreCommands).includes(cmd)) {
+  //         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //         // @ts-ignore
+  //         return fn(...args);
+  //       }
+  //
+  //       return wrappedFn(fn)(...args);
+  //     });
+  //   });
+  // };
 
   // if (allureLogCyCommands()) {
   //   wrapCypressGroupCommands();
