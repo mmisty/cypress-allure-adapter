@@ -95,12 +95,10 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       const isIts = /its:\s*\..*/.test(logMessage); // its already logged as command
       const ignoredLog = ignoreAllCommands(ignoreCommands).includes(logName);
       const isLogMsgEqCommandName = logMessage === cmdAttrs?.name;
-      const isGroupEnd = !!attr?.groupEnd;
-      const isEmitOnly = attr?.emitOnly;
+      const isGroupStart = !!attr?.groupStart;
 
       const noLogConditions = [equalMessages, isRequest, isIts, ignoredLog, isLogMsgEqCommandName];
-      const logCondition = isGroupEnd && isEmitOnly;
-      const result = noLogConditions.every(c => !c) || logCondition;
+      const result = noLogConditions.every(c => !c) || isGroupStart;
 
       // console.log(noLogConditions);
       // console.log(`logCondition: ${logCondition}`);
@@ -110,6 +108,13 @@ export const filterCommandLog = (command: CommandT, ignoreCommands: () => string
       return result;
     }) ?? []
   );
+};
+
+export const commandLogs = (command: CommandT): CommandLog[] => {
+  const cmdAttrs = command?.attributes;
+  const cmdLogs = cmdAttrs?.logs ?? [];
+
+  return cmdLogs;
 };
 
 export const withTry = (message: string, callback: () => void) => {
@@ -129,7 +134,8 @@ export const stepMessage = (name: string, args: string | undefined) => {
   const isNonZeroArgs = args && args.length > 0;
   const stringArgs = isNonZeroArgs ? `${args}` : '';
 
-  const argsLine = isLong && !isAssertLog ? '' : stringArgs;
+  const argsLineDarft = isLong && !isAssertLog ? '' : stringArgs;
+  const argsLine = argsLineDarft.replace('function(){}', '').trim();
   const argsAndName = argsLine === '' ? `${name}` : `${name}: ${argsLine}`;
   const message = name.trim() === '' ? `${argsLine}` : argsAndName;
 
