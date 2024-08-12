@@ -68,17 +68,25 @@ describe('${rootSuite}', { defaultCommandTimeout: 300, env: {
           },
           {
             attachments: [],
-            name: 'assert: expected **<div>** to be **visible**',
+            name: 'within',
             status: 'passed',
             statusDetails: {},
-            steps: [],
-          },
-          {
-            attachments: [],
-            name: 'log: 1',
-            status: 'passed',
-            statusDetails: {},
-            steps: [],
+            steps: [
+              {
+                attachments: [],
+                name: 'assert: expected **<div>** to be **visible**',
+                status: 'passed',
+                statusDetails: {},
+                steps: [],
+              },
+              {
+                attachments: [],
+                name: 'log: 1',
+                status: 'passed',
+                statusDetails: {},
+                steps: [],
+              },
+            ],
           },
           {
             attachments: [],
