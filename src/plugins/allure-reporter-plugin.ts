@@ -34,6 +34,7 @@ import { extname, logWithPackage } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
+import { mergeStepsWithSingleChild } from './helper';
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -449,7 +450,7 @@ export class AllureReporter {
       this.filterSteps(this.currentHook.wrappedItem);
       this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.setExecutableStatus(this.currentHook, result, details);
-      this.mergeStepsWithSingleChild(this.currentHook.wrappedItem.steps);
+      mergeStepsWithSingleChild(this.currentHook.wrappedItem.steps);
 
       this.hooks.pop();
 
@@ -940,13 +941,11 @@ export class AllureReporter {
     applyLabel(LabelName.SUB_SUITE);
   }
 
-  filterSteps(result: FixtureResult | TestResult | undefined) {
-    const skipSteps = this.allureSkipSteps;
-
+  filterSteps(result: FixtureResult | TestResult | undefined, skipSteps: RegExp[]) {
     if (result && result.steps.length > 0) {
       result.steps = result.steps.filter(t => !skipSteps.some(x => x.test(t.name ?? '')));
       result.steps.forEach(res => {
-        this.filterSteps(res);
+        this.filterSteps(res, skipSteps);
       });
     }
   }
@@ -972,14 +971,14 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
-    // this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
+    mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
       this.currentTestAll.status = result;
     }
 
     // filter steps here
-    this.filterSteps(this.currentTest.wrappedItem);
+    this.filterSteps(this.currentTest.wrappedItem, this.allureSkipSteps);
 
     this.setExecutableStatus(this.currentTest, result, details);
 
@@ -1011,41 +1010,6 @@ export class AllureReporter {
 
     log('testEnded: will move result to watch folder');
     copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
-  }
-
-  /**
-   * Recursively merge the steps when a step has single child with the same name
-   * Delete first child when it has the same name as parent
-   * @param steps
-   */
-  mergeStepsWithSingleChild(steps: ExecutableItem[]): void {
-    function mergeSteps(step: ExecutableItem): ExecutableItem {
-      if (!step.steps || step.steps.length === 0) {
-        return step;
-      }
-
-      // If the step has exactly one child with the same name, merge them
-      if (step.steps.length === 1 && step.steps[0].name === step.name) {
-        const mergedChild = mergeSteps(step.steps[0]);
-        step.steps = mergedChild.steps;
-        step.attachments.push(...mergedChild.attachments);
-
-        return step;
-      }
-
-      step.steps = step.steps.map(mergeSteps);
-
-      // If the first child has the same name as the parent, delete it
-      if (step.steps.length > 0 && step.steps[0].name === step.name) {
-        step.steps.shift();
-      }
-
-      return step;
-    }
-
-    for (let i = 0; i < steps.length; i++) {
-      steps[i] = mergeSteps(steps[i]);
-    }
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
