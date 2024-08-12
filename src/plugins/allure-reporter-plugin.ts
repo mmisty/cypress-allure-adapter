@@ -185,7 +185,7 @@ export class AllureReporter {
     this.screenshots = opts.screenshots;
     this.allureSkipSteps =
       opts.allureSkipSteps?.split(',').map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
-    this.allureSkipSteps.push(/^allure-group$/);
+    // this.allureSkipSteps.push(/^allure-group$/);
     log('Created reporter');
     log(opts);
     this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
@@ -970,7 +970,7 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
-    this.mergeGroupCommands(this.currentTest.wrappedItem.steps);
+    //this.mergeGroupCommands(this.currentTest.wrappedItem.steps);
     this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
