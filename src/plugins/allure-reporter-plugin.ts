@@ -972,7 +972,7 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
-    this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
+    // this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
       this.currentTestAll.status = result;

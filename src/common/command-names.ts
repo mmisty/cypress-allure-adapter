@@ -129,7 +129,8 @@ export const stepMessage = (name: string, args: string | undefined) => {
   const isNonZeroArgs = args && args.length > 0;
   const stringArgs = isNonZeroArgs ? `${args}` : '';
 
-  const argsLine = isLong && !isAssertLog ? '' : stringArgs;
+  const argsLineDarft = isLong && !isAssertLog ? '' : stringArgs;
+  const argsLine = argsLineDarft.replace('function(){}', '').trim();
   const argsAndName = argsLine === '' ? `${name}` : `${name}: ${argsLine}`;
   const message = name.trim() === '' ? `${argsLine}` : argsAndName;
 

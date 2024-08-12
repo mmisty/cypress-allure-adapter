@@ -374,11 +374,11 @@ export const handleCyLogEvents = (
       // console.log(attr);
       // console.log('consoleProps');
       // console.log(consoleProps);
-      if (groupStart) {
-        Cypress.Allure.startStep(logMessage);
-
-        return;
-      }
+      // if (groupStart) {
+      //   Cypress.Allure.startStep(logMessage);
+      //
+      //   return;
+      // }
 
       // if (groupEnd) {
       //   Cypress.Allure.endStep();
@@ -386,9 +386,10 @@ export const handleCyLogEvents = (
       //   return;
       // }
 
-      if (!groupEnd) {
-        Cypress.Allure.startStep(logMessage);
-      }
+      // if (!groupEnd) {
+      //   Cypress.Allure.startStep(logMessage);
+      // }
+      Cypress.Allure.startStep(logMessage);
 
       if (logName !== 'assert' && message && message.length > ARGS_TRIM_AT) {
         Cypress.Allure.attachment(`${logMessage} args`, message, 'application/json');
@@ -451,6 +452,7 @@ export const handleCyLogEvents = (
       return;
     }
 
+    // console.log(`started ${cmdMessage}`);
     debug(`started: ${cmdMessage}`);
     Cypress.Allure.startStep(cmdMessage);
 
@@ -487,6 +489,8 @@ export const handleCyLogEvents = (
       return;
     }
 
+    // console.log(`ended ${cmdMessage}`);
+
     if (name === COMMAND_REQUEST) {
       withTry('report attach:requests', () => {
         attachRequests(allureAttachRequests, command, { compactAttachments: allureCompactAttachmentsRequests });
@@ -496,6 +500,8 @@ export const handleCyLogEvents = (
     if (!allureLogCyCommands()) {
       return;
     }
+
+    // console.log(`ended finally ${cmdMessage}`);
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
     Cypress.Allure.endStep(status);
   });
