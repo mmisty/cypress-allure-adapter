@@ -12,6 +12,7 @@ export type CommandLog = {
     message?: string;
     error?: any;
     groupStart?: boolean;
+    event?: boolean;
     groupEnd?: boolean;
     group?: string;
     emitOnly?: boolean;

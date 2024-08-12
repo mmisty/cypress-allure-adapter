@@ -8,7 +8,7 @@ const data: TestData = {
   rootSuite,
   fileName: __filename,
   spec: `
-describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
+describe('${rootSuite}', { defaultCommandTimeout: 500 },() => {
   
   it('test 1 - create new and restore', () => {
     Cypress.session.clearAllSavedSessions();

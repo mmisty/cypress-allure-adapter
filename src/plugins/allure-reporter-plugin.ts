@@ -34,6 +34,7 @@ import { extname, logWithPackage } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
+import { mergeStepsWithName } from '@src/common/utils';
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -970,7 +971,7 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
-    //this.mergeGroupCommands(this.currentTest.wrappedItem.steps);
+    //mergeStepsWithName('then', this.currentTest.wrappedItem.steps);
     this.mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
@@ -1038,35 +1039,6 @@ export class AllureReporter {
       if (step.steps.length > 0 && step.steps[0].name === step.name) {
         step.steps.shift();
       }
-
-      return step;
-    }
-
-    for (let i = 0; i < steps.length; i++) {
-      steps[i] = mergeSteps(steps[i]);
-    }
-  }
-
-  /**
-   * Recursively merge the steps for groupping
-   * @param steps
-   */
-  mergeGroupCommands(steps: ExecutableItem[]): void {
-    const specialStep = 'allure-group';
-
-    function mergeSteps(step: ExecutableItem): ExecutableItem {
-      if (!step.steps || step.steps.length === 0) {
-        return step;
-      }
-
-      if (step.name && step.name === specialStep && step.steps.length >= 1) {
-        step.name = step.steps[0].name;
-        step.steps = step.steps.splice(1, step.steps.length - 1).map(s => mergeSteps(s));
-
-        return step;
-      }
-
-      step.steps = step.steps.map(mergeSteps);
 
       return step;
     }

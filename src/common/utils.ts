@@ -1,3 +1,5 @@
+import { ExecutableItem } from 'allure-js-commons';
+
 export type CypressDataStub = {
   browserRequestId?: string;
   statusCode?: number;
@@ -70,3 +72,31 @@ export const convertToRequestsIncoming = (data: CypressDataRequest): Partial<Cyp
 
   return res;
 };
+
+/**
+ * Recursively merge the steps by removing a step if it has the same name as the parent,
+ * while keeping its children.
+ * @param steps
+ */
+export function mergeStepsWithName(stepName: string, steps: ExecutableItem[]): void {
+  function mergeSteps(step: ExecutableItem): ExecutableItem {
+    if (!step.steps || step.steps.length === 0) {
+      return step;
+    }
+
+    step.steps = step.steps.map(mergeSteps);
+
+    // Remove the step if it has the same name as the parent, but keep its children
+    if (step.steps.length > 0 && step.steps[0].name === stepName) {
+      const childSteps = step.steps[0].steps;
+      step.steps.shift();
+      step.steps.unshift(...childSteps);
+    }
+
+    return step;
+  }
+
+  for (let i = 0; i < steps.length; i++) {
+    steps[i] = mergeSteps(steps[i]);
+  }
+}

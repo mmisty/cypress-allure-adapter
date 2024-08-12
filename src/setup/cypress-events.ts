@@ -248,6 +248,27 @@ export const handleCyLogEvents = (
     wrapCustomCommandsFn(commadsFixed, isExclude);
   }
 
+  const wrapCypressGroupCommands = () => {
+    const groupedCommands: (keyof typeof cy)[] = ['session', 'within'];
+
+    groupedCommands.forEach(cmd => {
+      Cypress.Commands.overwrite(cmd as any, function (originalFn, ...args) {
+        const fn = originalFn;
+
+        if (ignoreAllCommands(ignoreCommands).includes(cmd)) {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          return fn(...args);
+        }
+
+        return wrappedFn(fn)(...args);
+      });
+    });
+  };
+
+  if (allureLogCyCommands()) {
+    wrapCypressGroupCommands();
+  }
   const requests: FullRequest[] = [];
 
   // should be beforeEach (not before) to get env variable value from test config
@@ -270,7 +291,8 @@ export const handleCyLogEvents = (
         cy.intercept(r).as('allure');
       });
     } else {
-      cy.allure().step('will not intercept requests to save bodies');
+      cy.allure().startStep('will not intercept requests to save bodies');
+      cy.allure().endStep();
     }
     requests.splice(0, requests.length);
     groups.splice(0, groups.length);
@@ -292,14 +314,6 @@ export const handleCyLogEvents = (
 
       const cmdMessage = stepMessage(logName, logMessage === 'null' ? '' : logMessage);
 
-      startEndGroup(cmdMessage);
-
-      if (end) {
-        console.log('ENDED', log);
-      } else {
-        console.log('ADDED', log);
-      }
-
       if (!chainerId && end && logName !== COMMAND_REQUEST) {
         // synchronous log without commands
         Cypress.Allure.startStep(`${cmdMessage} SYNC`);
@@ -316,6 +330,8 @@ export const handleCyLogEvents = (
 
         Cypress.Allure.endStep(status);
       }
+
+      endGroupMayBe(cmdMessage);
     });
   });
 
@@ -343,6 +359,7 @@ export const handleCyLogEvents = (
       const emitOnly = attr?.emitOnly;
       const groupEnd = attr?.groupEnd;
       const groupStart = attr?.groupStart;
+
       const logMessage = stepMessage(logName, message === 'null' ? '' : message);
       const consoleProps = attr?.consoleProps?.();
 
@@ -352,12 +369,18 @@ export const handleCyLogEvents = (
       // console.log(attr);
       // console.log('consoleProps');
       // console.log(consoleProps);
+
+      // if (groupStart) {
+      //   startEndGroup(logMessage);
+      //
+      //   return;
+      //}
+
       if ((emitOnly && groupEnd) || groupStart) {
+        startEndGroup(logMessage);
+
         return;
       }
-
-      console.log(log);
-      // startEndGroup();
 
       Cypress.Allure.startStep(`${logMessage}`);
 
@@ -395,13 +418,32 @@ export const handleCyLogEvents = (
     //console.log((Cypress as any).state());
 
     if (logGroupIds.length - groups.length === 1) {
-      console.log(msg);
       events.emit('group:started', msg, logGroupIds[logGroupIds.length - 1]);
 
       groups.push({ id: logGroupIds[logGroupIds.length - 1], message: messageGroup });
 
       return 'started';
     }
+
+    if (groups.length - logGroupIds.length === 1) {
+      events.emit('group:ended', msg, groups[groups.length - 1].id);
+
+      groups.pop();
+
+      return 'ended';
+    }
+
+    return '';
+  };
+
+  /**
+   * Ends when changed
+   */
+  const endGroupMayBe = (msg: string): string => {
+    const messageGroup = 'allure-group';
+
+    const logGroupIds = (Cypress as any).state('logGroupIds') || [];
+    //console.log((Cypress as any).state());
 
     if (groups.length - logGroupIds.length === 1) {
       console.log(msg);
@@ -416,7 +458,6 @@ export const handleCyLogEvents = (
   };
 
   Cypress.on('command:start', (command: CommandT) => {
-    // startEndGroup();
     events.emit('cmd:started:tech', command);
   });
 
@@ -441,6 +482,7 @@ export const handleCyLogEvents = (
   events.on('cmd:started:tech', (command: CommandT, isCustom) => {
     const { message: cmdMessage } = commandParams(command);
 
+    startEndGroup(cmdMessage); // then is shown, todo
     debug(`started tech: ${cmdMessage}`);
 
     if (isCustom) {
@@ -479,7 +521,8 @@ export const handleCyLogEvents = (
     const { message: cmdMessage } = commandParams(command);
     const last = customCommands[customCommands.length - 1];
 
-    startEndGroup('endedd');
+    endGroupMayBe(cmdMessage);
+    //startEndGroup('endedd');
     addCommandLogs(command);
 
     if (last && last === cmdMessage) {
