@@ -54,6 +54,9 @@ const USER_EVENTS = {
 
   REQUEST_START: 'request:started',
   REQUEST_END: 'request:ended',
+
+  GROUP_START: 'group:started',
+  GROUP_END: 'group:ended',
 };
 
 const convertState = (state: string): Status => {
@@ -82,6 +85,8 @@ const allureEvents = [
   USER_EVENTS.CMD_START,
   USER_EVENTS.REQUEST_START,
   USER_EVENTS.REQUEST_END,
+  USER_EVENTS.GROUP_START,
+  USER_EVENTS.GROUP_END,
 ];
 
 const startEvents = () => {
@@ -150,15 +155,21 @@ export const allureInterface = (
     writeExecutorInfo: (info: ExecutorInfo) => fn({ task: 'writeExecutorInfo', arg: { info } }),
     writeCategoriesDefinitions: (categories: Category[] | string) =>
       fn({ task: 'writeCategoriesDefinitions', arg: { categories } }),
-    startStep: (name: string, date?: number) => fn({ task: 'stepStarted', arg: { name, date: date ?? Date.now() } }),
+    startStep: (name: string, date?: number) => {
+      // console.log(`START STEP: ${name}`);
+
+      return fn({ task: 'stepStarted', arg: { name, date: date ?? Date.now() } });
+    },
     // remove from interface
     mergeStepMaybe: (name: string) => fn({ task: 'mergeStepMaybe', arg: { name } }),
-    endStep: (status?: Status, statusDetails?: StatusDetails, date?: number) =>
-      fn({
+    endStep: (status?: Status, statusDetails?: StatusDetails, date?: number) => {
+      // console.log('END STEP');
+
+      return fn({
         task: 'stepEnded',
         arg: { status: status ?? Status.PASSED, details: statusDetails, date: date ?? Date.now() },
-      }),
-
+      });
+    },
     step: (name: string, status?: Status, details?: StatusDetails) =>
       fn({ task: 'step', arg: { name, status: status ?? Status.PASSED, date: Date.now(), details } }),
 
