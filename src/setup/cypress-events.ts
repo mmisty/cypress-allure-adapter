@@ -374,8 +374,6 @@ export const handleCyLogEvents = (
 
         Cypress.Allure.endStep(status);
       }
-
-      endGroupMayBe('');
     });
   });
 
@@ -412,7 +410,6 @@ export const handleCyLogEvents = (
       const logMessage = stepMessage(logName, message === 'null' ? '' : message);
       const consoleProps = attr?.consoleProps?.();
 
-      //endGroupMayBe('');
       // console.log('logName', logName);
       // console.log('logMessage', logMessage);
       // console.log('attr');
@@ -534,8 +531,6 @@ export const handleCyLogEvents = (
       return;
     }
 
-    // console.log(`ended ${cmdMessage}`);
-
     if (name === COMMAND_REQUEST) {
       withTry('report attach:requests', () => {
         attachRequests(allureAttachRequests, command, { compactAttachments: allureCompactAttachmentsRequests });
@@ -546,7 +541,6 @@ export const handleCyLogEvents = (
       return;
     }
 
-    // console.log(`ended finally ${cmdMessage}`);
     debug(`ended ${isCustom ? 'CUSTOM' : ''}: ${cmdMessage}`);
     Cypress.Allure.endStep(status);
   });
