@@ -447,7 +447,7 @@ export class AllureReporter {
     }
 
     if (this.currentHook) {
-      this.filterSteps(this.currentHook.wrappedItem);
+      this.filterSteps(this.currentHook.wrappedItem, this.allureSkipSteps);
       this.currentHook.wrappedItem.stop = date ?? Date.now();
       this.setExecutableStatus(this.currentHook, result, details);
       mergeStepsWithSingleChild(this.currentHook.wrappedItem.steps);
