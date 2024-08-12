@@ -129,13 +129,6 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
                   },
                 ],
               },
-              {
-                attachments: [],
-                name: 'doSyncCommand',
-                status: 'passed',
-                statusDetails: {},
-                steps: [],
-              },
             ],
           },
         ],
@@ -198,26 +191,40 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
             steps: [
               {
                 attachments: [],
-                name: 'log: level 1',
-                status: 'passed',
-                steps: [],
-              },
-              {
-                attachments: [],
                 name: 'withGroupping',
                 status: 'passed',
                 steps: [
                   {
                     attachments: [],
-                    name: 'log: level 2',
+                    name: 'log: level 1',
                     status: 'passed',
                     steps: [],
                   },
                   {
                     attachments: [],
-                    name: 'endLogGroup',
+                    name: 'withGroupping',
                     status: 'passed',
-                    steps: [],
+                    steps: [
+                      {
+                        attachments: [],
+                        name: 'withGroupping',
+                        status: 'passed',
+                        steps: [
+                          {
+                            attachments: [],
+                            name: 'log: level 2',
+                            status: 'passed',
+                            steps: [],
+                          },
+                        ],
+                      },
+                      {
+                        attachments: [],
+                        name: 'endLogGroup',
+                        status: 'passed',
+                        steps: [],
+                      },
+                    ],
                   },
                 ],
               },
@@ -236,9 +243,16 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
             steps: [
               {
                 attachments: [],
-                name: 'log: level 1 again',
+                name: 'withGroupping',
                 status: 'passed',
-                steps: [],
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: level 1 again',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
               },
               {
                 attachments: [],

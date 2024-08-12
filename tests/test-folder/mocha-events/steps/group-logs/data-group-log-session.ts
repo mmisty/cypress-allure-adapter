@@ -59,6 +59,12 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
             statusDetails: {},
             steps: [
               {
+                name: 'session: user123',
+                status: 'passed',
+                statusDetails: {},
+                steps: [],
+              },
+              {
                 attachments: [],
                 name: 'Clear page',
                 status: 'passed',
