@@ -34,7 +34,7 @@ import { extname, logWithPackage } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
-import { mergeStepsWithSingleChild } from './helper';
+import { mergeStepsWithSingleChild, removeFirstStepWhenSame } from './helper';
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -971,6 +971,8 @@ export class AllureReporter {
     if (!this.currentTest) {
       return;
     }
+
+    removeFirstStepWhenSame(this.currentTest.wrappedItem.steps);
     mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {

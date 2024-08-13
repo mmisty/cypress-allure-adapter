@@ -1,4 +1,7 @@
-import { mergeStepsWithSingleChild } from '@src/plugins/helper';
+import {
+  mergeStepsWithSingleChild,
+  removeFirstStepWhenSame,
+} from '@src/plugins/helper';
 
 describe('mergeStepsWithSingleChild', () => {
   it('nothing to merge', () => {
@@ -235,4 +238,235 @@ describe('mergeStepsWithSingleChild', () => {
   //     { name: '2', steps: [] },
   //   ]);
   // });
+
+  it('removeFirstMessageWhenSame', () => {
+    const steps = [
+      {
+        name: 'steps1',
+        steps: [
+          {
+            name: 'steps1',
+            steps: [],
+          },
+          {
+            name: 'steps2',
+            steps: [
+              {
+                name: 'steps3',
+                steps: [
+                  {
+                    name: 'step1.1',
+                    steps: [
+                      [
+                        { name: 'step1.1', steps: [] },
+                        { name: 'step1.2', steps: [] },
+                      ],
+                    ],
+                  },
+                  { name: 'step1.2', steps: [] },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      { name: '2', steps: [] },
+    ] as any;
+    const res = removeFirstStepWhenSame(steps);
+
+    expect(res).toEqual([
+      {
+        name: 'steps1',
+        steps: [
+          {
+            name: 'steps2',
+            steps: [
+              {
+                name: 'steps3',
+                steps: [
+                  {
+                    name: 'step1.1',
+                    steps: [{ name: 'step1.2', steps: [] }],
+                  },
+                  {
+                    name: 'step1.2',
+                    steps: [],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: '2',
+        steps: [],
+      },
+    ]);
+  });
+
+  it('removeFirstMessageWhenSame - should not remove when has child steps', () => {
+    const steps = [
+      {
+        attachments: [],
+        name: 'withGroupping',
+        status: 'passed',
+        steps: [
+          {
+            attachments: [],
+            name: 'withGroupping',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'log: level 1',
+                status: 'passed',
+                steps: [],
+              },
+              {
+                attachments: [],
+                name: 'withGroupping',
+                status: 'passed',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'withGroupping',
+                    status: 'passed',
+                    steps: [
+                      {
+                        attachments: [],
+                        name: 'log: level 2',
+                        status: 'passed',
+                        steps: [],
+                      },
+                    ],
+                  },
+                  {
+                    attachments: [],
+                    name: 'endLogGroup',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
+          },
+        ],
+      },
+      {
+        attachments: [],
+        name: 'withGroupping',
+        status: 'passed',
+        steps: [
+          {
+            attachments: [],
+            name: 'withGroupping',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'log: level 1 again',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
+            attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
+          },
+        ],
+      },
+    ] as any;
+    const res = removeFirstStepWhenSame(steps);
+
+    expect(res).toEqual([
+      {
+        attachments: [],
+        name: 'withGroupping',
+        status: 'passed',
+        steps: [
+          {
+            attachments: [],
+            name: 'withGroupping',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'log: level 1',
+                status: 'passed',
+                steps: [],
+              },
+              {
+                attachments: [],
+                name: 'withGroupping',
+                status: 'passed',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'withGroupping',
+                    status: 'passed',
+                    steps: [
+                      {
+                        attachments: [],
+                        name: 'log: level 2',
+                        status: 'passed',
+                        steps: [],
+                      },
+                    ],
+                  },
+                  {
+                    attachments: [],
+                    name: 'endLogGroup',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
+          },
+        ],
+      },
+      {
+        attachments: [],
+        name: 'withGroupping',
+        status: 'passed',
+        steps: [
+          {
+            attachments: [],
+            name: 'withGroupping',
+            status: 'passed',
+            steps: [
+              {
+                attachments: [],
+                name: 'log: level 1 again',
+                status: 'passed',
+                steps: [],
+              },
+            ],
+          },
+          {
+            attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
+          },
+        ],
+      },
+    ]);
+  });
 });
