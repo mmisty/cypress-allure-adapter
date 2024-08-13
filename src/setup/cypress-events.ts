@@ -281,7 +281,12 @@ export const handleCyLogEvents = (
     const last = customCommands[customCommands.length - 1];
 
     groups.endGroupMayBe();
-    addCommandLogs(command);
+
+    if (!isCustom) {
+      // will be added here for all custom or non-custom
+      // since cypress ends custom commands right away
+      addCommandLogs(command);
+    }
 
     if (last && last === cmdMessage) {
       customCommands.pop();
@@ -290,6 +295,7 @@ export const handleCyLogEvents = (
       // not end when custom started
       return;
     }
+
     events.emit('cmd:ended', command, isCustom);
   });
 
