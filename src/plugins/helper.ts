@@ -23,36 +23,6 @@ export function mergeStepsWithSingleChild(steps: ExecutableItem[]): void {
   }
 }
 
-function removeMatchingSteps(steps: ExecutableItem[]): ExecutableItem[] {
-  return (
-    steps.filter((step, i) => {
-      // Recursively remove matching steps within nested arrays
-      step.steps = removeMatchingSteps(step.steps);
-
-      return step.steps.length > 0 || step.name !== step.steps[0]?.name;
-    }) ?? []
-  );
-}
-
-/**
- * Recursively merge the steps when a step has single child with the same name
- * Delete first child when it has the same name as parent
- * @param steps
- */
-export function removeFirstMessageWhenSame2(steps: ExecutableItem[]): void {
-  const result = [];
-  steps.forEach((s, i) => {
-    // if (!s[i]) {
-    //   return;
-    // }
-
-    if (s[i] && s[i].steps.length > 0 && s[i].name === s[i].steps[0].name) {
-      s[i].steps.splice(0, 1);
-      removeFirstStepWhenSame(s[i].steps);
-    }
-  });
-}
-
 export function removeFirstStepWhenSame(steps: ExecutableItem[]): ExecutableItem[] {
   // Helper function to process each step recursively
   function processSteps(steps: ExecutableItem[]): ExecutableItem[] {
