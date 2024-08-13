@@ -12,7 +12,7 @@ type OneRequestConsoleProp = {
 };
 
 export const attachRequests = (
-  dbg,
+  dbg: string,
   allureAttachRequests: boolean,
   command: CommandT,
   opts: { compactAttachments: boolean },

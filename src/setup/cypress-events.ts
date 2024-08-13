@@ -107,6 +107,7 @@ export const handleCyLogEvents = (
         cy.intercept(r).as('allure');
       });
     } else {
+      // for not using step command
       cy.allure().startStep('will not intercept requests to save bodies');
       cy.allure().endStep();
     }
