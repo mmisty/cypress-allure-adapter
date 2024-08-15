@@ -118,6 +118,7 @@ describe('${rootSuite}', () => {
           {
             name: '"before each" hooks',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 name: '"before each" hook: [cypress-allure-adapter]',
@@ -147,29 +148,36 @@ describe('${rootSuite}', () => {
             ],
           },
           {
+            name: '"after each" hooks',
+            status: 'passed',
             attachments: [],
-            name: '"after each" hook',
-            status: 'failed',
             steps: [
               {
                 attachments: [],
-                name: 'log: after each',
-                status: 'passed',
-                steps: [],
+                name: '"after each" hook',
+                status: 'failed',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: after each',
+                    status: 'passed',
+                    steps: [],
+                  },
+                  {
+                    attachments: [],
+                    name: 'wrap',
+                    status: 'failed',
+                    steps: [],
+                  },
+                ],
               },
               {
                 attachments: [],
-                name: 'wrap',
-                status: 'failed',
+                name: '"after each" hook',
+                status: 'passed',
                 steps: [],
               },
             ],
-          },
-          {
-            attachments: [],
-            name: '"after each" hook',
-            status: 'passed',
-            steps: [],
           },
         ],
       },
