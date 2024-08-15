@@ -79,23 +79,29 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hook: [cypress-allure-adapter]',
+            name: '"before each" hooks (2)',
             status: 'passed',
-            attachments: [],
             steps: [
               {
+                name: '"before each" hook: [cypress-allure-adapter]',
+                status: 'passed',
                 attachments: [],
-                name: 'will not intercept requests to save bodies',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'will not intercept requests to save bodies',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
+              },
+              {
+                attachments: [],
+                name: '"before each" hook',
                 status: 'passed',
                 steps: [],
               },
             ],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [],
           },
           {
             attachments: [],
