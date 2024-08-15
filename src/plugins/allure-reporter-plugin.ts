@@ -974,8 +974,6 @@ export class AllureReporter {
 
     removeFirstStepWhenSame(this.currentTest.wrappedItem.steps);
     mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
-    this.currentTest.wrappedItem.steps = wrapHooks('"before each" hook', this.currentTest.wrappedItem.steps);
-    this.currentTest.wrappedItem.steps = wrapHooks('"after each" hook', this.currentTest.wrappedItem.steps);
 
     if (this.currentTestAll) {
       this.currentTestAll.status = result;
@@ -983,6 +981,8 @@ export class AllureReporter {
 
     // filter steps here
     this.filterSteps(this.currentTest.wrappedItem, this.allureSkipSteps);
+    this.currentTest.wrappedItem.steps = wrapHooks('"before each" hook', this.currentTest.wrappedItem.steps);
+    this.currentTest.wrappedItem.steps = wrapHooks('"after each" hook', this.currentTest.wrappedItem.steps);
 
     this.setExecutableStatus(this.currentTest, result, details);
 
