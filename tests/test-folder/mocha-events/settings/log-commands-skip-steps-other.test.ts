@@ -104,52 +104,65 @@ describe('should skip steps inside hooks / test', () => {
 
       expect(steps).toEqual([
         {
-          name: '"before each" hook: [cypress-allure-adapter]',
+          name: '"before each" hooks (3)',
           status: 'passed',
           steps: [
             {
-              name: 'will not intercept requests to save bodies',
+              name: '"before each" hook: [cypress-allure-adapter]',
               status: 'passed',
-              steps: [],
+              steps: [
+                {
+                  name: 'will not intercept requests to save bodies',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
             },
-          ],
-        },
-        {
-          name: '"before each" hook',
-          status: 'passed',
-          steps: [],
-        },
-        {
-          name: '"before each" hook',
-          status: 'passed',
-          steps: [
             {
-              name: 'other-step',
+              name: '"before each" hook',
               status: 'passed',
               steps: [],
             },
+            {
+              name: '"before each" hook',
+              status: 'passed',
+              steps: [
+                {
+                  name: 'other-step',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+            },
           ],
         },
+
         {
           name: 'other-step',
           status: 'passed',
           steps: [],
         },
         {
-          name: '"after each" hook: Named',
+          name: '"after each" hooks (2)',
           status: 'passed',
           steps: [
             {
-              name: 'other-step',
+              name: '"after each" hook: Named',
+              status: 'passed',
+              steps: [
+                {
+                  name: 'other-step',
+                  status: 'passed',
+                  steps: [],
+                },
+              ],
+            },
+            {
+              name: '"after each" hook', //coverage
               status: 'passed',
               steps: [],
             },
           ],
-        },
-        {
-          name: '"after each" hook', //coverage
-          status: 'passed',
-          steps: [],
         },
       ]);
     });
