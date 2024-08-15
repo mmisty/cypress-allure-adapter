@@ -191,7 +191,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 1 }, () => {
         expected: [
           {
             name: '"before each" hooks',
-            status: 'passed',
+            status: 'failed',
             attachments: [],
             steps: [
               {

@@ -85,7 +85,7 @@ describe('${rootSuite}', () => {
         expected: [
           {
             name: '"before each" hooks',
-            status: 'passed',
+            status: 'failed',
             attachments: [],
             steps: [
               {
