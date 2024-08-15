@@ -52,6 +52,7 @@ const data: TestData = {
           {
             name: '"before each" hooks',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 name: '"before each" hook: [cypress-allure-adapter]',
@@ -95,6 +96,7 @@ const data: TestData = {
           {
             name: '"before each" hooks',
             status: 'passed',
+            attachments: [],
             steps: [
               {
                 name: '"before each" hook: [cypress-allure-adapter]',
