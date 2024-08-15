@@ -149,7 +149,7 @@ describe('${rootSuite}', () => {
           },
           {
             name: '"after each" hooks',
-            status: 'passed',
+            status: 'failed',
             attachments: [],
             steps: [
               {

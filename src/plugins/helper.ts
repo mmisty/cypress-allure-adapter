@@ -127,16 +127,23 @@ export const wrapHooks = (
   if (endIndex !== undefined && startIndex !== undefined && startIndex !== endIndex) {
     const childrenBeforeEach = steps.slice(startIndex, endIndex + 1);
 
+    const nonSuccess = childrenBeforeEach.filter(x => x.status !== ('passed' as Status));
+    const status = nonSuccess.length > 0 ? nonSuccess[0].status : ('passed' as Status);
+    const startTime = childrenBeforeEach[0]?.start ?? undefined;
+    const endTime = childrenBeforeEach[childrenBeforeEach.length - 1].stop ?? undefined;
+
     return [
       ...steps.slice(0, startIndex),
       {
         name: `${stepName}s`,
         steps: childrenBeforeEach,
-        status: 'passed' as Status,
+        status,
         statusDetails: {},
         stage: 'finished' as Stage,
         attachments: [],
         parameters: [],
+        start: startTime,
+        stop: endTime,
       },
       ...steps.slice(endIndex + 1),
     ];
