@@ -126,8 +126,7 @@ describe('one passed test with global before hook', () => {
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
         [
-          '"before each" hook: [cypress-allure-adapter]',
-          ...whenCoverage('"before each" hook'),
+          '"before each" hooks',
           'log: message',
           ...whenCoverage('"after each" hook'),
         ],

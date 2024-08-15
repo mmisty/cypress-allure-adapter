@@ -1,4 +1,5 @@
 import { ExecutableItem } from 'allure-js-commons/dist/esm';
+import { Stage, Status } from 'allure-js-commons';
 
 /**
  * Recursively merge the steps when a step has single child with the same name
@@ -105,3 +106,41 @@ export function removeStepsByName(steps: ExecutableItem[], commands: string[]): 
 
   return result;
 }
+
+export const wrapHooks = (
+  stepName: '"before each" hook' | '"after each" hook',
+  steps: ExecutableItem[],
+): ExecutableItem[] => {
+  let startIndex: number | undefined = undefined;
+  let endIndex: number | undefined = undefined;
+
+  steps.forEach((step, i) => {
+    if (step.name?.startsWith(stepName) && startIndex === undefined) {
+      startIndex = i;
+    }
+
+    if (step.name?.startsWith(stepName) && startIndex !== undefined) {
+      endIndex = i;
+    }
+  });
+
+  if (endIndex !== undefined && startIndex !== undefined && startIndex !== endIndex) {
+    const childrenBeforeEach = steps.slice(startIndex, endIndex + 1);
+
+    return [
+      ...steps.slice(0, startIndex),
+      {
+        name: `${stepName}s`,
+        steps: childrenBeforeEach,
+        status: 'passed' as Status,
+        statusDetails: {},
+        stage: 'finished' as Stage,
+        attachments: [],
+        parameters: [],
+      },
+      ...steps.slice(endIndex + 1),
+    ];
+  }
+
+  return steps;
+};

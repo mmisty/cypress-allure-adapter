@@ -116,23 +116,30 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hook: [cypress-allure-adapter]',
+            name: '"before each" hooks',
             status: 'passed',
             attachments: [],
             steps: [
               {
+                name: '"before each" hook: [cypress-allure-adapter]',
+                status: 'passed',
                 attachments: [],
-                name: 'will not intercept requests to save bodies',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'will not intercept requests to save bodies',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
+              },
+              {
+                attachments: [],
+                name: '"before each" hook',
                 status: 'passed',
                 steps: [],
               },
             ],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [],
           },
           {
             attachments: [],
@@ -141,29 +148,36 @@ describe('${rootSuite}', () => {
             steps: [],
           },
           {
+            name: '"after each" hooks',
+            status: 'passed',
             attachments: [],
-            name: '"after each" hook',
-            status: 'failed',
             steps: [
               {
                 attachments: [],
-                name: 'log: after each',
-                status: 'passed',
-                steps: [],
+                name: '"after each" hook',
+                status: 'failed',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: after each',
+                    status: 'passed',
+                    steps: [],
+                  },
+                  {
+                    attachments: [],
+                    name: 'wrap',
+                    status: 'failed',
+                    steps: [],
+                  },
+                ],
               },
               {
                 attachments: [],
-                name: 'wrap',
-                status: 'failed',
+                name: '"after each" hook',
+                status: 'passed',
                 steps: [],
               },
             ],
-          },
-          {
-            attachments: [],
-            name: '"after each" hook',
-            status: 'passed',
-            steps: [],
           },
         ],
       },
