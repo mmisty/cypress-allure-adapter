@@ -126,12 +126,11 @@ export const wrapHooks = (
 
   if (endIndex !== undefined && startIndex !== undefined && startIndex !== endIndex) {
     const childrenBeforeEach = steps.slice(startIndex, endIndex + 1);
-    const count = endIndex - startIndex + 1;
 
     return [
       ...steps.slice(0, startIndex),
       {
-        name: `${stepName}s (${count})`,
+        name: `${stepName}s`,
         steps: childrenBeforeEach,
         status: 'passed' as Status,
         statusDetails: {},

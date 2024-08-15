@@ -116,7 +116,7 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (2)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {

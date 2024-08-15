@@ -275,7 +275,7 @@ describe('hello suite', () => {
 
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
-        ['"before each" hooks (3)', 'log: message', '"after each" hooks (2)'],
+        ['"before each" hooks', 'log: message', '"after each" hooks'],
       ]);
     });
   });

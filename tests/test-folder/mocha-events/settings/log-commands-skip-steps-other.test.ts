@@ -104,7 +104,7 @@ describe('should skip steps inside hooks / test', () => {
 
       expect(steps).toEqual([
         {
-          name: '"before each" hooks (3)',
+          name: '"before each" hooks',
           status: 'passed',
           steps: [
             {
@@ -143,7 +143,7 @@ describe('should skip steps inside hooks / test', () => {
           steps: [],
         },
         {
-          name: '"after each" hooks (2)',
+          name: '"after each" hooks',
           status: 'passed',
           steps: [
             {

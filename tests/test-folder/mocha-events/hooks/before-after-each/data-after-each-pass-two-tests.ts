@@ -86,7 +86,7 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (2)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {
@@ -117,7 +117,7 @@ describe('${rootSuite}', () => {
             steps: [],
           },
           {
-            name: '"after each" hooks (2)',
+            name: '"after each" hooks',
             status: 'passed',
             steps: [
               {
@@ -148,7 +148,7 @@ describe('${rootSuite}', () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (2)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {
@@ -179,7 +179,7 @@ describe('${rootSuite}', () => {
             steps: [],
           },
           {
-            name: '"after each" hooks (2)',
+            name: '"after each" hooks',
             status: 'passed',
             steps: [
               {

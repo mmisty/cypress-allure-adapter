@@ -115,7 +115,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (4)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {
@@ -185,7 +185,7 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (4)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {

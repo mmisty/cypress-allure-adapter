@@ -78,7 +78,7 @@ const data: TestData = {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (2)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {
@@ -121,7 +121,7 @@ const data: TestData = {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hooks (2)',
+            name: '"before each" hooks',
             status: 'passed',
             steps: [
               {

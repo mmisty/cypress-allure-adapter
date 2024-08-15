@@ -120,7 +120,7 @@ describe('hello suite', () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
         [
           'step right after start',
-          '"before each" hooks (2)',
+          '"before each" hooks',
           'wrap',
           ...whenCoverage('"after each" hook'),
           'step right before test end',
