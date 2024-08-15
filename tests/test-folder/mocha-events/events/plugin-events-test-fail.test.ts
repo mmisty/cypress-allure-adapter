@@ -120,8 +120,7 @@ describe('hello suite', () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
         [
           'step right after start',
-          '"before each" hook: [cypress-allure-adapter]',
-          ...whenCoverage('"before each" hook'),
+          '"before each" hooks (2)',
           'wrap',
           ...whenCoverage('"after each" hook'),
           'step right before test end',
