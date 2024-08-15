@@ -275,14 +275,7 @@ describe('hello suite', () => {
 
     it('check tests parent steps', async () => {
       expect(resFixed.map(t => t.steps.map(s => s.name))).toEqual([
-        [
-          '"before each" hook: [cypress-allure-adapter]',
-          ...whenCoverage('"before each" hook'),
-          '"before each" hook',
-          'log: message',
-          '"after each" hook',
-          ...whenCoverage('"after each" hook'),
-        ],
+        ['"before each" hooks (3)', 'log: message', '"after each" hooks (2)'],
       ]);
     });
   });
