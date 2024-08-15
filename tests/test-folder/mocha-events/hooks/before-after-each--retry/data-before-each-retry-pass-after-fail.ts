@@ -115,53 +115,59 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hook: [cypress-allure-adapter]',
+            name: '"before each" hooks (4)',
             status: 'passed',
-            attachments: [],
             steps: [
               {
-                attachments: [],
-                name: 'will not intercept requests to save bodies',
+                name: '"before each" hook: [cypress-allure-adapter]',
                 status: 'passed',
-                steps: [],
+                attachments: [],
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'will not intercept requests to save bodies',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
               },
-            ],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [
               {
                 attachments: [],
-                name: 'log: no name hook - before each',
-                status: 'passed',
-                steps: [],
-              },
-            ],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook: Named hook',
-            status: 'passed', // defect - should be failed
-            steps: [
-              {
-                attachments: [],
-                name: 'log: before each',
+                name: '"before each" hook',
                 status: 'passed',
                 steps: [],
               },
               {
                 attachments: [],
-                name: 'wrap',
+                name: '"before each" hook',
+                status: 'passed',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: no name hook - before each',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
+              },
+              {
+                attachments: [],
+                name: '"before each" hook: Named hook',
                 status: 'passed', // defect - should be failed
-                steps: [],
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: before each',
+                    status: 'passed',
+                    steps: [],
+                  },
+                  {
+                    attachments: [],
+                    name: 'wrap',
+                    status: 'passed', // defect - should be failed
+                    steps: [],
+                  },
+                ],
               },
             ],
           },
@@ -179,47 +185,53 @@ describe('${rootSuite} @beforeEachRetry', { retries: 2 }, () => {
         mapStep: m => ({ status: m.status, attachments: m.attachments }),
         expected: [
           {
-            name: '"before each" hook: [cypress-allure-adapter]',
+            name: '"before each" hooks (4)',
             status: 'passed',
-            attachments: [],
             steps: [
               {
+                name: '"before each" hook: [cypress-allure-adapter]',
+                status: 'passed',
                 attachments: [],
-                name: 'will not intercept requests to save bodies',
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'will not intercept requests to save bodies',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
+              },
+              {
+                attachments: [],
+                name: '"before each" hook',
                 status: 'passed',
                 steps: [],
               },
-            ],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook',
-            status: 'passed',
-            steps: [
               {
                 attachments: [],
-                name: 'log: no name hook - before each',
+                name: '"before each" hook',
                 status: 'passed',
-                steps: [],
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: no name hook - before each',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
               },
-            ],
-          },
-          {
-            attachments: [],
-            name: '"before each" hook: Named hook',
-            status: 'passed',
-            steps: [
               {
                 attachments: [],
-                name: 'log: before each',
+                name: '"before each" hook: Named hook',
                 status: 'passed',
-                steps: [],
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: before each',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
               },
             ],
           },
