@@ -27,7 +27,7 @@ export class CustomCommandsHandler {
           res.then(() => {
             end();
           });
-        } else if (res.should) {
+        } else if (res?.should) {
           res.should(() => {
             end();
           });
