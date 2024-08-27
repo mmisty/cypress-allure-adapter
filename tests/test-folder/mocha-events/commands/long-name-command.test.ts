@@ -61,13 +61,12 @@ describe('custom commands', () => {
         {
           attach: [],
           name: 'tasklog1: hello',
-          steps: [
-            {
-              name: 'task: log, hello',
-              attach: [],
-              steps: [],
-            },
-          ],
+          steps: [],
+        },
+        {
+          name: 'task: log, hello',
+          attach: [],
+          steps: [],
         },
       ]);
     });
@@ -98,20 +97,19 @@ describe('custom commands', () => {
               type: 'application/json',
             },
           ],
-          steps: [
+          steps: [],
+        },
+        {
+          name: 'task: log',
+          attach: [
             {
-              attach: [
-                {
-                  name: 'task: log args',
-                  sourceContent:
-                    'log\n012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
-                  type: 'application/json',
-                },
-              ],
-              name: 'task: log',
-              steps: [],
+              name: 'task: log args',
+              sourceContent:
+                'log\n012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
+              type: 'application/json',
             },
           ],
+          steps: [],
         },
       ]);
     });

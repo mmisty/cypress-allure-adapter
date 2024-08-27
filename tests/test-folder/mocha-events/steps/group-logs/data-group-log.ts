@@ -191,40 +191,20 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
             steps: [
               {
                 attachments: [],
+                name: 'log: level 1',
+                status: 'passed',
+                steps: [],
+              },
+              {
+                attachments: [],
                 name: 'withGroupping',
                 status: 'passed',
                 steps: [
                   {
                     attachments: [],
-                    name: 'log: level 1',
+                    name: 'log: level 2',
                     status: 'passed',
                     steps: [],
-                  },
-                  {
-                    attachments: [],
-                    name: 'withGroupping',
-                    status: 'passed',
-                    steps: [
-                      {
-                        attachments: [],
-                        name: 'withGroupping',
-                        status: 'passed',
-                        steps: [
-                          {
-                            attachments: [],
-                            name: 'log: level 2',
-                            status: 'passed',
-                            steps: [],
-                          },
-                        ],
-                      },
-                      {
-                        attachments: [],
-                        name: 'endLogGroup',
-                        status: 'passed',
-                        steps: [],
-                      },
-                    ],
                   },
                 ],
               },
@@ -238,29 +218,28 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
           },
           {
             attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
+          },
+          {
+            attachments: [],
             name: 'withGroupping',
             status: 'passed',
             steps: [
               {
                 attachments: [],
-                name: 'withGroupping',
-                status: 'passed',
-                steps: [
-                  {
-                    attachments: [],
-                    name: 'log: level 1 again',
-                    status: 'passed',
-                    steps: [],
-                  },
-                ],
-              },
-              {
-                attachments: [],
-                name: 'endLogGroup',
+                name: 'log: level 1 again',
                 status: 'passed',
                 steps: [],
               },
             ],
+          },
+          {
+            attachments: [],
+            name: 'endLogGroup',
+            status: 'passed',
+            steps: [],
           },
         ],
       },
