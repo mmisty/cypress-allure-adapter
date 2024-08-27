@@ -27,10 +27,15 @@ export class CustomCommandsHandler {
           res.then(() => {
             end();
           });
-        } else {
-          cy.doSyncCommand(() => {
+        } else if (res.should) {
+          res.should(() => {
             end();
           });
+        } else {
+          // when function returns
+          // undefined we cannot add command at the end,
+          // so custom command will be ended immediately
+          end();
         }
 
         return res;
