@@ -44,6 +44,10 @@ Cypress.Commands.add('qaId', (qaId, options = {}) => {
   cy.get(`[data-qa-id="${qaId}"]`, options);
 });
 
+Cypress.Commands.add('qaIdReturn', (qaId, options = {}) => {
+  return cy.get(`[data-qa-id="${qaId}"]`, options);
+});
+
 Cypress.Commands.add('fileExists', (filePath: string) => {
   cy.wait(1000);
   cy.wait(200);

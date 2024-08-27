@@ -133,13 +133,12 @@ describe('do sync command', () => {
         {
           name: 'qaId: link-2',
           status: 'passed',
-          steps: [
-            {
-              name: 'get: [data-qa-id=link-2]',
-              status: 'passed',
-              steps: [],
-            },
-          ],
+          steps: [],
+        },
+        {
+          name: 'get: [data-qa-id=link-2]',
+          status: 'passed',
+          steps: [],
         },
         {
           name: 'assert: expected **My link** to equal **My link**',
@@ -177,17 +176,16 @@ describe('do sync command', () => {
         {
           name: 'qaId: link-60',
           status: 'passed',
+          steps: [],
+        },
+        {
+          name: 'get: [data-qa-id=link-60]',
+          status: 'passed',
           steps: [
             {
-              name: 'get: [data-qa-id=link-60]',
+              name: 'assert: expected **[data-qa-id=link-60]** not to exist in the DOM',
               status: 'passed',
-              steps: [
-                {
-                  name: 'assert: expected **[data-qa-id=link-60]** not to exist in the DOM',
-                  status: 'passed',
-                  steps: [],
-                },
-              ],
+              steps: [],
             },
           ],
         },
@@ -211,17 +209,16 @@ describe('do sync command', () => {
         {
           name: 'qaId: link-60',
           status: 'passed',
+          steps: [],
+        },
+        {
+          name: 'get: [data-qa-id=link-60]',
+          status: 'passed',
           steps: [
             {
-              name: 'get: [data-qa-id=link-60]',
+              name: 'assert: expected **[data-qa-id=link-60]** not to exist in the DOM',
               status: 'passed',
-              steps: [
-                {
-                  name: 'assert: expected **[data-qa-id=link-60]** not to exist in the DOM',
-                  status: 'passed',
-                  steps: [],
-                },
-              ],
+              steps: [],
             },
           ],
         },

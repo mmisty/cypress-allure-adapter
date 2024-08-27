@@ -66,12 +66,11 @@ describe('custom commands', () => {
       expect(steps).toEqual([
         {
           name: 'qaId: link-2',
-          steps: [
-            {
-              name: 'get: [data-qa-id=link-2]',
-              steps: [],
-            },
-          ],
+          steps: [],
+        },
+        {
+          name: 'get: [data-qa-id=link-2]',
+          steps: [],
         },
         {
           name: 'click',
@@ -98,12 +97,11 @@ describe('custom commands', () => {
       expect(steps).toEqual([
         {
           name: 'qaId: link-2',
-          steps: [
-            {
-              name: 'get: [data-qa-id=link-2]',
-              steps: [],
-            },
-          ],
+          steps: [],
+        },
+        {
+          name: 'get: [data-qa-id=link-2]',
+          steps: [],
         },
         {
           name: 'click',
@@ -116,12 +114,11 @@ describe('custom commands', () => {
         },
         {
           name: 'qaId: link-3',
-          steps: [
-            {
-              name: 'get: [data-qa-id=link-3]',
-              steps: [],
-            },
-          ],
+          steps: [],
+        },
+        {
+          name: 'get: [data-qa-id=link-3]',
+          steps: [],
         },
         {
           name: 'click',
