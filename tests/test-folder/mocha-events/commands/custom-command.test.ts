@@ -242,11 +242,11 @@ describe('custom commands', () => {
                 { name: 'task: fileExists, nonexistingd2', steps: [] },
               ],
             },
-            {
-              name: 'assert: expected **false** to equal **false**',
-              steps: [],
-            },
           ],
+        },
+        {
+          name: 'assert: expected **false** to equal **false**',
+          steps: [],
         },
       ]);
     });
