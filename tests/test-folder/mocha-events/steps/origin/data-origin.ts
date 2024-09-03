@@ -1,5 +1,6 @@
 import { TestData } from '@test-utils';
 import { basename } from 'path';
+import { visitHtmlCode } from './visit-html';
 
 const rootSuite = `${basename(__filename)}`;
 
@@ -9,8 +10,10 @@ const data: TestData = {
   fileName: __filename,
   spec: `
 describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
+ ${visitHtmlCode}
+ 
   it('test 1 - pass', () => {
-     cy.origin('https://google.com/', { args: { username: 'testTas' } }, ({ username }) => {
+     cy.origin('mytest2.com', { args: { username: 'testTas' } }, ({ username }) => {
         cy.log(username);
      });
   });
@@ -47,13 +50,13 @@ describe('${rootSuite}', { defaultCommandTimeout: 300 },() => {
         expected: [
           {
             attachments: [],
-            name: 'origin: https://google.com/, {args: {username: "testTas"}}',
+            name: 'origin: mytest2.com, {args: {username: "testTas"}}',
             status: 'passed',
             statusDetails: {},
             steps: [
               {
                 attachments: [],
-                name: 'origin: https://google.com/',
+                name: 'origin: mytest2.com',
                 status: 'passed',
                 statusDetails: {},
                 steps: [
