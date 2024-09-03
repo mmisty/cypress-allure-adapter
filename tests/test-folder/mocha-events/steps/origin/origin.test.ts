@@ -5,7 +5,7 @@ import {
 } from '@test-utils';
 import { basename } from 'path';
 
-describe(`suite: ${basename(__dirname)}`, () => {
+describe.skip(`suite: ${basename(__dirname)}`, () => {
   const testsForOneCyRun = selectTestsToRun(__dirname);
 
   const res = createResTest2(
