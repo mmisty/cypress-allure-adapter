@@ -182,8 +182,20 @@ export const handleCyLogEvents = (
       const message = attr?.message;
       const groupStart = attr?.groupStart;
       const logMessage = stepMessage(logName, message === 'null' ? '' : message);
-      const consoleProps = attr?.consoleProps?.();
 
+      const getProps = () => {
+        if (attr && attr.consoleProps && typeof attr.consoleProps === 'function') {
+          return attr.consoleProps();
+        }
+
+        if (attr && attr.consoleProps && typeof attr.consoleProps !== 'function') {
+          return attr.consoleProps;
+        }
+
+        return undefined;
+      };
+
+      const consoleProps = getProps();
       // console.log('logName', logName);
       // console.log('logMessage', logMessage);
       // console.log('attr');
