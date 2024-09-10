@@ -88,6 +88,10 @@ export const logRequestEvents = (requests: FullRequest[], events: EventEmitter) 
           current.response.data = {};
         }
 
+        if (!current.response.statusCode) {
+          current.response.statusCode = res.status;
+        }
+
         current.response.data.headers = res.headers;
 
         const result = convertToRequestsResponse(current);
