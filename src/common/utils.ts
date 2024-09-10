@@ -18,6 +18,7 @@ export type CypressDataRequest = {
   body?: any;
   method?: string;
   url: string;
+  status?: number;
   resourceType?: string;
 };
 
