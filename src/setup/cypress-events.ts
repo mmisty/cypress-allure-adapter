@@ -221,7 +221,21 @@ export const handleCyLogEvents = (
       let state: Status = consoleProps?.error ?? logErr ? failedStatus : passedStatus;
       let details: { message?: string; trace?: string } | undefined = undefined;
 
-      if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1) {
+      const isIgnoreException = () => {
+        const ignored = Cypress.env('allureIgnoreUncaughtExceptions');
+
+        if (!ignored) {
+          return false;
+        }
+
+        const exceptions =
+          ignored.split(',').map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
+        const err = consoleProps?.props?.Error as Error | undefined;
+
+        return exceptions.some(e => e.test(err?.message));
+      };
+
+      if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1 && !isIgnoreException()) {
         const err = consoleProps?.props?.Error as Error | undefined;
         const isCommandFailed = command.state === 'failed';
         // when command failed we mark uncaught exception log as error,
