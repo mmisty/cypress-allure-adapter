@@ -229,10 +229,10 @@ export const handleCyLogEvents = (
         }
 
         const exceptions =
-          ignored.split(',').map(x => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
+          ignored.split(',').map((x: string) => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
         const err = consoleProps?.props?.Error as Error | undefined;
 
-        return exceptions.some(e => e.test(err?.message));
+        return err?.message && exceptions.some((e: RegExp) => e.test(err.message));
       };
 
       if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1 && !isIgnoreException()) {
