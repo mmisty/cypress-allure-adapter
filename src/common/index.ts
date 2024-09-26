@@ -53,6 +53,29 @@ export const tmsIssueUrl = (env: Record<string, string>, value: string, type: 'i
   return `${prefixFixed}/${value}`;
 };
 
+export const tmsIssueId = (env: Record<string, string>, value: string, type: 'issue' | 'tms') => {
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return undefined;
+  }
+
+  if (type === 'issue') {
+    return env['issuePrefix'] ? value : undefined;
+  }
+
+  if (type === 'tms') {
+    return env['tmsPrefix'] ? value : undefined;
+  }
+
+  return undefined;
+};
+
+export const descriptionId = (env: Record<string, string>, value: string, type: 'issue' | 'tms', desc?: string) => {
+  const id = tmsIssueId(env, value, type);
+  const idStr = id ? `${id}: ` : '';
+
+  return desc ? `${idStr}${desc}` : value;
+};
+
 // needed to work in browser
 export const extname = (path: string): string => {
   return path.match(/(\.[^.\\/]+)$/)?.[0] ?? '.unknown';

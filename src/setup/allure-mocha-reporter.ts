@@ -13,7 +13,7 @@ import {
 import { registerScreenshotHandler } from './screenshots';
 import StatusDetails = Cypress.StatusDetails;
 import { logClient } from './helper';
-import { packageLog, tmsIssueUrl } from '../common';
+import { descriptionId, packageLog, tmsIssueUrl } from '../common';
 import { EventEmitter } from 'events';
 import AllureEvents = Cypress.AllureEvents;
 
@@ -205,10 +205,26 @@ export const allureInterface = (
       return fn({ task: 'link', arg: { url: fullUrl, name: linkName, type } });
     },
 
+    tmsWithId: (url: string, name?: string) => {
+      const type: LinkType = 'tms';
+      const fullUrl = tmsIssueUrl(env, url, type);
+      const linkName = descriptionId(env, url, type, name);
+
+      return fn({ task: 'link', arg: { url: fullUrl, name: linkName, type } });
+    },
+
     issue: (url: string, name?: string) => {
       const type: LinkType = 'issue';
       const fullUrl = tmsIssueUrl(env, url, type);
       const linkName = name ?? url;
+
+      return fn({ task: 'link', arg: { url: fullUrl, name: linkName, type } });
+    },
+
+    issueWithId: (url: string, name?: string) => {
+      const type: LinkType = 'issue';
+      const fullUrl = tmsIssueUrl(env, url, type);
+      const linkName = descriptionId(env, url, type, name);
 
       return fn({ task: 'link', arg: { url: fullUrl, name: linkName, type } });
     },

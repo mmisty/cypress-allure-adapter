@@ -307,6 +307,23 @@ Will be shown in Links field for test
 cy.allure().tms('1', 'tms-1');
 ```
 
+
+### tmsWithId
+**tmsWithId(url: string, name?: string)**
+
+Adds link to test of type 'tms' ('tms' will have specific icon )
+
+The same as `tms` but will add tms id into description
+
+When `tmsPrefix` environment variable added no need to input the whole URL
+
+Will be shown in Links field for test
+
+```javascript
+cy.allure().tmsWithId('ABC-1', 'desc'); // will have link 'ABC-1: desc' when tmsPrefix is set
+```
+
+
 ### issue
 **issue(url: string, name?: string)**
 
@@ -320,6 +337,21 @@ Will be shown in Links field for test
 cy.allure().issue('1', 'issue-1');
 ```
 
+
+### issueWithId
+**issueWithId(url: string, name?: string)**
+
+Adds link to test of type 'issue' ('issue' will have specific icon - bug icon )
+
+The same as `issue` but will add issue id into description
+
+When `issuePrefix` environment variable added no need to input the whole URL
+
+Will be shown in Links field for test
+
+```javascript
+cy.allure().issueWithId('ABC-1', 'desc'); // will have link 'ABC-1: desc' when issuePrefix is set
+```
 
 ### parameter
 **parameter(name: string, value: string)**
