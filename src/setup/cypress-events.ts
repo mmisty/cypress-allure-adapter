@@ -182,8 +182,20 @@ export const handleCyLogEvents = (
       const message = attr?.message;
       const groupStart = attr?.groupStart;
       const logMessage = stepMessage(logName, message === 'null' ? '' : message);
-      const consoleProps = attr?.consoleProps?.();
 
+      const getProps = () => {
+        if (attr && attr.consoleProps && typeof attr.consoleProps === 'function') {
+          return attr.consoleProps();
+        }
+
+        if (attr && attr.consoleProps && typeof attr.consoleProps !== 'function') {
+          return attr.consoleProps;
+        }
+
+        return undefined;
+      };
+
+      const consoleProps = getProps();
       // console.log('logName', logName);
       // console.log('logMessage', logMessage);
       // console.log('attr');
@@ -209,7 +221,21 @@ export const handleCyLogEvents = (
       let state: Status = consoleProps?.error ?? logErr ? failedStatus : passedStatus;
       let details: { message?: string; trace?: string } | undefined = undefined;
 
-      if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1) {
+      const isIgnoreException = () => {
+        const ignored = Cypress.env('allureIgnoreUncaughtExceptions');
+
+        if (!ignored) {
+          return false;
+        }
+
+        const exceptions =
+          ignored.split(',').map((x: string) => new RegExp(`^${x.replace(/\./g, '.').replace(/\*/g, '.*')}$`)) ?? [];
+        const err = consoleProps?.props?.Error as Error | undefined;
+
+        return err?.message && exceptions.some((e: RegExp) => e.test(err.message));
+      };
+
+      if (logName.indexOf(UNCAUGHT_EXCEPTION_NAME) !== -1 && !isIgnoreException()) {
         const err = consoleProps?.props?.Error as Error | undefined;
         const isCommandFailed = command.state === 'failed';
         // when command failed we mark uncaught exception log as error,
