@@ -306,6 +306,16 @@ declare namespace Cypress {
     tms(urlOrId: string, name?: string): T;
 
     /**
+     * Adds link to tms = has icon tms
+     * @param urlOrId = full url or ID of item
+     * @param name = display text for URL in report (will add urlOrId to diplay text when it is id)
+     * @example
+     *  cy.allure().tmsWithId('ABD-123');
+     *  cy.allure().tmsWithId('http://my.jira.com/ABD-123', 'ABD-123 description');
+     */
+    tmsWithId(urlOrId: string, name?: string): T;
+
+    /**
      * Adds link to defect = has icon BUG
      * @param urlOrId = full url or ID of item
      * @param name = display text for URL in report
@@ -314,6 +324,17 @@ declare namespace Cypress {
      *  cy.allure().issue('http://my.jira.com/ABD-123', 'ABD-123 description');
      */
     issue(urlOrId: string, name?: string): T;
+
+    /**
+     * Adds link to defect = has icon BUG
+     * @param urlOrId = full url or ID of item
+     * @param name = display text for URL in report (will add urlOrId to diplay text when it is id)
+     * @example
+     *  cy.allure().issueWithId('ABD-123'); // will add link: "ABD-123"
+     *  cy.allure().issueWithId('http://my.jira.com/ABD-123', 'ABD-123 description'); // will add link: "ABD-123 description"
+     *  cy.allure().issueWithId('ABD-123', 'description'); // will add link: "ABD-123: description"
+     */
+    issueWithId(urlOrId: string, name?: string): T;
 
     feature(value: string): T;
     story(value: string): T;
