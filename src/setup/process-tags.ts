@@ -11,7 +11,9 @@ export const processTagsOnTestStart = (test: Mocha.Test) => {
     const tagNoAt = t.tag.slice(1);
 
     switch (tagNoAt) {
+      case 'tmsWithId':
       case 'tms':
+      case 'issueWithId':
 
       case 'issue': {
         const [urlOrId, name] = t.info ?? [];
