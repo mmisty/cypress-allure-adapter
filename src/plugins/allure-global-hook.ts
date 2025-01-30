@@ -142,7 +142,7 @@ export class GlobalHooks {
         date: hook.start,
       });
 
-      log(`hook steps: ${hook.steps?.length}` ?? 'undef');
+      log(`hook steps: ${hook.steps?.length ?? 'undef'}`);
       hook.steps?.forEach(step => {
         if (step.event === 'start') {
           this.reporter.startStep({ name: step.name, date: step.date });
