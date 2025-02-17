@@ -43,7 +43,7 @@ jobs:
       run: npm run test:jest
 
     - name: Archive jest code coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage-report
         path: ./reports/coverage-jest/lcov-report/
@@ -55,7 +55,7 @@ jobs:
       run: npm run cov:merge
 
     - name: Archive code coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage-report
         path: ./reports/coverage-full-total/lcov-report/
