@@ -89,13 +89,7 @@ describe('should have requests', () => {
         {
           attach: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
+              name: 'requests',
               source: 'source.json',
               sourceContentMoreThanZero: true,
               type: 'application/json',
@@ -152,13 +146,7 @@ describe('should have requests', () => {
         {
           attach: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
+              name: 'requests',
               source: 'source.json',
               sourceContentMoreThanZero: true,
               type: 'application/json',
@@ -215,13 +203,7 @@ describe('should have requests', () => {
         {
           attach: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
+              name: 'requests',
               source: 'source.json',
               sourceContentMoreThanZero: true,
               type: 'application/json',

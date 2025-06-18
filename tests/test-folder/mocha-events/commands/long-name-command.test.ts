@@ -71,7 +71,7 @@ describe('custom commands', () => {
       ]);
     });
 
-    it('should have attaches for commands with long args', () => {
+    it('should not have attaches for commands with long args', () => {
       const tests = results.filter(t => t.name === 'tasklog1 long');
       expect(tests.length).toEqual(1);
 
@@ -89,32 +89,30 @@ describe('custom commands', () => {
       expect(steps).toEqual([
         {
           name: 'tasklog1',
-          attach: [
+          attach: [],
+          steps: [
             {
-              name: 'tasklog1 args',
-              sourceContent:
-                '012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
-              type: 'application/json',
+              attach: [],
+              name: 'command has long args...',
+              steps: [],
             },
           ],
-          steps: [],
         },
         {
           name: 'task: log',
-          attach: [
+          attach: [],
+          steps: [
             {
-              name: 'task: log args',
-              sourceContent:
-                'log\n012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
-              type: 'application/json',
+              attach: [],
+              name: 'command has long args...',
+              steps: [],
             },
           ],
-          steps: [],
         },
       ]);
     });
 
-    it('should have attach for command log with long message', () => {
+    it('should not have attach for command log with long message', () => {
       const tests = results.filter(t => t.name === 'just long log');
       expect(tests.length).toEqual(1);
 
@@ -131,16 +129,15 @@ describe('custom commands', () => {
 
       expect(steps).toEqual([
         {
-          attach: [
+          attach: [],
+          name: 'log',
+          steps: [
             {
-              name: 'log args',
-              sourceContent:
-                '012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789',
-              type: 'application/json',
+              attach: [],
+              name: 'command has long args...',
+              steps: [],
             },
           ],
-          name: 'log',
-          steps: [],
         },
       ]);
     });

@@ -4,7 +4,7 @@ import { basename } from 'path';
 
 const rootSuite = `${basename(__filename)}`;
 
-describe('suite: request hander with specific requests - should add body only for selected', () => {
+describe('suite: request handler with specific requests - should add body only for selected', () => {
   const data: TestData = {
     name: rootSuite,
     rootSuite,

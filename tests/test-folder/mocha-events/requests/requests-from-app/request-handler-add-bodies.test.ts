@@ -4,7 +4,7 @@ import { basename } from 'path';
 
 const rootSuite = `${basename(__filename)}`;
 
-describe('suite: request hander without additional interception', () => {
+describe('suite: request handler without additional interception', () => {
   const data: TestData = {
     name: rootSuite,
     rootSuite,
