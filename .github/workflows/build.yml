@@ -43,22 +43,126 @@ jobs:
       run: npm run test:jest
 
     - name: Archive jest code coverage results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: code-coverage-report
         path: ./reports/coverage-jest/lcov-report/
 
-    - name: Test Cy
-      run: npm run test:jest:cy
+    - name: Test Cy passes
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:passes
+
+    - name: Test Cy failures
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:failures
+
+    - name: Test Cy requests
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:requests
+
+    - name: Test Cy attachments
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:attachments
+
+    - name: Test Cy hooks
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:hooks
+
+    - name: Test Cy commands
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:commands
+
+    - name: Test Cy events
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:events
+
+    - name: Test Cy cucumber
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:cucumber
+
+    - name: Test Cy duration
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:duration
+
+    - name: Test Cy interface
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:interface
+
+    - name: Test Cy only
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:only
+
+    - name: Test Cy other
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:other
+
+    - name: Test Cy regression
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:regression
+
+
+    - name: Test Cy settings
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:settings
+
+    - name: Test Cy skips
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 30
+        max_attempts: 1
+        command: npm run test:jest:cy:skips
+        
 
     - name: Merge Cov
       run: npm run cov:merge
 
-    - name: Archive code coverage results
-      uses: actions/upload-artifact@v3
-      with:
-        name: code-coverage-report
-        path: ./reports/coverage-full-total/lcov-report/
+#    - name: Archive code coverage results
+#      uses: actions/upload-artifact@v4
+#      with:
+#        name: code-coverage-report
+#        path: ./reports/coverage-full-total/lcov-report/
 
     - name: Monitor coverage
       continue-on-error: true

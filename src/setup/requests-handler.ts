@@ -89,11 +89,13 @@ export const attachRequests = (
     Cypress.Allure.parameters(reqUrlParam, ...shortAttaches.map(a => ({ name: a.name, value: a.stringified })));
 
     if (allureAttachRequests) {
+      const requests: any = {};
       longAttaches
         .filter(t => !!t.obj)
         .forEach(attach => {
-          Cypress.Allure.attachment(attach.name, attach.stringified, 'application/json');
+          requests[attach.name] = attach.obj;
         });
+      Cypress.Allure.attachment('requests', stringify(requests, true, indent), 'application/json');
     }
 
     if (allRequests.length > 1) {

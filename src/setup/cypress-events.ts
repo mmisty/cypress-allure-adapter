@@ -215,7 +215,7 @@ export const handleCyLogEvents = (
       Cypress.Allure.startStep(logMessage);
 
       if (logName !== 'assert' && message && message.length > ARGS_TRIM_AT) {
-        Cypress.Allure.attachment(`${logMessage} args`, message, 'application/json');
+        Cypress.Allure.step('Commnad has long args...');
       }
 
       let state: Status = consoleProps?.error ?? logErr ? failedStatus : passedStatus;
@@ -295,9 +295,7 @@ export const handleCyLogEvents = (
       const requestAndLogRequests = allureAttachRequests && name === COMMAND_REQUEST;
 
       if (!requestAndLogRequests && args.join(',').length > ARGS_TRIM_AT) {
-        const content = args.join('\n');
-
-        Cypress.Allure.attachment(`${cmdMessage} args`, content, 'application/json');
+        Cypress.Allure.step('command has long args...');
       }
     });
   });
