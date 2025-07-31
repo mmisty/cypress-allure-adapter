@@ -138,13 +138,7 @@ describe('should not log when allureLogCyCommands setting is false', () => {
         {
           attach: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
+              name: 'requests',
               source: 'source.json',
               sourceContentMoreThanZero: true,
               type: 'application/json',
@@ -171,19 +165,7 @@ describe('should not log when allureLogCyCommands setting is false', () => {
         {
           attach: [
             {
-              name: 'Request Headers',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Body',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-            {
-              name: 'Response Headers',
+              name: 'requests',
               source: 'source.json',
               sourceContentMoreThanZero: true,
               type: 'application/json',
