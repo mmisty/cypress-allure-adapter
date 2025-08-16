@@ -174,63 +174,51 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
-      taskManager.addTask(() => {
-        try {
-          writeFileSync(`${allureResults}/executor.json`, JSON.stringify(arg.info));
-        } catch (err) {
-          logWithPackage('error', `Could not write executor info ${(err as Error).message}`);
-        }
-
-        return Promise.resolve();
-      });
+      try {
+        writeFileSync(`${allureResults}/executor.json`, JSON.stringify(arg.info));
+      } catch (err) {
+        logWithPackage('error', `Could not write executor info ${(err as Error).message}`);
+      }
     },
 
     writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
-      taskManager.addTask(() => {
-        try {
-          const getCategoriesContent = (): string | undefined => {
-            if (typeof arg.categories !== 'string') {
-              return JSON.stringify(arg.categories, null, '  ');
-            }
-
-            const file = arg.categories;
-
-            if (!existsSync(file)) {
-              logWithPackage('error', `Categories file doesn't exist '${file}'`);
-
-              return undefined;
-            }
-
-            return readFileSync(file).toString();
-          };
-
-          const contents = getCategoriesContent();
-
-          if (!contents) {
-            return Promise.resolve();
+      try {
+        const getCategoriesContent = (): string | undefined => {
+          if (typeof arg.categories !== 'string') {
+            return JSON.stringify(arg.categories, null, '  ');
           }
 
-          writeFileSync(`${allureResults}/categories.json`, contents);
-        } catch (err) {
-          logWithPackage('error', 'Could not write categories definitions info');
+          const file = arg.categories;
+
+          if (!existsSync(file)) {
+            logWithPackage('error', `Categories file doesn't exist '${file}'`);
+
+            return undefined;
+          }
+
+          return readFileSync(file).toString();
+        };
+
+        const contents = getCategoriesContent();
+
+        if (!contents) {
+          return Promise.resolve();
         }
 
-        return Promise.resolve();
-      });
+        writeFileSync(`${allureResults}/categories.json`, contents);
+      } catch (err) {
+        logWithPackage('error', 'Could not write categories definitions info');
+      }
     },
 
     delete(arg: AllureTaskArgs<'delete'>) {
-      taskManager.addTask(() => {
-        try {
-          if (existsSync(arg.path)) {
-            rmSync(arg.path, { recursive: true });
-          }
-        } catch (err) {
-          log(`Could not delete: ${(err as Error).message}`);
+      try {
+        if (existsSync(arg.path)) {
+          rmSync(arg.path, { recursive: true });
         }
-
-        return Promise.resolve();
-      });
+      } catch (err) {
+        log(`Could not delete: ${(err as Error).message}`);
+      }
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
@@ -368,19 +356,15 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     testMessage: (arg: AllureTaskArgs<'testMessage'>) => {
       log(`testMessage ${JSON.stringify(arg)}`);
 
-      taskManager.addTask(() => {
-        if (!opts.isTest) {
-          return Promise.resolve();
-        }
-
-        if (!existsSync(dirname(arg.path))) {
-          mkdirSync(dirname(arg.path), { recursive: true });
-          writeFileSync(arg.path, '');
-        }
-        appendFileSync(arg.path, `${arg.message}\n`);
-
+      if (!opts.isTest) {
         return Promise.resolve();
-      });
+      }
+
+      if (!existsSync(dirname(arg.path))) {
+        mkdirSync(dirname(arg.path), { recursive: true });
+        writeFileSync(arg.path, '');
+      }
+      appendFileSync(arg.path, `${arg.message}\n`);
     },
 
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {

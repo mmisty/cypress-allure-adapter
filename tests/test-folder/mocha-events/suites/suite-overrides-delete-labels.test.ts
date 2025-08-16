@@ -1,5 +1,6 @@
 import { createResTest2, fixResult } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
+import expect from 'expect';
 
 describe('suite overrides - delete labels', () => {
   const res = createResTest2([

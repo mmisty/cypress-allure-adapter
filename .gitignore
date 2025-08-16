@@ -36,3 +36,7 @@ spec_pattern*.json
 filter*.json
 
 adapter-ctl.sh
+**/allure-results/**
+**/allure-report/**
+**/.allure/**
+**/debug-generate.sh

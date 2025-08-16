@@ -50,6 +50,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] } as any);
+    await reporter.taskManager.flushAllTasks();
 
     expect(
       existsSync(`${opts.techAllureResults}/environment.properties`),

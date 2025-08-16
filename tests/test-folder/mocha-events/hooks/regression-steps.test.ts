@@ -8,6 +8,7 @@ import {
   whenNoCoverage,
 } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
+import expect from 'expect';
 
 describe('should have all hooks and steps inside', () => {
   const res = createResTest2(
@@ -134,6 +135,7 @@ describe('hooks test - failed global hook step', () => {
     });
 
     it('check attachments', async () => {
+      expect(resFixed).toEqual([]);
       expect(resFixed.flatMap(t => t.attachments).sort()).toEqual([
         {
           name: 'test 1 -- before all hook Global Setup (failed).png',

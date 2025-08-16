@@ -2,6 +2,7 @@ import { createResTest2, fixResult, readWithRetry } from '@test-utils';
 import { getParentsArray, parseAllure } from 'allure-js-parser';
 import { extname } from '@src/common';
 import { AllureHook } from 'allure-js-parser/types';
+import expect from 'expect';
 
 // issue https://github.com/mmisty/cypress-allure-adapter/issues/95
 describe('several nested suites with global hook - hook should be added to all children', () => {

@@ -7,7 +7,8 @@ import {
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { extname } from '@src/common';
 
-describe('test screenshot event', () => {
+// moved
+describe.skip('test screenshot event', () => {
   const res = createResTest2(
     [
       `
