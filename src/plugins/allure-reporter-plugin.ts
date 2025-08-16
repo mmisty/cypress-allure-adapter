@@ -634,9 +634,6 @@ export class AllureReporter {
    * this is for test ops watch mode - if we put it before file is ready it will not be updated in testops
    */
   afterSpecMoveToWatch() {
-    const tests = parseAllure(this.allureResults);
-
-    const allAttachments = glob.sync(`${this.allureResults}/*-attachment.*`);
     const envProperties = `${this.allureResults}/environment.properties`;
 
     this.taskManager.addTask(async () => {
@@ -645,6 +642,10 @@ export class AllureReporter {
       }
       await copyFileCp(envProperties, envProperties.replace(this.allureResults, this.allureResultsWatch), true);
     });
+
+    const tests = parseAllure(this.allureResults);
+
+    const allAttachments = glob.sync(`${this.allureResults}/*-attachment.*`);
 
     for (const test of tests) {
       this.taskManager.addTask(async () => {
