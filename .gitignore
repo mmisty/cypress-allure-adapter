@@ -29,6 +29,7 @@
 /allure-results-jest
 /allure-report
 /filtered_tests.json
+/res
 
 
 # grep
