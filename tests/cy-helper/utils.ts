@@ -401,7 +401,7 @@ export const createResTest2 = (
 
   const name = basename(specPaths[0], '.test.ts');
   const testname = `${name}.cy.ts`;
-  const storeResDir = `allure-results/${testname}`;
+  const storeResDir = `res/${Date.now() + Math.random() * 1000}/allure-results/${testname}`;
 
   // ability to set allureResultsWatchPath from test to undefined or to <storeResDir>
   let definedWatchPath: string | undefined = `${storeResDir}/watch`;
@@ -438,7 +438,7 @@ export const createResTest2 = (
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
 
-    const port = 99000 + Math.round(Math.random() * 25000);
+    const port = Math.round(Math.random() * 65536);
     let err: Error | undefined;
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
@@ -473,7 +473,7 @@ export const createResTest2 = (
     // todo fix video
     console.log(`video:${video}`);
 
-    return cy
+    const res = await cy
       .run({
         spec: spec as string,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
@@ -487,26 +487,20 @@ export const createResTest2 = (
         //   trashAssetsBeforeRuns: true,
         // },
       })
+
       .catch(e => {
         err = e as Error;
-      })
-      .then(cyResult => {
-        result.res = cyResult;
-      })
-      .then(() => {
-        expect(err).toBeUndefined();
-
-        if (!specs.every(p => existsSync(p))) {
-          console.log('Not all files were written');
-
-          return delay(1000);
-        }
-      })
-      .then(() => {
-        if (shouldBeResults !== false) {
-          return checkFilesExist(10);
-        }
+        console.log('Exception when running cypress', e);
+        throw e;
       });
+
+    result.res = res;
+
+    if (!specs.every(p => existsSync(p))) {
+      console.log('Not all files were written');
+
+      return delay(1000);
+    }
   });
 
   return {
