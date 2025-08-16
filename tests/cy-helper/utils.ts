@@ -431,13 +431,14 @@ export const createResTest2 = (
     ...(envConfig || {}),
   };
 
-  it('create results jest', async () => {
+  // create results jest
+  beforeAll(async () => {
     jest.retryTimes(1);
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
 
-    const port = 40000 + Math.round(Math.random() * 25000);
+    const port = 99000 + Math.round(Math.random() * 25000);
     let err: Error | undefined;
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
