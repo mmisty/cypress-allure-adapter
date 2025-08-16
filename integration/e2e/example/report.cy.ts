@@ -1,5 +1,4 @@
 import { Status } from '@src/plugins/allure-types';
-import '@mmisty/cypress-grep/mocha';
 
 describe(
   'calculator @example',
