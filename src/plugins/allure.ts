@@ -3,9 +3,7 @@ import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { logWithPackage } from '../common';
-import { basename, dirname } from 'path';
-import glob from 'fast-glob';
-import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
+import { dirname } from 'path';
 import { TaskManager } from './task-manager';
 
 const debug = Debug('cypress-allure:proxy');
