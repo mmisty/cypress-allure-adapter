@@ -26,41 +26,41 @@ export type ReporterOptions = {
   isTest: boolean;
 };
 
-const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
-  if (allureResults === allureResultsWatch) {
-    log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-
-    return;
-  }
-
-  const results = glob.sync(`${allureResults}/*.*`);
-
-  mkdirSyncWithTry(allureResultsWatch);
-
-  log(`allureResults: ${allureResults}`);
-  log(`allureResultsWatch: ${allureResultsWatch}`);
-
-  const resultCopyTasks = results.map(res => {
-    const to = `${allureResultsWatch}/${basename(res)}`;
-
-    return copyFileCp(res, to, true);
-  });
-
-  await Promise.all(resultCopyTasks)
-    .then(() => {
-      log('All results copied to watch folder');
-    })
-    .catch(err => {
-      log('Some files failed to copy to watch folder:', err);
-    });
-};
+// const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
+//   if (allureResults === allureResultsWatch) {
+//     log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+//
+//     return;
+//   }
+//
+//   const results = glob.sync(`${allureResults}/*.*`);
+//
+//   mkdirSyncWithTry(allureResultsWatch);
+//
+//   log(`allureResults: ${allureResults}`);
+//   log(`allureResultsWatch: ${allureResultsWatch}`);
+//
+//   const resultCopyTasks = results.map(res => {
+//     const to = `${allureResultsWatch}/${basename(res)}`;
+//
+//     return copyFileCp(res, to, true);
+//   });
+//
+//   await Promise.all(resultCopyTasks)
+//     .then(() => {
+//       log('All results copied to watch folder');
+//     })
+//     .catch(err => {
+//       log('Some files failed to copy to watch folder:', err);
+//     });
+// };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
   const taskManager = new TaskManager();
   let allureReporter = new AllureReporter(opts, taskManager);
   const allureResults = opts.allureResults;
-  const allureResultsWatch = opts.techAllureResults;
+  // const allureResultsWatch = opts.techAllureResults;
 
   return {
     taskManager,
