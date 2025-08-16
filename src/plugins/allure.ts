@@ -58,7 +58,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   const taskManager = new TaskManager();
   let allureReporter = new AllureReporter(opts, taskManager);
   const allureResults = opts.allureResults;
-  const allureResultsWatch = opts.techAllureResults;
+  // const allureResultsWatch = opts.techAllureResults;
 
   return {
     taskManager,
