@@ -3,7 +3,7 @@ import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
 import { StepResult } from 'allure-js-commons';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 import { globSync } from 'fast-glob';
@@ -430,6 +430,10 @@ export const createResTest2 = (
     JEST_TEST: 'true',
     ...(envConfig || {}),
   };
+
+  afterAll(() => {
+    rmSync(storeResDir, { recursive: true });
+  });
 
   // create results jest
   beforeAll(async () => {

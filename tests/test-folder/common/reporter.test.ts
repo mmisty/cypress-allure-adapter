@@ -12,6 +12,7 @@ describe('reporter', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
+  const resultsPathWatch = `${resultsPath}/watch`;
 
   it('should correctly end all steps', async () => {
     if (existsSync(resultsPath)) {
@@ -22,7 +23,7 @@ describe('reporter', () => {
       allureAddVideoOnPass: false,
       allureSkipSteps: '',
       allureResults: resultsPath,
-      techAllureResults: `${resultsPath}/watch`,
+      techAllureResults: resultsPathWatch,
       videos: 'vid',
       screenshots: 'scr',
       showDuplicateWarn: false,
@@ -82,8 +83,9 @@ describe('reporter', () => {
     });
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] });
+    await reporter.taskManager.flushAllTasks();
 
-    const results = parseAllure(resultsPath);
+    const results = parseAllure(resultsPathWatch, { logError: false });
     expect(
       mapSteps(results[0].steps, t => ({ name: t.name, status: t.status })),
     ).toEqual([

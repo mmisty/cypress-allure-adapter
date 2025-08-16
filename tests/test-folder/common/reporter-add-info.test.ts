@@ -7,13 +7,14 @@ describe('reporter - add env info', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
+  const resultsPathWatch = `${resultsPath}/watch`;
   let reporter: AllureTasks;
 
   const opts: ReporterOptions = {
     allureAddVideoOnPass: false,
     allureSkipSteps: '',
     allureResults: resultsPath,
-    techAllureResults: `${resultsPath}/watch`,
+    techAllureResults: resultsPathWatch,
     videos: 'vid',
     screenshots: 'scr',
     showDuplicateWarn: false,
@@ -50,6 +51,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] } as any);
+    await reporter.taskManager.flushAllTasks();
 
     expect(
       existsSync(`${opts.techAllureResults}/environment.properties`),
@@ -85,6 +87,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] } as any);
+    await reporter.taskManager.flushAllTasks();
 
     expect(
       existsSync(`${opts.techAllureResults}/environment.properties`),
@@ -120,6 +123,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] } as any);
+    await reporter.taskManager.flushAllTasks();
 
     expect(
       existsSync(`${opts.techAllureResults}/environment.properties`),
@@ -153,6 +157,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] } as any);
+    await reporter.taskManager.flushAllTasks();
 
     expect(
       existsSync(`${opts.techAllureResults}/environment.properties`),

@@ -137,7 +137,7 @@
   "dependencies": {
     "@mmisty/cypress-tags": "^1.1.0",
     "allure-js-commons": "2.15.1",
-    "allure-js-parser": "^0.0.10",
+    "allure-js-parser": "^0.1.0",
     "debug": "4.4.0",
     "events": "3.3.0",
     "fast-glob": "3.3.2",
