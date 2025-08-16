@@ -13,7 +13,7 @@ import {
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rm, writeFileSync } from 'fs';
 import { readFile } from 'fs/promises';
 import path, { basename, dirname } from 'path';
 import glob from 'fast-glob';
@@ -46,8 +46,6 @@ const isAfterEachHook = (ttl: string | undefined) => ttl?.indexOf(afterEachHookN
 const isBeforeAllHook = (ttl: string | undefined) => ttl?.indexOf(beforeAllHookName) !== -1;
 
 const log = Debug('cypress-allure:reporter');
-
-const allTasks: any[] = [];
 
 const createNewContentForContainer = (nameAttAhc: string, existingContents: Buffer, ext: string, specname: string) => {
   const getContentJson = () => {
@@ -95,7 +93,7 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
  * @param input
  * @param allureResultsWatch
  */
-const copyFileToWatch = (
+const copyFileToWatch = async (
   input: { test: string; attachments: { name: string; type: string; source: string }[] },
   allureResultsWatch: string,
 ) => {
@@ -113,8 +111,8 @@ const copyFileToWatch = (
   log(`allureResultsWatch: ${allureResultsWatch}`);
   log(`attachments: ${JSON.stringify(attachments)}`);
 
-  copyAttachments(allTasks, attachments, allureResultsWatch, allureResultFile);
-  copyTest(allTasks, allureResultFile, allureResultsWatch);
+  await copyAttachments(attachments, allureResultsWatch, allureResultFile);
+  await copyTest(allureResultFile, allureResultsWatch);
 };
 
 /**
@@ -178,7 +176,10 @@ export class AllureReporter {
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
-  constructor(opts: ReporterOptions, taskManager: TaskManager) {
+  constructor(
+    opts: ReporterOptions,
+    private taskManager: TaskManager,
+  ) {
     this.showDuplicateWarn = opts.showDuplicateWarn;
     this.allureResults = opts.allureResults;
     this.allureResultsWatch = opts.techAllureResults;
@@ -615,17 +616,119 @@ export class AllureReporter {
     });
   }
 
-  async waitAllTasksToFinish() {
-    await Promise.all(allTasks)
-      .then(() => {
-        log(`All tasks completed (${allTasks.length})`);
-      })
-      .catch(err => {
-        logWithPackage('error', `Some of tasks (${allTasks.length}) failed:`);
-        // eslint-disable-next-line no-console
-        console.log(err);
-      });
+  /**
+   * this is for test ops watch mode - if we put it before file is ready it will not be updated in testops
+   */
+  afterSpecMoveToWatch() {
+    const envProperties = `${this.allureResults}/environment.properties`;
 
+    this.taskManager.addTask(async () => {
+      if (!existsSync(this.allureResultsWatch)) {
+        mkdirSync(this.allureResultsWatch);
+      }
+      await copyFileCp(envProperties, envProperties.replace(this.allureResults, this.allureResultsWatch), true);
+    });
+
+    const tests = parseAllure(this.allureResults);
+
+    const allAttachments = glob.sync(`${this.allureResults}/*-attachment.*`);
+
+    for (const test of tests) {
+      this.taskManager.addTask(async () => {
+        const testSource = `${this.allureResults}/${test.uuid}-result.json`;
+        const testTarget = testSource.replace(this.allureResults, this.allureResultsWatch);
+
+        function getAllParentUuids(test: any) {
+          const uuids: string[] = [];
+          let current = test.parent;
+
+          while (current) {
+            if (current.uuid) {
+              uuids.push(current.uuid);
+            }
+            current = current.parent;
+          }
+
+          return uuids;
+        }
+
+        const containerSources = getAllParentUuids(test).map(uuid => `${this.allureResults}/${uuid}-container.json`);
+
+        // move attachments referenced in tests or containers
+        const testAttachments = allAttachments.filter(attachFile => {
+          const testContents = readFileSync(testSource);
+
+          return (
+            testContents.indexOf(basename(attachFile)) !== -1 ||
+            containerSources
+              .filter(x => existsSync(x))
+              .some(x => {
+                const content = readFileSync(x);
+
+                return content.indexOf(basename(attachFile)) !== -1;
+              })
+          );
+        });
+
+        for (const attachFile of testAttachments) {
+          const attachTarget = attachFile.replace(this.allureResults, this.allureResultsWatch);
+
+          if (existsSync(attachFile) && !existsSync(attachTarget)) {
+            await copyFileCp(attachFile, attachTarget, true);
+          } else {
+            if (existsSync(attachFile)) {
+              await new Promise(res => {
+                rm(attachFile, err => {
+                  if (err) {
+                    logWithPackage('error', `Could not remove file ${attachFile}: ${err.message}`);
+                  }
+                  res('removed');
+                });
+              });
+            }
+          }
+        }
+
+        // copy test results and containers
+        if (existsSync(testSource) && !existsSync(testTarget)) {
+          await copyFileCp(testSource, testTarget, true);
+        } else {
+          if (existsSync(testSource)) {
+            await new Promise(res => {
+              rm(testSource, err => {
+                if (err) {
+                  logWithPackage('error', `Could not remove file ${testSource}: ${err.message}`);
+                }
+                res('removed');
+              });
+            });
+          }
+        }
+
+        for (const containerSource of containerSources) {
+          const containerTarget = containerSource.replace(this.allureResults, this.allureResultsWatch);
+
+          if (containerSource && containerTarget && existsSync(containerSource) && !existsSync(containerTarget)) {
+            await copyFileCp(containerSource, containerTarget, true);
+          } else {
+            if (containerSource && existsSync(containerSource)) {
+              await new Promise(res => {
+                rm(containerSource, err => {
+                  if (err) {
+                    logWithPackage('error', `Could not remove file ${containerSource}: ${err.message}`);
+                  }
+                  res('removed');
+                });
+              });
+            }
+          }
+        }
+      });
+    }
+  }
+
+  async waitAllTasksToFinish() {
+    await this.taskManager.flushAllTasks();
     log('All files / video copying tasks finished!');
   }
 
@@ -655,6 +758,14 @@ export class AllureReporter {
 
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
 
+    const testsWithSameParent = Array.from(
+      new Map(
+        testsAttach
+          .filter(test => test.parent) // keep only ones with parent
+          .map(test => [test.parent?.uuid, test]), // key by parent.uuid
+      ).values(),
+    );
+
     try {
       readFileSync(videoPath);
     } catch (errVideo) {
@@ -663,17 +774,17 @@ export class AllureReporter {
       return;
     }
 
-    allTasks.push(
-      ...testsAttach.map(test => {
-        if (!test.parent) {
-          logWithPackage('error', `not writing videos since test has no parent suite: ${test.fullName}`);
+    for (const test of testsWithSameParent) {
+      if (!test.parent) {
+        logWithPackage('error', `not writing videos since test has no parent suite: ${test.fullName}`);
 
-          return Promise.resolve();
-        }
+        return Promise.resolve();
+      }
 
-        const containerFile = `${this.allureResults}/${test.parent.uuid}-container.json`;
-        log(`ATTACHING to container: ${containerFile}`);
+      const containerFile = `${this.allureResults}/${test.parent.uuid}-container.json`;
+      log(`ATTACHING to container: ${containerFile}`);
 
+      this.taskManager.addTask(() => {
         return readFile(containerFile)
           .then(contents => {
             const uuid = randomUUID();
@@ -699,8 +810,8 @@ export class AllureReporter {
           .catch(err => {
             log(`error reading container: ${err.message}`);
           });
-      }),
-    );
+      });
+    }
   }
 
   endGroup() {

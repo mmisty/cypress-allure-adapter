@@ -3,9 +3,7 @@ import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { logWithPackage } from '../common';
-import { basename, dirname } from 'path';
-import glob from 'fast-glob';
-import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
+import { dirname } from 'path';
 import { TaskManager } from './task-manager';
 
 const debug = Debug('cypress-allure:proxy');
@@ -26,34 +24,34 @@ export type ReporterOptions = {
   isTest: boolean;
 };
 
-const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
-  if (allureResults === allureResultsWatch) {
-    log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-
-    return;
-  }
-
-  const results = glob.sync(`${allureResults}/*.*`);
-
-  mkdirSyncWithTry(allureResultsWatch);
-
-  log(`allureResults: ${allureResults}`);
-  log(`allureResultsWatch: ${allureResultsWatch}`);
-
-  const resultCopyTasks = results.map(res => {
-    const to = `${allureResultsWatch}/${basename(res)}`;
-
-    return copyFileCp(res, to, true);
-  });
-
-  await Promise.all(resultCopyTasks)
-    .then(() => {
-      log('All results copied to watch folder');
-    })
-    .catch(err => {
-      log('Some files failed to copy to watch folder:', err);
-    });
-};
+// const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
+//   if (allureResults === allureResultsWatch) {
+//     log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+//
+//     return;
+//   }
+//
+//   const results = glob.sync(`${allureResults}/*.*`);
+//
+//   mkdirSyncWithTry(allureResultsWatch);
+//
+//   log(`allureResults: ${allureResults}`);
+//   log(`allureResultsWatch: ${allureResultsWatch}`);
+//
+//   const resultCopyTasks = results.map(res => {
+//     const to = `${allureResultsWatch}/${basename(res)}`;
+//
+//     return copyFileCp(res, to, true);
+//   });
+//
+//   await Promise.all(resultCopyTasks)
+//     .then(() => {
+//       log('All results copied to watch folder');
+//     })
+//     .catch(err => {
+//       log('Some files failed to copy to watch folder:', err);
+//     });
+// };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
@@ -403,7 +401,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       }
 
       await allureReporter.waitAllTasksToFinish();
-      await copyResultsToWatchFolder(allureResults, allureResultsWatch);
+      allureReporter.afterSpecMoveToWatch();
       log('afterSpec');
     },
   };
