@@ -40,7 +40,7 @@ Feature: test cucumber
       const steps = mapSteps(test!.steps, t => ({
         name: t.name,
         status: t.status,
-        duration: t.stop && t.start && t.stop - t.start > 0,
+        duration: t.stop && t.start && t.stop - t.start >= 0,
       })).filter(
         t =>
           t.name.indexOf('before each') === -1 &&
