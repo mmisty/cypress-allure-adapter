@@ -6,6 +6,7 @@ import { logWithPackage } from '../common';
 import { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
+import { TaskManager } from './task-manager';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -59,8 +60,10 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   let allureReporter = new AllureReporter(opts);
   const allureResults = opts.allureResults;
   const allureResultsWatch = opts.techAllureResults;
+  const taskManager = new TaskManager();
 
   return {
+    taskManager,
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
