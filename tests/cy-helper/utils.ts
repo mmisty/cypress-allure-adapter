@@ -364,7 +364,7 @@ type Result = {
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
-  shouldBeResults?: boolean,
+  _shouldBeResults?: boolean,
 ): Result => {
   const result: {
     res:
@@ -439,36 +439,35 @@ export const createResTest2 = (
     const cy = require('cypress');
 
     const port = Math.round(Math.random() * 65536);
-    let err: Error | undefined;
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
     process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : '';
     process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
-    const checkFilesExist = retries => {
-      return new Promise((resolve, reject) => {
-        const attempt = remainingRetries => {
-          if (!specs.every(p => existsSync(p))) {
-            console.log(
-              `Not all files were written: attempt ${retries - remainingRetries + 1}`,
-            );
-
-            if (remainingRetries > 0) {
-              return delay(1000)
-                .then(() => attempt(remainingRetries - 1))
-                .catch(reject);
-            } else {
-              return reject(
-                new Error('Files are still missing after all retries'),
-              );
-            }
-          }
-          resolve(true);
-        };
-
-        attempt(retries);
-      });
-    };
+    // const checkFilesExist = retries => {
+    //   return new Promise((resolve, reject) => {
+    //     const attempt = remainingRetries => {
+    //       if (!specs.every(p => existsSync(p))) {
+    //         console.log(
+    //           `Not all files were written: attempt ${retries - remainingRetries + 1}`,
+    //         );
+    //
+    //         if (remainingRetries > 0) {
+    //           return delay(1000)
+    //             .then(() => attempt(remainingRetries - 1))
+    //             .catch(reject);
+    //         } else {
+    //           return reject(
+    //             new Error('Files are still missing after all retries'),
+    //           );
+    //         }
+    //       }
+    //       resolve(true);
+    //     };
+    //
+    //     attempt(retries);
+    //   });
+    // };
     const video = parseBoolean(envConfig?.video ?? `${true}`);
     // todo fix video
     console.log(`video:${video}`);
@@ -489,7 +488,6 @@ export const createResTest2 = (
       })
 
       .catch(e => {
-        err = e as Error;
         console.log('Exception when running cypress', e);
         throw e;
       });
