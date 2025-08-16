@@ -640,6 +640,9 @@ export class AllureReporter {
     const envProperties = `${this.allureResults}/environment.properties`;
 
     this.taskManager.addTask(async () => {
+      if (!existsSync(this.allureResultsWatch)) {
+        mkdirSync(this.allureResultsWatch);
+      }
       await copyFileCp(envProperties, envProperties.replace(this.allureResults, this.allureResultsWatch), true);
     });
 
