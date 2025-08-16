@@ -680,7 +680,7 @@ export class AllureReporter {
           if (existsSync(attachFile) && !existsSync(attachTarget)) {
             await copyFileCp(attachFile, attachTarget, true);
           } else {
-            if (existsSync(attachFile)) {
+            if (existsSync(attachFile) && attachFile !== attachTarget) {
               await new Promise(res => {
                 rm(attachFile, err => {
                   if (err) {
@@ -697,7 +697,7 @@ export class AllureReporter {
         if (existsSync(testSource) && !existsSync(testTarget)) {
           await copyFileCp(testSource, testTarget, true);
         } else {
-          if (existsSync(testSource)) {
+          if (existsSync(testSource) && testSource !== testTarget) {
             await new Promise(res => {
               rm(testSource, err => {
                 if (err) {
@@ -715,7 +715,7 @@ export class AllureReporter {
           if (containerSource && containerTarget && existsSync(containerSource) && !existsSync(containerTarget)) {
             await copyFileCp(containerSource, containerTarget, true);
           } else {
-            if (containerSource && existsSync(containerSource)) {
+            if (containerSource && existsSync(containerSource) && containerSource !== containerSource) {
               await new Promise(res => {
                 rm(containerSource, err => {
                   if (err) {

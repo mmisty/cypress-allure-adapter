@@ -33,7 +33,7 @@ export const copyFileCp = async (from: string, to: string, isRemoveSource: boole
     .then(() => {
       log(`Copied ${from} to ${to}`);
 
-      if (isRemoveSource) {
+      if (isRemoveSource && from !== to) {
         rm(from, () => {
           // ignore
         });
