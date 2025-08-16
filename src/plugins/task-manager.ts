@@ -8,10 +8,10 @@ export class TaskManager {
 
   addTask(task: () => Promise<any>): void {
     this.taskQueue.push({ task });
-    debug.log(`Task added to queue, processing started tasks count: ${this.taskQueue.length}`);
+    debug(`Task added to queue, processing started tasks count: ${this.taskQueue.length}`);
 
     this.processQueue().then(() => {
-      debug.log('Processing finished');
+      debug('Processing finished');
     });
   }
 
@@ -36,7 +36,7 @@ export class TaskManager {
 
   // Ensure no pending tasks left at the very end
   async flushAllTasks() {
-    debug.log(`All tasks are being flushed, tasks count: ${this.taskQueue.length}`);
+    debug(`All tasks are being flushed, tasks count: ${this.taskQueue.length}`);
     const dateStarted = Date.now();
     const timeout = 60000;
 
