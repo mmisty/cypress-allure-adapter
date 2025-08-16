@@ -621,12 +621,16 @@ export class AllureReporter {
    */
   afterSpecMoveToWatch() {
     const envProperties = `${this.allureResults}/environment.properties`;
+    const executor = `${this.allureResults}/executor.json`;
+    const categories = `${this.allureResults}/categories.json`;
 
     this.taskManager.addTask(async () => {
       if (!existsSync(this.allureResultsWatch)) {
         mkdirSync(this.allureResultsWatch);
       }
       await copyFileCp(envProperties, envProperties.replace(this.allureResults, this.allureResultsWatch), true);
+      await copyFileCp(executor, executor.replace(this.allureResults, this.allureResultsWatch), true);
+      await copyFileCp(categories, categories.replace(this.allureResults, this.allureResultsWatch), true);
     });
 
     const tests = parseAllure(this.allureResults);
