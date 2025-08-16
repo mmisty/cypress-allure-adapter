@@ -57,17 +57,17 @@ const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatc
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
-  let allureReporter = new AllureReporter(opts);
+  const taskManager = new TaskManager();
+  let allureReporter = new AllureReporter(opts, taskManager);
   const allureResults = opts.allureResults;
   const allureResultsWatch = opts.techAllureResults;
-  const taskManager = new TaskManager();
 
   return {
     taskManager,
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter(opts, taskManager);
       allureReporter.specStarted(arg);
       log('specStarted');
     },
@@ -224,7 +224,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter(opts, taskManager);
 
       try {
         if (existsSync(allureResults)) {

@@ -35,6 +35,7 @@ import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
 import { mergeStepsWithSingleChild, removeFirstStepWhenSame, wrapHooks } from './helper';
+import { TaskManager } from './task-manager';
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -177,7 +178,7 @@ export class AllureReporter {
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
 
-  constructor(opts: ReporterOptions) {
+  constructor(opts: ReporterOptions, taskManager: TaskManager) {
     this.showDuplicateWarn = opts.showDuplicateWarn;
     this.allureResults = opts.allureResults;
     this.allureResultsWatch = opts.techAllureResults;
