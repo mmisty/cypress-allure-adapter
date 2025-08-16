@@ -6,7 +6,7 @@ import {
   whenNoCoverage,
 } from '@test-utils';
 
-describe('two passed tests with before each in suite', () => {
+describe.skip('two passed tests with before each in suite', () => {
   const res = createResTest2([
     `
     describe('hello suite', () => {

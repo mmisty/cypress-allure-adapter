@@ -102,5 +102,10 @@ export const configureAllureAdapterPlugins = (
     await reporter.afterSpec({ results });
   });
 
+  on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {
+    debug('after:run');
+    await reporter.taskManager.flushAllTasks();
+  });
+
   return reporter;
 };

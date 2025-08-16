@@ -3,9 +3,8 @@ import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { logWithPackage } from '../common';
-import { basename, dirname } from 'path';
-import glob from 'fast-glob';
-import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
+import { dirname } from 'path';
+import { TaskManager } from './task-manager';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -25,46 +24,48 @@ export type ReporterOptions = {
   isTest: boolean;
 };
 
-const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
-  if (allureResults === allureResultsWatch) {
-    log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-
-    return;
-  }
-
-  const results = glob.sync(`${allureResults}/*.*`);
-
-  mkdirSyncWithTry(allureResultsWatch);
-
-  log(`allureResults: ${allureResults}`);
-  log(`allureResultsWatch: ${allureResultsWatch}`);
-
-  const resultCopyTasks = results.map(res => {
-    const to = `${allureResultsWatch}/${basename(res)}`;
-
-    return copyFileCp(res, to, true);
-  });
-
-  await Promise.all(resultCopyTasks)
-    .then(() => {
-      log('All results copied to watch folder');
-    })
-    .catch(err => {
-      log('Some files failed to copy to watch folder:', err);
-    });
-};
+// const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
+//   if (allureResults === allureResultsWatch) {
+//     log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+//
+//     return;
+//   }
+//
+//   const results = glob.sync(`${allureResults}/*.*`);
+//
+//   mkdirSyncWithTry(allureResultsWatch);
+//
+//   log(`allureResults: ${allureResults}`);
+//   log(`allureResultsWatch: ${allureResultsWatch}`);
+//
+//   const resultCopyTasks = results.map(res => {
+//     const to = `${allureResultsWatch}/${basename(res)}`;
+//
+//     return copyFileCp(res, to, true);
+//   });
+//
+//   await Promise.all(resultCopyTasks)
+//     .then(() => {
+//       log('All results copied to watch folder');
+//     })
+//     .catch(err => {
+//       log('Some files failed to copy to watch folder:', err);
+//     });
+// };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
-  let allureReporter = new AllureReporter(opts);
+  const taskManager = new TaskManager();
+  let allureReporter = new AllureReporter(opts, taskManager);
   const allureResults = opts.allureResults;
-  const allureResultsWatch = opts.techAllureResults;
+  // const allureResultsWatch = opts.techAllureResults;
 
   return {
+    taskManager,
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter(opts, taskManager);
       allureReporter.specStarted(arg);
       log('specStarted');
     },
@@ -201,7 +202,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         const contents = getCategoriesContent();
 
         if (!contents) {
-          return;
+          return Promise.resolve();
         }
 
         writeFileSync(`${allureResults}/categories.json`, contents);
@@ -221,7 +222,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter(opts, taskManager);
 
       try {
         if (existsSync(allureResults)) {
@@ -356,7 +357,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log(`testMessage ${JSON.stringify(arg)}`);
 
       if (!opts.isTest) {
-        return;
+        return Promise.resolve();
       }
 
       if (!existsSync(dirname(arg.path))) {
@@ -399,8 +400,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         );
       }
 
+      // wait all videos are processed and move result to watch after
       await allureReporter.waitAllTasksToFinish();
-      await copyResultsToWatchFolder(allureResults, allureResultsWatch);
+      allureReporter.afterSpecMoveToWatch();
       log('afterSpec');
     },
   };

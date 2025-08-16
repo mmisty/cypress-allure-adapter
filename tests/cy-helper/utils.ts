@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 import { globSync } from 'fast-glob';
+import expect from 'expect';
 
 jest.setTimeout(360000);
 

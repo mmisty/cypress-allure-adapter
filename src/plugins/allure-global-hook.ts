@@ -112,7 +112,7 @@ export class GlobalHooks {
     log(`added attachment: ${name}`);
   }
 
-  // proces attachments
+  // process attachments
   processForTest() {
     log('process global hooks for test');
     const res = this.beforeAfterHooks;
