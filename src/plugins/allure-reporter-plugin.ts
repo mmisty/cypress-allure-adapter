@@ -632,8 +632,14 @@ export class AllureReporter {
         mkdirSync(this.allureResultsWatch);
       }
       await copyFileCp(envProperties, envProperties.replace(this.allureResults, this.allureResultsWatch), true);
-      await copyFileCp(executor, executor.replace(this.allureResults, this.allureResultsWatch), true);
-      await copyFileCp(categories, categories.replace(this.allureResults, this.allureResultsWatch), true);
+
+      if (existsSync(executor)) {
+        await copyFileCp(executor, executor.replace(this.allureResults, this.allureResultsWatch), true);
+      }
+
+      if (existsSync(categories)) {
+        await copyFileCp(categories, categories.replace(this.allureResults, this.allureResultsWatch), true);
+      }
     });
 
     const tests = parseAllure(this.allureResults);
