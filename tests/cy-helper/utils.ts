@@ -433,6 +433,7 @@ export const createResTest2 = (
 
   afterAll(() => {
     rmSync(storeResDir, { recursive: true });
+    rmSync(testsPath, { recursive: true });
   });
 
   // create results jest
