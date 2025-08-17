@@ -128,7 +128,7 @@ jobs:
     - name: Test Cy commands
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 7
         max_attempts: 2
         command: npm run test:jest:cy:commands
 

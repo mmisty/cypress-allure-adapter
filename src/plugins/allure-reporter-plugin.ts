@@ -627,18 +627,25 @@ export class AllureReporter {
     const executor = `${this.allureResults}/executor.json`;
     const categories = `${this.allureResults}/categories.json`;
 
+    const targetPath = (src: string) => {
+      return src.replace(this.allureResults, this.allureResultsWatch);
+    };
+
     this.taskManager.addTask(async () => {
       if (!existsSync(this.allureResultsWatch)) {
         mkdirSync(this.allureResultsWatch);
       }
-      await copyFileCp(envProperties, envProperties.replace(this.allureResults, this.allureResultsWatch), true);
 
-      if (existsSync(executor)) {
-        await copyFileCp(executor, executor.replace(this.allureResults, this.allureResultsWatch), true);
+      if (existsSync(envProperties) && !existsSync(targetPath(envProperties))) {
+        await copyFileCp(envProperties, targetPath(envProperties), true);
       }
 
-      if (existsSync(categories)) {
-        await copyFileCp(categories, categories.replace(this.allureResults, this.allureResultsWatch), true);
+      if (existsSync(executor) && !existsSync(targetPath(executor))) {
+        await copyFileCp(executor, targetPath(executor), true);
+      }
+
+      if (existsSync(categories) && !existsSync(targetPath(categories))) {
+        await copyFileCp(categories, targetPath(categories), true);
       }
     });
 
