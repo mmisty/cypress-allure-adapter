@@ -51,15 +51,15 @@ jobs:
     - name: Test Cy passes
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 3
+        max_attempts: 2
         command: npm run test:jest:cy:passes
 
     - name: Test Cy failures
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:failures
 
     - name: Test Cy requests
