@@ -52,4 +52,11 @@ export class TaskManager {
 
     return null;
   }
+
+  async flushExistingTasks() {
+    debug(`Process existing tasks: ${this.taskQueue.length}`);
+    await this.processQueue();
+
+    return null;
+  }
 }

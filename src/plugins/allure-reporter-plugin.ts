@@ -748,11 +748,6 @@ export class AllureReporter {
     }
   }
 
-  async waitAllTasksToFinish() {
-    await this.taskManager.flushAllTasks();
-    log('All files / video copying tasks finished!');
-  }
-
   /**
    * Attach video to parent suite
    * @param arg {path: string}
