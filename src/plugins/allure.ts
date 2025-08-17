@@ -402,10 +402,14 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       taskManager.flushExistingTasks().then(() => {
         allureReporter.afterSpecMoveToWatch();
-        logWithPackage('log', `Processing all files for spec ${arg.results.spec.relative} finished`);
+        logWithPackage('log', `Processing all files for spec ${arg.results?.spec?.relative} finished`);
       });
 
       log('afterSpec');
+    },
+
+    async waitAllFinished(_arg: AllureTaskArgs<'waitAllFinished'>) {
+      await taskManager.flushAllTasks();
     },
   };
 };

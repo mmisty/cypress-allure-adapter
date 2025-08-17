@@ -235,6 +235,12 @@ describe('startReporterServer', () => {
             arg: { results: [] },
           },
         },
+        {
+          data: {
+            task: 'waitAllFinished',
+            arg: {},
+          },
+        },
       ],
       () => {
         expect(existsSync(results)).toEqual(true);

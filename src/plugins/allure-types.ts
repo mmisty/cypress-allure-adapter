@@ -73,6 +73,7 @@ type AllureTask = {
   };
   endAll: undefined;
   afterSpec: { results: CypressCommandLine.RunResult & AfterSpecScreenshots };
+  waitAllFinished: undefined;
 };
 
 export type RequestTask = keyof AllureTask;
