@@ -3,7 +3,6 @@ import {
   AllureRuntime,
   AllureStep,
   AllureTest,
-  Attachment,
   ExecutableItem,
   ExecutableItemWrapper,
   FixtureResult,
@@ -33,7 +32,7 @@ import {
 import { extname, logWithPackage } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
-import { copyAttachments, copyFileCp, copyTest, mkdirSyncWithTry, writeResultFile } from './fs-tools';
+import { copyFileCp, writeResultFile } from './fs-tools';
 import { mergeStepsWithSingleChild, removeFirstStepWhenSame, wrapHooks } from './helper';
 import { TaskManager } from './task-manager';
 
@@ -119,24 +118,24 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
  * Get all attachments for test to move them to watch folder
  * @param item test item
  */
-const getAllAttachments = (item: ExecutableItem): Attachment[] => {
-  const attachmentsResult: Attachment[] = [];
-
-  const inner = (steps: ExecutableItem[], accumulatedRes: Attachment[]): Attachment[] => {
-    if (steps.length === 0) {
-      return accumulatedRes;
-    }
-
-    const [first, ...rest] = steps;
-    const newRes = [...accumulatedRes, ...first.attachments];
-
-    return inner(rest, newRes);
-  };
-
-  const stepAttachments = inner(item.steps, attachmentsResult);
-
-  return [...stepAttachments, ...item.attachments];
-};
+// const getAllAttachments = (item: ExecutableItem): Attachment[] => {
+//   const attachmentsResult: Attachment[] = [];
+//
+//   const inner = (steps: ExecutableItem[], accumulatedRes: Attachment[]): Attachment[] => {
+//     if (steps.length === 0) {
+//       return accumulatedRes;
+//     }
+//
+//     const [first, ...rest] = steps;
+//     const newRes = [...accumulatedRes, ...first.attachments];
+//
+//     return inner(rest, newRes);
+//   };
+//
+//   const stepAttachments = inner(item.steps, attachmentsResult);
+//
+//   return [...stepAttachments, ...item.attachments];
+// };
 
 // all tests for session
 const allTests: {
