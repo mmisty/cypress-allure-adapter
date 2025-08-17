@@ -78,16 +78,19 @@ describe('reporter', () => {
       result: 'failed' as Status,
       details: {
         message: 'Timed out retrying after 1000ms: expected 1 to equal 3',
-        trace: 'AssertionErro',
+        trace: 'AssertionError',
       },
     });
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] });
-    await reporter.taskManager.flushAllTasks();
+    await reporter.waitAllFinished();
 
     const results = parseAllure(resultsPathWatch, { logError: false });
     expect(
-      mapSteps(results[0].steps, t => ({ name: t.name, status: t.status })),
+      mapSteps(results[0]?.steps ?? [], t => ({
+        name: t.name,
+        status: t.status,
+      })),
     ).toEqual([
       {
         name: 'subtract',

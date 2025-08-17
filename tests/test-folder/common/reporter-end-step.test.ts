@@ -56,7 +56,7 @@ describe('reporter - end step', () => {
   const stepsAfter = async () => {
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: [] } as any);
-    await reporter.taskManager.flushAllTasks();
+    await reporter.waitAllFinished({});
   };
 
   it('should mark parent as broken when children have errors', async () => {
