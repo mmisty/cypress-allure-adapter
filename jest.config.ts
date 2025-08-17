@@ -31,7 +31,7 @@ export default {
   // coverageProvider: 'v8',
 
   // A list of reporter names that Jest uses when writing coverage reports
-  coverageReporters: ['json', 'text', 'lcov', 'cobertura', 'clover'],
+  coverageReporters: ['json', 'text', 'lcov'],
 
   // The test environment that will be used for testing
   testEnvironment: 'node',

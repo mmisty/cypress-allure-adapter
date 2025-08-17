@@ -439,14 +439,15 @@ export const createResTest2 = (
         // ignore
       }
     }
-
-    if (existsSync(testsPath)) {
-      try {
-        rmSync(testsPath, { recursive: true });
-      } catch {
-        // ignore
+    specPaths.forEach(path => {
+      if (existsSync(path)) {
+        try {
+          rmSync(path, { recursive: true });
+        } catch {
+          // ignore
+        }
       }
-    }
+    });
   });
 
   // create results jest
