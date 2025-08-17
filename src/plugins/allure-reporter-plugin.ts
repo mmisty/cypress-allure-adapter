@@ -1134,7 +1134,9 @@ export class AllureReporter {
     }
 
     log('testEnded: will move result to watch folder');
-    copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
+    // do not copy otherwise attachments may not be shown in testops
+    // will be moved after spec is done
+    // copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
