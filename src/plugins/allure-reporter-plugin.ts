@@ -93,27 +93,27 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
  * @param input
  * @param allureResultsWatch
  */
-const copyFileToWatch = async (
-  input: { test: string; attachments: { name: string; type: string; source: string }[] },
-  allureResultsWatch: string,
-) => {
-  const { test: allureResultFile, attachments } = input;
-  const allureResults = path.dirname(allureResultFile);
-
-  if (allureResults === allureResultsWatch) {
-    log(`copyFileToWatch allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-
-    return;
-  }
-  mkdirSyncWithTry(allureResultsWatch);
-
-  log(`allureResults: ${allureResults}`);
-  log(`allureResultsWatch: ${allureResultsWatch}`);
-  log(`attachments: ${JSON.stringify(attachments)}`);
-
-  await copyAttachments(attachments, allureResultsWatch, allureResultFile);
-  await copyTest(allureResultFile, allureResultsWatch);
-};
+// const copyFileToWatch = async (
+//   input: { test: string; attachments: { name: string; type: string; source: string }[] },
+//   allureResultsWatch: string,
+// ) => {
+//   const { test: allureResultFile, attachments } = input;
+//   const allureResults = path.dirname(allureResultFile);
+//
+//   if (allureResults === allureResultsWatch) {
+//     log(`copyFileToWatch allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+//
+//     return;
+//   }
+//   mkdirSyncWithTry(allureResultsWatch);
+//
+//   log(`allureResults: ${allureResults}`);
+//   log(`allureResultsWatch: ${allureResultsWatch}`);
+//   log(`attachments: ${JSON.stringify(attachments)}`);
+//
+//   await copyAttachments(attachments, allureResultsWatch, allureResultFile);
+//   await copyTest(allureResultFile, allureResultsWatch);
+// };
 
 /**
  * Get all attachments for test to move them to watch folder
@@ -1119,7 +1119,7 @@ export class AllureReporter {
     const uid = this.currentTest.uuid;
 
     //const resAtt: Attachment[] = [...this.currentTest.wrappedItem.attachments];
-    const attachments = getAllAttachments(this.currentTest.wrappedItem);
+    // const attachments = getAllAttachments(this.currentTest.wrappedItem);
     this.currentTest.endTest();
     this.tests.pop();
     this.descriptionHtml = [];
