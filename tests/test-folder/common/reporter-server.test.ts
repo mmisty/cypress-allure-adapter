@@ -229,6 +229,12 @@ describe('startReporterServer', () => {
             arg: { title: 'test1', id: 'testID1', result: 'passed' },
           },
         },
+        {
+          data: {
+            task: 'afterSpec',
+            arg: { results: [] },
+          },
+        },
       ],
       () => {
         expect(existsSync(results)).toEqual(true);
