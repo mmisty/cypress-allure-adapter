@@ -432,8 +432,21 @@ export const createResTest2 = (
   };
 
   afterAll(() => {
-    rmSync(storeResDir, { recursive: true });
-    rmSync(testsPath, { recursive: true });
+    if (existsSync(storeResDir)) {
+      try {
+        rmSync(storeResDir, { recursive: true });
+      } catch {
+        // ignore
+      }
+    }
+
+    if (existsSync(testsPath)) {
+      try {
+        rmSync(testsPath, { recursive: true });
+      } catch {
+        // ignore
+      }
+    }
   });
 
   // create results jest
