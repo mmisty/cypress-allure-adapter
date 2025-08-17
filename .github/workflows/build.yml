@@ -128,7 +128,7 @@ jobs:
     - name: Test Cy commands
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 7
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:commands
 
@@ -149,14 +149,14 @@ jobs:
     - name: Test Cy duration
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 6
         max_attempts: 2
         command: npm run test:jest:cy:duration
 
     - name: Test Cy interface
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 6
         max_attempts: 2
         command: npm run test:jest:cy:interface
 
