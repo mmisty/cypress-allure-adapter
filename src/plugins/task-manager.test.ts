@@ -181,22 +181,22 @@ describe('task manager', () => {
     const tm = new TaskManager();
 
     tm.addTask('spec1', async () => {
-      console.log('task 1');
+      logs.push('task 1');
     });
 
     tm.addTask('spec1', async () => {
-      console.log('task 2');
+      logs.push('task 2');
     });
 
     tm.addTask('spec1', async () => {
-      console.log('task 3');
+      logs.push('task 3');
       await delay(100); // to process
-      console.log('task 3 end');
+      logs.push('task 3 end');
     });
 
     await tm.flushAllTasksForQueue('spec1').then(() => {
-      console.log('end');
+      logs.push('end');
     });
-    expect(cons?.log.mock.calls.map(x => x[0])).toEqual(['task 1', 'task 2', 'task 3', 'task 3 end', 'end']);
+    expect(logs).toEqual(['task 1', 'task 2', 'task 3', 'task 3 end', 'end']);
   });
 });
