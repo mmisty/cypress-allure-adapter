@@ -117,6 +117,9 @@ export class TaskManager {
       return;
     }
 
+    if (queue.isFlushing) return; // already running
+    queue.isFlushing = true;
+
     while (queue.tasks.length > 0 || queue.isFlushing) {
       await new Promise(r => setTimeout(r, 50));
 

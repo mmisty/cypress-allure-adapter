@@ -54,6 +54,13 @@ jobs:
         max_attempts: 2
         command: npm run test:jest:cy:passes
 
+    - name: Test Cy Videos
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 3
+        max_attempts: 2
+        command: npm run test:jest:cy:v2
+
     - name: Test Cy failures
       uses: nick-fields/retry@v2
       with:

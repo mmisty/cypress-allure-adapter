@@ -792,7 +792,7 @@ export class AllureReporter {
       } catch (errVideo) {
         logWithPackage('error', `Could not read video: ${errVideo}`);
 
-        return;
+        return Promise.resolve();
       }
 
       for (const test of testsWithSameParent) {
