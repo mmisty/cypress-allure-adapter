@@ -79,7 +79,7 @@ describe('before each fail with retry - first in test then in hook', { retries: 
             message: t.statusDetails.message,
             start: t.start,
           }))
-          .sort((a, b) => (a.start && b.start && a.start < b.start ? -1 : 1))
+          .sort((a, b) => (a.name && b.name && a.name < b.name ? -1 : 1))
           .map(x => ({ ...x, start: undefined })),
       ).toEqual([
         {

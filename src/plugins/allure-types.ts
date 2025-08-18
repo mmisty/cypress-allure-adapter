@@ -1,4 +1,5 @@
 import type { ContentType } from '../common/types';
+import type { TaskManager } from './task-manager';
 
 export type StatusDetails = {
   message?: string;
@@ -72,6 +73,7 @@ type AllureTask = {
   };
   endAll: undefined;
   afterSpec: { results: CypressCommandLine.RunResult & AfterSpecScreenshots };
+  waitAllFinished: undefined;
 };
 
 export type RequestTask = keyof AllureTask;
@@ -80,7 +82,9 @@ export type AllureTaskArgs<T extends RequestTask> = AllureTask[T] extends undefi
       // ign
     }
   : AllureTask[T];
-export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> };
+export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> } & {
+  taskManager: TaskManager;
+};
 export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
 
 export enum Status {

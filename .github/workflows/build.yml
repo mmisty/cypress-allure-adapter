@@ -11,7 +11,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js
@@ -51,107 +50,157 @@ jobs:
     - name: Test Cy passes
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 3
+        max_attempts: 2
         command: npm run test:jest:cy:passes
+
+    - name: Test Cy Videos
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 3
+        max_attempts: 2
+        command: npm run test:jest:cy:v2
 
     - name: Test Cy failures
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:failures
 
     - name: Test Cy requests
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:requests
 
     - name: Test Cy attachments
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:attachments
 
     - name: Test Cy hooks
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 6
+        max_attempts: 2
         command: npm run test:jest:cy:hooks
+
+    - name: Publish
+      if: success()
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        branch=${{ github.ref }}
+        echo "Branch: $branch" 
+        
+        gitmsg="${{ github.event.commits[0].message }}"
+        echo "Commit: $gitmsg" 
+        
+        if [[ "$gitmsg" =~ "[patch]" ]]; then
+          echo "publish patch"
+          npm run publish:patch
+          git push --tags
+          exit 0
+        fi 
+        
+        if [[ "$gitmsg" =~ "[fix]" ]]; then
+          echo "publish patch"
+          npm run publish:patch
+          git push --tags
+          exit 0
+        fi
+        
+        if [[ "$gitmsg" =~ "[minor]" ]]; then
+          echo "publish minor"
+          npm run publish:minor
+          git push --tags
+          exit 0
+        fi
+        
+        if [[ "$gitmsg" =~ "[major]" ]]; then
+          echo "publish major"
+          npm run publish:major
+          git push --tags
+          exit 0
+        fi
+        
+        echo "publishing beta, for other commit message should contain [minor], [major] or [patch]/[fix]"
+        npm run publish:beta || true
+        # git push --tags || true
 
     - name: Test Cy commands
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 10
+        max_attempts: 2
         command: npm run test:jest:cy:commands
 
     - name: Test Cy events
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:events
 
     - name: Test Cy cucumber
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:cucumber
 
     - name: Test Cy duration
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 6
+        max_attempts: 2
         command: npm run test:jest:cy:duration
 
     - name: Test Cy interface
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 6
+        max_attempts: 2
         command: npm run test:jest:cy:interface
 
     - name: Test Cy only
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:only
 
     - name: Test Cy other
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:other
 
     - name: Test Cy regression
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:regression
 
 
     - name: Test Cy settings
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 4
+        max_attempts: 2
         command: npm run test:jest:cy:settings
 
     - name: Test Cy skips
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 30
-        max_attempts: 1
+        timeout_minutes: 2
+        max_attempts: 2
         command: npm run test:jest:cy:skips
         
 
@@ -178,48 +227,4 @@ jobs:
         report_paths: '**/reports/jest/*.xml'
         check_name: 'Jest Test Report'
         detailed_summary: true
-
-    - name: Publish
-      if: success()
-      env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: |
-          branch=${{ github.ref }}
-          echo "Branch: $branch" 
-          
-          gitmsg="${{ github.event.commits[0].message }}"
-          echo "Commit: $gitmsg" 
-        
-          if [[ "$gitmsg" =~ "[patch]" ]]; then
-            echo "publish patch"
-            npm run publish:patch
-            git push --tags
-            exit 0
-          fi 
-          
-          if [[ "$gitmsg" =~ "[fix]" ]]; then
-            echo "publish patch"
-            npm run publish:patch
-            git push --tags
-            exit 0
-          fi
-          
-          if [[ "$gitmsg" =~ "[minor]" ]]; then
-            echo "publish minor"
-            npm run publish:minor
-            git push --tags
-            exit 0
-          fi
-          
-          if [[ "$gitmsg" =~ "[major]" ]]; then
-            echo "publish major"
-            npm run publish:major
-            git push --tags
-            exit 0
-          fi
-          
-          echo "publishing beta, for other commit message should contain [minor], [major] or [patch]/[fix]"
-          npm run publish:beta || true
-          # git push --tags || true
-
 

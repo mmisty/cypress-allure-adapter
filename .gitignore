@@ -24,11 +24,14 @@
 /js-files-cypress
 /lib
 
-/allure-results
+
+**/allure-results/**
+**/allure-report/**
 /allure-results-2
 /allure-results-jest
-/allure-report
 /filtered_tests.json
+/res
+**/debug-generate.sh
 
 
 # grep

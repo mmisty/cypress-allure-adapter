@@ -5,6 +5,7 @@ import { consoleMock } from '../../mocks/console-mock';
 
 jest.setTimeout(60000);
 const results = 'reports/allure-res';
+const resultsPathWatch = `${results}/watch`;
 
 describe('startReporterServer', () => {
   beforeEach(() => {
@@ -30,7 +31,7 @@ describe('startReporterServer', () => {
     const reporter = allureTasks({
       allureAddVideoOnPass: true,
       allureResults: results,
-      techAllureResults: `${results}/watch`,
+      techAllureResults: resultsPathWatch,
       videos: 'reports/screens',
       screenshots: 'reports/screens',
       showDuplicateWarn: true,
@@ -228,11 +229,25 @@ describe('startReporterServer', () => {
             arg: { title: 'test1', id: 'testID1', result: 'passed' },
           },
         },
+        {
+          data: {
+            task: 'afterSpec',
+            arg: { results: { spec: { relative: '123' } } },
+          },
+        },
+        {
+          data: {
+            task: 'waitAllFinished',
+            arg: {},
+          },
+        },
       ],
       () => {
         expect(existsSync(results)).toEqual(true);
 
-        const pa: AllureTest[] = parseAllure(`${results}/watch`);
+        const pa: AllureTest[] = parseAllure(resultsPathWatch, {
+          logError: false,
+        });
         expect(
           pa.map(t => ({
             name: t.name,

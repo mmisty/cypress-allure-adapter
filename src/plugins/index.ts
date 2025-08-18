@@ -5,6 +5,7 @@ import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
+import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -100,6 +101,12 @@ export const configureAllureAdapterPlugins = (
     const results: CypressCommandLine.RunResult & AfterSpecScreenshots = res as CypressCommandLine.RunResult &
       AfterSpecScreenshots;
     await reporter.afterSpec({ results });
+  });
+
+  on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {
+    debug('after:run');
+    await reporter.waitAllFinished({});
+    logWithPackage('log', 'Processing all files finished');
   });
 
   return reporter;
