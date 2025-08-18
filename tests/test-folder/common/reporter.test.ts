@@ -82,7 +82,7 @@ describe('reporter', () => {
       },
     });
     reporter.suiteEnded({});
-    await reporter.afterSpec({ results: [] });
+    await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
     await reporter.waitAllFinished();
 
     const results = parseAllure(resultsPathWatch, { logError: false });

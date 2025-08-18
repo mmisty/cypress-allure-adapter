@@ -50,7 +50,7 @@ describe('reporter - add env info', () => {
     });
 
     reporter.suiteEnded({});
-    await reporter.afterSpec({ results: [] } as any);
+    await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
     await reporter.taskManager.flushAllTasks();
 
     expect(
@@ -86,7 +86,7 @@ describe('reporter - add env info', () => {
     });
 
     reporter.suiteEnded({});
-    await reporter.afterSpec({ results: [] } as any);
+    await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
     await reporter.taskManager.flushAllTasks();
 
     expect(
@@ -122,7 +122,7 @@ describe('reporter - add env info', () => {
     });
 
     reporter.suiteEnded({});
-    await reporter.afterSpec({ results: [] } as any);
+    await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
     await reporter.taskManager.flushAllTasks();
 
     expect(
@@ -156,7 +156,7 @@ describe('reporter - add env info', () => {
     });
 
     reporter.suiteEnded({});
-    await reporter.afterSpec({ results: [] } as any);
+    await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
     await reporter.taskManager.flushAllTasks();
 
     expect(

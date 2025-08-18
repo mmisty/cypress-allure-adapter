@@ -232,7 +232,7 @@ describe('startReporterServer', () => {
         {
           data: {
             task: 'afterSpec',
-            arg: { results: [] },
+            arg: { results: { spec: { relative: '123' } } },
           },
         },
         {
