@@ -2,7 +2,7 @@ import { globSync } from 'fast-glob';
 import process from 'node:process';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { existsSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { StepResult } from 'allure-js-commons';
 import { execSync } from 'child_process';
 
@@ -56,7 +56,7 @@ export const prepareResults = async (
     env?: Record<string, any>;
   },
 ): Promise<PreparedResults> => {
-  const allureResults = `${dir}/allure-results`;
+  // const allureResults = `${dir}/allure-results`;
 
   // if (existsSync(allureResults)) {
   //   if (`${process.env.COVERAGE}` !== 'true') {
@@ -147,20 +147,20 @@ export const mapSteps = <T>(
     });
 };
 
-export const stepsAndAttachments = (test: AllureTest | undefined) => {
-  return {
-    attachments:
-      test?.attachments.map(x => ({ ...x, source: undefined })) ?? [],
-    steps:
-      mapSteps(
-        test?.steps ?? [],
-        x => ({
-          name: x.name,
-          attachments: x.attachments.map(y => ({ ...y, source: undefined })),
-        }),
-        x =>
-          x.name?.indexOf('before each') === -1 &&
-          x.name?.indexOf('after each') === -1,
-      ) ?? [],
-  };
-};
+// export const stepsAndAttachments = (test: AllureTest | undefined) => {
+//   return {
+//     attachments:
+//       test?.attachments.map(x => ({ ...x, source: undefined })) ?? [],
+//     steps:
+//       mapSteps(
+//         test?.steps ?? [],
+//         x => ({
+//           name: x.name,
+//           attachments: x.attachments.map(y => ({ ...y, source: undefined })),
+//         }),
+//         x =>
+//           x.name?.indexOf('before each') === -1 &&
+//           x.name?.indexOf('after each') === -1,
+//       ) ?? [],
+//   };
+// };
