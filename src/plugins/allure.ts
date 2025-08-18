@@ -400,9 +400,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         );
       }
 
-      taskManager.processQueue().then(() => {
+      taskManager.flushAllTasksForQueue(`${arg.results.spec.relative}`).then(() => {
         allureReporter.afterSpecMoveToWatch();
-        logWithPackage('log', `Processing all files for spec ${arg.results?.spec?.relative} finished`);
+        logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
       });
 
       log('afterSpec');

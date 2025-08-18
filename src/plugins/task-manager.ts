@@ -1,55 +1,129 @@
 import Debug from 'debug';
+import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:task-manager');
+type TaskFn = () => Promise<any>;
+
+interface EntityQueue {
+  tasks: TaskFn[];
+  isFlushing: boolean;
+}
 
 export class TaskManager {
-  private taskQueue: { task: () => Promise<any> }[] = [];
-  private isFlushing = false;
+  private entityQueues = new Map<string, EntityQueue>();
 
-  addTask(task: () => Promise<any>): void {
-    this.taskQueue.push({ task });
-    debug(`Task added to queue, processing started tasks count: ${this.taskQueue.length}`);
+  constructor(private options?: { taskTimeout?: number; overallTimeout?: number }) {}
 
-    this.processQueue().then(() => {
-      debug('Processing finished');
+  addTask(entityId: string | undefined, task: TaskFn): void {
+    if (!entityId) {
+      logWithPackage('error', `Cannot start start without entityId set\n Task: ${task.toString()}`);
+
+      return;
+    }
+
+    let queue = this.entityQueues.get(entityId);
+
+    if (!queue) {
+      queue = { tasks: [], isFlushing: false };
+      this.entityQueues.set(entityId, queue);
+    }
+
+    queue.tasks.push(task);
+    debug(`Task added for entity "${entityId}", queue length: ${queue.tasks.length}`);
+
+    // Start worker for this entity if not running
+    this.processQueue(entityId).catch(err => {
+      logWithPackage('error', `entity worker crashed ${entityId}: ${(err as Error).message}`);
     });
   }
 
-  // Worker function that processes tasks in FIFO order
-  async processQueue() {
-    if (this.isFlushing) return; // avoid parallel workers
-    this.isFlushing = true;
+  public async processQueue(entityId: string) {
+    const queue = this.entityQueues.get(entityId);
 
-    while (this.taskQueue.length > 0) {
-      const { task } = this.taskQueue.shift() ?? {};
+    if (!queue) {
+      logWithPackage('warn', `tasks for ${entityId} not found`);
 
-      try {
-        await task?.();
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('[cypress-allure-adapter] task failed:', err);
-      }
+      return;
     }
 
-    this.isFlushing = false;
+    if (queue.isFlushing) return; // already running
+    queue.isFlushing = true;
+
+    while (queue.tasks.length > 0) {
+      const task = queue.tasks.shift();
+
+      if (!task) {
+        continue;
+      }
+
+      const TASK_TIMEOUT = this.options?.taskTimeout ?? 30000;
+      let timeoutId: NodeJS.Timeout;
+
+      const timeoutPromise = () =>
+        new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            logWithPackage('error', `task for ${entityId} timed out`);
+            reject(new Error('task timeout'));
+          }, TASK_TIMEOUT);
+        });
+
+      const taskPromise = () =>
+        new Promise((res, rej) => {
+          return task()
+            .then(() => {
+              clearTimeout(timeoutId);
+              res('done');
+            })
+            .catch(err => {
+              clearTimeout(timeoutId);
+              logWithPackage('error', `task failed for ${entityId} ${(err as Error).message}\n${(err as Error).stack}`);
+              rej('task error');
+            });
+        });
+
+      await Promise.race([timeoutPromise(), taskPromise()]).catch(err => {
+        logWithPackage('error', `task failed ${entityId}: ${(err as Error).message}`);
+        clearTimeout(timeoutId);
+      });
+    }
+
+    queue.isFlushing = false;
   }
 
-  // Ensure no pending tasks left at the very end
   async flushAllTasks() {
-    debug(`All tasks are being flushed, tasks count: ${this.taskQueue.length}`);
-    const dateStarted = Date.now();
-    const timeout = 60000;
+    debug('Flushing all entity queues');
+    const start = Date.now();
+    const timeout = this.options?.overallTimeout ?? 60000;
 
-    while (this.taskQueue.length > 0 || this.isFlushing) {
+    while ([...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing)) {
       await new Promise(r => setTimeout(r, 50));
 
-      if (Date.now() - dateStarted > timeout) {
-        // eslint-disable-next-line no-console
-        console.error(`[cypress-allure-adapter] flushing tasks took too long ${timeout / 1000}sec, exiting:`);
+      if (Date.now() - start > timeout) {
+        logWithPackage('error', `flushAllTasks exceeded ${timeout / 1000}s, exiting`);
         break;
       }
     }
+  }
 
-    return null;
+  async flushAllTasksForQueue(entityId: string) {
+    debug(`Flushing all tasks for queue ${entityId}`);
+    const start = Date.now();
+    const queue = this.entityQueues.get(entityId);
+    const timeout = this.options?.overallTimeout ?? 60000;
+
+    if (!queue) {
+      logWithPackage('warn', `tasks for ${entityId} not found`);
+
+      return;
+    }
+
+    while (queue.tasks.length > 0 || queue.isFlushing) {
+      await new Promise(r => setTimeout(r, 50));
+
+      if (Date.now() - start > timeout) {
+        logWithPackage('error', `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting`);
+        break;
+      }
+    }
   }
 }

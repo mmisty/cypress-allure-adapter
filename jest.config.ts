@@ -15,6 +15,7 @@ export default {
   // An array of glob patterns indicating a set of files for which coverage information should be collected
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
+    'src/**/*.test.{ts,tsx}',
     'src/*.{ts,tsx}',
     '!**/lib/**',
     '!src/cypress/**',
@@ -38,6 +39,7 @@ export default {
 
   // The glob patterns Jest uses to detect test files
   testMatch: [
+    '**/src/**/*.test.ts',
     '**/tests/test-folder/**/?(*.)+(spec|test).[tj]s?(x)',
     '!**/tests/test-folder/allure-plugin/**/?(*.)+(spec|test).[tj]s?(x)',
     '!**/lib/**/*.*',

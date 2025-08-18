@@ -2,6 +2,6 @@
 /lib
 /js-files-cypress
 /node_modules
-/allure-results
-/allure-report
+**/allure-results/**
+**/allure-report/**
 /integration/e2e/temp

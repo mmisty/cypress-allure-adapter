@@ -28,6 +28,7 @@
   "scripts": {
     "husky:install": "husky install",
     "lint": "eslint --fix '**/*.{ts,tsx,js}'",
+    "test:jest:cy:v2": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/v2\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:attachments": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/attachments\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:commands": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/commands\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:cucumber": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/cucumber\" --reporters=default --reporters=jest-junit",
