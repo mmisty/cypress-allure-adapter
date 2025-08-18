@@ -6,7 +6,8 @@ import { consoleMock } from '../../tests/mocks/console-mock';
 describe('task manager', () => {
   let cons: ReturnType<typeof consoleMock> | undefined;
   beforeEach(() => {
-    // cons; //= //consoleMock();
+    cons = consoleMock();
+    jest.clearAllMocks();
   });
 
   it('should not start when no id', async () => {
@@ -149,27 +150,53 @@ describe('task manager', () => {
     expect(cons?.error.mock.calls[0][0]).toContain('flushAllTasks exceeded 0.3s, exiting');
   });
 
-  it('should flushAllTasksForQueue', async () => {
+  it('should flushAllTasksForQueue even when all already finished', async () => {
     const logs: string[] = [];
     const tm = new TaskManager();
 
     tm.addTask('spec1', async () => {
-      logs.push('spec1 - 1');
-    });
-    await delay(100); // to process
-
-    tm.addTask('spec1', async () => {
-      logs.push('spec1 - 2');
+      console.log('task 1');
     });
 
     tm.addTask('spec1', async () => {
-      logs.push('spec1 - 3');
-      await delay(1000);
-      logs.push('spec1 - 3 end');
+      console.log('task 2');
     });
 
-    await tm.flushAllTasksForQueue('spec1');
-    expect(logs).toEqual(['spec1 - 1', 'spec1 - 2', 'spec1 - 3']);
-    expect(cons?.error.mock.calls.length).toEqual(0);
+    tm.addTask('spec1', async () => {
+      console.log('task 3');
+      await delay(100); // to process
+      console.log('task 3 end');
+    });
+
+    await delay(200); // to finish all
+
+    await tm.flushAllTasksForQueue('spec1').then(() => {
+      console.log('end');
+    });
+    expect(cons?.log.mock.calls.map(x => x[0])).toEqual(['task 1', 'task 2', 'task 3', 'task 3 end', 'end']);
+  });
+
+  it('should flushAllTasksForQueue even when tasks in progress', async () => {
+    const logs: string[] = [];
+    const tm = new TaskManager();
+
+    tm.addTask('spec1', async () => {
+      console.log('task 1');
+    });
+
+    tm.addTask('spec1', async () => {
+      console.log('task 2');
+    });
+
+    tm.addTask('spec1', async () => {
+      console.log('task 3');
+      await delay(100); // to process
+      console.log('task 3 end');
+    });
+
+    await tm.flushAllTasksForQueue('spec1').then(() => {
+      console.log('end');
+    });
+    expect(cons?.log.mock.calls.map(x => x[0])).toEqual(['task 1', 'task 2', 'task 3', 'task 3 end', 'end']);
   });
 });

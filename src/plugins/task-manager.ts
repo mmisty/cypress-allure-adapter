@@ -49,7 +49,16 @@ export class TaskManager {
     if (queue.isFlushing) return; // already running
     queue.isFlushing = true;
 
+    const maxParallel = 5;
+
     while (queue.tasks.length > 0) {
+      const runningQueues = [...this.entityQueues.values()].filter(q => q.tasks.length > 0 || q.isFlushing).length;
+
+      if (runningQueues >= maxParallel) {
+        await new Promise(r => setTimeout(r, 50));
+
+        continue;
+      }
       const task = queue.tasks.shift();
 
       if (!task) {
@@ -95,7 +104,13 @@ export class TaskManager {
     const start = Date.now();
     const timeout = this.options?.overallTimeout ?? 60000;
 
-    while ([...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing)) {
+    const hasRunningTasks = () => {
+      const has = [...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing);
+
+      return has;
+    };
+
+    while (hasRunningTasks()) {
       await new Promise(r => setTimeout(r, 50));
 
       if (Date.now() - start > timeout) {
@@ -116,9 +131,6 @@ export class TaskManager {
 
       return;
     }
-
-    if (queue.isFlushing) return; // already running
-    queue.isFlushing = true;
 
     while (queue.tasks.length > 0 || queue.isFlushing) {
       await new Promise(r => setTimeout(r, 50));
