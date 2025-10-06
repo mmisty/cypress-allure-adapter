@@ -49,7 +49,7 @@ export class TaskManager {
     if (queue.isFlushing) return; // already running
     queue.isFlushing = true;
 
-    const maxParallel = 5;
+    const maxParallel = 15;
 
     while (queue.tasks.length > 0) {
       const runningQueues = [...this.entityQueues.values()].filter(q => q.tasks.length > 0 || q.isFlushing).length;
