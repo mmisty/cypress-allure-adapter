@@ -9,14 +9,46 @@ interface EntityQueue {
   isFlushing: boolean;
 }
 
+class Semaphore {
+  private count: number;
+  private waiters: (() => void)[] = [];
+
+  constructor(private max: number) {
+    this.count = max;
+  }
+
+  async acquire() {
+    if (this.count > 0) {
+      this.count--;
+
+      return;
+    }
+    await new Promise<void>(resolve => this.waiters.push(resolve));
+  }
+
+  release() {
+    this.count++;
+    const next = this.waiters.shift();
+
+    if (next) {
+      this.count--;
+      next();
+    }
+  }
+}
+
 export class TaskManager {
   private entityQueues = new Map<string, EntityQueue>();
+  private semaphore: Semaphore;
 
-  constructor(private options?: { taskTimeout?: number; overallTimeout?: number }) {}
+  constructor(private options?: { taskTimeout?: number; overallTimeout?: number; maxParallel?: number }) {
+    const maxParallel = this.options?.maxParallel ?? 5;
+    this.semaphore = new Semaphore(maxParallel);
+  }
 
   addTask(entityId: string | undefined, task: TaskFn): void {
     if (!entityId) {
-      logWithPackage('error', `Cannot start start without entityId set\n Task: ${task.toString()}`);
+      logWithPackage('error', `Cannot start task without entityId set\n Task: ${task.toString()}`);
 
       return;
     }
@@ -31,84 +63,72 @@ export class TaskManager {
     queue.tasks.push(task);
     debug(`Task added for entity "${entityId}", queue length: ${queue.tasks.length}`);
 
-    // Start worker for this entity if not running
-    this.processQueue(entityId).catch(err => {
-      logWithPackage('error', `entity worker crashed ${entityId}: ${(err as Error).message}`);
-    });
+    // Trigger processing if not already running
+    if (!queue.isFlushing) {
+      this.processQueue(entityId).catch(err => {
+        logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
+      });
+    }
   }
 
   public async processQueue(entityId: string) {
     const queue = this.entityQueues.get(entityId);
 
     if (!queue) {
-      logWithPackage('warn', `tasks for ${entityId} not found`);
+      logWithPackage('warn', `Tasks for ${entityId} not found`);
 
       return;
     }
 
-    if (queue.isFlushing) return; // already running
+    if (queue.isFlushing) return; // Prevent concurrent runs for same queue
     queue.isFlushing = true;
 
-    const maxParallel = 15;
+    try {
+      while (queue.tasks.length > 0) {
+        const task = queue.tasks.shift();
+        if (!task) continue;
 
-    while (queue.tasks.length > 0) {
-      const runningQueues = [...this.entityQueues.values()].filter(q => q.tasks.length > 0 || q.isFlushing).length;
+        await this.semaphore.acquire();
 
-      if (runningQueues >= maxParallel) {
-        await new Promise(r => setTimeout(r, 50));
-
-        continue;
+        try {
+          await this.runWithTimeout(task, entityId);
+        } finally {
+          this.semaphore.release();
+        }
       }
-      const task = queue.tasks.shift();
-
-      if (!task) {
-        continue;
-      }
-
-      const TASK_TIMEOUT = this.options?.taskTimeout ?? 30000;
-      let timeoutId: NodeJS.Timeout;
-
-      const timeoutPromise = () =>
-        new Promise((_, reject) => {
-          timeoutId = setTimeout(() => {
-            logWithPackage('error', `task for ${entityId} timed out`);
-            reject(new Error('task timeout'));
-          }, TASK_TIMEOUT);
-        });
-
-      const taskPromise = () =>
-        new Promise((res, rej) => {
-          return task()
-            .then(() => {
-              clearTimeout(timeoutId);
-              res('done');
-            })
-            .catch(err => {
-              clearTimeout(timeoutId);
-              logWithPackage('error', `task failed for ${entityId} ${(err as Error).message}\n${(err as Error).stack}`);
-              rej('task error');
-            });
-        });
-
-      await Promise.race([timeoutPromise(), taskPromise()]).catch(err => {
-        logWithPackage('error', `task failed ${entityId}: ${(err as Error).message}`);
-        clearTimeout(timeoutId);
-      });
+    } catch (err) {
+      logWithPackage('error', `Queue error for ${entityId}: ${(err as Error).message}`);
+    } finally {
+      queue.isFlushing = false;
     }
+  }
 
-    queue.isFlushing = false;
+  private async runWithTimeout(task: TaskFn, entityId: string): Promise<void> {
+    const TASK_TIMEOUT = this.options?.taskTimeout ?? 30000;
+    let timeoutId: NodeJS.Timeout | undefined = undefined;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        logWithPackage('error', `Task for ${entityId} timed out`);
+        reject(new Error('task timeout'));
+      }, TASK_TIMEOUT);
+    });
+
+    try {
+      await Promise.race([task(), timeoutPromise]);
+    } catch (err) {
+      logWithPackage('error', `Task failed for ${entityId}: ${(err as Error).message}`);
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   async flushAllTasks() {
     debug('Flushing all entity queues');
     const start = Date.now();
-    const timeout = this.options?.overallTimeout ?? 60000;
+    const timeout = this.options?.overallTimeout ?? 120000;
 
-    const hasRunningTasks = () => {
-      const has = [...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing);
-
-      return has;
-    };
+    const hasRunningTasks = () => [...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing);
 
     while (hasRunningTasks()) {
       await new Promise(r => setTimeout(r, 50));
@@ -124,10 +144,10 @@ export class TaskManager {
     debug(`Flushing all tasks for queue ${entityId}`);
     const start = Date.now();
     const queue = this.entityQueues.get(entityId);
-    const timeout = this.options?.overallTimeout ?? 60000;
+    const timeout = this.options?.overallTimeout ?? 120000;
 
     if (!queue) {
-      logWithPackage('warn', `tasks for ${entityId} not found`);
+      logWithPackage('warn', `Tasks for ${entityId} not found`);
 
       return;
     }
