@@ -75,10 +75,7 @@ describe('startReporterServer', () => {
 
     return start(true, env).then(serv => {
       const wsPathFixed =
-        `${env['allureWsPort']}/__cypress/allure_messages/`.replace(
-          /\/\//g,
-          '/',
-        );
+        `${env['allureWsPort']}/cypress_allure_messages/`.replace(/\/\//g, '/');
       const wsPath = `ws://localhost:${wsPathFixed}`;
       const ws = new WebSocket(wsPath, { origin: 'localhost' });
 
