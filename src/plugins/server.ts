@@ -116,11 +116,10 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
       const payload = requestData.data;
 
       if (requestData.id) {
-        executeTask(tasks, payload).then(result => {
-          sockserver.clients.forEach(client => {
-            log(`sending back: ${JSON.stringify(requestData)}`);
-            client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
-          });
+        const result = executeTask(tasks, payload);
+        sockserver.clients.forEach(client => {
+          log(`sending back: ${JSON.stringify(requestData)}`);
+          client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
         });
       } else {
         sockserver.clients.forEach(client => {
@@ -166,7 +165,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const executeTask = async (tasks: AllureTasks, data: { task?: any; arg?: any }): Promise<boolean> => {
+const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boolean => {
   if (!data || !data.task) {
     log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
 
@@ -177,7 +176,9 @@ const executeTask = async (tasks: AllureTasks, data: { task?: any; arg?: any }):
     if (Object.keys(tasks).indexOf(data.task) !== -1) {
       const task = data.task as RequestTask; // todo check
       log(task);
-      await tasks[task](data.arg);
+
+      // start task
+      tasks[task](data.arg);
 
       return true;
     } else {
