@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, rm } from 'fs';
 import { copyFile, writeFile } from 'fs/promises';
 import Debug from 'debug';
-import { Attachment } from 'allure-js-commons';
+import type { Attachment } from 'allure-js-commons';
 import { basename, dirname } from 'path';
 import { logWithPackage } from '../common';
 

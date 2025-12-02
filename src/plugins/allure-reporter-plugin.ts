@@ -1,15 +1,5 @@
-import {
-  AllureGroup,
-  AllureRuntime,
-  AllureStep,
-  AllureTest,
-  ExecutableItem,
-  ExecutableItemWrapper,
-  FixtureResult,
-  Status,
-  StatusDetails,
-  TestResult,
-} from 'allure-js-commons';
+import { FixtureResult, Status, StatusDetails, StepResult, TestResult, Stage as AllureStage } from 'allure-js-commons';
+import { ReporterRuntime, FileSystemWriter } from 'allure-js-commons/sdk/reporter';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rm, writeFileSync } from 'fs';
@@ -25,7 +15,6 @@ import {
   AutoScreen,
   EnvironmentInfo,
   LabelName,
-  Stage,
   StatusType,
   UNKNOWN,
 } from './allure-types';
@@ -46,6 +35,9 @@ const isBeforeAllHook = (ttl: string | undefined) => ttl?.indexOf(beforeAllHookN
 
 const log = Debug('cypress-allure:reporter');
 
+// Helper type for executable items (steps, fixtures, tests)
+type ExecutableItem = StepResult | FixtureResult | TestResult;
+
 const createNewContentForContainer = (nameAttAhc: string, existingContents: Buffer, ext: string, specname: string) => {
   const getContentJson = () => {
     try {
@@ -59,7 +51,7 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
 
   const containerJSON = getContentJson();
 
-  const after: ExecutableItem = {
+  const after: FixtureResult = {
     name: 'video',
     attachments: [
       {
@@ -73,7 +65,7 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
     stop: Date.now(),
     status: Status.PASSED,
     statusDetails: {},
-    stage: Stage.FINISHED,
+    stage: AllureStage.FINISHED,
     steps: [],
   };
 
@@ -86,57 +78,6 @@ const createNewContentForContainer = (nameAttAhc: string, existingContents: Buff
   return containerJSON;
 };
 
-/**
- * Will copy test results and all attachments to watch folder
- * for results to appear in TestOps
- * @param input
- * @param allureResultsWatch
- */
-// const copyFileToWatch = async (
-//   input: { test: string; attachments: { name: string; type: string; source: string }[] },
-//   allureResultsWatch: string,
-// ) => {
-//   const { test: allureResultFile, attachments } = input;
-//   const allureResults = path.dirname(allureResultFile);
-//
-//   if (allureResults === allureResultsWatch) {
-//     log(`copyFileToWatch allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-//
-//     return;
-//   }
-//   mkdirSyncWithTry(allureResultsWatch);
-//
-//   log(`allureResults: ${allureResults}`);
-//   log(`allureResultsWatch: ${allureResultsWatch}`);
-//   log(`attachments: ${JSON.stringify(attachments)}`);
-//
-//   await copyAttachments(attachments, allureResultsWatch, allureResultFile);
-//   await copyTest(allureResultFile, allureResultsWatch);
-// };
-
-/**
- * Get all attachments for test to move them to watch folder
- * @param item test item
- */
-// const getAllAttachments = (item: ExecutableItem): Attachment[] => {
-//   const attachmentsResult: Attachment[] = [];
-//
-//   const inner = (steps: ExecutableItem[], accumulatedRes: Attachment[]): Attachment[] => {
-//     if (steps.length === 0) {
-//       return accumulatedRes;
-//     }
-//
-//     const [first, ...rest] = steps;
-//     const newRes = [...accumulatedRes, ...first.attachments];
-//
-//     return inner(rest, newRes);
-//   };
-//
-//   const stepAttachments = inner(item.steps, attachmentsResult);
-//
-//   return [...stepAttachments, ...item.attachments];
-// };
-
 // all tests for session
 const allTests: {
   specRelative: string | undefined;
@@ -147,6 +88,33 @@ const allTests: {
   status?: Status;
 }[] = [];
 
+// Wrapper types to maintain compatibility with old API patterns
+interface GroupInfo {
+  uuid: string;
+  name: string;
+  scopeUuid: string;
+}
+
+interface TestInfo {
+  uuid: string;
+  result: TestResult;
+}
+
+interface StepInfo {
+  uuid: string;
+  result: StepResult;
+  rootUuid: string;
+}
+
+interface HookInfo {
+  id?: string;
+  uuid: string;
+  result: FixtureResult;
+  nested: number;
+  name: string;
+  scopeUuid: string;
+}
+
 export class AllureReporter {
   // todo config
   private showDuplicateWarn: boolean;
@@ -156,19 +124,22 @@ export class AllureReporter {
   private allureSkipSteps: RegExp[];
   private videos: string;
   private screenshots: string;
-  groups: AllureGroup[] = [];
-  tests: AllureTest[] = [];
-  steps: AllureStep[] = [];
+
+  // New UUID-based tracking
+  groups: GroupInfo[] = [];
+  tests: TestInfo[] = [];
+  steps: StepInfo[] = [];
   labels: { name: string; value: string }[] = [];
   globalHooks = new GlobalHooks(this);
 
   // this is variable for global hooks only
-  hooks: { id?: string; hook: ExecutableItemWrapper; nested: number; name: string }[] = [];
-  allHooks: { id?: string; hook: ExecutableItemWrapper; suite: string; nested: number; name: string }[] = [];
+  hooks: HookInfo[] = [];
+  allHooks: HookInfo[] = [];
 
   currentSpec: Cypress.Spec | undefined;
   taskQueueId: string | undefined;
-  allureRuntime: AllureRuntime;
+  allureRuntime: ReporterRuntime;
+  private writer: FileSystemWriter;
   descriptionHtml: string[] = [];
 
   private screenshotsTest: (AutoScreen & { attached?: boolean })[] = [];
@@ -191,7 +162,10 @@ export class AllureReporter {
 
     log('Created reporter');
     log(opts);
-    this.allureRuntime = new AllureRuntime({ resultsDir: this.allureResults });
+
+    // Initialize with new API
+    this.writer = new FileSystemWriter({ resultsDir: this.allureResults });
+    this.allureRuntime = new ReporterRuntime({ writer: this.writer });
   }
 
   get currentTestAll() {
@@ -202,7 +176,7 @@ export class AllureReporter {
     return undefined;
   }
 
-  get currentGroup() {
+  get currentGroup(): GroupInfo | undefined {
     if (this.groups.length === 0) {
       return undefined;
     }
@@ -210,7 +184,7 @@ export class AllureReporter {
     return this.groups[this.groups.length - 1];
   }
 
-  get currentTest(): AllureTest | undefined {
+  get currentTest(): TestInfo | undefined {
     if (this.tests.length === 0) {
       log('No current test!');
 
@@ -222,17 +196,17 @@ export class AllureReporter {
     return this.tests[this.tests.length - 1];
   }
 
-  get currentHook() {
+  get currentHook(): HookInfo | undefined {
     if (this.hooks.length === 0) {
       return undefined;
     }
 
     log('current hook');
 
-    return this.hooks[this.hooks.length - 1].hook;
+    return this.hooks[this.hooks.length - 1];
   }
 
-  get currentStep() {
+  get currentStep(): StepInfo | undefined {
     if (this.steps.length === 0) {
       return undefined;
     }
@@ -241,8 +215,20 @@ export class AllureReporter {
     return this.steps[this.steps.length - 1];
   }
 
-  get currentExecutable() {
-    return this.currentStep || this.currentHook || this.currentTest;
+  get currentExecutable(): { uuid: string; result: ExecutableItem; rootUuid?: string } | undefined {
+    if (this.currentStep) {
+      return { uuid: this.currentStep.uuid, result: this.currentStep.result, rootUuid: this.currentStep.rootUuid };
+    }
+
+    if (this.currentHook) {
+      return { uuid: this.currentHook.uuid, result: this.currentHook.result };
+    }
+
+    if (this.currentTest) {
+      return { uuid: this.currentTest.uuid, result: this.currentTest.result };
+    }
+
+    return undefined;
   }
 
   addGlobalHooks(_nestedLevel: number) {
@@ -262,8 +248,14 @@ export class AllureReporter {
     const { title } = arg;
     log(`start group: ${title}`);
 
-    const group = (this.currentGroup ?? this.allureRuntime).startGroup(title);
-    this.groups.push(group);
+    const scopeUuid = this.allureRuntime.startScope();
+    const groupUuid = randomUUID();
+
+    this.groups.push({
+      uuid: groupUuid,
+      name: title,
+      scopeUuid,
+    });
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
     this.addGlobalHooks(this.groups.length);
@@ -275,17 +267,23 @@ export class AllureReporter {
 
     if (!!this.currentGroup && hooks.length > 0) {
       hooks.forEach(hk => {
-        const currentHook = isBeforeAllHook(hk.hook.name)
-          ? this.currentGroup!.addBefore()
-          : this.currentGroup!.addAfter();
+        const fixtureType = isBeforeAllHook(hk.name) ? 'before' : 'after';
 
-        currentHook.name = hk.name;
-        currentHook.wrappedItem.status = hk.hook.status;
-        currentHook.wrappedItem.stop = hk.hook.wrappedItem.stop;
-        currentHook.wrappedItem.start = hk.hook.wrappedItem.start;
-        currentHook.wrappedItem.attachments = hk.hook.wrappedItem.attachments;
-        currentHook.wrappedItem.statusDetails = hk.hook.wrappedItem.statusDetails;
-        currentHook.wrappedItem.parameters = hk.hook.wrappedItem.parameters;
+        const fixtureUuid = this.allureRuntime.startFixture(this.currentGroup!.scopeUuid, fixtureType, {
+          name: hk.name,
+          start: hk.result.start,
+        });
+
+        if (fixtureUuid) {
+          this.allureRuntime.updateFixture(fixtureUuid, (fixture: FixtureResult) => {
+            fixture.status = hk.result.status;
+            fixture.stop = hk.result.stop;
+            fixture.attachments = hk.result.attachments;
+            fixture.statusDetails = hk.result.statusDetails;
+            fixture.parameters = hk.result.parameters;
+          });
+          this.allureRuntime.stopFixture(fixtureUuid);
+        }
       });
     }
   }
@@ -326,85 +324,89 @@ export class AllureReporter {
       return;
     }
 
-    if (this.allureSkipSteps.every(t => !t.test(title))) {
-      const currentHook = isBeforeAllHook(title) ? this.currentGroup.addBefore() : this.currentGroup.addAfter();
+    const fixtureResult: FixtureResult = {
+      name: title,
+      status: undefined,
+      statusDetails: { message: '', trace: '' },
+      stage: AllureStage.RUNNING,
+      steps: [],
+      attachments: [],
+      parameters: [],
+      start: date ?? Date.now(),
+    };
 
-      currentHook.name = title;
-      currentHook.wrappedItem.start = date ?? Date.now();
-      this.hooks.push({ id: hookId, hook: currentHook, nested: this.groups.length, name: title });
-      this.allHooks.push({
-        id: hookId,
-        hook: currentHook,
-        suite: this.currentGroup?.uuid,
-        nested: this.groups.length,
-        name: title,
-      });
+    if (this.allureSkipSteps.every(t => !t.test(title))) {
+      const fixtureType = isBeforeAllHook(title) ? 'before' : 'after';
+      const fixtureUuid = this.allureRuntime.startFixture(this.currentGroup.scopeUuid, fixtureType, fixtureResult);
+
+      if (fixtureUuid) {
+        const hookInfo: HookInfo = {
+          id: hookId,
+          uuid: fixtureUuid,
+          result: fixtureResult,
+          nested: this.groups.length,
+          name: title,
+          scopeUuid: this.currentGroup.scopeUuid,
+        };
+        this.hooks.push(hookInfo);
+        this.allHooks.push(hookInfo);
+      }
     } else {
       // create but not add to suite for steps to be added there
-      const currentHook = new ExecutableItemWrapper({
-        name: title,
-        uuid: '',
-        historyId: '',
-        links: [],
-        attachments: [],
-        parameters: [],
-        labels: [],
-        steps: [],
-        statusDetails: { message: '', trace: '' },
-        stage: Stage.FINISHED,
-      });
-
-      currentHook.wrappedItem.start = date ?? Date.now();
-      this.hooks.push({ id: hookId, hook: currentHook, nested: this.groups.length, name: title });
-      this.allHooks.push({
+      const hookInfo: HookInfo = {
         id: hookId,
-        hook: currentHook,
-        suite: this.currentGroup?.uuid,
+        uuid: randomUUID(),
+        result: fixtureResult,
         nested: this.groups.length,
         name: title,
-      });
+        scopeUuid: this.currentGroup.scopeUuid,
+      };
+      this.hooks.push(hookInfo);
+      this.allHooks.push(hookInfo);
     }
   }
 
-  setExecutableStatus(executable: ExecutableItemWrapper | undefined, res: Status, dtls?: StatusDetails) {
-    if (!executable) {
+  setExecutableStatus(executableItem: ExecutableItem | undefined, res: Status, dtls?: StatusDetails) {
+    if (!executableItem) {
       return;
     }
 
     if (res === Status.PASSED) {
-      executable.status = Status.PASSED;
-      executable.stage = Stage.FINISHED;
+      executableItem.status = Status.PASSED;
+      executableItem.stage = AllureStage.FINISHED;
     }
 
     if (res === Status.BROKEN) {
-      executable.status = Status.BROKEN;
-      executable.stage = Stage.FINISHED;
+      executableItem.status = Status.BROKEN;
+      executableItem.stage = AllureStage.FINISHED;
     }
 
     if (res === Status.FAILED) {
-      executable.status = Status.FAILED;
-      executable.stage = Stage.FINISHED;
+      executableItem.status = Status.FAILED;
+      executableItem.stage = AllureStage.FINISHED;
 
-      executable.detailsMessage = dtls?.message;
-      executable.detailsTrace = dtls?.trace;
+      if (dtls) {
+        executableItem.statusDetails.message = dtls.message;
+        executableItem.statusDetails.trace = dtls.trace;
+      }
     }
 
     if (res === Status.SKIPPED) {
-      executable.status = Status.SKIPPED;
-      executable.stage = Stage.PENDING;
+      executableItem.status = Status.SKIPPED;
+      executableItem.stage = AllureStage.PENDING;
 
-      executable.detailsMessage = dtls?.message || 'Suite disabled';
+      executableItem.statusDetails.message = dtls?.message || 'Suite disabled';
     }
 
     if (res !== Status.FAILED && res !== Status.BROKEN && res !== Status.PASSED && res !== Status.SKIPPED) {
-      executable.status = UNKNOWN;
-      executable.stage = Stage.PENDING;
+      executableItem.status = UNKNOWN as Status;
+      executableItem.stage = AllureStage.PENDING;
 
-      executable.detailsMessage = dtls?.message || `Result: ${res ?? '<no>'}`;
+      executableItem.statusDetails.message = dtls?.message || `Result: ${res ?? '<no>'}`;
     }
 
     if (dtls) {
-      executable.statusDetails = dtls;
+      executableItem.statusDetails = dtls;
     }
   }
 
@@ -443,17 +445,26 @@ export class AllureReporter {
     }
 
     if (isBeforeEachHook(title) || isAfterEachHook(title)) {
-      this.endStep({ status: this.currentStep?.isAnyStepFailed ? Status.FAILED : Status.PASSED });
+      const hasFailedStep = this.currentStep?.result.steps.some(
+        s => s.status === Status.FAILED || s.status === Status.BROKEN,
+      );
+      this.endStep({ status: hasFailedStep ? Status.FAILED : Status.PASSED });
       this.endAllSteps({ status: UNKNOWN });
 
       return;
     }
 
     if (this.currentHook) {
-      this.filterSteps(this.currentHook.wrappedItem, this.allureSkipSteps);
-      this.currentHook.wrappedItem.stop = date ?? Date.now();
-      this.setExecutableStatus(this.currentHook, result, details);
-      mergeStepsWithSingleChild(this.currentHook.wrappedItem.steps);
+      this.filterSteps(this.currentHook.result, this.allureSkipSteps);
+      this.currentHook.result.stop = date ?? Date.now();
+      this.setExecutableStatus(this.currentHook.result, result, details);
+      mergeStepsWithSingleChild(this.currentHook.result.steps);
+
+      // Update the fixture in runtime
+      this.allureRuntime.updateFixture(this.currentHook.uuid, (fixture: FixtureResult) => {
+        Object.assign(fixture, this.currentHook!.result);
+      });
+      this.allureRuntime.stopFixture(this.currentHook.uuid);
 
       this.hooks.pop();
 
@@ -463,7 +474,7 @@ export class AllureReporter {
 
   endHooks(status: StatusType = Status.PASSED) {
     this.hooks.forEach(h => {
-      this.hookEnded({ title: h.hook.name, result: status });
+      this.hookEnded({ title: h.name, result: status });
     });
   }
 
@@ -617,7 +628,13 @@ export class AllureReporter {
       }
       copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
-      attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
+      if (attachTo) {
+        attachTo.result.attachments.push({
+          name: basename(file),
+          type: 'image/png',
+          source: fileNew,
+        });
+      }
     });
   }
 
@@ -841,7 +858,7 @@ export class AllureReporter {
 
     if (this.currentGroup) {
       log('END GROUP');
-      this.currentGroup?.endGroup();
+      this.allureRuntime.writeScope(this.currentGroup.scopeUuid);
       this.groups.pop();
     }
   }
@@ -849,40 +866,41 @@ export class AllureReporter {
   endAllGroups() {
     log('endAllGroups');
     this.groups.forEach(g => {
-      g.endGroup();
+      this.allureRuntime.writeScope(g.scopeUuid);
     });
+    this.groups = [];
     this.allHooks = [];
   }
 
   label(arg: AllureTaskArgs<'label'>) {
     if (this.currentTest) {
-      this.currentTest.addLabel(arg.name, arg.value);
+      this.currentTest.result.labels.push({ name: arg.name, value: arg.value });
     }
   }
 
   link(arg: AllureTaskArgs<'link'>) {
     if (this.currentTest) {
-      this.currentTest.addLink(arg.url, arg.name, arg.type);
+      this.currentTest.result.links.push({ url: arg.url, name: arg.name, type: arg.type });
     }
   }
 
   fullName(arg: AllureTaskArgs<'fullName'>) {
     if (this.currentTest) {
-      this.currentTest.fullName = arg.value;
+      this.currentTest.result.fullName = arg.value;
       // should update history id when updating title
-      this.currentTest.historyId = getUuid(arg.value);
+      this.currentTest.result.historyId = getUuid(arg.value);
     }
   }
 
   historyId(arg: AllureTaskArgs<'fullName'>) {
     if (this.currentTest) {
-      this.currentTest.historyId = arg.value;
+      this.currentTest.result.historyId = arg.value;
     }
   }
 
   parameter(arg: AllureTaskArgs<'parameter'>) {
     if (this.currentExecutable) {
-      this.currentExecutable.addParameter(arg.name, arg.value);
+      this.currentExecutable.result.parameters.push({ name: arg.name, value: arg.value });
     }
   }
 
@@ -919,7 +937,7 @@ export class AllureReporter {
 
   testParameter(arg: AllureTaskArgs<'parameter'>) {
     if (this.currentTest) {
-      this.currentTest.addParameter(arg.name, arg.value);
+      this.currentTest.result.parameters.push({ name: arg.name, value: arg.value });
     }
   }
 
@@ -944,7 +962,7 @@ export class AllureReporter {
 
     if (this.currentSpec) {
       const paths = this.currentSpec.relative?.split('/');
-      this.currentTest?.addLabel(LabelName.PACKAGE, paths.join('.'));
+      this.currentTest?.result.labels.push({ name: LabelName.PACKAGE, value: paths.join('.') });
     }
 
     if (this.groups.length > 0) {
@@ -985,25 +1003,50 @@ export class AllureReporter {
       this.suiteStarted({ title: 'Root suite', fullTitle: 'Root suite' });
     }
 
-    const group = this.currentGroup;
-    const test = group!.startTest(title);
+    const testResult: Partial<TestResult> = {
+      name: title,
+      fullName: fullTitle,
+      historyId: getUuid(fullTitle),
+      labels: [],
+      links: [],
+      start: Date.now(),
+    };
+
+    const scopeUuids = this.groups.map(g => g.scopeUuid);
+    const testUuid = this.allureRuntime.startTest(testResult, scopeUuids);
+
+    const testInfo: TestInfo = {
+      uuid: testUuid,
+      result: {
+        uuid: testUuid,
+        name: title,
+        fullName: fullTitle,
+        historyId: getUuid(fullTitle),
+        labels: [],
+        links: [],
+        status: undefined,
+        statusDetails: {},
+        stage: AllureStage.RUNNING,
+        steps: [],
+        attachments: [],
+        parameters: [],
+        start: Date.now(),
+      },
+    };
 
     allTests.push({
       retryIndex: currentRetry,
       specRelative: this.currentSpec?.relative,
       fullTitle,
       mochaId: id,
-      uuid: test.uuid,
+      uuid: testUuid,
     });
-    this.tests.push(test);
+    this.tests.push(testInfo);
 
-    test.fullName = fullTitle;
-
-    test.historyId = getUuid(fullTitle);
     this.addGroupLabels();
 
     if (this.currentSpec?.relative) {
-      test.addLabel('path', this.currentSpec.relative);
+      testInfo.result.labels.push({ name: 'path', value: this.currentSpec.relative });
     }
     this.globalHooks.processForTest();
   }
@@ -1035,7 +1078,7 @@ export class AllureReporter {
 
   applyDescriptionHtml() {
     if (this.currentTest) {
-      this.currentTest.descriptionHtml = this.descriptionHtml.join('');
+      this.currentTest.result.descriptionHtml = this.descriptionHtml.join('');
     }
   }
 
@@ -1066,7 +1109,7 @@ export class AllureReporter {
       const lastLabel = lb[lb.length - 1];
 
       if (lastLabel) {
-        this.currentTest.addLabel(lastLabel.name, lastLabel.value);
+        this.currentTest.result.labels.push({ name: lastLabel.name, value: lastLabel.value });
       }
     };
 
@@ -1075,7 +1118,7 @@ export class AllureReporter {
     applyLabel(LabelName.SUB_SUITE);
   }
 
-  filterSteps(result: FixtureResult | TestResult | undefined, skipSteps: RegExp[]) {
+  filterSteps(result: FixtureResult | TestResult | StepResult | undefined, skipSteps: RegExp[]) {
     if (result && result.steps.length > 0) {
       result.steps = result.steps.filter(t => !skipSteps.some(x => x.test(t.name ?? '')));
       result.steps.forEach(res => {
@@ -1089,51 +1132,44 @@ export class AllureReporter {
     const storedStatus = this.testStatusStored;
     const storedDetails = this.testDetailsStored;
 
-    /*
-      todo case when all steps finished but test failed
-      if (this.steps.length === 0) {
-       */
-    // all ended already
-    /*this.currentExecutable?.wrappedItem.steps && this.currentExecutable.wrappedItem.steps.length > 0) {
-        this.startStep({ name: 'some of previous steps failed' });
-        this.endStep({ status: arg.result, details: arg.details });
-      }
-      }
-    */
     this.endAllSteps({ status: result, details });
 
     if (!this.currentTest) {
       return;
     }
 
-    removeFirstStepWhenSame(this.currentTest.wrappedItem.steps);
-    mergeStepsWithSingleChild(this.currentTest.wrappedItem.steps);
+    removeFirstStepWhenSame(this.currentTest.result.steps);
+    mergeStepsWithSingleChild(this.currentTest.result.steps);
 
     if (this.currentTestAll) {
       this.currentTestAll.status = result;
     }
 
     // filter steps here
-    this.filterSteps(this.currentTest.wrappedItem, this.allureSkipSteps);
-    this.currentTest.wrappedItem.steps = wrapHooks('"before each" hook', this.currentTest.wrappedItem.steps);
-    this.currentTest.wrappedItem.steps = wrapHooks('"after each" hook', this.currentTest.wrappedItem.steps);
+    this.filterSteps(this.currentTest.result, this.allureSkipSteps);
+    this.currentTest.result.steps = wrapHooks('"before each" hook', this.currentTest.result.steps);
+    this.currentTest.result.steps = wrapHooks('"after each" hook', this.currentTest.result.steps);
 
-    this.setExecutableStatus(this.currentTest, result, details);
+    this.setExecutableStatus(this.currentTest.result, result, details);
 
     if (storedDetails) {
-      this.setExecutableStatus(this.currentTest, result, storedDetails.details);
+      this.setExecutableStatus(this.currentTest.result, result, storedDetails.details);
     }
 
     if (storedStatus) {
-      this.setExecutableStatus(this.currentTest, storedStatus.result, storedStatus.details);
+      this.setExecutableStatus(this.currentTest.result, storedStatus.result, storedStatus.details);
     }
 
     this.applyGroupLabels();
     const uid = this.currentTest.uuid;
 
-    //const resAtt: Attachment[] = [...this.currentTest.wrappedItem.attachments];
-    // const attachments = getAllAttachments(this.currentTest.wrappedItem);
-    this.currentTest.endTest();
+    // Update the test in runtime before writing
+    this.allureRuntime.updateTest(uid, (test: TestResult) => {
+      Object.assign(test, this.currentTest!.result);
+    });
+    this.allureRuntime.stopTest(uid);
+    this.allureRuntime.writeTest(uid);
+
     this.tests.pop();
     this.descriptionHtml = [];
     this.testStatusStored = undefined;
@@ -1147,9 +1183,6 @@ export class AllureReporter {
     }
 
     log('testEnded: will move result to watch folder');
-    // do not copy otherwise attachments may not be shown in testops
-    // will be moved after spec is done
-    // copyFileToWatch({ test: testFile, attachments }, this.allureResultsWatch);
   }
 
   startStep(arg: AllureTaskArgs<'stepStarted'>) {
@@ -1161,9 +1194,39 @@ export class AllureReporter {
 
       return;
     }
+
     log('start step for current executable');
-    const step = this.currentExecutable.startStep(name, date);
-    this.steps.push(step);
+
+    const stepResult: StepResult = {
+      name,
+      status: undefined,
+      statusDetails: {},
+      stage: AllureStage.RUNNING,
+      steps: [],
+      attachments: [],
+      parameters: [],
+      start: date ?? Date.now(),
+    };
+
+    // Generate a UUID for tracking, but handle steps locally (not via runtime)
+    // The runtime will receive the steps when we update the test result before writing
+    const rootUuid = this.currentTest?.uuid ?? this.currentHook?.uuid;
+    const stepUuid = randomUUID();
+
+    // Add to parent's steps array for local tracking
+    if (this.currentStep) {
+      this.currentStep.result.steps.push(stepResult);
+    } else if (this.currentHook) {
+      this.currentHook.result.steps.push(stepResult);
+    } else if (this.currentTest) {
+      this.currentTest.result.steps.push(stepResult);
+    }
+
+    this.steps.push({
+      uuid: stepUuid,
+      result: stepResult,
+      rootUuid: rootUuid ?? '',
+    });
   }
 
   endAllSteps(arg: AllureTaskArgs<'stepEnded'>) {
@@ -1173,7 +1236,7 @@ export class AllureReporter {
   }
 
   // set status to last step recursively when unknown or passed statuses
-  setLastStepStatus(steps: ExecutableItem[], status: Status, details?: StatusDetails) {
+  setLastStepStatus(steps: StepResult[], status: Status, details?: StatusDetails) {
     const stepsCount = steps.length;
     const step = steps[stepsCount - 1];
     const stepStatus = step?.status;
@@ -1187,7 +1250,7 @@ export class AllureReporter {
     }
   }
 
-  hasChildrenWith(steps: ExecutableItem[], statuses: Status[]) {
+  hasChildrenWith(steps: StepResult[], statuses: Status[]) {
     const stepsCount = steps.length;
     let hasError = false;
     steps.forEach(step => {
@@ -1216,8 +1279,6 @@ export class AllureReporter {
     }
 
     if (!this.currentStep) {
-      //this.setLastStepStatus(this.currentExecutable.wrappedItem.steps, status, details);
-
       return;
     }
 
@@ -1225,34 +1286,50 @@ export class AllureReporter {
     const passedStatuses = ['passed' as Status];
 
     // when unknown or passed
-    this.setLastStepStatus(this.currentStep.wrappedItem.steps, status, details);
+    this.setLastStepStatus(this.currentStep.result.steps, status, details);
 
     if (
       passedStatuses.includes(status as Status) &&
-      this.hasChildrenWith(this.currentStep.wrappedItem.steps, markBrokenStatuses)
+      this.hasChildrenWith(this.currentStep.result.steps, markBrokenStatuses)
     ) {
-      this.setExecutableStatus(this.currentStep, Status.BROKEN);
+      this.setExecutableStatus(this.currentStep.result, Status.BROKEN);
     } else {
-      this.setExecutableStatus(this.currentStep, status, details);
+      this.setExecutableStatus(this.currentStep.result, status, details);
     }
 
-    this.currentStep.endStep(date ?? Date.now());
+    this.currentStep.result.stop = date ?? Date.now();
+    this.currentStep.result.stage = AllureStage.FINISHED;
 
+    // Steps are tracked locally and will be included when we update the test result
     this.steps.pop();
   }
 
-  private executableAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'attachment'>) {
+  private executableAttachment(
+    exec: { uuid: string; result: ExecutableItem; rootUuid?: string } | undefined,
+    arg: AllureTaskArgs<'attachment'>,
+  ) {
     if (!exec) {
       log('No current executable - will not attach');
 
       return;
     }
 
-    const file = this.allureRuntime.writeAttachment(
-      arg.content ?? `Could not create attachment: no content for ${arg.name} received`,
-      arg.type,
-    );
-    exec.addAttachment(arg.name, arg.type, file);
+    // Write attachment to file system
+    const content = arg.content ?? `Could not create attachment: no content for ${arg.name} received`;
+    const fileExt = arg.type.split('/')[1] || 'txt';
+    const fileName = `${randomUUID()}-attachment.${fileExt}`;
+
+    if (!existsSync(this.allureResults)) {
+      mkdirSync(this.allureResults, { recursive: true });
+    }
+
+    writeFileSync(`${this.allureResults}/${fileName}`, content);
+
+    exec.result.attachments.push({
+      name: arg.name,
+      type: arg.type,
+      source: fileName,
+    });
   }
 
   public setAttached(file: string) {
@@ -1263,7 +1340,10 @@ export class AllureReporter {
     }
   }
 
-  private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
+  private executableFileAttachment(
+    exec: { uuid: string; result: ExecutableItem; rootUuid?: string } | TestInfo | undefined,
+    arg: AllureTaskArgs<'fileAttachment'>,
+  ) {
     if (!this.currentExecutable && this.globalHooks.currentHook) {
       log('No current executable, test or hook - add to global hook');
       this.globalHooks.attachment(arg.name, arg.file, arg.type);
@@ -1295,7 +1375,11 @@ export class AllureReporter {
 
       if (currExec) {
         copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-        currExec.addAttachment(arg.name, arg.type, fileNew);
+        currExec.result.attachments.push({
+          name: arg.name,
+          type: arg.type,
+          source: fileNew,
+        });
         log(`added attachment: ${fileNew} ${arg.file}`);
         this.setAttached(arg.file);
       }
@@ -1317,8 +1401,20 @@ export class AllureReporter {
         const env = readFileSync(envPropsFile)?.toString();
         const res: EnvironmentInfo = {};
         env?.split('\n').forEach(line => {
-          const keyValue = line.split(' = ');
-          res[keyValue[0]] = keyValue[1];
+          // Handle both old format (key = value) and new format (key=value)
+          const separatorIndex = line.indexOf('=');
+
+          if (separatorIndex > 0) {
+            let key = line.substring(0, separatorIndex);
+            let value = line.substring(separatorIndex + 1);
+            // Trim spaces for old format compatibility
+            key = key.trim();
+            value = value.trim();
+
+            if (key) {
+              res[key] = value;
+            }
+          }
         });
 
         return res;
