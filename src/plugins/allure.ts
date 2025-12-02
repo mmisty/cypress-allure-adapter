@@ -157,9 +157,9 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       }
     },
 
-    addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
+    async addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
       const additionalInfo = arg.info;
-      const existing = allureReporter.getEnvInfo(allureResults);
+      const existing = await allureReporter.getEnvInfo(allureResults);
       // be careful with parallelization, todo
 
       // do not override values when it is different from additional

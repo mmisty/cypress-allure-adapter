@@ -117,7 +117,6 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
 
       if (requestData.id) {
         const result = executeTask(tasks, payload);
-
         sockserver.clients.forEach(client => {
           log(`sending back: ${JSON.stringify(requestData)}`);
           client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
@@ -177,6 +176,8 @@ const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boole
     if (Object.keys(tasks).indexOf(data.task) !== -1) {
       const task = data.task as RequestTask; // todo check
       log(task);
+
+      // start task
       tasks[task](data.arg);
 
       return true;
