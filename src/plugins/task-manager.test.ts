@@ -112,7 +112,7 @@ describe('task manager', () => {
     });
 
     tm.addTask('spec1', async () => {
-      await delay(50);
+      await delay(100);
       logs.push('spec1 - 2');
     });
 

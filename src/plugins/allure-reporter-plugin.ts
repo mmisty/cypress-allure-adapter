@@ -12,7 +12,8 @@ import {
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFile, mkdir, readFile, writeFile } from 'fs/promises';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { mkdir, readFile } from 'node:fs/promises';
 import path, { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -295,11 +296,10 @@ export class AllureReporter {
     log(JSON.stringify(args));
     this.currentSpec = args.spec;
     this.taskQueueId = `${this.currentSpec.relative}`;
-    this.taskManager.addTask(this.taskQueueId, async () => {
-      if (!(await fileExists(this.allureResults))) {
-        await mkdir(this.allureResults, { recursive: true });
-      }
-    });
+
+    if (!existsSync(this.allureResults)) {
+      mkdirSync(this.allureResults, { recursive: true });
+    }
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {
@@ -535,9 +535,9 @@ export class AllureReporter {
       for (const uuid of uuids) {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
 
-        this.taskManager.addTask(this.taskQueueId, async () => {
+        this.taskManager.addTask(this.taskQueueId, () => {
           try {
-            const contents = await readFile(testFile);
+            const contents = readFileSync(testFile);
             const ext = path.extname(afterSpecRes.path);
             const name = path.basename(afterSpecRes.path);
 
@@ -547,10 +547,8 @@ export class AllureReporter {
             const nameAttach = `${uuidNew}-attachment${ext}`; // todo not copy same image
             const newPath = path.join(this.allureResults, nameAttach);
 
-            const isExist = await fileExists(newPath);
-
-            if (!isExist) {
-              await copyFile(afterSpecRes.path, path.join(this.allureResults, nameAttach));
+            if (!existsSync(newPath)) {
+              copyFileSync(afterSpecRes.path, path.join(this.allureResults, nameAttach));
             }
 
             if (!testCon.attachments) {
@@ -563,7 +561,7 @@ export class AllureReporter {
               source: nameAttach, // todo
             });
 
-            return writeFile(testFile, JSON.stringify(testCon));
+            writeFileSync(testFile, JSON.stringify(testCon));
           } catch (e) {
             logWithPackage('error', `Could not attach screenshot ${afterSpecRes.screenshotId ?? afterSpecRes.path}`);
           }
@@ -602,29 +600,25 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      this.taskManager.addTask(this.taskQueueId, async () => {
-        const executable = this.currentExecutable;
-        const attachTo = forStep && this.currentStep ? this.currentStep : executable;
-        // to have it in allure-results directory
+      const executable = this.currentExecutable;
+      const attachTo = forStep && this.currentStep ? this.currentStep : executable;
+      // to have it in allure-results directory
 
-        const newUuid = randomUUID();
-        const fileNew = `${newUuid}-attachment.png`;
-        const existsRes = await fileExists(this.allureResults);
+      const newUuid = randomUUID();
+      const fileNew = `${newUuid}-attachment.png`;
 
-        if (!existsRes) {
-          await mkdir(this.allureResults, { recursive: true });
-        }
-        const exists = await fileExists(file);
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults, { recursive: true });
+      }
 
-        if (!exists) {
-          logWithPackage('log', `file ${file} doesnt exist`);
+      if (!existsSync(file)) {
+        logWithPackage('log', `file ${file} doesnt exist`);
 
-          return;
-        }
-        await copyFile(file, `${this.allureResults}/${fileNew}`);
+        return;
+      }
+      copyFileSync(file, `${this.allureResults}/${fileNew}`);
 
-        attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
-      });
+      attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
     });
   }
 
@@ -670,7 +664,9 @@ export class AllureReporter {
           let current = testObj.parent;
 
           while (current) {
-            if (current.uuid) uuids.push(current.uuid);
+            if (current.uuid) {
+              uuids.push(current.uuid);
+            }
             current = current.parent;
           }
 
@@ -954,16 +950,16 @@ export class AllureReporter {
     this.executableFileAttachment(this.currentTest, arg);
   }
 
-  fileAttachment(arg: AllureTaskArgs<'fileAttachment'>) {
-    this.executableFileAttachment(this.currentExecutable, arg);
+  async fileAttachment(arg: AllureTaskArgs<'fileAttachment'>) {
+    await this.executableFileAttachment(this.currentExecutable, arg);
   }
 
-  testAttachment(arg: AllureTaskArgs<'testAttachment'>) {
-    this.executableAttachment(this.currentTest, arg);
+  async testAttachment(arg: AllureTaskArgs<'testAttachment'>) {
+    await this.executableAttachment(this.currentTest, arg);
   }
 
-  attachment(arg: AllureTaskArgs<'attachment'>) {
-    this.executableAttachment(this.currentExecutable, arg);
+  async attachment(arg: AllureTaskArgs<'attachment'>) {
+    await this.executableAttachment(this.currentExecutable, arg);
   }
 
   addGroupLabels() {
@@ -1169,11 +1165,9 @@ export class AllureReporter {
 
     const testFile = `${this.allureResults}/${uid}-result.json`;
 
-    this.taskManager.addTask(this.taskQueueId, async () => {
-      if (!(await fileExists(testFile))) {
-        logWithPackage('error', ` Result file doesn't exist: ${testFile}`);
-      }
-    });
+    if (!existsSync(testFile)) {
+      logWithPackage('error', ` Result file doesn't exist: ${testFile}`);
+    }
 
     log('testEnded: will move result to watch folder');
     // do not copy otherwise attachments may not be shown in testops
@@ -1270,11 +1264,11 @@ export class AllureReporter {
     this.steps.pop();
   }
 
-  private executableAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'attachment'>) {
+  private async executableAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'attachment'>) {
     if (!exec) {
       log('No current executable - will not attach');
 
-      return;
+      return Promise.resolve();
     }
 
     const file = this.allureRuntime.writeAttachment(
@@ -1282,6 +1276,8 @@ export class AllureReporter {
       arg.type,
     );
     exec.addAttachment(arg.name, arg.type, file);
+
+    return Promise.resolve();
   }
 
   public setAttached(file: string) {
@@ -1292,63 +1288,63 @@ export class AllureReporter {
     }
   }
 
-  private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
-    this.taskManager.addTask(this.taskQueueId, async () => {
-      if (!this.currentExecutable && this.globalHooks.currentHook) {
-        log('No current executable, test or hook - add to global hook');
-        this.globalHooks.attachment(arg.name, arg.file, arg.type);
+  private async executableFileAttachment(
+    exec: ExecutableItemWrapper | undefined,
+    arg: AllureTaskArgs<'fileAttachment'>,
+  ) {
+    if (!this.currentExecutable && this.globalHooks.currentHook) {
+      log('No current executable, test or hook - add to global hook');
+      this.globalHooks.attachment(arg.name, arg.file, arg.type);
 
-        return;
+      return Promise.resolve();
+    }
+
+    if (!exec && !this.currentExecutable) {
+      return Promise.resolve();
+    }
+
+    if (!existsSync(arg.file)) {
+      logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
+
+      return Promise.resolve();
+    }
+
+    try {
+      const uuid = randomUUID();
+
+      // to have it in allure-results directory
+      const fileNew = `${uuid}-attachment${extname(arg.file)}`;
+
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults, { recursive: true });
       }
 
-      if (!exec && !this.currentExecutable) {
-        return;
+      const currExec = exec ?? this.currentExecutable;
+
+      if (currExec) {
+        copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
+        currExec.addAttachment(arg.name, arg.type, fileNew);
+        log(`added attachment: ${fileNew} ${arg.file}`);
+        this.setAttached(arg.file);
       }
-      const isExist = fileExists(arg.file);
+    } catch (err) {
+      logWithPackage('error', `Could not attach ${arg.file}`);
+    }
 
-      if (!isExist) {
-        logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
-
-        return;
-      }
-
-      try {
-        const uuid = randomUUID();
-
-        // to have it in allure-results directory
-        const fileNew = `${uuid}-attachment${extname(arg.file)}`;
-
-        const isExistRes = fileExists(this.allureResults);
-
-        if (!isExistRes) {
-          await mkdir(this.allureResults, { recursive: true });
-        }
-
-        const currExec = exec ?? this.currentExecutable;
-
-        if (currExec) {
-          await copyFile(arg.file, `${this.allureResults}/${fileNew}`);
-          currExec.addAttachment(arg.name, arg.type, fileNew);
-          log(`added attachment: ${fileNew} ${arg.file}`);
-          this.setAttached(arg.file);
-        }
-      } catch (err) {
-        logWithPackage('error', `Could not attach ${arg.file}`);
-      }
-    });
+    return Promise.resolve();
   }
 
-  async getEnvInfo(resultsFolder: string): Promise<EnvironmentInfo> {
+  getEnvInfo(resultsFolder: string): EnvironmentInfo {
     const fileName = 'environment.properties';
     const envPropsFile = `${resultsFolder}/${fileName}`;
 
-    if (!(await fileExists(envPropsFile))) {
+    if (!existsSync(envPropsFile)) {
       return {};
     }
 
-    if (await fileExists(envPropsFile)) {
+    if (existsSync(envPropsFile)) {
       try {
-        const env = (await readFile(envPropsFile))?.toString();
+        const env = readFileSync(envPropsFile)?.toString();
         const res: EnvironmentInfo = {};
         env?.split('\n').forEach(line => {
           const keyValue = line.split(' = ');
