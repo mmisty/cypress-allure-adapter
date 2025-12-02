@@ -212,7 +212,7 @@ describe('task manager', () => {
 
   it('should stop all when overall timeout and many tasks', async () => {
     const logs: string[] = [];
-    const tm = new TaskManager({ overallTimeout: 100 });
+    const tm = new TaskManager({ overallTimeout: 10 });
     addTasks(tm, logs, 'spec1', 4, 10);
     addTasks(tm, logs, 'spec2', 4, 10);
     addTasks(tm, logs, 'spec3', 4, 10);
@@ -229,7 +229,7 @@ describe('task manager', () => {
     await tm.flushAllTasksForQueue('spec2');
 
     expect(cons?.error.mock.calls[0][0]).toEqual(
-      '[cypress-allure-adapter] flushAllTasksForQueue exceeded 0.1s, exiting',
+      '[cypress-allure-adapter] flushAllTasksForQueue exceeded 0.01s, exiting',
     );
   });
 
