@@ -73,7 +73,7 @@ export const writeResultFile = async (resultContainer: string, content: string) 
     });
 };
 
-export async function fileExists(path) {
+export async function fileExists(path: string) {
   try {
     await access(path, constants.F_OK);
 

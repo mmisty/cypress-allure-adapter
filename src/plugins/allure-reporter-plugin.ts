@@ -665,7 +665,7 @@ export class AllureReporter {
         const testSource = `${this.allureResults}/${test.uuid}-result.json`;
         const testTarget = testSource.replace(this.allureResults, this.allureResultsWatch);
 
-        function getAllParentUuids(testObj) {
+        function getAllParentUuids(testObj: any) {
           const uuids: string[] = [];
           let current = testObj.parent;
 
@@ -710,7 +710,7 @@ export class AllureReporter {
         const containerEntries = (await Promise.all(containerReadPromises)).filter(Boolean);
 
         // helper to check basename presence in any loaded content
-        const nameAppearsInLoadedContents = name => {
+        const nameAppearsInLoadedContents = (name: string) => {
           if (testContents && testContents.includes(name)) return true;
 
           for (const entry of containerEntries) {
