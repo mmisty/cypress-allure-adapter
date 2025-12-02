@@ -163,6 +163,11 @@ export class AllureReporter {
     log('Created reporter');
     log(opts);
 
+    // Ensure allure results directory exists
+    if (!existsSync(this.allureResults)) {
+      mkdirSync(this.allureResults, { recursive: true });
+    }
+
     // Initialize with new API
     this.writer = new FileSystemWriter({ resultsDir: this.allureResults });
     this.allureRuntime = new ReporterRuntime({ writer: this.writer });
