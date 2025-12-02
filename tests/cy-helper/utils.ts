@@ -2,13 +2,40 @@ import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
-import { StepResult } from 'allure-js-commons';
+import { Attachment, StepResult, Status } from 'allure-js-commons';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 import { globSync } from 'fast-glob';
 
 jest.setTimeout(360000);
+
+// Types for fullStepAttachment
+interface MappedAttachment extends Attachment {
+  name: string;
+  source: string;
+}
+
+interface MappedItem {
+  name: string;
+  status?: Status;
+  attachments: MappedAttachment[];
+  steps: StepResult[];
+}
+
+interface ParentInfo {
+  suiteName?: string;
+  befores: MappedItem[];
+  afters: MappedItem[];
+}
+
+export interface FullStepAttachmentResult {
+  name: string; // Always present in practice for test assertions
+  status?: Status;
+  attachments: Attachment[];
+  steps: StepResult[];
+  parents?: ParentInfo[];
+}
 
 // eslint-disable-next-line jest/no-export
 export const mapSteps = <T>(
@@ -188,7 +215,7 @@ export const createResTest = (
 };
 
 // eslint-disable-next-line jest/no-export
-export const sortAttachments = (res: AllureTest[]) => {
+export const sortAttachments = (res: AllureTest[]): Attachment[][] => {
   return res
     .map(t =>
       t.attachments.sort((a, b) =>
@@ -201,7 +228,10 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const labelsForTest = (res: AllureTest[], filterLabels?: string[]) => {
+export const labelsForTest = (
+  res: AllureTest[],
+  filterLabels?: string[],
+): { labels: { name: string; value: string }[]; name?: string }[] => {
   return res
     .map(t => ({ labels: t.labels, name: t.name }))
     .sort((a, b) => ((a as any).name < (b as any).name ? -1 : 1))
@@ -220,7 +250,7 @@ export const fullStepAttachment = (
   res: AllureTest[],
   mapStep?: (m: StepResult) => any,
   options?: { noAddParents?: boolean },
-) => {
+): FullStepAttachmentResult[] => {
   const parents = res
     .map(x => ({
       ...x,
@@ -291,7 +321,7 @@ export const fullStepAttachment = (
     }))
     .filter(x => skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1));
 
-  return full;
+  return full as FullStepAttachmentResult[];
 };
 
 // eslint-disable-next-line jest/no-export

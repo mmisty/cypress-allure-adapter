@@ -116,7 +116,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -155,7 +156,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -194,7 +196,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -233,7 +236,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -272,7 +276,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -311,7 +316,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -350,7 +356,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -395,7 +402,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -440,7 +448,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -485,7 +494,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -530,7 +540,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {
@@ -575,7 +586,8 @@ describe('test screenshot with setting', () => {
         obj[0]['parents'] = [];
       }
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
       expect(obj).toEqual([
         {

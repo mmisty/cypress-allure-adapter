@@ -49,7 +49,8 @@ describe('screenshot when global before hook fails @screen', () => {
       }));
 
       obj[0].steps = obj[0].steps.filter(
-        t => !t.name.includes('after each') && !t.name.includes('before each'),
+        t =>
+          !t.name?.includes('after each') && !t.name?.includes('before each'),
       );
 
       expect(obj).toEqual([
