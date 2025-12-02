@@ -109,7 +109,7 @@ export class TaskManager {
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
-        logWithPackage('error', `Task for ${entityId} timed out`);
+        logWithPackage('error', `Task for ${entityId} timed out after ${TASK_TIMEOUT}ms`);
         reject(new Error('task timeout'));
       }, TASK_TIMEOUT);
     });

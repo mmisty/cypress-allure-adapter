@@ -402,7 +402,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       // this should be done after video processed
       allureReporter.afterSpecMoveToWatch();
-      await taskManager.flushAllTasksForQueue(arg.results.spec.relative).then(() => {
+      taskManager.flushAllTasksForQueue(arg.results.spec.relative).then(() => {
         logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
       });
 
