@@ -224,6 +224,8 @@ describe('task manager', () => {
     addTasks(tm, logs, 'spec9', 4, 10);
     addTasks(tm, logs, 'spec10', 4, 10);
     addTasks(tm, logs, 'spec11', 4, 10);
+    addTasks(tm, logs, 'spec12', 4, 10);
+    addTasks(tm, logs, 'spec13', 4, 10);
     await tm.flushAllTasksForQueue('spec2');
 
     expect(cons?.error.mock.calls[0][0]).toEqual(
