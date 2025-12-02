@@ -144,7 +144,7 @@ export class TaskManager {
     debug(`Flushing all tasks for queue ${entityId}`);
     const start = Date.now();
     const queue = this.entityQueues.get(entityId);
-    const timeout = this.options?.overallTimeout ?? 120000;
+    const timeout = this.options?.overallTimeout ?? 60000;
 
     if (!queue) {
       logWithPackage('warn', `Tasks for ${entityId} not found`);

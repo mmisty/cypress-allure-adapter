@@ -5,6 +5,20 @@ import { logClient } from './helper';
 const dbg = 'cypress-allure:ws-client';
 const PROCESS_INTERVAL_MS = 10;
 
+function safeSend(ws: WebSocket | undefined, data: string | Buffer) {
+  try {
+    if (!ws) return;
+
+    if (ws.readyState === ws.OPEN) {
+      ws.send(data);
+    } else {
+      logWithPackage('warn', 'socket not open; dropping message');
+    }
+  } catch (err) {
+    logWithPackage('warn', `safeSend error ${JSON.stringify(err)}`);
+  }
+}
+
 export const startWsClient = (): WebSocket | undefined => {
   const debug = logClient(dbg);
   const port = Cypress.env(ENV_WS);
@@ -22,7 +36,7 @@ export const startWsClient = (): WebSocket | undefined => {
   const ws = new WebSocket(`ws://localhost:${wsPathFixed}`);
 
   ws.onopen = () => {
-    ws.send('WS opened');
+    safeSend(ws, 'WS opened');
     debug(`${packageLog} Opened ws connection`);
   };
 
@@ -59,7 +73,7 @@ export const createMessage = (ws: WebSocket): MessageManager => {
     });
     debug('---');
     messages.forEach(msg => {
-      ws.send(JSON.stringify(msg));
+      safeSend(ws, JSON.stringify(msg));
     });
   };
 
