@@ -1,4 +1,4 @@
-import { FixtureResult, Status, StatusDetails, StepResult, TestResult, Stage as AllureStage } from 'allure-js-commons';
+import { FixtureResult, Status, StatusDetails, StepResult, TestResult, TestResultContainer, Stage as AllureStage } from 'allure-js-commons';
 import { ReporterRuntime, FileSystemWriter } from 'allure-js-commons/sdk/reporter';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
@@ -93,6 +93,7 @@ interface GroupInfo {
   uuid: string;
   name: string;
   scopeUuid: string;
+  testUuids: string[]; // Track test UUIDs for this group
 }
 
 interface TestInfo {
@@ -260,6 +261,7 @@ export class AllureReporter {
       uuid: groupUuid,
       name: title,
       scopeUuid,
+      testUuids: [],
     });
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
@@ -863,15 +865,62 @@ export class AllureReporter {
 
     if (this.currentGroup) {
       log('END GROUP');
-      this.allureRuntime.writeScope(this.currentGroup.scopeUuid);
+
+      // Collect befores and afters from hooks that belong to this scope
+      const scopeUuid = this.currentGroup.scopeUuid;
+      const scopeHooks = this.allHooks.filter(h => h.scopeUuid === scopeUuid);
+
+      const befores: FixtureResult[] = scopeHooks
+        .filter(h => h.name.includes('"before all" hook'))
+        .map(h => h.result);
+
+      const afters: FixtureResult[] = scopeHooks
+        .filter(h => !h.name.includes('"before all" hook'))
+        .map(h => h.result);
+
+      // Write container in v2 format (compatible with allure-js-parser)
+      const container: TestResultContainer = {
+        uuid: this.currentGroup.uuid,
+        name: this.currentGroup.name,
+        children: [...new Set(this.currentGroup.testUuids)],
+        befores,
+        afters,
+      };
+
+      // Only write if there are tests or fixtures
+      if (container.children.length > 0 || befores.length > 0 || afters.length > 0) {
+        this.writer.writeGroup(container);
+      }
+
       this.groups.pop();
     }
   }
 
   endAllGroups() {
     log('endAllGroups');
+    // Write all remaining groups as containers
     this.groups.forEach(g => {
-      this.allureRuntime.writeScope(g.scopeUuid);
+      const scopeHooks = this.allHooks.filter(h => h.scopeUuid === g.scopeUuid);
+
+      const befores: FixtureResult[] = scopeHooks
+        .filter(h => h.name.includes('"before all" hook'))
+        .map(h => h.result);
+
+      const afters: FixtureResult[] = scopeHooks
+        .filter(h => !h.name.includes('"before all" hook'))
+        .map(h => h.result);
+
+      const container: TestResultContainer = {
+        uuid: g.uuid,
+        name: g.name,
+        children: [...new Set(g.testUuids)],
+        befores,
+        afters,
+      };
+
+      if (container.children.length > 0 || befores.length > 0 || afters.length > 0) {
+        this.writer.writeGroup(container);
+      }
     });
     this.groups = [];
     this.allHooks = [];
@@ -1019,6 +1068,11 @@ export class AllureReporter {
 
     const scopeUuids = this.groups.map(g => g.scopeUuid);
     const testUuid = this.allureRuntime.startTest(testResult, scopeUuids);
+
+    // Track test UUID in all current groups for container writing
+    this.groups.forEach(g => {
+      g.testUuids.push(testUuid);
+    });
 
     const testInfo: TestInfo = {
       uuid: testUuid,
