@@ -1,4 +1,12 @@
-import { FixtureResult, Status, StatusDetails, StepResult, TestResult, TestResultContainer, Stage as AllureStage } from 'allure-js-commons';
+import {
+  FixtureResult,
+  Status,
+  StatusDetails,
+  StepResult,
+  TestResult,
+  TestResultContainer,
+  Stage as AllureStage,
+} from 'allure-js-commons';
 import { ReporterRuntime, FileSystemWriter } from 'allure-js-commons/sdk/reporter';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
@@ -870,13 +878,9 @@ export class AllureReporter {
       const scopeUuid = this.currentGroup.scopeUuid;
       const scopeHooks = this.allHooks.filter(h => h.scopeUuid === scopeUuid);
 
-      const befores: FixtureResult[] = scopeHooks
-        .filter(h => h.name.includes('"before all" hook'))
-        .map(h => h.result);
+      const befores: FixtureResult[] = scopeHooks.filter(h => h.name.includes('"before all" hook')).map(h => h.result);
 
-      const afters: FixtureResult[] = scopeHooks
-        .filter(h => !h.name.includes('"before all" hook'))
-        .map(h => h.result);
+      const afters: FixtureResult[] = scopeHooks.filter(h => !h.name.includes('"before all" hook')).map(h => h.result);
 
       // Write container in v2 format (compatible with allure-js-parser)
       const container: TestResultContainer = {
@@ -902,13 +906,9 @@ export class AllureReporter {
     this.groups.forEach(g => {
       const scopeHooks = this.allHooks.filter(h => h.scopeUuid === g.scopeUuid);
 
-      const befores: FixtureResult[] = scopeHooks
-        .filter(h => h.name.includes('"before all" hook'))
-        .map(h => h.result);
+      const befores: FixtureResult[] = scopeHooks.filter(h => h.name.includes('"before all" hook')).map(h => h.result);
 
-      const afters: FixtureResult[] = scopeHooks
-        .filter(h => !h.name.includes('"before all" hook'))
-        .map(h => h.result);
+      const afters: FixtureResult[] = scopeHooks.filter(h => !h.name.includes('"before all" hook')).map(h => h.result);
 
       const container: TestResultContainer = {
         uuid: g.uuid,
@@ -954,7 +954,9 @@ export class AllureReporter {
 
   parameter(arg: AllureTaskArgs<'parameter'>) {
     if (this.currentExecutable) {
-      this.currentExecutable.result.parameters.push({ name: arg.name, value: arg.value });
+      // Stringify object values to ensure Parameter.value is always a string
+      const value = typeof arg.value === 'object' ? JSON.stringify(arg.value) : arg.value;
+      this.currentExecutable.result.parameters.push({ name: arg.name, value });
     }
   }
 
