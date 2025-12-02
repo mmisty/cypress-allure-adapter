@@ -1,9 +1,10 @@
 import { existsSync, mkdirSync, rm } from 'fs';
-import { copyFile, writeFile } from 'fs/promises';
+import { access, copyFile, writeFile } from 'fs/promises';
 import Debug from 'debug';
 import { Attachment } from 'allure-js-commons';
 import { basename, dirname } from 'path';
 import { logWithPackage } from '../common';
+import * as constants from 'node:constants';
 
 const debug = Debug('cypress-allure:fs-tools');
 
@@ -71,3 +72,13 @@ export const writeResultFile = async (resultContainer: string, content: string) 
       log(`error test file  ${err.message} `);
     });
 };
+
+export async function fileExists(path: string) {
+  try {
+    await access(path, constants.F_OK);
+
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -104,12 +104,12 @@ export class TaskManager {
   }
 
   private async runWithTimeout(task: TaskFn, entityId: string): Promise<void> {
-    const TASK_TIMEOUT = this.options?.taskTimeout ?? 30000;
+    const TASK_TIMEOUT = this.options?.taskTimeout ?? 45000;
     let timeoutId: NodeJS.Timeout | undefined = undefined;
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
-        logWithPackage('error', `Task for ${entityId} timed out`);
+        logWithPackage('error', `Task for ${entityId} timed out after ${TASK_TIMEOUT}ms`);
         reject(new Error('task timeout'));
       }, TASK_TIMEOUT);
     });
@@ -144,7 +144,7 @@ export class TaskManager {
     debug(`Flushing all tasks for queue ${entityId}`);
     const start = Date.now();
     const queue = this.entityQueues.get(entityId);
-    const timeout = this.options?.overallTimeout ?? 120000;
+    const timeout = this.options?.overallTimeout ?? 60000;
 
     if (!queue) {
       logWithPackage('warn', `Tasks for ${entityId} not found`);

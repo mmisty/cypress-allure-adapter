@@ -82,6 +82,7 @@ export type AllureTaskArgs<T extends RequestTask> = AllureTask[T] extends undefi
       // ign
     }
   : AllureTask[T];
+// todo return type
 export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> } & {
   taskManager: TaskManager;
 };
