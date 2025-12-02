@@ -43,7 +43,7 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    reporter.addEnvironmentInfo({ info: { version: '1.2.3' } });
+    await reporter.addEnvironmentInfo({ info: { version: '1.2.3' } });
     reporter.hookEnded({
       title: '"before all" hook',
       result: 'passed' as Status,
@@ -77,7 +77,7 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    reporter.addEnvironmentInfo({
+    await reporter.addEnvironmentInfo({
       info: { version: '1.2.3', otherThing: 'hello and more' },
     });
     reporter.hookEnded({
@@ -115,7 +115,7 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
+    await reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
     reporter.hookEnded({
       title: '"before all" hook',
       result: 'passed' as Status,
@@ -148,8 +148,8 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
-    reporter.addEnvironmentInfo({ info: { version: '1.3.5' } });
+    await reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
+    await reporter.addEnvironmentInfo({ info: { version: '1.3.5' } });
     reporter.hookEnded({
       title: '"before all" hook',
       result: 'passed' as Status,

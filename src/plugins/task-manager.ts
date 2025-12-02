@@ -104,7 +104,7 @@ export class TaskManager {
   }
 
   private async runWithTimeout(task: TaskFn, entityId: string): Promise<void> {
-    const TASK_TIMEOUT = this.options?.taskTimeout ?? 30000;
+    const TASK_TIMEOUT = this.options?.taskTimeout ?? 45000;
     let timeoutId: NodeJS.Timeout | undefined = undefined;
 
     const timeoutPromise = new Promise<never>((_, reject) => {

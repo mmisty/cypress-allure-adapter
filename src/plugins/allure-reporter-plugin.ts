@@ -12,8 +12,7 @@ import {
 } from 'allure-js-commons';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rm, writeFileSync } from 'fs';
-import { readFile } from 'fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'fs/promises';
 import path, { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -32,9 +31,10 @@ import {
 import { extname, logWithPackage } from '../common';
 import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
-import { copyFileCp, writeResultFile } from './fs-tools';
+import { copyFileCp, fileExists, writeResultFile } from './fs-tools';
 import { mergeStepsWithSingleChild, removeFirstStepWhenSame, wrapHooks } from './helper';
 import { TaskManager } from './task-manager';
+import * as fs from 'node:fs';
 
 const beforeEachHookName = '"before each" hook';
 const beforeAllHookName = '"before all" hook';
@@ -295,10 +295,11 @@ export class AllureReporter {
     log(JSON.stringify(args));
     this.currentSpec = args.spec;
     this.taskQueueId = `${this.currentSpec.relative}`;
-
-    if (!existsSync(this.allureResults)) {
-      mkdirSync(this.allureResults, { recursive: true });
-    }
+    this.taskManager.addTask(this.taskQueueId, async () => {
+      if (!(await fileExists(this.allureResults))) {
+        await mkdir(this.allureResults, { recursive: true });
+      }
+    });
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {
@@ -534,9 +535,9 @@ export class AllureReporter {
       for (const uuid of uuids) {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
 
-        this.taskManager.addTask(this.taskQueueId, () => {
+        this.taskManager.addTask(this.taskQueueId, async () => {
           try {
-            const contents = readFileSync(testFile);
+            const contents = await readFile(testFile);
             const ext = path.extname(afterSpecRes.path);
             const name = path.basename(afterSpecRes.path);
 
@@ -546,8 +547,10 @@ export class AllureReporter {
             const nameAttach = `${uuidNew}-attachment${ext}`; // todo not copy same image
             const newPath = path.join(this.allureResults, nameAttach);
 
-            if (!existsSync(newPath)) {
-              copyFileSync(afterSpecRes.path, path.join(this.allureResults, nameAttach));
+            const isExist = await fileExists(newPath);
+
+            if (!isExist) {
+              await copyFile(afterSpecRes.path, path.join(this.allureResults, nameAttach));
             }
 
             if (!testCon.attachments) {
@@ -560,7 +563,7 @@ export class AllureReporter {
               source: nameAttach, // todo
             });
 
-            writeFileSync(testFile, JSON.stringify(testCon));
+            return writeFile(testFile, JSON.stringify(testCon));
           } catch (e) {
             logWithPackage('error', `Could not attach screenshot ${afterSpecRes.screenshotId ?? afterSpecRes.path}`);
           }
@@ -599,25 +602,29 @@ export class AllureReporter {
     }
 
     files.forEach(file => {
-      const executable = this.currentExecutable;
-      const attachTo = forStep && this.currentStep ? this.currentStep : executable;
-      // to have it in allure-results directory
+      this.taskManager.addTask(this.taskQueueId, async () => {
+        const executable = this.currentExecutable;
+        const attachTo = forStep && this.currentStep ? this.currentStep : executable;
+        // to have it in allure-results directory
 
-      const newUuid = randomUUID();
-      const fileNew = `${newUuid}-attachment.png`;
+        const newUuid = randomUUID();
+        const fileNew = `${newUuid}-attachment.png`;
+        const existsRes = await fileExists(this.allureResults);
 
-      if (!existsSync(this.allureResults)) {
-        mkdirSync(this.allureResults, { recursive: true });
-      }
+        if (!existsRes) {
+          await mkdir(this.allureResults, { recursive: true });
+        }
+        const exists = await fileExists(file);
 
-      if (!existsSync(file)) {
-        logWithPackage('log', `file ${file} doesnt exist`);
+        if (!exists) {
+          logWithPackage('log', `file ${file} doesnt exist`);
 
-        return;
-      }
-      copyFileSync(file, `${this.allureResults}/${fileNew}`);
+          return;
+        }
+        await copyFile(file, `${this.allureResults}/${fileNew}`);
 
-      attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
+        attachTo?.addAttachment(basename(file), { contentType: 'image/png', fileExtension: 'png' }, fileNew);
+      });
     });
   }
 
@@ -634,19 +641,19 @@ export class AllureReporter {
     };
 
     this.taskManager.addTask(this.taskQueueId, async () => {
-      if (!existsSync(this.allureResultsWatch)) {
-        mkdirSync(this.allureResultsWatch);
+      if (!(await fileExists(this.allureResultsWatch))) {
+        await mkdir(this.allureResultsWatch);
       }
 
-      if (existsSync(envProperties) && !existsSync(targetPath(envProperties))) {
+      if ((await fileExists(envProperties)) && !(await fileExists(targetPath(envProperties)))) {
         await copyFileCp(envProperties, targetPath(envProperties), true);
       }
 
-      if (existsSync(executor) && !existsSync(targetPath(executor))) {
+      if ((await fileExists(executor)) && !(await fileExists(targetPath(executor)))) {
         await copyFileCp(executor, targetPath(executor), true);
       }
 
-      if (existsSync(categories) && !existsSync(targetPath(categories))) {
+      if ((await fileExists(categories)) && !(await fileExists(targetPath(categories)))) {
         await copyFileCp(categories, targetPath(categories), true);
       }
     });
@@ -658,14 +665,12 @@ export class AllureReporter {
         const testSource = `${this.allureResults}/${test.uuid}-result.json`;
         const testTarget = testSource.replace(this.allureResults, this.allureResultsWatch);
 
-        function getAllParentUuids(test: any) {
+        function getAllParentUuids(testObj) {
           const uuids: string[] = [];
-          let current = test.parent;
+          let current = testObj.parent;
 
           while (current) {
-            if (current.uuid) {
-              uuids.push(current.uuid);
-            }
+            if (current.uuid) uuids.push(current.uuid);
             current = current.parent;
           }
 
@@ -674,75 +679,96 @@ export class AllureReporter {
 
         const containerSources = getAllParentUuids(test).map(uuid => `${this.allureResults}/${uuid}-container.json`);
 
-        const allAttachments = glob.sync(`${this.allureResults}/*-attachment.*`);
+        // gather attachments async
+        const allAttachments = await glob.async(`${this.allureResults}/*-attachment.*`);
 
-        // move attachments referenced in tests or containers
-        const testAttachments = allAttachments.filter(attachFile => {
-          const testContents = readFileSync(testSource);
+        // read testSource if exists (treat missing as empty)
+        let testContents = '';
 
-          return (
-            testContents.indexOf(basename(attachFile)) !== -1 ||
-            containerSources
-              .filter(x => existsSync(x))
-              .some(x => {
-                const content = readFileSync(x);
+        try {
+          if (await fileExists(testSource)) {
+            testContents = await readFile(testSource, 'utf8');
+          }
+        } catch (err) {
+          // optional: log error
+          testContents = '';
+        }
 
-                return content.indexOf(basename(attachFile)) !== -1;
-              })
-          );
+        // read container contents in parallel (skip missing/unreadable)
+        const containerReadPromises = containerSources.map(async p => {
+          try {
+            if (await fileExists(p)) {
+              return { path: p, content: await readFile(p, 'utf8') };
+            }
+          } catch (err) {
+            // ignore unreadable file
+          }
+
+          return null;
         });
 
+        const containerEntries = (await Promise.all(containerReadPromises)).filter(Boolean);
+
+        // helper to check basename presence in any loaded content
+        const nameAppearsInLoadedContents = name => {
+          if (testContents && testContents.includes(name)) return true;
+
+          for (const entry of containerEntries) {
+            if (entry && entry.content && entry.content.includes(name)) return true;
+          }
+
+          return false;
+        };
+
+        // select attachments referenced by test or containers
+        const testAttachments = allAttachments.filter(attachFile => nameAppearsInLoadedContents(basename(attachFile)));
+
+        // process attachments: copy if source exists and target doesn't; otherwise
+        // if both exist and are different, remove the source (keep the target).
         for (const attachFile of testAttachments) {
           const attachTarget = attachFile.replace(this.allureResults, this.allureResultsWatch);
 
-          if (existsSync(attachFile) && !existsSync(attachTarget)) {
+          const existsAttachFile = await fileExists(attachFile);
+          const existsAttachTarget = await fileExists(attachTarget);
+
+          if (existsAttachFile && !existsAttachTarget) {
+            // copy, allow overwrite flag handled inside copyFileCp(true)
             await copyFileCp(attachFile, attachTarget, true);
-          } else {
-            if (existsSync(attachFile) && attachFile !== attachTarget) {
-              await new Promise(res => {
-                rm(attachFile, err => {
-                  if (err) {
-                    logWithPackage('error', `Could not remove file ${attachFile}: ${err.message}`);
-                  }
-                  res('removed');
-                });
-              });
+          } else if (existsAttachFile && existsAttachTarget && attachFile !== attachTarget) {
+            // both exist and are different files -> remove the source (keep target)
+            try {
+              await fs.promises.rm(attachFile);
+            } catch (err) {
+              logWithPackage('error', `Could not remove file ${attachFile}: ${(err as Error).message}`);
             }
           }
         }
 
-        // copy test results and containers
-        if (existsSync(testSource)) {
-          // should overwrite
-          await copyFileCp(testSource, testTarget, true);
-        } else {
-          if (existsSync(testSource) && testSource !== testTarget) {
-            await new Promise(res => {
-              rm(testSource, err => {
-                if (err) {
-                  logWithPackage('error', `Could not remove file ${testSource}: ${err.message}`);
-                }
-                res('removed');
-              });
-            });
+        // copy test result (if exists) — overwrite allowed
+        try {
+          if (await fileExists(testSource)) {
+            await copyFileCp(testSource, testTarget, true);
           }
+        } catch (err) {
+          logWithPackage(
+            'error',
+            `Failed copying test result ${testSource} -> ${testTarget}: ${(err as Error).message}`,
+          );
         }
 
+        // copy container files. If both source and target exist and are different, remove source.
         for (const containerSource of containerSources) {
           const containerTarget = containerSource.replace(this.allureResults, this.allureResultsWatch);
+          const existsContainerSource = await fileExists(containerSource);
+          const existsContainerTarget = await fileExists(containerTarget);
 
-          if (containerSource && existsSync(containerSource)) {
+          if (existsContainerSource && !existsContainerTarget) {
             await copyFileCp(containerSource, containerTarget, true);
-          } else {
-            if (containerSource && existsSync(containerSource) && containerSource !== containerSource) {
-              await new Promise(res => {
-                rm(containerSource, err => {
-                  if (err) {
-                    logWithPackage('error', `Could not remove file ${containerSource}: ${err.message}`);
-                  }
-                  res('removed');
-                });
-              });
+          } else if (existsContainerSource && existsContainerTarget && containerSource !== containerTarget) {
+            try {
+              await fs.promises.rm(containerSource);
+            } catch (err) {
+              logWithPackage('error', `Could not remove file ${containerSource}: ${(err as Error).message}`);
             }
           }
         }
@@ -788,7 +814,7 @@ export class AllureReporter {
       );
 
       try {
-        readFileSync(videoPath);
+        await readFile(videoPath);
       } catch (errVideo) {
         logWithPackage('error', `Could not read video: ${errVideo}`);
 
@@ -805,31 +831,32 @@ export class AllureReporter {
         const containerFile = `${this.allureResults}/${test.parent.uuid}-container.json`;
         log(`ATTACHING to container: ${containerFile}`);
 
-        await readFile(containerFile)
-          .then(contents => {
-            const uuid = randomUUID();
-            const nameAttAhc = `${uuid}-attachment${ext}`;
-            const newPath = path.join(this.allureResults, nameAttAhc);
-            const newContentJson = createNewContentForContainer(nameAttAhc, contents, ext, specname);
-            const newContent = JSON.stringify(newContentJson);
+        try {
+          const contents = await readFile(containerFile);
 
-            const writeContainer = () => {
-              log(`write result file ${containerFile} `);
+          const uuid = randomUUID();
+          const nameAttAhc = `${uuid}-attachment${ext}`;
+          const newPath = path.join(this.allureResults, nameAttAhc);
+          const newContentJson = createNewContentForContainer(nameAttAhc, contents, ext, specname);
+          const newContent = JSON.stringify(newContentJson);
 
-              return writeResultFile(containerFile, newContent);
-            };
+          const writeContainer = () => {
+            log(`write result file ${containerFile} `);
 
-            if (existsSync(newPath)) {
-              log(`not writing video, file already exists in path ${newPath} `);
+            return writeResultFile(containerFile, newContent);
+          };
+          const newExists = await fileExists(newPath);
 
-              return writeContainer();
-            }
+          if (newExists) {
+            log(`not writing video, file already exists in path ${newPath} `);
 
-            return copyFileCp(videoPath, newPath, false).then(writeContainer);
-          })
-          .catch(err => {
-            log(`error reading container: ${err.message}`);
-          });
+            return writeContainer();
+          }
+
+          return copyFileCp(videoPath, newPath, false).then(writeContainer);
+        } catch (err) {
+          log(`error reading container: ${(err as Error).message}`);
+        }
       }
 
       logWithPackage('log', `end attaching video for ${this.taskQueueId}`);
@@ -1142,9 +1169,11 @@ export class AllureReporter {
 
     const testFile = `${this.allureResults}/${uid}-result.json`;
 
-    if (!existsSync(testFile)) {
-      logWithPackage('error', ` Result file doesn't exist: ${testFile}`);
-    }
+    this.taskManager.addTask(this.taskQueueId, async () => {
+      if (!(await fileExists(testFile))) {
+        logWithPackage('error', ` Result file doesn't exist: ${testFile}`);
+      }
+    });
 
     log('testEnded: will move result to watch folder');
     // do not copy otherwise attachments may not be shown in testops
@@ -1264,57 +1293,62 @@ export class AllureReporter {
   }
 
   private executableFileAttachment(exec: ExecutableItemWrapper | undefined, arg: AllureTaskArgs<'fileAttachment'>) {
-    if (!this.currentExecutable && this.globalHooks.currentHook) {
-      log('No current executable, test or hook - add to global hook');
-      this.globalHooks.attachment(arg.name, arg.file, arg.type);
+    this.taskManager.addTask(this.taskQueueId, async () => {
+      if (!this.currentExecutable && this.globalHooks.currentHook) {
+        log('No current executable, test or hook - add to global hook');
+        this.globalHooks.attachment(arg.name, arg.file, arg.type);
 
-      return;
-    }
-
-    if (!exec && !this.currentExecutable) {
-      return;
-    }
-
-    if (!existsSync(arg.file)) {
-      logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
-
-      return;
-    }
-
-    try {
-      const uuid = randomUUID();
-
-      // to have it in allure-results directory
-      const fileNew = `${uuid}-attachment${extname(arg.file)}`;
-
-      if (!existsSync(this.allureResults)) {
-        mkdirSync(this.allureResults, { recursive: true });
+        return;
       }
 
-      const currExec = exec ?? this.currentExecutable;
-
-      if (currExec) {
-        copyFileSync(arg.file, `${this.allureResults}/${fileNew}`);
-        currExec.addAttachment(arg.name, arg.type, fileNew);
-        log(`added attachment: ${fileNew} ${arg.file}`);
-        this.setAttached(arg.file);
+      if (!exec && !this.currentExecutable) {
+        return;
       }
-    } catch (err) {
-      logWithPackage('error', `Could not attach ${arg.file}`);
-    }
+      const isExist = fileExists(arg.file);
+
+      if (!isExist) {
+        logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
+
+        return;
+      }
+
+      try {
+        const uuid = randomUUID();
+
+        // to have it in allure-results directory
+        const fileNew = `${uuid}-attachment${extname(arg.file)}`;
+
+        const isExistRes = fileExists(this.allureResults);
+
+        if (!isExistRes) {
+          await mkdir(this.allureResults, { recursive: true });
+        }
+
+        const currExec = exec ?? this.currentExecutable;
+
+        if (currExec) {
+          await copyFile(arg.file, `${this.allureResults}/${fileNew}`);
+          currExec.addAttachment(arg.name, arg.type, fileNew);
+          log(`added attachment: ${fileNew} ${arg.file}`);
+          this.setAttached(arg.file);
+        }
+      } catch (err) {
+        logWithPackage('error', `Could not attach ${arg.file}`);
+      }
+    });
   }
 
-  getEnvInfo(resultsFolder: string): EnvironmentInfo {
+  async getEnvInfo(resultsFolder: string): Promise<EnvironmentInfo> {
     const fileName = 'environment.properties';
     const envPropsFile = `${resultsFolder}/${fileName}`;
 
-    if (!existsSync(envPropsFile)) {
+    if (!(await fileExists(envPropsFile))) {
       return {};
     }
 
-    if (existsSync(envPropsFile)) {
+    if (await fileExists(envPropsFile)) {
       try {
-        const env = readFileSync(envPropsFile)?.toString();
+        const env = (await readFile(envPropsFile))?.toString();
         const res: EnvironmentInfo = {};
         env?.split('\n').forEach(line => {
           const keyValue = line.split(' = ');
