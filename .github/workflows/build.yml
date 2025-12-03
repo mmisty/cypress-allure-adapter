@@ -97,7 +97,7 @@ jobs:
         command: npm run test:jest:cy:hooks
 
     - name: Publish
-      if: success()
+      if: success() || failure()
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
