@@ -2,13 +2,40 @@ import { execSync } from 'child_process';
 import path, { basename } from 'path';
 import { delay } from 'jest-test-each/dist/tests/utils/utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
-import { StepResult } from 'allure-js-commons';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { Attachment, StepResult, Status } from 'allure-js-commons';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureHook, Parent } from 'allure-js-parser/types';
 import { globSync } from 'fast-glob';
 
 jest.setTimeout(360000);
+
+// Types for fullStepAttachment
+interface MappedAttachment extends Attachment {
+  name: string;
+  source: string;
+}
+
+interface MappedItem {
+  name: string;
+  status?: Status;
+  attachments: MappedAttachment[];
+  steps: StepResult[];
+}
+
+interface ParentInfo {
+  suiteName?: string;
+  befores: MappedItem[];
+  afters: MappedItem[];
+}
+
+export interface FullStepAttachmentResult {
+  name: string; // Always present in practice for test assertions
+  status?: Status;
+  attachments: Attachment[];
+  steps: StepResult[];
+  parents?: ParentInfo[];
+}
 
 // eslint-disable-next-line jest/no-export
 export const mapSteps = <T>(
@@ -188,7 +215,7 @@ export const createResTest = (
 };
 
 // eslint-disable-next-line jest/no-export
-export const sortAttachments = (res: AllureTest[]) => {
+export const sortAttachments = (res: AllureTest[]): Attachment[][] => {
   return res
     .map(t =>
       t.attachments.sort((a, b) =>
@@ -201,7 +228,10 @@ export const sortAttachments = (res: AllureTest[]) => {
 };
 
 // eslint-disable-next-line jest/no-export
-export const labelsForTest = (res: AllureTest[], filterLabels?: string[]) => {
+export const labelsForTest = (
+  res: AllureTest[],
+  filterLabels?: string[],
+): { labels: { name: string; value: string }[]; name?: string }[] => {
   return res
     .map(t => ({ labels: t.labels, name: t.name }))
     .sort((a, b) => ((a as any).name < (b as any).name ? -1 : 1))
@@ -220,7 +250,7 @@ export const fullStepAttachment = (
   res: AllureTest[],
   mapStep?: (m: StepResult) => any,
   options?: { noAddParents?: boolean },
-) => {
+): FullStepAttachmentResult[] => {
   const parents = res
     .map(x => ({
       ...x,
@@ -291,7 +321,7 @@ export const fullStepAttachment = (
     }))
     .filter(x => skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1));
 
-  return full;
+  return full as FullStepAttachmentResult[];
 };
 
 // eslint-disable-next-line jest/no-export
@@ -364,7 +394,7 @@ type Result = {
 export const createResTest2 = (
   specTexts: string[],
   envConfig?: Record<string, string | undefined>,
-  shouldBeResults?: boolean,
+  _shouldBeResults?: boolean,
 ): Result => {
   const result: {
     res:
@@ -401,7 +431,7 @@ export const createResTest2 = (
 
   const name = basename(specPaths[0], '.test.ts');
   const testname = `${name}.cy.ts`;
-  const storeResDir = `allure-results/${testname}`;
+  const storeResDir = `res/${Date.now() + Math.random() * 1000}/allure-results/${testname}`;
 
   // ability to set allureResultsWatchPath from test to undefined or to <storeResDir>
   let definedWatchPath: string | undefined = `${storeResDir}/watch`;
@@ -431,48 +461,67 @@ export const createResTest2 = (
     ...(envConfig || {}),
   };
 
-  it('create results jest', async () => {
+  afterAll(() => {
+    if (existsSync(storeResDir)) {
+      try {
+        rmSync(storeResDir, { recursive: true });
+      } catch {
+        // ignore
+      }
+    }
+    specPaths.forEach(path => {
+      if (existsSync(path)) {
+        try {
+          rmSync(path, { recursive: true });
+        } catch {
+          // ignore
+        }
+      }
+    });
+  });
+
+  // create results jest
+  beforeAll(async () => {
     jest.retryTimes(1);
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
 
-    const port = 40000 + Math.round(Math.random() * 25000);
-    let err: Error | undefined;
+    const port = Math.round(Math.random() * 65536);
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
     process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : '';
     process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
-    const checkFilesExist = retries => {
-      return new Promise((resolve, reject) => {
-        const attempt = remainingRetries => {
-          if (!specs.every(p => existsSync(p))) {
-            console.log(
-              `Not all files were written: attempt ${retries - remainingRetries + 1}`,
-            );
-
-            if (remainingRetries > 0) {
-              return delay(1000)
-                .then(() => attempt(remainingRetries - 1))
-                .catch(reject);
-            } else {
-              return reject(
-                new Error('Files are still missing after all retries'),
-              );
-            }
-          }
-          resolve(true);
-        };
-
-        attempt(retries);
-      });
-    };
+    // const checkFilesExist = retries => {
+    //   return new Promise((resolve, reject) => {
+    //     const attempt = remainingRetries => {
+    //       if (!specs.every(p => existsSync(p))) {
+    //         console.log(
+    //           `Not all files were written: attempt ${retries - remainingRetries + 1}`,
+    //         );
+    //
+    //         if (remainingRetries > 0) {
+    //           return delay(1000)
+    //             .then(() => attempt(remainingRetries - 1))
+    //             .catch(reject);
+    //         } else {
+    //           return reject(
+    //             new Error('Files are still missing after all retries'),
+    //           );
+    //         }
+    //       }
+    //       resolve(true);
+    //     };
+    //
+    //     attempt(retries);
+    //   });
+    // };
     const video = parseBoolean(envConfig?.video ?? `${true}`);
     // todo fix video
     console.log(`video:${video}`);
 
-    return cy
+    const res = await cy
       .run({
         spec: spec as string,
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
@@ -486,26 +535,19 @@ export const createResTest2 = (
         //   trashAssetsBeforeRuns: true,
         // },
       })
+
       .catch(e => {
-        err = e as Error;
-      })
-      .then(cyResult => {
-        result.res = cyResult;
-      })
-      .then(() => {
-        expect(err).toBeUndefined();
-
-        if (!specs.every(p => existsSync(p))) {
-          console.log('Not all files were written');
-
-          return delay(1000);
-        }
-      })
-      .then(() => {
-        if (shouldBeResults !== false) {
-          return checkFilesExist(10);
-        }
+        console.log('Exception when running cypress', e);
+        throw e;
       });
+
+    result.res = res;
+
+    if (!specs.every(p => existsSync(p))) {
+      console.log('Not all files were written');
+
+      return delay(1000);
+    }
   });
 
   return {

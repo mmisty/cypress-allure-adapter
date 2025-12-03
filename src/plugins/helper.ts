@@ -1,5 +1,7 @@
-import { ExecutableItem } from 'allure-js-commons/dist/esm';
-import { Stage, Status } from 'allure-js-commons';
+import { Stage, Status, StepResult } from 'allure-js-commons';
+
+// ExecutableItem is now represented by StepResult in the new API
+type ExecutableItem = StepResult;
 
 /**
  * Recursively merge the steps when a step has single child with the same name

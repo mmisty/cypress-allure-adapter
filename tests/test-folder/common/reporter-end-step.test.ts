@@ -11,13 +11,14 @@ describe('reporter - end step', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
+  const resultsPathWatch = `${resultsPath}/watch`;
   let reporter: AllureTasks;
 
   const opts: ReporterOptions = {
     allureAddVideoOnPass: false,
     allureSkipSteps: '',
     allureResults: resultsPath,
-    techAllureResults: `${resultsPath}/watch`,
+    techAllureResults: resultsPathWatch,
     videos: 'vid',
     screenshots: 'scr',
     showDuplicateWarn: false,
@@ -54,7 +55,8 @@ describe('reporter - end step', () => {
 
   const stepsAfter = async () => {
     reporter.suiteEnded({});
-    await reporter.afterSpec({ results: [] } as any);
+    await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
+    await reporter.waitAllFinished({});
   };
 
   it('should mark parent as broken when children have errors', async () => {
@@ -76,7 +78,7 @@ describe('reporter - end step', () => {
     reporter.testEnded({ result: Status.PASSED });
     await stepsAfter();
 
-    const results = parseAllure(resultsPath);
+    const results = parseAllure(resultsPathWatch, { logError: false });
 
     expect(
       mapSteps(results[0].steps, t => ({
@@ -119,7 +121,7 @@ describe('reporter - end step', () => {
 
     await stepsAfter();
 
-    const results = parseAllure(resultsPath);
+    const results = parseAllure(resultsPathWatch, { logError: false });
     expect(
       mapSteps(results[0].steps, t => ({
         name: t.name,
@@ -161,7 +163,7 @@ describe('reporter - end step', () => {
 
     await stepsAfter();
 
-    const results = parseAllure(resultsPath);
+    const results = parseAllure(resultsPathWatch, { logError: false });
     expect(
       mapSteps(results[0].steps, t => ({
         name: t.name,

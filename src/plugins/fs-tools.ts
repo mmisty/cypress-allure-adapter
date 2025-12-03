@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, rm } from 'fs';
 import { copyFile, writeFile } from 'fs/promises';
 import Debug from 'debug';
-import { Attachment } from 'allure-js-commons';
+import type { Attachment } from 'allure-js-commons';
 import { basename, dirname } from 'path';
 import { logWithPackage } from '../common';
 
@@ -26,14 +26,14 @@ export const mkdirSyncWithTry = (dir: string) => {
   }
 };
 
-export const copyFileCp = (from: string, to: string, isRemoveSource: boolean) => {
+export const copyFileCp = async (from: string, to: string, isRemoveSource: boolean) => {
   log(`copy file ${from} to ${to}`);
 
-  return copyFile(from, to)
+  await copyFile(from, to)
     .then(() => {
       log(`Copied ${from} to ${to}`);
 
-      if (isRemoveSource) {
+      if (isRemoveSource && from !== to) {
         rm(from, () => {
           // ignore
         });
@@ -44,33 +44,25 @@ export const copyFileCp = (from: string, to: string, isRemoveSource: boolean) =>
     });
 };
 
-export const copyAttachments = (
-  allTasks: any[],
-  attachments: Attachment[],
-  watchPath: string,
-  allureResultFile: string,
-) => {
+export const copyAttachments = async (attachments: Attachment[], watchPath: string, allureResultFile: string) => {
   const allureResults = dirname(allureResultFile);
 
-  const attachCopyOperations = attachments.map(attach => {
+  for (const attach of attachments) {
     const attachTo = `${watchPath}/${attach.source}`;
     const attachFrom = `${allureResults}/${attach.source}`;
 
-    return copyFileCp(attachFrom, attachTo, true);
-  });
-
-  allTasks.push(...attachCopyOperations);
+    await copyFileCp(attachFrom, attachTo, true);
+  }
 };
 
-export const copyTest = (allTasks: any[], testFile: string, watchPath: string) => {
+export const copyTest = async (testFile: string, watchPath: string) => {
   const to = `${watchPath}/${basename(testFile)}`;
 
   // do not remove for understanding how containers connected to tests
-  const testCopyOperation = [copyFileCp(testFile, to, false)];
-  allTasks.push(testCopyOperation);
+  await copyFileCp(testFile, to, false);
 };
 
-export const writeResultFile = (resultContainer: string, content: string) => {
+export const writeResultFile = async (resultContainer: string, content: string) => {
   return writeFile(resultContainer, content)
     .then(() => {
       log(`write test file done ${resultContainer} `);

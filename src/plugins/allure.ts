@@ -3,9 +3,8 @@ import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { logWithPackage } from '../common';
-import { basename, dirname } from 'path';
-import glob from 'fast-glob';
-import { copyFileCp, mkdirSyncWithTry } from './fs-tools';
+import { dirname } from 'path';
+import { TaskManager } from './task-manager';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -25,46 +24,48 @@ export type ReporterOptions = {
   isTest: boolean;
 };
 
-const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
-  if (allureResults === allureResultsWatch) {
-    log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-
-    return;
-  }
-
-  const results = glob.sync(`${allureResults}/*.*`);
-
-  mkdirSyncWithTry(allureResultsWatch);
-
-  log(`allureResults: ${allureResults}`);
-  log(`allureResultsWatch: ${allureResultsWatch}`);
-
-  const resultCopyTasks = results.map(res => {
-    const to = `${allureResultsWatch}/${basename(res)}`;
-
-    return copyFileCp(res, to, true);
-  });
-
-  await Promise.all(resultCopyTasks)
-    .then(() => {
-      log('All results copied to watch folder');
-    })
-    .catch(err => {
-      log('Some files failed to copy to watch folder:', err);
-    });
-};
+// const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
+//   if (allureResults === allureResultsWatch) {
+//     log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
+//
+//     return;
+//   }
+//
+//   const results = glob.sync(`${allureResults}/*.*`);
+//
+//   mkdirSyncWithTry(allureResultsWatch);
+//
+//   log(`allureResults: ${allureResults}`);
+//   log(`allureResultsWatch: ${allureResultsWatch}`);
+//
+//   const resultCopyTasks = results.map(res => {
+//     const to = `${allureResultsWatch}/${basename(res)}`;
+//
+//     return copyFileCp(res, to, true);
+//   });
+//
+//   await Promise.all(resultCopyTasks)
+//     .then(() => {
+//       log('All results copied to watch folder');
+//     })
+//     .catch(err => {
+//       log('Some files failed to copy to watch folder:', err);
+//     });
+// };
 
 export const allureTasks = (opts: ReporterOptions): AllureTasks => {
   // todo config
-  let allureReporter = new AllureReporter(opts);
+  const taskManager = new TaskManager();
+  let allureReporter = new AllureReporter(opts, taskManager);
   const allureResults = opts.allureResults;
-  const allureResultsWatch = opts.techAllureResults;
+  // const allureResultsWatch = opts.techAllureResults;
 
   return {
+    taskManager,
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter(opts, taskManager);
       allureReporter.specStarted(arg);
       log('specStarted');
     },
@@ -98,16 +99,20 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
     mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
       log(`mergePrevStep ${JSON.stringify(arg)}`);
-      const steps = allureReporter.currentTest?.wrappedItem.steps ?? [];
+      const steps = allureReporter.currentTest?.result.steps ?? [];
       const last = steps[steps?.length - 1];
 
-      if (arg.name === last.name) {
+      if (last && arg.name === last.name) {
         steps.splice(steps?.length - 1, 1);
 
         allureReporter.startStep({ name: arg.name, date: last.start });
-        last.steps.forEach(s => {
-          allureReporter.currentStep?.addStep(s);
-        });
+
+        // Add child steps from the merged step
+        if (allureReporter.currentStep) {
+          last.steps.forEach((s: { name?: string }) => {
+            allureReporter.currentStep!.result.steps.push(s as any);
+          });
+        }
       } else {
         allureReporter.startStep({ name: arg.name, date: Date.now() });
       }
@@ -150,7 +155,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         if (!existsSync(allureResults)) {
           mkdirSync(allureResults);
         }
-        allureReporter.allureRuntime.writer.writeEnvironmentInfo(arg.info);
+
+        // Write in old format (key = value) for backwards compatibility
+        const content = Object.entries(arg.info)
+          .filter(([key, value]) => key && value !== undefined)
+          .map(([key, value]) => `${key} = ${value}`)
+          .join('\n');
+        writeFileSync(`${allureResults}/environment.properties`, content);
       } catch (err) {
         logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
       }
@@ -169,7 +180,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       }
       const newInfo = { ...existing, ...additionalInfo };
 
-      allureReporter.allureRuntime.writer.writeEnvironmentInfo(newInfo);
+      // Write in old format (key = value) for backwards compatibility
+      if (!existsSync(allureResults)) {
+        mkdirSync(allureResults);
+      }
+
+      const content = Object.entries(newInfo)
+        .filter(([key, value]) => key && value !== undefined)
+        .map(([key, value]) => `${key} = ${value}`)
+        .join('\n');
+      writeFileSync(`${allureResults}/environment.properties`, content);
     },
 
     writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
@@ -221,7 +241,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
-      allureReporter = new AllureReporter(opts);
+      allureReporter = new AllureReporter(opts, taskManager);
 
       try {
         if (existsSync(allureResults)) {
@@ -237,8 +257,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       if (allureReporter.currentTest) {
         allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
-        allureReporter.currentTest.status = arg.result;
-        allureReporter.currentTest.detailsMessage = arg.details?.message;
+        allureReporter.currentTest.result.status = arg.result;
+
+        if (arg.details?.message) {
+          allureReporter.currentTest.result.statusDetails.message = arg.details.message;
+        }
 
         if (allureReporter.currentTestAll) {
           allureReporter.currentTestAll.mochaId = arg.id;
@@ -399,9 +422,17 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         );
       }
 
-      await allureReporter.waitAllTasksToFinish();
-      await copyResultsToWatchFolder(allureResults, allureResultsWatch);
+      // this should be done after video processed
+      allureReporter.afterSpecMoveToWatch();
+      taskManager.flushAllTasksForQueue(arg.results.spec.relative).then(() => {
+        logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
+      });
+
       log('afterSpec');
+    },
+
+    async waitAllFinished(_arg: AllureTaskArgs<'waitAllFinished'>) {
+      await taskManager.flushAllTasks();
     },
   };
 };

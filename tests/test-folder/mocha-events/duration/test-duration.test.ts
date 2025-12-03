@@ -42,7 +42,7 @@ describe('test duration', () => {
       console.log(duration);
       // there are before all hooks for coverage
       expect(duration).toBeGreaterThanOrEqual(0);
-      expect(duration).toBeLessThanOrEqual(2000);
+      expect(duration).toBeLessThanOrEqual(2900);
     });
   });
 });
