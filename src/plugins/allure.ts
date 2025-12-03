@@ -99,16 +99,20 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
     mergeStepMaybe: (arg: AllureTaskArgs<'mergeStepMaybe'>) => {
       log(`mergePrevStep ${JSON.stringify(arg)}`);
-      const steps = allureReporter.currentTest?.wrappedItem.steps ?? [];
+      const steps = allureReporter.currentTest?.result.steps ?? [];
       const last = steps[steps?.length - 1];
 
-      if (arg.name === last.name) {
+      if (last && arg.name === last.name) {
         steps.splice(steps?.length - 1, 1);
 
         allureReporter.startStep({ name: arg.name, date: last.start });
-        last.steps.forEach(s => {
-          allureReporter.currentStep?.addStep(s);
-        });
+
+        // Add child steps from the merged step
+        if (allureReporter.currentStep) {
+          last.steps.forEach((s: { name?: string }) => {
+            allureReporter.currentStep!.result.steps.push(s as any);
+          });
+        }
       } else {
         allureReporter.startStep({ name: arg.name, date: Date.now() });
       }
@@ -151,7 +155,13 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         if (!existsSync(allureResults)) {
           mkdirSync(allureResults);
         }
-        allureReporter.allureRuntime.writer.writeEnvironmentInfo(arg.info);
+
+        // Write in old format (key = value) for backwards compatibility
+        const content = Object.entries(arg.info)
+          .filter(([key, value]) => key && value !== undefined)
+          .map(([key, value]) => `${key} = ${value}`)
+          .join('\n');
+        writeFileSync(`${allureResults}/environment.properties`, content);
       } catch (err) {
         logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
       }
@@ -170,7 +180,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       }
       const newInfo = { ...existing, ...additionalInfo };
 
-      allureReporter.allureRuntime.writer.writeEnvironmentInfo(newInfo);
+      // Write in old format (key = value) for backwards compatibility
+      if (!existsSync(allureResults)) {
+        mkdirSync(allureResults);
+      }
+
+      const content = Object.entries(newInfo)
+        .filter(([key, value]) => key && value !== undefined)
+        .map(([key, value]) => `${key} = ${value}`)
+        .join('\n');
+      writeFileSync(`${allureResults}/environment.properties`, content);
     },
 
     writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
@@ -238,8 +257,11 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
 
       if (allureReporter.currentTest) {
         allureReporter.endAllSteps({ status: arg.result as Status, details: arg.details });
-        allureReporter.currentTest.status = arg.result;
-        allureReporter.currentTest.detailsMessage = arg.details?.message;
+        allureReporter.currentTest.result.status = arg.result;
+
+        if (arg.details?.message) {
+          allureReporter.currentTest.result.statusDetails.message = arg.details.message;
+        }
 
         if (allureReporter.currentTestAll) {
           allureReporter.currentTestAll.mochaId = arg.id;

@@ -1,4 +1,4 @@
-import { StatusDetails } from 'allure-js-commons';
+import type { StatusDetails } from 'allure-js-commons';
 import { AllureReporter } from './allure-reporter-plugin';
 import Debug from 'debug';
 import { Status, StatusType, UNKNOWN } from './allure-types';

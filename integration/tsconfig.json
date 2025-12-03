@@ -13,6 +13,6 @@
       "@src/*": ["./*"]
     }
   },
-  "include": ["./"],
+  "include": ["./", "../src/plugins/allure-sdk-reporter.d.ts"],
   "exclude": ["./e2e/temp"]
 }
