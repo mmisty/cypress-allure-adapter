@@ -1,6 +1,5 @@
 import { expect } from 'expect';
 import {
-  getResults,
   getTest,
   mapAttachments,
   outputDebugGenerate,
@@ -15,9 +14,6 @@ describe('nested suites with failed hook', () => {
   outputDebugGenerate(__dirname);
 
   beforeAll(async () => {
-    // results = getResults(__dirname, {
-    //   env: { allureAddVideoOnPass: 'true' },
-    // });
     results = await prepareResults(__dirname, {
       env: { allureAddVideoOnPass: 'true' },
     });
@@ -82,7 +78,40 @@ describe('nested suites with failed hook', () => {
     });
   });
 
-  it('test should have no attachments', async () => {
+  describe('labels', () => {
+    it('first test should have proper label - only parentSuite', async () => {
+      expect(
+        test0?.labels.filter(x => !['package', 'path'].includes(x.name)),
+      ).toEqual([
+        {
+          name: 'parentSuite',
+          value: 'nested-suite-before-fail',
+        },
+      ]);
+    });
+
+    it('child test should have proper labels - only parentSuite', async () => {
+      expect(
+        test1?.labels.filter(x => !['package', 'path'].includes(x.name)),
+      ).toEqual([
+        { name: 'parentSuite', value: 'nested-suite-before-fail' },
+        { name: 'suite', value: 'hooks test - child' },
+        { name: 'subSuite', value: 'hooks test - sub child' },
+      ]);
+    });
+
+    it('another child test should have proper labels - only parentSuite', async () => {
+      expect(
+        test2?.labels.filter(x => !['package', 'path'].includes(x.name)),
+      ).toEqual([
+        { name: 'parentSuite', value: 'nested-suite-before-fail' },
+        { name: 'suite', value: 'hooks test - child' },
+        { name: 'subSuite', value: 'hooks test - sub child' },
+      ]);
+    });
+  });
+
+  it('test should have no attachments for test', async () => {
     expect(test0?.attachments).toEqual([]);
     expect(test1?.attachments).toEqual([]);
     expect(test2?.attachments).toEqual([]);

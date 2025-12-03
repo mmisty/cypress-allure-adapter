@@ -72,6 +72,7 @@ export const prepareResults = async (
   options?: {
     allowCyFail?: boolean;
     env?: Record<string, any>;
+    onlyGetResults?: boolean;
   },
 ): Promise<PreparedResults> => {
   // const allureResults = `${dir}/allure-results`;
@@ -83,6 +84,18 @@ export const prepareResults = async (
   // }
 
   const allowCyFail = options?.allowCyFail ?? false;
+  const onlyGetResults = options?.onlyGetResults ?? false;
+
+  if (onlyGetResults) {
+    const results = readResults(dir);
+
+    if (results.watchResults.length === 0 && !allowCyFail) {
+      throw new Error('No allure results found');
+    }
+
+    return results;
+  }
+
   const env = options?.env ?? {};
   const specs = globSync(`${dir}/cypress/*.cy.ts`);
 
