@@ -110,20 +110,17 @@ describe('nested suites with failed hook', () => {
     // this fails - global hooks are not attached to nested tests, issue 119
     it('should have global hook for child test', async () => {
       const suite = test1?.parent;
-      // actual:
-      expect(suite?.befores?.length).toEqual(0);
+      expect(suite?.befores?.length).toEqual(1);
+      expect(suite?.befores?.[0]?.name).toEqual(
+        '"before all" hook: global before one',
+      );
       expect(suite?.afters?.length).toEqual(1);
       expect(suite?.afters?.[0]?.name).toEqual('video');
-      // expected:
-      // expect(suite?.befores?.length).toEqual(1);
-      // expect(suite?.befores?.[0]?.name).toEqual(
-      //   '"before all" hook: global before one',
-      // );
+      // expected
       // expect(suite?.afters?.length).toEqual(2);
       // expect(suite?.afters?.[0]?.name).toEqual(
       //   '"after all" hook: global after one',
       // );
-      // expect(suite?.afters?.[1]?.name).toEqual('video');
     });
   });
 
@@ -157,7 +154,12 @@ describe('nested suites with failed hook', () => {
           name: x.name,
           attachments: mapAttachments(x.attachments),
         })),
-      ).toEqual([]);
+      ).toEqual([
+        {
+          attachments: [],
+          name: '"before all" hook: global before one',
+        },
+      ]);
       expect(excludeCovAfters?.[0].attachments[0].name).toEqual(
         'spec.cy.ts.mp4',
       );

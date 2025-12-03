@@ -17,11 +17,11 @@ export type PreparedResults = {
 
 export const outputDebugGenerate = dir => {
   console.log(
-    `cd "${dir}"&&allure generate "allure-results/watch"&&allure open`,
+    `cd "${dir}"&&allure generate --clean "allure-results/watch"&&allure open`,
   );
   writeFileSync(
     `${dir}/debug-generate.sh`,
-    `#!/bin/bash\ncd "${dir}"&&allure generate "allure-results/watch"&&allure open`,
+    `#!/bin/bash\ncd "${dir}"&&allure generate --clean "allure-results/watch"&&allure open`,
   );
   execSync(`chmod +x ${dir}/debug-generate.sh`);
 };

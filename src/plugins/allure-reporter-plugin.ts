@@ -102,6 +102,7 @@ interface GroupInfo {
   name: string;
   scopeUuid: string;
   childUuids: string[]; // Track test UUIDs AND nested suite UUIDs for this group
+  nestedLevel: number; // Track the nesting level for hook inheritance
 }
 
 interface TestInfo {
@@ -276,6 +277,7 @@ export class AllureReporter {
       name: title,
       scopeUuid,
       childUuids: [],
+      nestedLevel: this.groups.length + 1, // 1-based nesting level
     });
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
@@ -882,9 +884,25 @@ export class AllureReporter {
 
       // Collect befores and afters from hooks that belong to this scope
       const scopeUuid = this.currentGroup.scopeUuid;
+      const nestedLevel = this.currentGroup.nestedLevel;
       const scopeHooks = this.allHooks.filter(h => h.scopeUuid === scopeUuid);
 
-      const befores: FixtureResult[] = scopeHooks.filter(h => h.name.includes('"before all" hook')).map(h => h.result);
+      // Include inherited before hooks from parent scopes (nested < currentLevel)
+      // These are global/parent before hooks that should apply to nested suites
+      const inheritedBeforeHooks = this.allHooks.filter(
+        h => h.nested < nestedLevel && h.name.includes('"before all" hook'),
+      );
+
+      const befores: FixtureResult[] = [
+        // Inherited before hooks first (from parent scopes)
+        ...inheritedBeforeHooks.map(h => ({
+          ...h.result,
+          // Clone with empty steps to avoid duplication (steps shown in parent container)
+          steps: [],
+        })),
+        // Then this scope's own before hooks
+        ...scopeHooks.filter(h => h.name.includes('"before all" hook')).map(h => h.result),
+      ];
 
       const afters: FixtureResult[] = scopeHooks.filter(h => !h.name.includes('"before all" hook')).map(h => h.result);
 
