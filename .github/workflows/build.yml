@@ -54,12 +54,19 @@ jobs:
         max_attempts: 2
         command: npm run test:jest:cy:passes
 
-    - name: Test Cy Videos
+    - name: Test Cy V2 Videos
       uses: nick-fields/retry@v2
       with:
         timeout_minutes: 3
         max_attempts: 2
-        command: npm run test:jest:cy:v2
+        command: npm run test:jest:cy:v2attachments
+
+    - name: Test Cy V2 Suites
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 3
+        max_attempts: 2
+        command: npm run test:jest:cy:v2suites
 
     - name: Test Cy failures
       uses: nick-fields/retry@v2
@@ -71,7 +78,7 @@ jobs:
     - name: Test Cy requests
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 6
         max_attempts: 2
         command: npm run test:jest:cy:requests
 
@@ -90,7 +97,7 @@ jobs:
         command: npm run test:jest:cy:hooks
 
     - name: Publish
-      if: success()
+      if: success() || failure()
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |

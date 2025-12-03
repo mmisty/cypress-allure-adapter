@@ -8,9 +8,9 @@
       "@src": ["./index.ts"],
       "@src/*": ["./*"],
 
-      "@test-utils": ["../tests/cy-helper/utils.ts"],
+      "@test-utils": ["../tests/cy-helper/utils.ts"]
     }
   },
-  "include": ["./", "../tests", "../jest.setup.ts"],
+  "include": ["./", "../tests", "../jest.setup.ts", "../src/plugins/allure-sdk-reporter.d.ts"]
 }
 
