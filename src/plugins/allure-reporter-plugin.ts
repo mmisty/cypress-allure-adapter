@@ -885,12 +885,16 @@ export class AllureReporter {
       // Collect befores and afters from hooks that belong to this scope
       const scopeUuid = this.currentGroup.scopeUuid;
       const nestedLevel = this.currentGroup.nestedLevel;
-      const scopeHooks = this.allHooks.filter(h => h.scopeUuid === scopeUuid);
+
+      // Helper to check if hook should be skipped based on allureSkipSteps
+      const shouldIncludeHook = (hookName: string) => this.allureSkipSteps.every(t => !t.test(hookName));
+
+      const scopeHooks = this.allHooks.filter(h => h.scopeUuid === scopeUuid && shouldIncludeHook(h.name));
 
       // Include inherited before hooks from parent scopes (nested < currentLevel)
       // These are global/parent before hooks that should apply to nested suites
       const inheritedBeforeHooks = this.allHooks.filter(
-        h => h.nested < nestedLevel && h.name.includes('"before all" hook'),
+        h => h.nested < nestedLevel && h.name.includes('"before all" hook') && shouldIncludeHook(h.name),
       );
 
       const befores: FixtureResult[] = [
@@ -922,9 +926,12 @@ export class AllureReporter {
 
   endAllGroups() {
     log('endAllGroups');
+    // Helper to check if hook should be skipped based on allureSkipSteps
+    const shouldIncludeHook = (hookName: string) => this.allureSkipSteps.every(t => !t.test(hookName));
+
     // Write all remaining groups as containers
     this.groups.forEach(g => {
-      const scopeHooks = this.allHooks.filter(h => h.scopeUuid === g.scopeUuid);
+      const scopeHooks = this.allHooks.filter(h => h.scopeUuid === g.scopeUuid && shouldIncludeHook(h.name));
 
       const befores: FixtureResult[] = scopeHooks.filter(h => h.name.includes('"before all" hook')).map(h => h.result);
 
