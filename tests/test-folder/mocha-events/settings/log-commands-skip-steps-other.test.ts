@@ -1,5 +1,6 @@
 import { createResTest2, mapSteps } from '@test-utils';
 import { AllureTest, getParentsArray, parseAllure } from 'allure-js-parser';
+import { excludeCoverage } from '../../../cy-helper/utils-v2';
 
 describe('should skip steps inside hooks / test', () => {
   const res = createResTest2(
@@ -171,7 +172,9 @@ describe('should skip steps inside hooks / test', () => {
       const tests = resAllure.filter(t => t.name === 'test1');
       expect(tests.length).toEqual(1);
 
-      const befores = getParentsArray(tests[0]).flatMap(t =>
+      const suites = getParentsArray(tests[0]).map(x => excludeCoverage(x));
+
+      const befores = suites.flatMap(t =>
         t.befores?.map(x => ({
           name: (x as any).name,
           steps: mapSteps(x.steps, y => ({
@@ -181,7 +184,7 @@ describe('should skip steps inside hooks / test', () => {
         })),
       );
 
-      const afters = getParentsArray(tests[0]).flatMap(t =>
+      const afters = suites.flatMap(t =>
         t.afters?.map(x => ({
           name: (x as any).name,
           steps: mapSteps(x.steps, y => ({

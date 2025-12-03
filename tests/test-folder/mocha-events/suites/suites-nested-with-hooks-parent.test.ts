@@ -100,7 +100,7 @@ describe('hello suite', () => {
                   attachments: [
                     {
                       name: 'out parent',
-                      source: 'source.txt',
+                      source: 'source.plain',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
                     },
@@ -112,7 +112,7 @@ describe('hello suite', () => {
                   attachments: [
                     {
                       name: 'out child',
-                      source: 'source.txt',
+                      source: 'source.plain',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
                     },
@@ -135,7 +135,7 @@ describe('hello suite', () => {
                   attachments: [
                     {
                       name: 'out parent',
-                      source: 'source.txt',
+                      source: 'source.plain',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
                     },
@@ -147,7 +147,7 @@ describe('hello suite', () => {
                   attachments: [
                     {
                       name: 'out child',
-                      source: 'source.txt',
+                      source: 'source.plain',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
                     },
@@ -170,7 +170,7 @@ describe('hello suite', () => {
                   attachments: [
                     {
                       name: 'out parent',
-                      source: 'source.txt',
+                      source: 'source.plain',
                       sourceContentMoreThanZero: true,
                       type: 'text/plain',
                     },

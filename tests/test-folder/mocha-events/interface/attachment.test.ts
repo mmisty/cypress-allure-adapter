@@ -1,6 +1,6 @@
 import { createResTest2, fixResult, mapSteps } from '@test-utils';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { extname } from '../../../../lib/common';
+import { extname } from '@src/common';
 
 describe('should have attachments by using cy.allure() interface', () => {
   const res = createResTest2(
@@ -70,7 +70,7 @@ describe('should have attachments by using cy.allure() interface', () => {
           attach: [
             {
               name: 'Letter1.json',
-              source: 'source.txt',
+              source: 'source.plain',
               type: 'text/plain',
             },
           ],
@@ -122,7 +122,7 @@ describe('should have attachments by using cy.allure() interface', () => {
         [
           {
             name: 'Letter1.json',
-            source: 'source.txt',
+            source: 'source.plain',
             type: 'text/plain',
           },
         ],
@@ -149,7 +149,7 @@ describe('should have attachments by using cy.allure() interface', () => {
         [
           {
             name: 'Letter1.json',
-            source: 'source.txt',
+            source: 'source.plain',
             type: 'text/plain',
           },
         ],
