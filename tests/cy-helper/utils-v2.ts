@@ -6,6 +6,7 @@ import { writeFileSync } from 'fs';
 import { StepResult } from 'allure-js-commons';
 import { execSync } from 'child_process';
 import path from 'path';
+import { Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(360000);
 
@@ -21,7 +22,7 @@ export const outputDebugGenerate = dir => {
   );
   writeFileSync(
     `${dir}/debug-generate.sh`,
-    `#!/bin/bash\ncd "${dir}"&&allure generate --clean "allure-results/watch"&&allure open`,
+    `#!/bin/bash\ncd "${dir}"&&allure generate --clean "allure-results/watch"&&allure open\n`,
   );
   execSync(`chmod +x ${dir}/debug-generate.sh`);
 };
@@ -36,12 +37,12 @@ export const readResults = (dir: string): PreparedResults => {
   const watchResults = parseAllure(`${dir}/allure-results/watch`, {
     failOnError: false,
     logError: false,
-  });
+  }).map(x => ({ ...x, parent: excludeCoverage(x.parent) }));
 
   const results = parseAllure(`${dir}/allure-results`, {
     failOnError: false,
     logError: false,
-  });
+  }).map(x => ({ ...x, parent: excludeCoverage(x.parent) }));
 
   return {
     watchResults,
@@ -191,6 +192,7 @@ export const mapAttachments = (itemaAttachments: any[]) => {
     }))
     .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1));
 };
+
 // export const stepsAndAttachments = (test: AllureTest | undefined) => {
 //   return {
 //     attachments:
@@ -208,3 +210,23 @@ export const mapAttachments = (itemaAttachments: any[]) => {
 //       ) ?? [],
 //   };
 // };
+
+export const excludeCoverage = <T extends Parent | undefined>(suite: T) => {
+  if (suite?.befores) {
+    suite.befores = suite.befores.filter(
+      x =>
+        x.name?.toLowerCase()?.indexOf('coverage') === -1 &&
+        !x.steps.some(s => s.name?.toLowerCase()?.indexOf('coverage') !== -1),
+    );
+  }
+
+  if (suite?.afters) {
+    suite.afters = suite.afters.filter(
+      x =>
+        x.name?.toLowerCase()?.indexOf('coverage') === -1 &&
+        !x.steps.some(s => s.name?.toLowerCase()?.indexOf('coverage') !== -1),
+    );
+  }
+
+  return suite;
+};

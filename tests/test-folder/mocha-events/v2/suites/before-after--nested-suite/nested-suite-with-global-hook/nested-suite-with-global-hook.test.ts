@@ -16,7 +16,7 @@ describe('nested suites with failed hook', () => {
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
       env: { allureAddVideoOnPass: 'true' },
-      // onlyGetResults: true,
+      onlyGetResults: true,
     });
   });
   let test1: AllureTest | undefined;
@@ -128,10 +128,9 @@ describe('nested suites with failed hook', () => {
 
     it('should have global before hook for child test', async () => {
       const suite = test1?.parent;
-      expect(suite?.befores?.length).toEqual(1);
-      expect(suite?.befores?.[0]?.name).toEqual(
+      expect(suite?.befores?.map(x => x.name)).toEqual([
         '"before all" hook: global before one',
-      );
+      ]);
     });
 
     // issue 152 - Global hook doesn't have steps for tests in nested suites
