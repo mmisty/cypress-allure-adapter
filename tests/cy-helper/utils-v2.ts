@@ -224,6 +224,7 @@ export const excludeCoverage = <T extends Parent | undefined>(suite: T) => {
     suite.afters = suite.afters.filter(
       x =>
         x.name?.toLowerCase()?.indexOf('coverage') === -1 &&
+        x.name?.toLowerCase()?.indexOf('generatereport') === -1 &&
         !x.steps.some(s => s.name?.toLowerCase()?.indexOf('coverage') !== -1),
     );
   }
