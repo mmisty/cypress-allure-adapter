@@ -894,12 +894,8 @@ export class AllureReporter {
       );
 
       const befores: FixtureResult[] = [
-        // Inherited before hooks first (from parent scopes)
-        ...inheritedBeforeHooks.map(h => ({
-          ...h.result,
-          // Clone with empty steps to avoid duplication (steps shown in parent container)
-          steps: [],
-        })),
+        // Inherited before hooks first (from parent scopes) - include steps
+        ...inheritedBeforeHooks.map(h => h.result),
         // Then this scope's own before hooks
         ...scopeHooks.filter(h => h.name.includes('"before all" hook')).map(h => h.result),
       ];
