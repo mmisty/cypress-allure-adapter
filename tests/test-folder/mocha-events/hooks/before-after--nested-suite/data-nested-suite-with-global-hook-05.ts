@@ -242,15 +242,15 @@ const data: TestData = {
               {
                 name: '"before all" hook: global before one',
                 attachments: [],
-                steps: [],
-                // todo should be, issue #152
-                //   {
-                //     attachments: [],
-                //     name: 'log: hook pass',
-                //     status: 'passed',
-                //     steps: [],
-                //   },
-                // ],
+                // was issue #152, todo this check was moved
+                steps: [
+                  {
+                    attachments: [],
+                    name: 'log: hook pass',
+                    status: 'passed',
+                    steps: [],
+                  },
+                ],
               },
             ],
             afters: [
