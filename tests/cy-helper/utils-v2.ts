@@ -5,6 +5,7 @@ import { AllureTest, parseAllure } from 'allure-js-parser';
 import { writeFileSync } from 'fs';
 import { StepResult } from 'allure-js-commons';
 import { execSync } from 'child_process';
+import path from 'path';
 
 jest.setTimeout(360000);
 
@@ -47,6 +48,23 @@ export const readResults = (dir: string): PreparedResults => {
     results,
     watchDir,
   };
+};
+
+export const getResults = (
+  dir: string,
+  options?: {
+    allowCyFail?: boolean;
+    env?: Record<string, any>;
+  },
+) => {
+  const allowCyFail = options?.allowCyFail ?? false;
+  const results = readResults(dir);
+
+  if (results.watchResults.length === 0 && !allowCyFail) {
+    throw new Error('No allure results found');
+  }
+
+  return results;
 };
 
 export const prepareResults = async (
@@ -147,6 +165,19 @@ export const mapSteps = <T>(
     });
 };
 
+const fixAttachName = (spec: string) => {
+  return spec.replace(/\d{5,}/g, 'number').replace(/_\d_/, '_0_');
+};
+
+export const mapAttachments = (itemaAttachments: any[]) => {
+  return itemaAttachments
+    .map(t => ({
+      ...t,
+      name: fixAttachName(t.name),
+      source: `source${path.extname(t.source)}`,
+    }))
+    .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1));
+};
 // export const stepsAndAttachments = (test: AllureTest | undefined) => {
 //   return {
 //     attachments:

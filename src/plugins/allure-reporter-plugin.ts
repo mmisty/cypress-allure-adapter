@@ -101,7 +101,7 @@ interface GroupInfo {
   uuid: string;
   name: string;
   scopeUuid: string;
-  testUuids: string[]; // Track test UUIDs for this group
+  childUuids: string[]; // Track test UUIDs AND nested suite UUIDs for this group
 }
 
 interface TestInfo {
@@ -265,11 +265,17 @@ export class AllureReporter {
     const scopeUuid = this.allureRuntime.startScope();
     const groupUuid = randomUUID();
 
+    // Add this new group's UUID to parent group's children (for nested suite linking)
+    if (this.currentGroup) {
+      this.currentGroup.childUuids.push(groupUuid);
+      log(`Added nested suite ${groupUuid} (${title}) to parent ${this.currentGroup.name}`);
+    }
+
     this.groups.push({
       uuid: groupUuid,
       name: title,
       scopeUuid,
-      testUuids: [],
+      childUuids: [],
     });
     log(`SUITES: ${JSON.stringify(this.groups.map(t => t.name))}`);
 
@@ -886,7 +892,7 @@ export class AllureReporter {
       const container: TestResultContainer = {
         uuid: this.currentGroup.uuid,
         name: this.currentGroup.name,
-        children: [...new Set(this.currentGroup.testUuids)],
+        children: [...new Set(this.currentGroup.childUuids)],
         befores,
         afters,
       };
@@ -913,7 +919,7 @@ export class AllureReporter {
       const container: TestResultContainer = {
         uuid: g.uuid,
         name: g.name,
-        children: [...new Set(g.testUuids)],
+        children: [...new Set(g.childUuids)],
         befores,
         afters,
       };
@@ -1071,10 +1077,12 @@ export class AllureReporter {
     const scopeUuids = this.groups.map(g => g.scopeUuid);
     const testUuid = this.allureRuntime.startTest(testResult, scopeUuids);
 
-    // Track test UUID in all current groups for container writing
-    this.groups.forEach(g => {
-      g.testUuids.push(testUuid);
-    });
+    // Track test UUID only in the immediate parent group (currentGroup)
+    // The nested suite chain is maintained by child suite UUIDs in parent's children
+    if (this.currentGroup) {
+      this.currentGroup.childUuids.push(testUuid);
+      log(`Added test ${testUuid} to group ${this.currentGroup.name}`);
+    }
 
     const testInfo: TestInfo = {
       uuid: testUuid,
