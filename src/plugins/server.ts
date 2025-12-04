@@ -82,6 +82,90 @@ function retrieveRandomPortNumber(): number {
   return port;
 }
 
+/**
+ * Message queue to ensure messages are processed in order
+ */
+class MessageProcessingQueue {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private queue: Array<{ data: RawData; resolve: () => void }> = [];
+  private isProcessing = false;
+  private tasks: AllureTasks;
+  private sockserver: WebSocketServer;
+
+  constructor(tasks: AllureTasks, sockserver: WebSocketServer) {
+    this.tasks = tasks;
+    this.sockserver = sockserver;
+  }
+
+  enqueue(data: RawData): Promise<void> {
+    return new Promise(resolve => {
+      this.queue.push({ data, resolve });
+      this.processNext();
+    });
+  }
+
+  private async processNext(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+    const item = this.queue.shift();
+
+    if (!item) {
+      this.isProcessing = false;
+
+      return;
+    }
+
+    try {
+      await this.processMessage(item.data);
+    } finally {
+      item.resolve();
+      this.isProcessing = false;
+
+      // Process next item in queue using setImmediate to avoid stack overflow
+      // and ensure proper event loop behavior
+      if (this.queue.length > 0) {
+        setImmediate(() => this.processNext());
+      }
+    }
+  }
+
+  private async processMessage(data: RawData): Promise<void> {
+    messageGot('message received');
+    messageGot(data);
+
+    testMessages.push(`${data}`);
+
+    const parseData = (rawData: RawData) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return JSON.parse(rawData.toString()) as any;
+      } catch (e) {
+        return {};
+      }
+    };
+    const requestData = parseData(data);
+    const payload = requestData.data;
+
+    if (requestData.id) {
+      const result = await executeTask(this.tasks, payload);
+
+      this.sockserver.clients.forEach(client => {
+        log(`sending back: ${JSON.stringify(requestData)}`);
+        client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
+      });
+    } else {
+      await executeTask(this.tasks, payload);
+      this.sockserver.clients.forEach(client => {
+        log(`sending back: ${JSON.stringify(requestData)}`);
+        client.send(JSON.stringify({ payload, status: 'done' }));
+      });
+    }
+  }
+}
+
 const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks) => {
   if (!sockserver) {
     log('Could not start reporting server');
@@ -92,42 +176,16 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
   sockserver.on('connection', ws => {
     log('New client connected!');
     ws.send('connection established');
+
+    const messageQueue = new MessageProcessingQueue(tasks, sockserver);
+
     ws.on('close', () => {
       log('Client has disconnected!');
     });
 
     ws.on('message', data => {
-      messageGot('message received');
-      messageGot(data);
-
-      testMessages.push(`${data}`);
-
-      const parseData = (data: RawData) => {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return JSON.parse(data.toString()) as any;
-        } catch (e) {
-          // console.log((e as Error).message);
-
-          return {};
-        }
-      };
-      const requestData = parseData(data);
-      const payload = requestData.data;
-
-      if (requestData.id) {
-        const result = executeTask(tasks, payload);
-
-        sockserver.clients.forEach(client => {
-          log(`sending back: ${JSON.stringify(requestData)}`);
-          client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
-        });
-      } else {
-        sockserver.clients.forEach(client => {
-          log(`sending back: ${JSON.stringify(requestData)}`);
-          client.send(JSON.stringify({ payload, status: 'done' }));
-        });
-      }
+      // Enqueue message for sequential processing
+      messageQueue.enqueue(data);
     });
 
     ws.onerror = function () {
@@ -166,7 +224,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boolean => {
+const executeTask = async (tasks: AllureTasks, data: { task?: any; arg?: any }): Promise<boolean> => {
   if (!data || !data.task) {
     log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
 
@@ -177,7 +235,7 @@ const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boole
     if (Object.keys(tasks).indexOf(data.task) !== -1) {
       const task = data.task as RequestTask; // todo check
       log(task);
-      tasks[task](data.arg);
+      await tasks[task](data.arg);
 
       return true;
     } else {

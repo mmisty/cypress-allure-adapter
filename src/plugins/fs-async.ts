@@ -21,6 +21,7 @@ export const mkdirAsync = async (dir: string, options: { recursive?: boolean } =
   for (let i = 0; i < 5; i++) {
     try {
       await mkdir(dir, { recursive: options.recursive ?? true });
+
       return;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
@@ -47,6 +48,7 @@ export const readFileAsync = async (filePath: string): Promise<Buffer> => {
   try {
     const content = await readFile(filePath);
     log(`Read file: ${filePath}`);
+
     return content;
   } catch (err) {
     logWithPackage('error', `Failed to read file ${filePath}: ${(err as Error).message}`);
@@ -54,11 +56,7 @@ export const readFileAsync = async (filePath: string): Promise<Buffer> => {
   }
 };
 
-export const copyFileAsync = async (
-  from: string,
-  to: string,
-  removeSource = false,
-): Promise<void> => {
+export const copyFileAsync = async (from: string, to: string, removeSource = false): Promise<void> => {
   log(`Copy file ${from} to ${to}`);
 
   try {
@@ -91,6 +89,7 @@ export const removeFileAsync = async (filePath: string): Promise<void> => {
 export const fileExistsAsync = async (filePath: string): Promise<boolean> => {
   try {
     await stat(filePath);
+
     return true;
   } catch {
     return false;
@@ -99,4 +98,3 @@ export const fileExistsAsync = async (filePath: string): Promise<boolean> => {
 
 // Re-export existsSync for cases where sync check is acceptable (before async operations begin)
 export { existsSync };
-

@@ -30,9 +30,7 @@ export type FsOperation =
   | { type: 'exists'; path: string }
   | { type: 'batch'; operations: FsOperation[] };
 
-export type FsOperationResult =
-  | { success: true; data?: unknown }
-  | { success: false; error: string };
+export type FsOperationResult = { success: true; data?: unknown } | { success: false; error: string };
 
 /**
  * Queue for filesystem operations with concurrency control
@@ -42,6 +40,7 @@ class FsOperationQueue {
     operation: FsOperation;
     resolve: (result: FsOperationResult) => void;
   }> = [];
+
   private running = 0;
   private maxConcurrent: number;
 
@@ -66,6 +65,7 @@ class FsOperationQueue {
 
     if (!item) {
       this.running--;
+
       return;
     }
 
@@ -90,52 +90,59 @@ class FsOperationQueue {
     switch (operation.type) {
       case 'mkdir': {
         await mkdirAsync(operation.path, operation.options);
+
         return { success: true };
       }
 
       case 'writeFile': {
-        const content =
-          operation.encoding === 'base64'
-            ? Buffer.from(operation.content, 'base64')
-            : operation.content;
+        const content = operation.encoding === 'base64' ? Buffer.from(operation.content, 'base64') : operation.content;
         await writeFileAsync(operation.path, content);
+
         return { success: true };
       }
 
       case 'readFile': {
         const data = await readFileAsync(operation.path);
+
         return { success: true, data: data.toString('base64') };
       }
 
       case 'copyFile': {
         await copyFileAsync(operation.from, operation.to, operation.removeSource);
+
         return { success: true };
       }
 
       case 'removeFile': {
         await removeFileAsync(operation.path);
+
         return { success: true };
       }
 
       case 'exists': {
         const exists = await fileExistsAsync(operation.path);
+
         return { success: true, data: exists };
       }
 
       case 'batch': {
         const results: FsOperationResult[] = [];
+
         for (const op of operation.operations) {
           const result = await this.executeOperation(op);
           results.push(result);
+
           if (!result.success) {
             // Continue with other operations even if one fails
             debug(`Batch operation failed: ${result.error}`);
           }
         }
         const allSuccess = results.every(r => r.success);
+
         if (allSuccess) {
           return { success: true, data: results };
         }
+
         return {
           success: false,
           error: 'Some batch operations failed',
@@ -167,6 +174,7 @@ const findAvailablePort = async (startPort = 45000): Promise<number> => {
     const tryPort = (port: number, attempts = 0): void => {
       if (attempts > 50) {
         reject(new Error('Could not find available port for reporting server'));
+
         return;
       }
 
@@ -217,12 +225,14 @@ export class ReportingServer {
         if (req.method === 'OPTIONS') {
           res.writeHead(200);
           res.end();
+
           return;
         }
 
         if (req.method !== 'POST' || !req.url?.startsWith(REPORTING_SERVER_PATH)) {
           res.writeHead(404);
           res.end('Not found');
+
           return;
         }
 
@@ -269,6 +279,7 @@ export class ReportingServer {
     return new Promise(resolve => {
       if (!this.server) {
         resolve();
+
         return;
       }
 
@@ -309,6 +320,7 @@ export class ReportingServer {
    */
   async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
     const result = await this.execute({ type: 'mkdir', path, options });
+
     if (!result.success) {
       throw new Error(result.error);
     }
@@ -318,6 +330,7 @@ export class ReportingServer {
     const contentStr = Buffer.isBuffer(content) ? content.toString('base64') : content;
     const encoding: BufferEncoding | undefined = Buffer.isBuffer(content) ? 'base64' : undefined;
     const result = await this.execute({ type: 'writeFile', path, content: contentStr, encoding });
+
     if (!result.success) {
       throw new Error(result.error);
     }
@@ -325,14 +338,17 @@ export class ReportingServer {
 
   async readFile(path: string): Promise<Buffer> {
     const result = await this.execute({ type: 'readFile', path });
+
     if (!result.success) {
       throw new Error(result.error);
     }
+
     return Buffer.from(result.data as string, 'base64');
   }
 
   async copyFile(from: string, to: string, removeSource = false): Promise<void> {
     const result = await this.execute({ type: 'copyFile', from, to, removeSource });
+
     if (!result.success) {
       throw new Error(result.error);
     }
@@ -340,6 +356,7 @@ export class ReportingServer {
 
   async removeFile(path: string): Promise<void> {
     const result = await this.execute({ type: 'removeFile', path });
+
     if (!result.success) {
       throw new Error(result.error);
     }
@@ -347,9 +364,11 @@ export class ReportingServer {
 
   async exists(path: string): Promise<boolean> {
     const result = await this.execute({ type: 'exists', path });
+
     if (!result.success) {
       throw new Error(result.error);
     }
+
     return result.data as boolean;
   }
 
@@ -365,9 +384,11 @@ export class ReportingServer {
    */
   async batch(operations: FsOperation[]): Promise<FsOperationResult[]> {
     const result = await this.execute({ type: 'batch', operations });
+
     if (!result.success) {
       throw new Error(result.error);
     }
+
     return result.data as FsOperationResult[];
   }
 }
@@ -379,12 +400,14 @@ export const getReportingServer = (): ReportingServer => {
   if (!reportingServerInstance) {
     reportingServerInstance = new ReportingServer();
   }
+
   return reportingServerInstance;
 };
 
 export const startReportingServer = async (): Promise<ReportingServer> => {
   const server = getReportingServer();
   await server.start();
+
   return server;
 };
 
@@ -394,4 +417,3 @@ export const stopReportingServer = async (): Promise<void> => {
     reportingServerInstance = null;
   }
 };
-
