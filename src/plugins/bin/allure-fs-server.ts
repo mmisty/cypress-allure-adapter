@@ -13,4 +13,3 @@
 import { runStandaloneServer } from '../fs-server-standalone';
 
 runStandaloneServer();
-

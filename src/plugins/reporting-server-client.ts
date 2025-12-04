@@ -10,7 +10,6 @@ import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 import { existsSync } from 'fs';
 import Debug from 'debug';
-import { logWithPackage } from '../common';
 import {
   FsOperation,
   FsOperationResult,
@@ -92,6 +91,7 @@ export class ReportingServerClient {
 
       // Build the command based on whether we need ts-node
       const command = useTsNode ? 'npx' : 'node';
+
       const args = useTsNode
         ? ['ts-node', '--transpile-only', serverScript, '--port', String(requestedPort)]
         : [serverScript, '--port', String(requestedPort)];
@@ -282,7 +282,7 @@ export class ReportingServerClient {
       return { success: false, error: 'Not connected to FS server' };
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const body = JSON.stringify(operation);
 
       const req = http.request(
@@ -529,4 +529,3 @@ export const stopFsServerProcess = async (): Promise<void> => {
     clientInstance = null;
   }
 };
-
