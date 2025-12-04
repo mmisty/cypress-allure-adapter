@@ -1,7 +1,6 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFile, mkdir, writeFile } from 'fs/promises';
 import { logWithPackage } from '../common';
 import { dirname } from 'path';
 import { TaskManager } from './task-manager';
@@ -366,10 +365,10 @@ export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingSe
       const dirExists = await server.exists(dirPath);
 
       if (!dirExists) {
-        await mkdir(dirPath, { recursive: true });
-        await writeFile(arg.path, '');
+        await server.mkdir(dirPath, { recursive: true });
+        await server.writeFile(arg.path, '');
       }
-      await appendFile(arg.path, `${arg.message}\n`);
+      await server.appendFile(arg.path, `${arg.message}\n`);
     },
 
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {

@@ -5,6 +5,7 @@ import { logWithPackage } from '../common';
 import {
   mkdirAsync,
   writeFileAsync,
+  appendFileAsync,
   readFileAsync,
   copyFileAsync,
   removeFileAsync,
@@ -24,6 +25,7 @@ export const REPORTING_SERVER_PATH = '/__allure_reporting/';
 export type FsOperation =
   | { type: 'mkdir'; path: string; options?: { recursive?: boolean } }
   | { type: 'writeFile'; path: string; content: string; encoding?: BufferEncoding }
+  | { type: 'appendFile'; path: string; content: string }
   | { type: 'readFile'; path: string }
   | { type: 'copyFile'; from: string; to: string; removeSource?: boolean }
   | { type: 'removeFile'; path: string }
@@ -97,6 +99,12 @@ class FsOperationQueue {
       case 'writeFile': {
         const content = operation.encoding === 'base64' ? Buffer.from(operation.content, 'base64') : operation.content;
         await writeFileAsync(operation.path, content);
+
+        return { success: true };
+      }
+
+      case 'appendFile': {
+        await appendFileAsync(operation.path, operation.content);
 
         return { success: true };
       }
@@ -330,6 +338,14 @@ export class ReportingServer {
     const contentStr = Buffer.isBuffer(content) ? content.toString('base64') : content;
     const encoding: BufferEncoding | undefined = Buffer.isBuffer(content) ? 'base64' : undefined;
     const result = await this.execute({ type: 'writeFile', path, content: contentStr, encoding });
+
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+  }
+
+  async appendFile(path: string, content: string): Promise<void> {
+    const result = await this.execute({ type: 'appendFile', path, content });
 
     if (!result.success) {
       throw new Error(result.error);

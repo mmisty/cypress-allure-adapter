@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, rm, writeFile, stat } from 'fs/promises';
+import { appendFile, copyFile, mkdir, readFile, rm, writeFile, stat } from 'fs/promises';
 import { existsSync } from 'fs';
 import Debug from 'debug';
 import { logWithPackage } from '../common';
@@ -40,6 +40,16 @@ export const writeFileAsync = async (filePath: string, content: string | Buffer)
     log(`Wrote file: ${filePath}`);
   } catch (err) {
     logWithPackage('error', `Failed to write file ${filePath}: ${(err as Error).message}`);
+    throw err;
+  }
+};
+
+export const appendFileAsync = async (filePath: string, content: string): Promise<void> => {
+  try {
+    await appendFile(filePath, content);
+    log(`Appended to file: ${filePath}`);
+  } catch (err) {
+    logWithPackage('error', `Failed to append to file ${filePath}: ${(err as Error).message}`);
     throw err;
   }
 };

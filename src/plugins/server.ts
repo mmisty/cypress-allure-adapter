@@ -95,6 +95,39 @@ const logQueue = (...args: unknown[]) => {
   }
 };
 
+// Default timeout for queue completion after run ends (5 minutes)
+const DEFAULT_QUEUE_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * Get queue timeout from env variable ALLURE_QUEUE_TIMEOUT_MS (in milliseconds)
+ * or ALLURE_QUEUE_TIMEOUT (in seconds) or use default (5 minutes)
+ */
+const getQueueTimeoutMs = (): number => {
+  // Check for milliseconds env var first
+  const timeoutMs = process.env.ALLURE_QUEUE_TIMEOUT_MS;
+
+  if (timeoutMs) {
+    const parsed = parseInt(timeoutMs, 10);
+
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  // Check for seconds env var
+  const timeoutSec = process.env.ALLURE_QUEUE_TIMEOUT;
+
+  if (timeoutSec) {
+    const parsed = parseInt(timeoutSec, 10);
+
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed * 1000;
+    }
+  }
+
+  return DEFAULT_QUEUE_TIMEOUT_MS;
+};
+
 /**
  * Message queue to ensure messages are processed in order
  */
@@ -104,6 +137,8 @@ class MessageProcessingQueue {
   private isProcessing = false;
   private tasks: AllureTasks;
   private sockserver: WebSocketServer;
+  private runEnded = false;
+  private timeoutId: NodeJS.Timeout | null = null;
 
   constructor(tasks: AllureTasks, sockserver: WebSocketServer) {
     this.tasks = tasks;
@@ -116,6 +151,65 @@ class MessageProcessingQueue {
       logQueue(`Enqueued message, queue size: ${this.queue.length}`);
       this.processNext();
     });
+  }
+
+  /**
+   * Called when the run ends (client disconnects or run end event)
+   * Starts a timeout to force completion if tasks don't finish in time
+   */
+  onRunEnded(): void {
+    if (this.runEnded) {
+      return;
+    }
+
+    this.runEnded = true;
+    const timeoutMs = getQueueTimeoutMs();
+    logQueue(`Run ended, starting ${timeoutMs / 1000}s timeout for remaining tasks`);
+
+    if (this.queue.length === 0 && !this.isProcessing) {
+      logQueue('No pending tasks, queue completed');
+
+      return;
+    }
+
+    logQueue(`Pending tasks: ${this.queue.length}, processing: ${this.isProcessing}`);
+
+    this.timeoutId = setTimeout(() => {
+      if (this.queue.length > 0 || this.isProcessing) {
+        logWithPackage(
+          'warn',
+          `Queue timeout reached after ${timeoutMs / 1000}s. ` +
+            `Forcing completion with ${this.queue.length} pending tasks. ` +
+            'Some allure results may be incomplete.',
+        );
+        this.forceComplete();
+      }
+    }, timeoutMs);
+  }
+
+  /**
+   * Force complete all pending tasks without processing
+   */
+  private forceComplete(): void {
+    logQueue(`Force completing ${this.queue.length} pending tasks`);
+
+    // Resolve all pending promises
+    while (this.queue.length > 0) {
+      const item = this.queue.shift();
+
+      if (item) {
+        item.resolve();
+      }
+    }
+    this.isProcessing = false;
+    this.clearTimeout();
+  }
+
+  private clearTimeout(): void {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
   }
 
   private async processNext(): Promise<void> {
@@ -140,6 +234,12 @@ class MessageProcessingQueue {
     } finally {
       item.resolve();
       this.isProcessing = false;
+
+      // Check if we're done after run ended
+      if (this.runEnded && this.queue.length === 0) {
+        logQueue('All tasks completed after run ended');
+        this.clearTimeout();
+      }
 
       // Process next item in queue using setImmediate to avoid stack overflow
       // and ensure proper event loop behavior
@@ -203,6 +303,8 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
 
     ws.on('close', () => {
       log('Client has disconnected!');
+      // Start timeout for remaining tasks when client disconnects
+      messageQueue.onRunEnded();
     });
 
     ws.on('message', data => {
