@@ -30,7 +30,7 @@ describe('reporter - add env info', () => {
   });
 
   it('should add additional env info', async () => {
-    await reporter.writeEnvironmentInfo({ info: { app: '1' } });
+    reporter.writeEnvironmentInfo({ info: { app: '1' } });
     reporter.specStarted({
       spec: {
         name: 'spec name',
@@ -43,7 +43,7 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    await reporter.addEnvironmentInfo({ info: { version: '1.2.3' } });
+    reporter.addEnvironmentInfo({ info: { version: '1.2.3' } });
     reporter.hookEnded({
       title: '"before all" hook',
       result: 'passed' as Status,
@@ -51,6 +51,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
+    await reporter.flushFileOperations();
     await reporter.taskManager.flushAllTasks();
 
     expect(
@@ -64,7 +65,7 @@ describe('reporter - add env info', () => {
   });
 
   it('should not override existing env info with diff values', async () => {
-    await reporter.writeEnvironmentInfo({ info: { version: '1.3.4' } });
+    reporter.writeEnvironmentInfo({ info: { version: '1.3.4' } });
     reporter.specStarted({
       spec: {
         name: 'spec name',
@@ -77,7 +78,7 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    await reporter.addEnvironmentInfo({
+    reporter.addEnvironmentInfo({
       info: { version: '1.2.3', otherThing: 'hello and more' },
     });
     reporter.hookEnded({
@@ -87,6 +88,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
+    await reporter.flushFileOperations();
     await reporter.taskManager.flushAllTasks();
 
     expect(
@@ -100,7 +102,7 @@ describe('reporter - add env info', () => {
   });
 
   it('should not duplcate existing env info when the same value', async () => {
-    await reporter.writeEnvironmentInfo({
+    reporter.writeEnvironmentInfo({
       info: { version: '1.3.4', otherThing: 'hello and more' },
     });
     reporter.specStarted({
@@ -115,7 +117,7 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    await reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
+    reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
     reporter.hookEnded({
       title: '"before all" hook',
       result: 'passed' as Status,
@@ -123,6 +125,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
+    await reporter.flushFileOperations();
     await reporter.taskManager.flushAllTasks();
 
     expect(
@@ -148,8 +151,8 @@ describe('reporter - add env info', () => {
       fullTitle: 'ROOT',
     });
     reporter.hookStarted({ title: '"before all" hook', hookId: '1' });
-    await reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
-    await reporter.addEnvironmentInfo({ info: { version: '1.3.5' } });
+    reporter.addEnvironmentInfo({ info: { version: '1.3.4' } });
+    reporter.addEnvironmentInfo({ info: { version: '1.3.5' } });
     reporter.hookEnded({
       title: '"before all" hook',
       result: 'passed' as Status,
@@ -157,6 +160,7 @@ describe('reporter - add env info', () => {
 
     reporter.suiteEnded({});
     await reporter.afterSpec({ results: { spec: { relative: '123' } } } as any);
+    await reporter.flushFileOperations();
     await reporter.taskManager.flushAllTasks();
 
     expect(

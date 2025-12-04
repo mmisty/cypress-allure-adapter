@@ -173,11 +173,8 @@ export class AllureReporter {
     log('Created reporter');
     log(opts);
 
-    // Ensure allure results directory exists (async via reporting server)
-    // Note: This is queued and will be ready by the time tests start
-    this.taskManager.addTask('__init__', async () => {
-      await this.reportingServer.mkdir(this.allureResults, { recursive: true });
-    });
+    // Ensure allure results directory exists (fire and forget - queued async)
+    this.reportingServer.mkdir(this.allureResults, { recursive: true });
 
     // Initialize with new API
     this.writer = new FileSystemWriter({ resultsDir: this.allureResults });
@@ -318,10 +315,8 @@ export class AllureReporter {
     this.currentSpec = args.spec;
     this.taskQueueId = `${this.currentSpec.relative}`;
 
-    // Ensure directory exists asynchronously
-    this.taskManager.addTask(this.taskQueueId, async () => {
-      await this.reportingServer.mkdir(this.allureResults, { recursive: true });
-    });
+    // Ensure directory exists (fire and forget)
+    this.reportingServer.mkdir(this.allureResults, { recursive: true });
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {
@@ -570,7 +565,8 @@ export class AllureReporter {
       for (const uuid of uuids) {
         const testFile = `${this.allureResults}/${uuid}-result.json`;
 
-        this.taskManager.addTask(this.taskQueueId, async () => {
+        // Fire and forget - queue the operation
+        this.reportingServer.addOperation(async () => {
           try {
             const contents = await this.reportingServer.readFile(testFile);
             const ext = path.extname(afterSpecRes.path);
@@ -585,7 +581,7 @@ export class AllureReporter {
             const exists = await this.reportingServer.exists(newPath);
 
             if (!exists) {
-              await this.reportingServer.copyFile(afterSpecRes.path, path.join(this.allureResults, nameAttach));
+              this.reportingServer.copyFile(afterSpecRes.path, path.join(this.allureResults, nameAttach));
             }
 
             if (!testCon.attachments) {
@@ -598,7 +594,7 @@ export class AllureReporter {
               source: nameAttach, // todo
             });
 
-            await this.reportingServer.writeFile(testFile, JSON.stringify(testCon));
+            this.reportingServer.writeFile(testFile, JSON.stringify(testCon));
           } catch (e) {
             logWithPackage('error', `Could not attach screenshot ${afterSpecRes.screenshotId ?? afterSpecRes.path}`);
           }
@@ -642,19 +638,14 @@ export class AllureReporter {
       const newUuid = randomUUID();
       const fileNew = `${newUuid}-attachment.png`;
 
-      // Queue the async file operations
-      this.taskManager.addTask(this.taskQueueId, async () => {
-        await this.reportingServer.mkdir(this.allureResults, { recursive: true });
+      // Fire and forget - queue the file operations
+      this.reportingServer.mkdir(this.allureResults, { recursive: true });
 
-        const exists = await this.reportingServer.exists(file);
-
-        if (!exists) {
-          logWithPackage('log', `file ${file} doesnt exist`);
-
-          return;
-        }
-        await this.reportingServer.copyFile(file, `${this.allureResults}/${fileNew}`);
-      });
+      if (this.reportingServer.existsSync(file)) {
+        this.reportingServer.copyFile(file, `${this.allureResults}/${fileNew}`);
+      } else {
+        logWithPackage('log', `file ${file} doesnt exist`);
+      }
 
       if (attachTo) {
         attachTo.result.attachments.push({
@@ -678,35 +669,37 @@ export class AllureReporter {
       return src.replace(this.allureResults, this.allureResultsWatch);
     };
 
-    this.taskManager.addTask(this.taskQueueId, async () => {
-      await this.reportingServer.mkdir(this.allureResultsWatch, { recursive: true });
+    // Fire and forget - queue the operations
+    this.reportingServer.addOperation(async () => {
+      this.reportingServer.mkdir(this.allureResultsWatch, { recursive: true });
 
       const envExists = await this.reportingServer.exists(envProperties);
       const envTargetExists = await this.reportingServer.exists(targetPath(envProperties));
 
       if (envExists && !envTargetExists) {
-        await this.reportingServer.copyFile(envProperties, targetPath(envProperties), true);
+        this.reportingServer.copyFile(envProperties, targetPath(envProperties), true);
       }
 
       const execExists = await this.reportingServer.exists(executor);
       const execTargetExists = await this.reportingServer.exists(targetPath(executor));
 
       if (execExists && !execTargetExists) {
-        await this.reportingServer.copyFile(executor, targetPath(executor), true);
+        this.reportingServer.copyFile(executor, targetPath(executor), true);
       }
 
       const catExists = await this.reportingServer.exists(categories);
       const catTargetExists = await this.reportingServer.exists(targetPath(categories));
 
       if (catExists && !catTargetExists) {
-        await this.reportingServer.copyFile(categories, targetPath(categories), true);
+        this.reportingServer.copyFile(categories, targetPath(categories), true);
       }
     });
 
     const tests = parseAllure(this.allureResults);
 
     for (const test of tests) {
-      this.taskManager.addTask(this.taskQueueId, async () => {
+      // Fire and forget - queue each test's operations
+      this.reportingServer.addOperation(async () => {
         const testSource = `${this.allureResults}/${test.uuid}-result.json`;
         const testTarget = testSource.replace(this.allureResults, this.allureResultsWatch);
 
@@ -758,9 +751,9 @@ export class AllureReporter {
           const attachTargetExists = await this.reportingServer.exists(attachTarget);
 
           if (attachExists && !attachTargetExists) {
-            await this.reportingServer.copyFile(attachFile, attachTarget, true);
+            this.reportingServer.copyFile(attachFile, attachTarget, true);
           } else if (attachExists && attachFile !== attachTarget) {
-            await this.reportingServer.removeFile(attachFile);
+            this.reportingServer.removeFile(attachFile);
           }
         }
 
@@ -769,7 +762,7 @@ export class AllureReporter {
 
         if (testSourceExists) {
           // should overwrite
-          await this.reportingServer.copyFile(testSource, testTarget, true);
+          this.reportingServer.copyFile(testSource, testTarget, true);
         }
 
         for (const containerSource of containerSources) {
@@ -777,7 +770,7 @@ export class AllureReporter {
           const containerExists = await this.reportingServer.exists(containerSource);
 
           if (containerExists) {
-            await this.reportingServer.copyFile(containerSource, containerTarget, true);
+            this.reportingServer.copyFile(containerSource, containerTarget, true);
           }
         }
       });
@@ -792,7 +785,8 @@ export class AllureReporter {
     // this happens after test and suites have already finished
     const { path: videoPath } = arg;
 
-    this.taskManager.addTask(this.taskQueueId, async () => {
+    // Fire and forget - queue the video attachment operation
+    this.reportingServer.addOperation(async () => {
       logWithPackage('log', `start attaching video for ${this.taskQueueId}`);
       log(`attachVideoToTests: ${videoPath}`);
       const ext = '.mp4';
@@ -851,13 +845,13 @@ export class AllureReporter {
           const newPathExists = await this.reportingServer.exists(newPath);
 
           if (!newPathExists) {
-            await this.reportingServer.copyFile(videoPath, newPath, false);
+            this.reportingServer.copyFile(videoPath, newPath, false);
           } else {
             log(`not writing video, file already exists in path ${newPath}`);
           }
 
           log(`write result file ${containerFile}`);
-          await this.reportingServer.writeFile(containerFile, newContent);
+          this.reportingServer.writeFile(containerFile, newContent);
         } catch (err) {
           log(`error reading container: ${(err as Error).message}`);
         }
@@ -1395,17 +1389,15 @@ export class AllureReporter {
       return;
     }
 
-    // Write attachment to file system asynchronously
+    // Write attachment to file system (fire and forget)
     const content = arg.content ?? `Could not create attachment: no content for ${arg.name} received`;
     const fileExt = arg.type.split('/')[1] || 'txt';
     const fileName = `${randomUUID()}-attachment.${fileExt}`;
 
-    // Queue the async file write
-    this.taskManager.addTask(this.taskQueueId, async () => {
-      await this.reportingServer.mkdir(this.allureResults, { recursive: true });
-      const contentToWrite = Buffer.isBuffer(content) ? content : content.toString();
-      await this.reportingServer.writeFile(`${this.allureResults}/${fileName}`, contentToWrite);
-    });
+    // Fire and forget - queue file operations
+    this.reportingServer.mkdir(this.allureResults, { recursive: true });
+    const contentToWrite = Buffer.isBuffer(content) ? content : content.toString();
+    this.reportingServer.writeFile(`${this.allureResults}/${fileName}`, contentToWrite);
 
     exec.result.attachments.push({
       name: arg.name,
@@ -1452,23 +1444,13 @@ export class AllureReporter {
       log(`added attachment: ${fileNew} ${arg.file}`);
       this.setAttached(arg.file);
 
-      // Queue the async file operations
-      this.taskManager.addTask(this.taskQueueId, async () => {
-        const fileExists = await this.reportingServer.exists(arg.file);
-
-        if (!fileExists) {
-          logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
-
-          return;
-        }
-
-        try {
-          await this.reportingServer.mkdir(this.allureResults, { recursive: true });
-          await this.reportingServer.copyFile(arg.file, `${this.allureResults}/${fileNew}`);
-        } catch (err) {
-          logWithPackage('error', `Could not attach ${arg.file}`);
-        }
-      });
+      // Fire and forget - queue file operations
+      if (this.reportingServer.existsSync(arg.file)) {
+        this.reportingServer.mkdir(this.allureResults, { recursive: true });
+        this.reportingServer.copyFile(arg.file, `${this.allureResults}/${fileNew}`);
+      } else {
+        logWithPackage('error', `Attaching file: file ${arg.file} doesnt exist`);
+      }
     }
   }
 

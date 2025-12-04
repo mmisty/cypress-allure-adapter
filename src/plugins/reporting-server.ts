@@ -1,163 +1,22 @@
 import http from 'http';
 import net from 'net';
 import Debug from 'debug';
+import { copyFile, mkdir, readFile, rm, writeFile, stat } from 'fs/promises';
+import { existsSync } from 'fs';
 import { logWithPackage } from '../common';
-import {
-  mkdirAsync,
-  writeFileAsync,
-  readFileAsync,
-  copyFileAsync,
-  removeFileAsync,
-  fileExistsAsync,
-  existsSync,
-} from './fs-async';
 
 const debug = Debug('cypress-allure:reporting-server');
-const debugOps = Debug('cypress-allure:reporting-server:ops');
 
 export const REPORTING_SERVER_PORT_ENV = 'allureReportingServerPort';
-export const REPORTING_SERVER_PATH = '/__allure_reporting/';
 
-/**
- * Filesystem operation types supported by the reporting server
- */
-export type FsOperation =
+type FileOperation =
   | { type: 'mkdir'; path: string; options?: { recursive?: boolean } }
   | { type: 'writeFile'; path: string; content: string; encoding?: BufferEncoding }
-  | { type: 'readFile'; path: string }
   | { type: 'copyFile'; from: string; to: string; removeSource?: boolean }
   | { type: 'removeFile'; path: string }
-  | { type: 'exists'; path: string }
-  | { type: 'batch'; operations: FsOperation[] };
+  | { type: 'custom'; id: string };
 
-export type FsOperationResult =
-  | { success: true; data?: unknown }
-  | { success: false; error: string };
-
-/**
- * Queue for filesystem operations with concurrency control
- */
-class FsOperationQueue {
-  private queue: Array<{
-    operation: FsOperation;
-    resolve: (result: FsOperationResult) => void;
-  }> = [];
-  private running = 0;
-  private maxConcurrent: number;
-
-  constructor(maxConcurrent = 10) {
-    this.maxConcurrent = maxConcurrent;
-  }
-
-  async enqueue(operation: FsOperation): Promise<FsOperationResult> {
-    return new Promise(resolve => {
-      this.queue.push({ operation, resolve });
-      this.processNext();
-    });
-  }
-
-  private async processNext(): Promise<void> {
-    if (this.running >= this.maxConcurrent || this.queue.length === 0) {
-      return;
-    }
-
-    this.running++;
-    const item = this.queue.shift();
-
-    if (!item) {
-      this.running--;
-      return;
-    }
-
-    try {
-      const result = await this.executeOperation(item.operation);
-      item.resolve(result);
-    } catch (err) {
-      item.resolve({
-        success: false,
-        error: (err as Error).message,
-      });
-    } finally {
-      this.running--;
-      // Process next items in queue
-      setImmediate(() => this.processNext());
-    }
-  }
-
-  private async executeOperation(operation: FsOperation): Promise<FsOperationResult> {
-    debugOps(`Executing operation: ${operation.type}`);
-
-    switch (operation.type) {
-      case 'mkdir': {
-        await mkdirAsync(operation.path, operation.options);
-        return { success: true };
-      }
-
-      case 'writeFile': {
-        const content =
-          operation.encoding === 'base64'
-            ? Buffer.from(operation.content, 'base64')
-            : operation.content;
-        await writeFileAsync(operation.path, content);
-        return { success: true };
-      }
-
-      case 'readFile': {
-        const data = await readFileAsync(operation.path);
-        return { success: true, data: data.toString('base64') };
-      }
-
-      case 'copyFile': {
-        await copyFileAsync(operation.from, operation.to, operation.removeSource);
-        return { success: true };
-      }
-
-      case 'removeFile': {
-        await removeFileAsync(operation.path);
-        return { success: true };
-      }
-
-      case 'exists': {
-        const exists = await fileExistsAsync(operation.path);
-        return { success: true, data: exists };
-      }
-
-      case 'batch': {
-        const results: FsOperationResult[] = [];
-        for (const op of operation.operations) {
-          const result = await this.executeOperation(op);
-          results.push(result);
-          if (!result.success) {
-            // Continue with other operations even if one fails
-            debug(`Batch operation failed: ${result.error}`);
-          }
-        }
-        const allSuccess = results.every(r => r.success);
-        if (allSuccess) {
-          return { success: true, data: results };
-        }
-        return {
-          success: false,
-          error: 'Some batch operations failed',
-        };
-      }
-
-      default:
-        return {
-          success: false,
-          error: `Unknown operation type: ${(operation as FsOperation).type}`,
-        };
-    }
-  }
-
-  get pendingCount(): number {
-    return this.queue.length;
-  }
-
-  get runningCount(): number {
-    return this.running;
-  }
-}
+type OperationResult = { success: true; data?: unknown } | { success: false; error: string };
 
 /**
  * Find an available port
@@ -167,6 +26,7 @@ const findAvailablePort = async (startPort = 45000): Promise<number> => {
     const tryPort = (port: number, attempts = 0): void => {
       if (attempts > 50) {
         reject(new Error('Could not find available port for reporting server'));
+
         return;
       }
 
@@ -179,7 +39,6 @@ const findAvailablePort = async (startPort = 45000): Promise<number> => {
       });
 
       server.on('error', () => {
-        // Port in use, try next
         tryPort(port + 1, attempts + 1);
       });
     };
@@ -189,15 +48,28 @@ const findAvailablePort = async (startPort = 45000): Promise<number> => {
 };
 
 /**
- * Reporting server that handles all filesystem operations asynchronously
+ * Reporting server that handles filesystem operations asynchronously.
+ * Operations are queued without awaits (fire-and-forget), and at the end
+ * you can wait for all operations to complete.
  */
 export class ReportingServer {
   private server: http.Server | null = null;
-  private operationQueue: FsOperationQueue;
   private port: number | null = null;
 
+  // Queue management
+  private queue: Array<{ operation: FileOperation; resolve: (result: OperationResult) => void }> = [];
+  private isProcessing = false;
+  private running = 0;
+  private maxConcurrent: number;
+
+  // Track pending operations for flush
+  private pendingOperations: Promise<OperationResult>[] = [];
+
+  // Custom operation handlers
+  private customHandlers: Map<string, () => Promise<void>> = new Map();
+
   constructor(maxConcurrentOps = 10) {
-    this.operationQueue = new FsOperationQueue(maxConcurrentOps);
+    this.maxConcurrent = maxConcurrentOps;
   }
 
   async start(): Promise<number> {
@@ -209,7 +81,6 @@ export class ReportingServer {
 
     return new Promise((resolve, reject) => {
       this.server = http.createServer(async (req, res) => {
-        // Enable CORS
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -217,16 +88,17 @@ export class ReportingServer {
         if (req.method === 'OPTIONS') {
           res.writeHead(200);
           res.end();
+
           return;
         }
 
-        if (req.method !== 'POST' || !req.url?.startsWith(REPORTING_SERVER_PATH)) {
+        if (req.method !== 'POST') {
           res.writeHead(404);
           res.end('Not found');
+
           return;
         }
 
-        // Parse request body
         let body = '';
         req.on('data', chunk => {
           body += chunk.toString();
@@ -234,20 +106,14 @@ export class ReportingServer {
 
         req.on('end', async () => {
           try {
-            const operation: FsOperation = JSON.parse(body);
-            const result = await this.operationQueue.enqueue(operation);
+            const operation: FileOperation = JSON.parse(body);
+            const result = await this.enqueueAndProcess(operation);
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(result));
           } catch (err) {
-            debug(`Error processing request: ${(err as Error).message}`);
             res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(
-              JSON.stringify({
-                success: false,
-                error: (err as Error).message,
-              }),
-            );
+            res.end(JSON.stringify({ success: false, error: (err as Error).message }));
           }
         });
       });
@@ -266,29 +132,21 @@ export class ReportingServer {
   }
 
   async stop(): Promise<void> {
+    // Wait for all pending operations
+    await this.flush();
+
     return new Promise(resolve => {
       if (!this.server) {
         resolve();
+
         return;
       }
 
-      // Wait for pending operations
-      const waitForPending = async (): Promise<void> => {
-        while (this.operationQueue.pendingCount > 0 || this.operationQueue.runningCount > 0) {
-          debug(
-            `Waiting for ${this.operationQueue.pendingCount} pending and ${this.operationQueue.runningCount} running operations`,
-          );
-          await new Promise(r => setTimeout(r, 100));
-        }
-      };
-
-      waitForPending().then(() => {
-        this.server!.close(() => {
-          debug('Reporting server stopped');
-          this.server = null;
-          this.port = null;
-          resolve();
-        });
+      this.server.close(() => {
+        debug('Reporting server stopped');
+        this.server = null;
+        this.port = null;
+        resolve();
       });
     });
   }
@@ -297,94 +155,242 @@ export class ReportingServer {
     return this.port;
   }
 
+  // ============ FIRE-AND-FORGET METHODS (no await needed) ============
+
   /**
-   * Execute operation directly (for in-process usage)
+   * Queue mkdir operation (fire and forget)
    */
-  async execute(operation: FsOperation): Promise<FsOperationResult> {
-    return this.operationQueue.enqueue(operation);
+  mkdir(path: string, options?: { recursive?: boolean }): void {
+    this.queueOperation({ type: 'mkdir', path, options });
   }
 
   /**
-   * Convenience methods for common operations
+   * Queue writeFile operation (fire and forget)
    */
-  async mkdir(path: string, options?: { recursive?: boolean }): Promise<void> {
-    const result = await this.execute({ type: 'mkdir', path, options });
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-  }
-
-  async writeFile(path: string, content: string | Buffer): Promise<void> {
+  writeFile(path: string, content: string | Buffer): void {
     const contentStr = Buffer.isBuffer(content) ? content.toString('base64') : content;
     const encoding: BufferEncoding | undefined = Buffer.isBuffer(content) ? 'base64' : undefined;
-    const result = await this.execute({ type: 'writeFile', path, content: contentStr, encoding });
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-  }
-
-  async readFile(path: string): Promise<Buffer> {
-    const result = await this.execute({ type: 'readFile', path });
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-    return Buffer.from(result.data as string, 'base64');
-  }
-
-  async copyFile(from: string, to: string, removeSource = false): Promise<void> {
-    const result = await this.execute({ type: 'copyFile', from, to, removeSource });
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-  }
-
-  async removeFile(path: string): Promise<void> {
-    const result = await this.execute({ type: 'removeFile', path });
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-  }
-
-  async exists(path: string): Promise<boolean> {
-    const result = await this.execute({ type: 'exists', path });
-    if (!result.success) {
-      throw new Error(result.error);
-    }
-    return result.data as boolean;
+    this.queueOperation({ type: 'writeFile', path, content: contentStr, encoding });
   }
 
   /**
-   * Sync check for existence (for initial checks before server is involved)
+   * Queue copyFile operation (fire and forget)
+   */
+  copyFile(from: string, to: string, removeSource = false): void {
+    this.queueOperation({ type: 'copyFile', from, to, removeSource });
+  }
+
+  /**
+   * Queue removeFile operation (fire and forget)
+   */
+  removeFile(path: string): void {
+    this.queueOperation({ type: 'removeFile', path });
+  }
+
+  /**
+   * Queue custom operation (fire and forget)
+   */
+  addOperation(fn: () => Promise<void>): void {
+    const id = `custom_${Date.now()}_${Math.random()}`;
+    this.customHandlers.set(id, fn);
+    this.queueOperation({ type: 'custom', id });
+  }
+
+  // ============ SYNC/ASYNC METHODS (for reads that need results) ============
+
+  /**
+   * Check if file exists (sync - safe for quick checks before queueing)
    */
   existsSync(path: string): boolean {
     return existsSync(path);
   }
 
   /**
-   * Batch multiple operations for efficiency
+   * Check if file exists (async)
    */
-  async batch(operations: FsOperation[]): Promise<FsOperationResult[]> {
-    const result = await this.execute({ type: 'batch', operations });
-    if (!result.success) {
-      throw new Error(result.error);
+  async exists(path: string): Promise<boolean> {
+    try {
+      await stat(path);
+
+      return true;
+    } catch {
+      return false;
     }
-    return result.data as FsOperationResult[];
+  }
+
+  /**
+   * Read file (async - must be awaited)
+   */
+  async readFile(path: string): Promise<Buffer> {
+    return readFile(path);
+  }
+
+  // ============ QUEUE MANAGEMENT ============
+
+  private queueOperation(operation: FileOperation): void {
+    const promise = this.enqueueAndProcess(operation);
+    this.pendingOperations.push(promise);
+
+    // Clean up resolved promises periodically
+    promise.finally(() => {
+      const index = this.pendingOperations.indexOf(promise);
+
+      if (index > -1) {
+        this.pendingOperations.splice(index, 1);
+      }
+    });
+  }
+
+  private enqueueAndProcess(operation: FileOperation): Promise<OperationResult> {
+    return new Promise(resolve => {
+      this.queue.push({ operation, resolve });
+      debug(`Queued ${operation.type} operation, queue size: ${this.queue.length}`);
+
+      // Start processing if not already running
+      if (!this.isProcessing) {
+        this.processQueue();
+      }
+    });
+  }
+
+  private async processQueue(): Promise<void> {
+    if (this.isProcessing) return;
+    this.isProcessing = true;
+
+    while (this.queue.length > 0 || this.running > 0) {
+      // Start new operations up to max concurrent
+      while (this.queue.length > 0 && this.running < this.maxConcurrent) {
+        const item = this.queue.shift();
+
+        if (item) {
+          this.running++;
+          this.executeOperation(item.operation)
+            .then(result => item.resolve(result))
+            .catch(err => item.resolve({ success: false, error: (err as Error).message }))
+            .finally(() => {
+              this.running--;
+            });
+        }
+      }
+
+      // Yield to event loop
+      if (this.queue.length > 0 || this.running > 0) {
+        await new Promise(resolve => setImmediate(resolve));
+      }
+    }
+
+    this.isProcessing = false;
+  }
+
+  private async executeOperation(operation: FileOperation): Promise<OperationResult> {
+    debug(`Executing ${operation.type} operation`);
+
+    try {
+      switch (operation.type) {
+        case 'mkdir': {
+          if (!existsSync(operation.path)) {
+            await mkdir(operation.path, { recursive: operation.options?.recursive ?? true });
+          }
+
+          return { success: true };
+        }
+
+        case 'writeFile': {
+          const content =
+            operation.encoding === 'base64' ? Buffer.from(operation.content, 'base64') : operation.content;
+          await writeFile(operation.path, content);
+          debug(`Wrote file: ${operation.path}`);
+
+          return { success: true };
+        }
+
+        case 'copyFile': {
+          await copyFile(operation.from, operation.to);
+          debug(`Copied ${operation.from} to ${operation.to}`);
+
+          if (operation.removeSource && operation.from !== operation.to) {
+            try {
+              await rm(operation.from);
+            } catch {
+              // Ignore removal errors
+            }
+          }
+
+          return { success: true };
+        }
+
+        case 'removeFile': {
+          try {
+            await rm(operation.path, { recursive: true, force: true });
+            debug(`Removed: ${operation.path}`);
+          } catch {
+            // Ignore removal errors
+          }
+
+          return { success: true };
+        }
+
+        case 'custom': {
+          const handler = this.customHandlers.get(operation.id);
+
+          if (handler) {
+            await handler();
+            this.customHandlers.delete(operation.id);
+          }
+
+          return { success: true };
+        }
+
+        default:
+          return { success: false, error: 'Unknown operation type' };
+      }
+    } catch (err) {
+      logWithPackage('error', `File operation ${operation.type} failed: ${(err as Error).message}`);
+
+      return { success: false, error: (err as Error).message };
+    }
+  }
+
+  /**
+   * Wait for all queued operations to complete
+   */
+  async flush(): Promise<void> {
+    debug(`Flushing ${this.pendingOperations.length} pending operations`);
+
+    // Wait for all pending operations
+    await Promise.all(this.pendingOperations);
+
+    // Double check the queue is empty
+    while (this.queue.length > 0 || this.running > 0 || this.isProcessing) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+
+    debug('All operations flushed');
+  }
+
+  /**
+   * Get count of pending operations
+   */
+  get pendingCount(): number {
+    return this.queue.length + this.running + this.pendingOperations.length;
   }
 }
 
-// Singleton instance for the reporting server
+// Singleton instance
 let reportingServerInstance: ReportingServer | null = null;
 
 export const getReportingServer = (): ReportingServer => {
   if (!reportingServerInstance) {
     reportingServerInstance = new ReportingServer();
   }
+
   return reportingServerInstance;
 };
 
 export const startReportingServer = async (): Promise<ReportingServer> => {
   const server = getReportingServer();
   await server.start();
+
   return server;
 };
 
@@ -394,4 +400,3 @@ export const stopReportingServer = async (): Promise<void> => {
     reportingServerInstance = null;
   }
 };
-

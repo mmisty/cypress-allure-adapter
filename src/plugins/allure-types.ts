@@ -84,6 +84,7 @@ export type AllureTaskArgs<T extends RequestTask> = AllureTask[T] extends undefi
   : AllureTask[T];
 export type AllureTasks = { [key in RequestTask]: (args: AllureTaskArgs<key>) => void | Promise<void> } & {
   taskManager: TaskManager;
+  flushFileOperations: () => Promise<void>;
 };
 export type AllureTransfer<T extends RequestTask> = { task: T; arg: AllureTaskArgs<T> };
 

@@ -3,7 +3,11 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import { startReportingServer, stopReportingServer, REPORTING_SERVER_PORT_ENV } from './reporting-server';
+import {
+  startReportingServer as startFsServer,
+  stopReportingServer,
+  REPORTING_SERVER_PORT_ENV,
+} from './reporting-server';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 
@@ -58,40 +62,31 @@ export const configureAllureAdapterPlugins = async (
   debug(JSON.stringify(options, null, ' '));
 
   // Start the reporting server for async filesystem operations
-  const reportingServer = await startReportingServer();
-  config.env[REPORTING_SERVER_PORT_ENV] = reportingServer.getPort();
+  const fsServer = await startFsServer();
+  config.env[REPORTING_SERVER_PORT_ENV] = fsServer.getPort();
 
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
     debug('Clean results');
 
-    const cleanDir = async (dir: string) => {
-      const exists = await reportingServer.exists(dir);
-
-      if (!exists) {
-        return;
-      }
-
-      debug(`Deleting ${dir}`);
-
-      try {
-        await reportingServer.removeFile(dir);
-      } catch (err) {
-        debug(`Error deleting ${dir}: ${(err as Error).message}`);
-      }
-    };
-
-    await cleanDir(options.allureResults);
-    await cleanDir(options.techAllureResults);
-
-    try {
-      await reportingServer.mkdir(options.allureResults, { recursive: true });
-      await reportingServer.mkdir(options.techAllureResults, { recursive: true });
-    } catch (err) {
-      debug(`Error creating allure-results: ${(err as Error).message}`);
+    // Fire and forget - clean and create directories
+    if (fsServer.existsSync(options.allureResults)) {
+      debug(`Deleting ${options.allureResults}`);
+      fsServer.removeFile(options.allureResults);
     }
+
+    if (fsServer.existsSync(options.techAllureResults)) {
+      debug(`Deleting ${options.techAllureResults}`);
+      fsServer.removeFile(options.techAllureResults);
+    }
+
+    fsServer.mkdir(options.allureResults, { recursive: true });
+    fsServer.mkdir(options.techAllureResults, { recursive: true });
+
+    // Wait for cleanup to complete
+    await fsServer.flush();
   }
 
-  const reporter = allureTasks(options, reportingServer);
+  const reporter = allureTasks(options, fsServer);
   debug('Registered with options:');
   debug(options);
 

@@ -65,6 +65,7 @@ export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingSe
 
   return {
     taskManager,
+    flushFileOperations: () => server.flush(),
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
@@ -153,108 +154,96 @@ export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingSe
       log('testStarted');
     },
 
-    async writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
-      try {
-        await server.mkdir(allureResults, { recursive: true });
-
-        // Write in old format (key = value) for backwards compatibility
-        const content = Object.entries(arg.info)
-          .filter(([key, value]) => key && value !== undefined)
-          .map(([key, value]) => `${key} = ${value}`)
-          .join('\n');
-        await server.writeFile(`${allureResults}/environment.properties`, content);
-      } catch (err) {
-        logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
-      }
-    },
-
-    async addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
-      const additionalInfo = arg.info;
-      const existing = await allureReporter.getEnvInfoAsync(allureResults);
-      // be careful with parallelization, todo
-
-      // do not override values when it is different from additional
-      for (const key in existing) {
-        if (additionalInfo[key] && additionalInfo[key] !== existing[key]) {
-          additionalInfo[key] += `,${existing[key]}`;
-        }
-      }
-      const newInfo = { ...existing, ...additionalInfo };
+    writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
+      // Fire and forget
+      server.mkdir(allureResults, { recursive: true });
 
       // Write in old format (key = value) for backwards compatibility
-      await server.mkdir(allureResults, { recursive: true });
-
-      const content = Object.entries(newInfo)
+      const content = Object.entries(arg.info)
         .filter(([key, value]) => key && value !== undefined)
         .map(([key, value]) => `${key} = ${value}`)
         .join('\n');
-      await server.writeFile(`${allureResults}/environment.properties`, content);
+      server.writeFile(`${allureResults}/environment.properties`, content);
     },
 
-    async writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
-      try {
-        await server.writeFile(`${allureResults}/executor.json`, JSON.stringify(arg.info));
-      } catch (err) {
-        logWithPackage('error', `Could not write executor info ${(err as Error).message}`);
-      }
+    addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
+      // Fire and forget - use addOperation for reads
+      // First flush to ensure any previous writes complete before we read
+      server.addOperation(async () => {
+        await server.flush();
+
+        const additionalInfo = arg.info;
+        const existing = await allureReporter.getEnvInfoAsync(allureResults);
+        // be careful with parallelization, todo
+
+        // do not override values when it is different from additional
+        for (const key in existing) {
+          if (additionalInfo[key] && additionalInfo[key] !== existing[key]) {
+            additionalInfo[key] += `,${existing[key]}`;
+          }
+        }
+        const newInfo = { ...existing, ...additionalInfo };
+
+        // Write in old format (key = value) for backwards compatibility
+        server.mkdir(allureResults, { recursive: true });
+
+        const content = Object.entries(newInfo)
+          .filter(([key, value]) => key && value !== undefined)
+          .map(([key, value]) => `${key} = ${value}`)
+          .join('\n');
+        server.writeFile(`${allureResults}/environment.properties`, content);
+      });
     },
 
-    async writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
-      try {
-        const getCategoriesContent = async (): Promise<string | undefined> => {
+    writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
+      // Fire and forget
+      server.writeFile(`${allureResults}/executor.json`, JSON.stringify(arg.info));
+    },
+
+    writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
+      // Fire and forget - use addOperation for reads
+      server.addOperation(async () => {
+        try {
+          let contents: string | undefined;
+
           if (typeof arg.categories !== 'string') {
-            return JSON.stringify(arg.categories, null, '  ');
+            contents = JSON.stringify(arg.categories, null, '  ');
+          } else {
+            const file = arg.categories;
+            const exists = await server.exists(file);
+
+            if (!exists) {
+              logWithPackage('error', `Categories file doesn't exist '${file}'`);
+
+              return;
+            }
+
+            const content = await server.readFile(file);
+            contents = content.toString();
           }
 
-          const file = arg.categories;
-          const exists = await server.exists(file);
-
-          if (!exists) {
-            logWithPackage('error', `Categories file doesn't exist '${file}'`);
-
-            return undefined;
+          if (contents) {
+            server.writeFile(`${allureResults}/categories.json`, contents);
           }
-
-          const content = await server.readFile(file);
-
-          return content.toString();
-        };
-
-        const contents = await getCategoriesContent();
-
-        if (!contents) {
-          return;
+        } catch (err) {
+          logWithPackage('error', 'Could not write categories definitions info');
         }
+      });
+    },
 
-        await server.writeFile(`${allureResults}/categories.json`, contents);
-      } catch (err) {
-        logWithPackage('error', 'Could not write categories definitions info');
+    delete(arg: AllureTaskArgs<'delete'>) {
+      // Fire and forget
+      if (server.existsSync(arg.path)) {
+        server.removeFile(arg.path);
       }
     },
 
-    async delete(arg: AllureTaskArgs<'delete'>) {
-      try {
-        const exists = await server.exists(arg.path);
-
-        if (exists) {
-          await server.removeFile(arg.path);
-        }
-      } catch (err) {
-        log(`Could not delete: ${(err as Error).message}`);
-      }
-    },
-
-    async deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
+    deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
       allureReporter = new AllureReporter(opts, taskManager, server);
 
-      try {
-        const exists = await server.exists(allureResults);
-
-        if (exists) {
-          await server.removeFile(allureResults);
-        }
-      } catch (err) {
-        log(`Could not delete: ${(err as Error).message}`);
+      // Fire and forget
+      if (server.existsSync(allureResults)) {
+        server.removeFile(allureResults);
       }
     },
 
@@ -381,21 +370,24 @@ export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingSe
       log(`message ${JSON.stringify(arg)}`);
     },
 
-    async testMessage(arg: AllureTaskArgs<'testMessage'>) {
+    testMessage(arg: AllureTaskArgs<'testMessage'>) {
       log(`testMessage ${JSON.stringify(arg)}`);
 
       if (!opts.isTest) {
         return;
       }
 
-      const dirPath = dirname(arg.path);
-      const dirExists = await server.exists(dirPath);
+      // Fire and forget - use addOperation for reads
+      server.addOperation(async () => {
+        const dirPath = dirname(arg.path);
+        const dirExists = await server.exists(dirPath);
 
-      if (!dirExists) {
-        await mkdir(dirPath, { recursive: true });
-        await writeFile(arg.path, '');
-      }
-      await appendFile(arg.path, `${arg.message}\n`);
+        if (!dirExists) {
+          await mkdir(dirPath, { recursive: true });
+          await writeFile(arg.path, '');
+        }
+        await appendFile(arg.path, `${arg.message}\n`);
+      });
     },
 
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {
@@ -433,14 +425,17 @@ export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingSe
 
       // this should be done after video processed
       allureReporter.afterSpecMoveToWatch();
-      taskManager.flushAllTasksForQueue(arg.results.spec.relative).then(() => {
-        logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
-      });
+
+      // Flush the reporting server queue and taskManager
+      await server.flush();
+      await taskManager.flushAllTasksForQueue(arg.results.spec.relative);
+      logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
 
       log('afterSpec');
     },
 
     async waitAllFinished(_arg: AllureTaskArgs<'waitAllFinished'>) {
+      await server.flush();
       await taskManager.flushAllTasks();
     },
   };
