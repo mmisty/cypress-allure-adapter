@@ -1,10 +1,11 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { appendFile, mkdir, writeFile } from 'fs/promises';
 import { logWithPackage } from '../common';
 import { dirname } from 'path';
 import { TaskManager } from './task-manager';
+import { ReportingServer } from './reporting-server';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -53,10 +54,12 @@ export type ReporterOptions = {
 //     });
 // };
 
-export const allureTasks = (opts: ReporterOptions): AllureTasks => {
+export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingServer): AllureTasks => {
   // todo config
   const taskManager = new TaskManager();
-  let allureReporter = new AllureReporter(opts, taskManager);
+  // Create a default reporting server if not provided (for backward compatibility with tests)
+  const server = reportingServer ?? new ReportingServer();
+  let allureReporter = new AllureReporter(opts, taskManager, server);
   const allureResults = opts.allureResults;
   // const allureResultsWatch = opts.techAllureResults;
 
@@ -65,7 +68,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
-      allureReporter = new AllureReporter(opts, taskManager);
+      allureReporter = new AllureReporter(opts, taskManager, server);
       allureReporter.specStarted(arg);
       log('specStarted');
     },
@@ -150,26 +153,24 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('testStarted');
     },
 
-    writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
+    async writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
       try {
-        if (!existsSync(allureResults)) {
-          mkdirSync(allureResults);
-        }
+        await server.mkdir(allureResults, { recursive: true });
 
         // Write in old format (key = value) for backwards compatibility
         const content = Object.entries(arg.info)
           .filter(([key, value]) => key && value !== undefined)
           .map(([key, value]) => `${key} = ${value}`)
           .join('\n');
-        writeFileSync(`${allureResults}/environment.properties`, content);
+        await server.writeFile(`${allureResults}/environment.properties`, content);
       } catch (err) {
         logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
       }
     },
 
-    addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
+    async addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
       const additionalInfo = arg.info;
-      const existing = allureReporter.getEnvInfo(allureResults);
+      const existing = await allureReporter.getEnvInfoAsync(allureResults);
       // be careful with parallelization, todo
 
       // do not override values when it is different from additional
@@ -181,71 +182,76 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       const newInfo = { ...existing, ...additionalInfo };
 
       // Write in old format (key = value) for backwards compatibility
-      if (!existsSync(allureResults)) {
-        mkdirSync(allureResults);
-      }
+      await server.mkdir(allureResults, { recursive: true });
 
       const content = Object.entries(newInfo)
         .filter(([key, value]) => key && value !== undefined)
         .map(([key, value]) => `${key} = ${value}`)
         .join('\n');
-      writeFileSync(`${allureResults}/environment.properties`, content);
+      await server.writeFile(`${allureResults}/environment.properties`, content);
     },
 
-    writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
+    async writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
       try {
-        writeFileSync(`${allureResults}/executor.json`, JSON.stringify(arg.info));
+        await server.writeFile(`${allureResults}/executor.json`, JSON.stringify(arg.info));
       } catch (err) {
         logWithPackage('error', `Could not write executor info ${(err as Error).message}`);
       }
     },
 
-    writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
+    async writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
       try {
-        const getCategoriesContent = (): string | undefined => {
+        const getCategoriesContent = async (): Promise<string | undefined> => {
           if (typeof arg.categories !== 'string') {
             return JSON.stringify(arg.categories, null, '  ');
           }
 
           const file = arg.categories;
+          const exists = await server.exists(file);
 
-          if (!existsSync(file)) {
+          if (!exists) {
             logWithPackage('error', `Categories file doesn't exist '${file}'`);
 
             return undefined;
           }
 
-          return readFileSync(file).toString();
+          const content = await server.readFile(file);
+
+          return content.toString();
         };
 
-        const contents = getCategoriesContent();
+        const contents = await getCategoriesContent();
 
         if (!contents) {
           return;
         }
 
-        writeFileSync(`${allureResults}/categories.json`, contents);
+        await server.writeFile(`${allureResults}/categories.json`, contents);
       } catch (err) {
         logWithPackage('error', 'Could not write categories definitions info');
       }
     },
 
-    delete(arg: AllureTaskArgs<'delete'>) {
+    async delete(arg: AllureTaskArgs<'delete'>) {
       try {
-        if (existsSync(arg.path)) {
-          rmSync(arg.path, { recursive: true });
+        const exists = await server.exists(arg.path);
+
+        if (exists) {
+          await server.removeFile(arg.path);
         }
       } catch (err) {
         log(`Could not delete: ${(err as Error).message}`);
       }
     },
 
-    deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
-      allureReporter = new AllureReporter(opts, taskManager);
+    async deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
+      allureReporter = new AllureReporter(opts, taskManager, server);
 
       try {
-        if (existsSync(allureResults)) {
-          rmSync(allureResults, { recursive: true });
+        const exists = await server.exists(allureResults);
+
+        if (exists) {
+          await server.removeFile(allureResults);
         }
       } catch (err) {
         log(`Could not delete: ${(err as Error).message}`);
@@ -375,18 +381,21 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log(`message ${JSON.stringify(arg)}`);
     },
 
-    testMessage: (arg: AllureTaskArgs<'testMessage'>) => {
+    async testMessage(arg: AllureTaskArgs<'testMessage'>) {
       log(`testMessage ${JSON.stringify(arg)}`);
 
       if (!opts.isTest) {
         return;
       }
 
-      if (!existsSync(dirname(arg.path))) {
-        mkdirSync(dirname(arg.path), { recursive: true });
-        writeFileSync(arg.path, '');
+      const dirPath = dirname(arg.path);
+      const dirExists = await server.exists(dirPath);
+
+      if (!dirExists) {
+        await mkdir(dirPath, { recursive: true });
+        await writeFile(arg.path, '');
       }
-      appendFileSync(arg.path, `${arg.message}\n`);
+      await appendFile(arg.path, `${arg.message}\n`);
     },
 
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {

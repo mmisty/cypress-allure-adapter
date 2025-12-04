@@ -3,7 +3,7 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import { existsSync, mkdirSync, rmSync } from 'fs';
+import { startReportingServer, stopReportingServer, REPORTING_SERVER_PORT_ENV } from './reporting-server';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 
@@ -11,10 +11,10 @@ const debug = Debug('cypress-allure:plugins');
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const configureAllureAdapterPlugins = (
+export const configureAllureAdapterPlugins = async (
   on: PluginEvents,
   config: PluginConfigOptions,
-): AllureTasks | undefined => {
+): Promise<AllureTasks | undefined> => {
   if (process.env.DEBUG) {
     config.env['DEBUG'] = process.env.DEBUG;
   }
@@ -57,35 +57,41 @@ export const configureAllureAdapterPlugins = (
   debug('OPTIONS:');
   debug(JSON.stringify(options, null, ' '));
 
+  // Start the reporting server for async filesystem operations
+  const reportingServer = await startReportingServer();
+  config.env[REPORTING_SERVER_PORT_ENV] = reportingServer.getPort();
+
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
     debug('Clean results');
 
-    const cleanDir = (dir: string) => {
-      if (!existsSync(dir)) {
+    const cleanDir = async (dir: string) => {
+      const exists = await reportingServer.exists(dir);
+
+      if (!exists) {
         return;
       }
 
       debug(`Deleting ${dir}`);
 
       try {
-        rmSync(dir, { recursive: true });
+        await reportingServer.removeFile(dir);
       } catch (err) {
         debug(`Error deleting ${dir}: ${(err as Error).message}`);
       }
     };
 
-    cleanDir(options.allureResults);
-    cleanDir(options.techAllureResults);
+    await cleanDir(options.allureResults);
+    await cleanDir(options.techAllureResults);
 
     try {
-      mkdirSync(options.allureResults, { recursive: true });
-      mkdirSync(options.techAllureResults, { recursive: true });
+      await reportingServer.mkdir(options.allureResults, { recursive: true });
+      await reportingServer.mkdir(options.techAllureResults, { recursive: true });
     } catch (err) {
       debug(`Error creating allure-results: ${(err as Error).message}`);
     }
   }
 
-  const reporter = allureTasks(options);
+  const reporter = allureTasks(options, reportingServer);
   debug('Registered with options:');
   debug(options);
 
@@ -106,6 +112,7 @@ export const configureAllureAdapterPlugins = (
   on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {
     debug('after:run');
     await reporter.waitAllFinished({});
+    await stopReportingServer();
     logWithPackage('log', 'Processing all files finished');
   });
 
