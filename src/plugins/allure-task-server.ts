@@ -66,6 +66,7 @@ class OperationQueue {
 
     if (!item) {
       this.running--;
+
       return;
     }
 
@@ -103,9 +104,11 @@ async function executeFsOperation(op: FsOperation): Promise<OperationResult> {
       if (existsSync(op.path)) {
         return { success: true };
       }
+
       for (let i = 0; i < 5; i++) {
         try {
           await mkdir(op.path, { recursive: op.options?.recursive ?? true });
+
           return { success: true };
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
@@ -114,12 +117,14 @@ async function executeFsOperation(op: FsOperation): Promise<OperationResult> {
           await new Promise(resolve => setTimeout(resolve, 50));
         }
       }
+
       return { success: true };
     }
 
     case 'fs:mkdirSync': {
       try {
         mkdirSync(op.path, op.options);
+
         return { success: true };
       } catch (err) {
         return { success: false, error: (err as Error).message };
@@ -129,21 +134,25 @@ async function executeFsOperation(op: FsOperation): Promise<OperationResult> {
     case 'fs:writeFile': {
       const content = op.encoding === 'base64' ? Buffer.from(op.content, 'base64') : op.content;
       await writeFile(op.path, content);
+
       return { success: true };
     }
 
     case 'fs:appendFile': {
       await appendFile(op.path, op.content);
+
       return { success: true };
     }
 
     case 'fs:readFile': {
       const data = await readFile(op.path);
+
       return { success: true, data: data.toString('base64') };
     }
 
     case 'fs:copyFile': {
       await copyFile(op.from, op.to);
+
       if (op.removeSource && op.from !== op.to) {
         try {
           await rm(op.from);
@@ -151,17 +160,20 @@ async function executeFsOperation(op: FsOperation): Promise<OperationResult> {
           // Ignore removal errors
         }
       }
+
       return { success: true };
     }
 
     case 'fs:removeFile': {
       await rm(op.path, { recursive: true, force: true });
+
       return { success: true };
     }
 
     case 'fs:removeFileSync': {
       try {
         rmSync(op.path, { recursive: true, force: true });
+
         return { success: true };
       } catch (err) {
         return { success: false, error: (err as Error).message };
@@ -171,6 +183,7 @@ async function executeFsOperation(op: FsOperation): Promise<OperationResult> {
     case 'fs:exists': {
       try {
         await stat(op.path);
+
         return { success: true, data: true };
       } catch {
         return { success: true, data: false };
@@ -303,11 +316,7 @@ async function attachVideoToContainers(
     const testsAttach = tests.filter(t => t.path && t.path.indexOf(specname) !== -1);
 
     const testsWithSameParent = Array.from(
-      new Map(
-        testsAttach
-          .filter(test => test.parent)
-          .map(test => [test.parent?.uuid, test]),
-      ).values(),
+      new Map(testsAttach.filter(test => test.parent).map(test => [test.parent?.uuid, test])).values(),
     );
 
     for (const test of testsWithSameParent) {
@@ -325,6 +334,7 @@ async function attachVideoToContainers(
 
         // Parse and update container
         const containerJSON = JSON.parse(contents.toString());
+
         const after: FixtureResult = {
           name: 'video',
           attachments: [
@@ -385,8 +395,10 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
     const copyIfNeeded = async (src: string, target: string, removeSource = false) => {
       try {
         await stat(src);
+
         try {
           await stat(target);
+
           // Target exists, skip or remove source
           if (removeSource && src !== target) {
             await rm(src);
@@ -394,6 +406,7 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
         } catch {
           // Target doesn't exist, copy
           await copyFile(src, target);
+
           if (removeSource && src !== target) {
             await rm(src);
           }
@@ -406,7 +419,11 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
     const targetPath = (src: string) => src.replace(allureResults, allureResultsWatch);
 
     // Copy environment, executor, categories
-    await copyIfNeeded(`${allureResults}/environment.properties`, targetPath(`${allureResults}/environment.properties`), true);
+    await copyIfNeeded(
+      `${allureResults}/environment.properties`,
+      targetPath(`${allureResults}/environment.properties`),
+      true,
+    );
     await copyIfNeeded(`${allureResults}/executor.json`, targetPath(`${allureResults}/executor.json`), true);
     await copyIfNeeded(`${allureResults}/categories.json`, targetPath(`${allureResults}/categories.json`), true);
 
@@ -421,12 +438,14 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
       const getAllParentUuids = (t: unknown) => {
         const uuids: string[] = [];
         let current = (t as { parent?: { uuid?: string; parent?: unknown } }).parent;
+
         while (current) {
           if (current.uuid) {
             uuids.push(current.uuid);
           }
           current = current.parent as { uuid?: string; parent?: unknown } | undefined;
         }
+
         return uuids;
       };
 
@@ -443,6 +462,7 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
       }
 
       const containerContents: string[] = [];
+
       for (const containerSource of containerSources) {
         try {
           containerContents.push((await readFile(containerSource)).toString());
@@ -453,9 +473,9 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
 
       const testAttachments = allAttachments.filter(attachFile => {
         const attachBasename = basename(attachFile);
+
         return (
-          testContents.includes(attachBasename) ||
-          containerContents.some(content => content.includes(attachBasename))
+          testContents.includes(attachBasename) || containerContents.some(content => content.includes(attachBasename))
         );
       });
 
@@ -617,6 +637,7 @@ async function writeTestMessage(filePath: string, message: string): Promise<Oper
     }
 
     await appendFile(filePath, `${message}\n`);
+
     return { success: true };
   } catch (err) {
     return { success: false, error: (err as Error).message };
@@ -635,6 +656,7 @@ export const findAvailablePort = async (startPort = 46000): Promise<number> => {
     const tryPort = (port: number, attempts = 0): void => {
       if (attempts > 100) {
         reject(new Error('Could not find available port for task server'));
+
         return;
       }
 
@@ -683,6 +705,7 @@ export class AllureTaskServer {
         if (req.method === 'OPTIONS') {
           res.writeHead(200);
           res.end();
+
           return;
         }
 
@@ -695,12 +718,14 @@ export class AllureTaskServer {
               running: this.operationQueue.runningCount,
             }),
           );
+
           return;
         }
 
         if (req.method !== 'POST' || !req.url?.startsWith(SERVER_PATH)) {
           res.writeHead(404);
           res.end('Not found');
+
           return;
         }
 
@@ -717,6 +742,7 @@ export class AllureTaskServer {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ success: true }));
               setTimeout(() => this.stop(), 100);
+
               return;
             }
 
@@ -748,6 +774,7 @@ export class AllureTaskServer {
     return new Promise(resolve => {
       if (!this.server) {
         resolve();
+
         return;
       }
 
@@ -813,4 +840,3 @@ export const runServer = async (): Promise<void> => {
 if (require.main === module) {
   runServer();
 }
-

@@ -87,9 +87,7 @@ export type ServerOperation = FsOperation | AllureOperation | BatchOperation | C
 /**
  * Result of an operation
  */
-export type OperationResult =
-  | { success: true; data?: unknown }
-  | { success: false; error: string };
+export type OperationResult = { success: true; data?: unknown } | { success: false; error: string };
 
 /**
  * Server endpoints
@@ -97,4 +95,3 @@ export type OperationResult =
 export const SERVER_PATH = '/__allure_tasks/';
 export const SERVER_HEALTH_PATH = '/__allure_health/';
 export const SERVER_PORT_ENV = 'ALLURE_TASK_SERVER_PORT';
-

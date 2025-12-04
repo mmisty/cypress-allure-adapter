@@ -49,11 +49,13 @@ export const configureAllureAdapterPlugins = (
 
   if (config.env['GREP_PRE_FILTER'] === 'true' || config.env['GREP_PRE_FILTER'] === true) {
     debug('Not running allure in prefiltering mode');
+
     return undefined;
   }
 
   if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
     debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
+
     return undefined;
   }
 

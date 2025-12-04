@@ -1,6 +1,6 @@
 import Debug from 'debug';
 import { logWithPackage } from '../common';
-import type { ServerOperation, OperationResult } from './allure-operations';
+import type { ServerOperation } from './allure-operations';
 import { AllureTaskClient } from './allure-task-client';
 
 const debug = Debug('cypress-allure:task-manager');
@@ -23,6 +23,7 @@ class Semaphore {
   async acquire() {
     if (this.count > 0) {
       this.count--;
+
       return;
     }
     await new Promise<void>(resolve => this.waiters.push(resolve));
@@ -31,6 +32,7 @@ class Semaphore {
   release() {
     this.count++;
     const next = this.waiters.shift();
+
     if (next) {
       this.count--;
       next();
@@ -76,11 +78,13 @@ export class TaskManager {
    */
   addTask(entityId: string | undefined, task: TaskFn): void {
     if (!entityId) {
-      logWithPackage('error', `Cannot start task without entityId set`);
+      logWithPackage('error', 'Cannot start task without entityId set');
+
       return;
     }
 
     let queue = this.entityQueues.get(entityId);
+
     if (!queue) {
       queue = { tasks: [], isFlushing: false };
       this.entityQueues.set(entityId, queue);
@@ -101,11 +105,13 @@ export class TaskManager {
    */
   addOperation(entityId: string | undefined, operation: ServerOperation): void {
     if (!entityId) {
-      logWithPackage('error', `Cannot add operation without entityId set`);
+      logWithPackage('error', 'Cannot add operation without entityId set');
+
       return;
     }
 
     let queue = this.entityQueues.get(entityId);
+
     if (!queue) {
       queue = { tasks: [], isFlushing: false };
       this.entityQueues.set(entityId, queue);
@@ -126,6 +132,7 @@ export class TaskManager {
 
     if (!queue) {
       logWithPackage('warn', `Tasks for ${entityId} not found`);
+
       return;
     }
 
@@ -207,6 +214,7 @@ export class TaskManager {
 
     if (!queue) {
       logWithPackage('warn', `Tasks for ${entityId} not found`);
+
       return;
     }
 

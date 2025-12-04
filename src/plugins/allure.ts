@@ -147,10 +147,12 @@ export const allureTasks = (opts: ReporterOptions, client: AllureTaskClient): Al
 
           if (!exists) {
             logWithPackage('error', `Categories file doesn't exist '${file}'`);
+
             return undefined;
           }
 
           const content = await client.readFile(file);
+
           return content.toString();
         };
 

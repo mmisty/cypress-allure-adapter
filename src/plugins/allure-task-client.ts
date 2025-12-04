@@ -8,11 +8,11 @@
 import http from 'http';
 import { spawn, ChildProcess, execSync } from 'child_process';
 import path from 'path';
-import { existsSync, mkdirSync, rmSync } from 'fs';
+import { existsSync } from 'fs';
 import Debug from 'debug';
 import { logWithPackage } from '../common';
-import type { ServerOperation, OperationResult, FsOperation, AllureOperation } from './allure-operations';
-import { SERVER_PATH, SERVER_HEALTH_PATH, SERVER_PORT_ENV } from './allure-operations';
+import type { ServerOperation, OperationResult, FsOperation } from './allure-operations';
+import { SERVER_PATH, SERVER_PORT_ENV } from './allure-operations';
 import { findAvailablePort } from './allure-task-server';
 
 const debug = Debug('cypress-allure:task-client');
@@ -72,6 +72,7 @@ export class AllureTaskClient {
   async start(): Promise<number> {
     if (this.mode === 'local') {
       this.isConnected = true;
+
       return 0;
     }
 
@@ -86,6 +87,7 @@ export class AllureTaskClient {
     debug('Starting task server process');
 
     this.startPromise = this.doStart();
+
     return this.startPromise;
   }
 
@@ -99,6 +101,7 @@ export class AllureTaskClient {
       debug(`Starting server from: ${serverScript} (ts-node: ${useTsNode})`);
 
       const command = useTsNode ? 'npx' : 'node';
+
       const args = useTsNode
         ? ['ts-node', '--transpile-only', serverScript, '--port', String(requestedPort)]
         : [serverScript, '--port', String(requestedPort)];
@@ -132,11 +135,20 @@ export class AllureTaskClient {
       });
 
       this.serverProcess.stderr?.on('data', (data: Buffer) => {
-        debug(`Server stderr: ${data.toString().trim()}`);
+        const output = data.toString();
+
+        // Forward server debug output to parent's stderr so it's visible
+        // Debug package writes to stderr, so we forward it directly
+        if (process.env.DEBUG?.includes('cypress-allure')) {
+          process.stderr.write(output);
+        } else {
+          debug(`Server stderr: ${output.trim()}`);
+        }
       });
 
       this.serverProcess.on('error', err => {
         debug(`Server process error: ${err.message}`);
+
         if (!portResolved) {
           reject(new Error(`Failed to start task server: ${err.message}`));
         }
@@ -146,6 +158,7 @@ export class AllureTaskClient {
         debug(`Server process exited: code=${code}, signal=${signal}`);
         this.isConnected = false;
         this.serverProcess = null;
+
         if (!portResolved) {
           reject(new Error(`Task server exited unexpectedly: code=${code}, signal=${signal}`));
         }
@@ -170,6 +183,7 @@ export class AllureTaskClient {
 
     if (this.startPromise) {
       await this.startPromise;
+
       return;
     }
 
@@ -185,6 +199,7 @@ export class AllureTaskClient {
   private killServer(): void {
     if (this.serverProcess) {
       debug('Killing server process');
+
       try {
         this.serverProcess.kill('SIGTERM');
       } catch {
@@ -286,12 +301,12 @@ export class AllureTaskClient {
    */
   private async executeLocal(operation: ServerOperation): Promise<OperationResult> {
     // Dynamic import to avoid loading server dependencies in remote mode
-    const { AllureTaskServer } = await import('./allure-task-server');
+    // const { AllureTaskServer } = await import('./allure-task-server');
 
     // Create a temporary server instance for local execution
     // Note: This is not ideal but maintains compatibility
     // In production, remote mode should be used
-    const localServer = new AllureTaskServer();
+    // const localServer = new AllureTaskServer();
 
     // For local mode, we execute operations directly without starting HTTP server
     // We need to access the internal execute function
@@ -311,13 +326,16 @@ export class AllureTaskClient {
 
     if (operation.type === 'batch') {
       const results: OperationResult[] = [];
+
       for (const op of operation.operations) {
         results.push(await this.executeLocalOperation(op));
       }
       const allSuccess = results.every(r => r.success);
+
       if (allSuccess) {
         return { success: true, data: results };
       }
+
       return { success: false, error: 'Some batch operations failed' };
     }
 
@@ -326,15 +344,18 @@ export class AllureTaskClient {
       case 'fs:mkdir':
         try {
           await fs.mkdir(operation.path, { recursive: operation.options?.recursive ?? true });
+
           return { success: true };
         } catch (err) {
           if ((err as NodeJS.ErrnoException).code === 'EEXIST') return { success: true };
+
           return { success: false, error: (err as Error).message };
         }
 
       case 'fs:mkdirSync':
         try {
           fsSync.mkdirSync(operation.path, operation.options);
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -342,8 +363,10 @@ export class AllureTaskClient {
 
       case 'fs:writeFile':
         try {
-          const content = operation.encoding === 'base64' ? Buffer.from(operation.content, 'base64') : operation.content;
+          const content =
+            operation.encoding === 'base64' ? Buffer.from(operation.content, 'base64') : operation.content;
           await fs.writeFile(operation.path, content);
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -352,6 +375,7 @@ export class AllureTaskClient {
       case 'fs:appendFile':
         try {
           await fs.appendFile(operation.path, operation.content);
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -360,6 +384,7 @@ export class AllureTaskClient {
       case 'fs:readFile':
         try {
           const data = await fs.readFile(operation.path);
+
           return { success: true, data: data.toString('base64') };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -368,9 +393,15 @@ export class AllureTaskClient {
       case 'fs:copyFile':
         try {
           await fs.copyFile(operation.from, operation.to);
+
           if (operation.removeSource && operation.from !== operation.to) {
-            try { await fs.rm(operation.from); } catch { /* ignore */ }
+            try {
+              await fs.rm(operation.from);
+            } catch {
+              /* ignore */
+            }
           }
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -379,6 +410,7 @@ export class AllureTaskClient {
       case 'fs:removeFile':
         try {
           await fs.rm(operation.path, { recursive: true, force: true });
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -387,6 +419,7 @@ export class AllureTaskClient {
       case 'fs:removeFileSync':
         try {
           fsSync.rmSync(operation.path, { recursive: true, force: true });
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -395,6 +428,7 @@ export class AllureTaskClient {
       case 'fs:exists':
         try {
           await fs.stat(operation.path);
+
           return { success: true, data: true };
         } catch {
           return { success: true, data: false };
@@ -420,6 +454,7 @@ export class AllureTaskClient {
       case 'fs:mkdirSync':
         try {
           fsSync.mkdirSync(operation.path, operation.options);
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -428,6 +463,7 @@ export class AllureTaskClient {
       case 'fs:removeFileSync':
         try {
           fsSync.rmSync(operation.path, { recursive: true, force: true });
+
           return { success: true };
         } catch (err) {
           return { success: false, error: (err as Error).message };
@@ -458,10 +494,12 @@ export class AllureTaskClient {
     // Try remote execution via curl
     try {
       const body = JSON.stringify(operation);
+
       const result = execSync(
         `curl -s -X POST -H "Content-Type: application/json" -d '${body.replace(/'/g, "\\'")}' http://localhost:${this.port}${SERVER_PATH}`,
         { encoding: 'utf-8', timeout: 5000 },
       );
+
       return JSON.parse(result);
     } catch {
       // Fallback to local on error
@@ -498,6 +536,7 @@ export class AllureTaskClient {
   async readFile(filePath: string): Promise<Buffer> {
     const result = await this.execute({ type: 'fs:readFile', path: filePath });
     if (!result.success) throw new Error(result.error);
+
     return Buffer.from(result.data as string, 'base64');
   }
 
@@ -519,12 +558,14 @@ export class AllureTaskClient {
   async exists(filePath: string): Promise<boolean> {
     const result = await this.execute({ type: 'fs:exists', path: filePath });
     if (!result.success) throw new Error(result.error);
+
     return result.data as boolean;
   }
 
   existsSync(filePath: string): boolean {
     const result = this.executeSync({ type: 'fs:existsSync', path: filePath });
     if (!result.success) throw new Error(result.error);
+
     return result.data as boolean;
   }
 
@@ -605,12 +646,14 @@ export const getAllureTaskClient = (mode?: TaskClientMode): AllureTaskClient => 
   if (!clientInstance) {
     clientInstance = new AllureTaskClient(mode ?? 'remote');
   }
+
   return clientInstance;
 };
 
 export const startAllureTaskServer = async (mode?: TaskClientMode): Promise<AllureTaskClient> => {
   const client = getAllureTaskClient(mode);
   await client.start();
+
   return client;
 };
 
@@ -620,4 +663,3 @@ export const stopAllureTaskServer = async (): Promise<void> => {
     clientInstance = null;
   }
 };
-

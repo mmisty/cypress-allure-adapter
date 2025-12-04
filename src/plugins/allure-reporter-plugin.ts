@@ -25,7 +25,6 @@ import {
   UNKNOWN,
 } from './allure-types';
 import { extname, logWithPackage } from '../common';
-import type { ContentType } from '../common/types';
 import { randomUUID } from 'crypto';
 import { mergeStepsWithSingleChild, removeFirstStepWhenSame, wrapHooks } from './helper';
 import { TaskManager } from './task-manager';
@@ -145,6 +144,7 @@ export class AllureReporter {
     if (this.currentTest && allTests[allTests.length - 1]) {
       return allTests[allTests.length - 1];
     }
+
     return undefined;
   }
 
@@ -152,15 +152,18 @@ export class AllureReporter {
     if (this.groups.length === 0) {
       return undefined;
     }
+
     return this.groups[this.groups.length - 1];
   }
 
   get currentTest(): TestInfo | undefined {
     if (this.tests.length === 0) {
       log('No current test!');
+
       return undefined;
     }
     log('current test');
+
     return this.tests[this.tests.length - 1];
   }
 
@@ -169,6 +172,7 @@ export class AllureReporter {
       return undefined;
     }
     log('current hook');
+
     return this.hooks[this.hooks.length - 1];
   }
 
@@ -177,6 +181,7 @@ export class AllureReporter {
       return undefined;
     }
     log('current step');
+
     return this.steps[this.steps.length - 1];
   }
 
@@ -184,12 +189,15 @@ export class AllureReporter {
     if (this.currentStep) {
       return { uuid: this.currentStep.uuid, result: this.currentStep.result, rootUuid: this.currentStep.rootUuid };
     }
+
     if (this.currentHook) {
       return { uuid: this.currentHook.uuid, result: this.currentHook.result };
     }
+
     if (this.currentTest) {
       return { uuid: this.currentTest.uuid, result: this.currentTest.result };
     }
+
     return undefined;
   }
 
@@ -246,6 +254,7 @@ export class AllureReporter {
 
     if (!this.globalHooks.hasHooks()) {
       log('not root hooks');
+
       return;
     }
 
@@ -324,6 +333,7 @@ export class AllureReporter {
     if (!this.currentGroup) {
       log(`no current group - start added hook to storage: ${JSON.stringify(arg)}`);
       this.globalHooks.start(title, hookId);
+
       return;
     }
 
@@ -335,6 +345,7 @@ export class AllureReporter {
       log(`${title} will not be added to suite:${hookId} ${title}`);
       this.endAllSteps({ status: UNKNOWN });
       this.startStep({ name: title });
+
       return;
     }
 
@@ -450,6 +461,7 @@ export class AllureReporter {
     if (!this.currentGroup) {
       log('no current group - will end hook in storage');
       this.globalHooks.end(result, details);
+
       return;
     }
 
@@ -459,6 +471,7 @@ export class AllureReporter {
       );
       this.endStep({ status: hasFailedStep ? Status.FAILED : Status.PASSED });
       this.endAllSteps({ status: UNKNOWN });
+
       return;
     }
 
@@ -474,6 +487,7 @@ export class AllureReporter {
       this.allureRuntime.stopFixture(this.currentHook.uuid);
 
       this.hooks.pop();
+
       return;
     }
   }
@@ -494,6 +508,7 @@ export class AllureReporter {
 
     if (!name) {
       log('No name specified for screenshot, will not attach');
+
       return;
     }
 
@@ -502,6 +517,7 @@ export class AllureReporter {
 
     if (files.length === 0) {
       log(`NO SCREENSHOTS: ${pattern}`);
+
       return;
     }
 
@@ -745,6 +761,7 @@ export class AllureReporter {
 
     if (this.currentTest) {
       log(`will not start already started test: ${fullTitle}`);
+
       return;
     }
 
@@ -817,7 +834,7 @@ export class AllureReporter {
   }
 
   endTests() {
-    for (const _tst of this.tests) {
+    for (let i = 0; i < this.tests.length; i++) {
       this.endTest({ result: UNKNOWN, details: undefined });
     }
   }
@@ -949,6 +966,7 @@ export class AllureReporter {
     if (!this.currentExecutable || this.globalHooks.currentHook) {
       log('will start step for global hook');
       this.globalHooks.startStep(name);
+
       return;
     }
 
@@ -1028,6 +1046,7 @@ export class AllureReporter {
     if (!this.currentExecutable) {
       log('No current executable, test or hook - will end step for global hook');
       this.globalHooks.endStep(arg.status, details);
+
       return;
     }
 
@@ -1061,6 +1080,7 @@ export class AllureReporter {
   ) {
     if (!exec) {
       log('No current executable - will not attach');
+
       return;
     }
 
@@ -1094,6 +1114,7 @@ export class AllureReporter {
 
   public setAttached(file: string) {
     const screen = this.screenshotsTest.find(t => t.path === file);
+
     if (screen) {
       screen.attached = true;
     }
@@ -1106,6 +1127,7 @@ export class AllureReporter {
     if (!this.currentExecutable && this.globalHooks.currentHook) {
       log('No current executable, test or hook - add to global hook');
       this.globalHooks.attachment(arg.name, arg.file, arg.type);
+
       return;
     }
 
@@ -1168,6 +1190,7 @@ export class AllureReporter {
       return res;
     } catch (err) {
       logWithPackage('error', 'could not get existing environment info');
+
       return {};
     }
   }
