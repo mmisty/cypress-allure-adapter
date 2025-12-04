@@ -3,11 +3,40 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import { stopReportingServer, ReportingServer } from './reporting-server';
+import { stopReportingServer, ReportingServer, ReportingServerMode } from './reporting-server';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:plugins');
+
+/**
+ * Environment variable to control the reporting server mode
+ * - 'remote': FS operations run in a separate process (recommended for production)
+ * - 'local': FS operations run in the same process (legacy behavior)
+ */
+const ALLURE_FS_MODE_ENV = 'ALLURE_FS_MODE';
+
+/**
+ * Get the reporting server mode from environment or config
+ */
+const getReportingServerMode = (config: PluginConfigOptions): ReportingServerMode => {
+  // Check environment variable first
+  const envMode = process.env[ALLURE_FS_MODE_ENV];
+
+  if (envMode === 'local' || envMode === 'remote') {
+    return envMode;
+  }
+
+  // Check cypress config
+  const configMode = config.env['allureFsMode'];
+
+  if (configMode === 'local' || configMode === 'remote') {
+    return configMode;
+  }
+
+  // Default to 'remote' for better performance (FS operations in separate process)
+  return 'remote';
+};
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -57,9 +86,21 @@ export const configureAllureAdapterPlugins = (
   debug('OPTIONS:');
   debug(JSON.stringify(options, null, ' '));
 
-  // Start the reporting server for async filesystem operations
-  const reportingServer = new ReportingServer();
-  // config.env[REPORTING_SERVER_PORT_ENV] = reportingServer.getPort();
+  // Determine FS server mode
+  const fsMode = getReportingServerMode(config);
+  debug(`FS server mode: ${fsMode}`);
+
+  // Create the reporting server with the appropriate mode
+  // In 'remote' mode, FS operations will run in a separate process
+  const reportingServer = new ReportingServer({ mode: fsMode });
+
+  // Start the remote FS server if in remote mode
+  // The server will be started asynchronously, but operations will wait for it
+  if (fsMode === 'remote') {
+    reportingServer.startRemote().catch(err => {
+      logWithPackage('error', `Failed to start remote FS server: ${err.message}`);
+    });
+  }
 
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
     debug('Clean results');
