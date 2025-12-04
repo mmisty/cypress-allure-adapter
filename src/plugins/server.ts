@@ -82,6 +82,19 @@ function retrieveRandomPortNumber(): number {
   return port;
 }
 
+const debugQueue = Debug('cypress-allure:server:queue');
+
+// Verbose logging that can be enabled via ALLURE_DEBUG_QUEUE env var
+const isVerboseQueue = () => process.env.ALLURE_DEBUG_QUEUE === 'true';
+
+const logQueue = (...args: unknown[]) => {
+  debugQueue(`${args}`);
+
+  if (isVerboseQueue()) {
+    logWithPackage('log', `[queue] ${args}`);
+  }
+};
+
 /**
  * Message queue to ensure messages are processed in order
  */
@@ -100,6 +113,7 @@ class MessageProcessingQueue {
   enqueue(data: RawData): Promise<void> {
     return new Promise(resolve => {
       this.queue.push({ data, resolve });
+      logQueue(`Enqueued message, queue size: ${this.queue.length}`);
       this.processNext();
     });
   }
@@ -118,8 +132,11 @@ class MessageProcessingQueue {
       return;
     }
 
+    logQueue(`Processing message, remaining in queue: ${this.queue.length}`);
+
     try {
       await this.processMessage(item.data);
+      logQueue('Message processed successfully');
     } finally {
       item.resolve();
       this.isProcessing = false;
@@ -127,6 +144,7 @@ class MessageProcessingQueue {
       // Process next item in queue using setImmediate to avoid stack overflow
       // and ensure proper event loop behavior
       if (this.queue.length > 0) {
+        logQueue('Scheduling next message processing');
         setImmediate(() => this.processNext());
       }
     }
@@ -148,6 +166,10 @@ class MessageProcessingQueue {
     };
     const requestData = parseData(data);
     const payload = requestData.data;
+
+    logQueue(
+      `Task: ${payload?.task}, arg: ${JSON.stringify(payload?.arg?.title || payload?.arg?.name || payload?.arg?.message || '')}`,
+    );
 
     if (requestData.id) {
       const result = await executeTask(this.tasks, payload);
