@@ -3,7 +3,12 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import { startReportingServer, stopReportingServer, REPORTING_SERVER_PORT_ENV } from './reporting-server';
+import {
+  startReportingServer,
+  stopReportingServer,
+  REPORTING_SERVER_PORT_ENV,
+  ReportingServer,
+} from './reporting-server';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 
@@ -11,10 +16,10 @@ const debug = Debug('cypress-allure:plugins');
 
 // this runs in node
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const configureAllureAdapterPlugins = async (
+export const configureAllureAdapterPlugins = (
   on: PluginEvents,
   config: PluginConfigOptions,
-): Promise<AllureTasks | undefined> => {
+): AllureTasks | undefined => {
   if (process.env.DEBUG) {
     config.env['DEBUG'] = process.env.DEBUG;
   }
@@ -58,14 +63,14 @@ export const configureAllureAdapterPlugins = async (
   debug(JSON.stringify(options, null, ' '));
 
   // Start the reporting server for async filesystem operations
-  const reportingServer = await startReportingServer();
-  config.env[REPORTING_SERVER_PORT_ENV] = reportingServer.getPort();
+  const reportingServer = new ReportingServer();
+  // config.env[REPORTING_SERVER_PORT_ENV] = reportingServer.getPort();
 
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
     debug('Clean results');
 
-    const cleanDir = async (dir: string) => {
-      const exists = await reportingServer.exists(dir);
+    const cleanDir = (dir: string) => {
+      const exists = reportingServer.existsSync(dir);
 
       if (!exists) {
         return;
@@ -74,18 +79,18 @@ export const configureAllureAdapterPlugins = async (
       debug(`Deleting ${dir}`);
 
       try {
-        await reportingServer.removeFile(dir);
+        reportingServer.removeFileSync(dir);
       } catch (err) {
         debug(`Error deleting ${dir}: ${(err as Error).message}`);
       }
     };
 
-    await cleanDir(options.allureResults);
-    await cleanDir(options.techAllureResults);
+    cleanDir(options.allureResults);
+    cleanDir(options.techAllureResults);
 
     try {
-      await reportingServer.mkdir(options.allureResults, { recursive: true });
-      await reportingServer.mkdir(options.techAllureResults, { recursive: true });
+      reportingServer.mkdirSync(options.allureResults, { recursive: true });
+      reportingServer.mkdirSync(options.techAllureResults, { recursive: true });
     } catch (err) {
       debug(`Error creating allure-results: ${(err as Error).message}`);
     }

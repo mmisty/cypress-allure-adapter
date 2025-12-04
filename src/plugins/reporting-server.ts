@@ -12,6 +12,8 @@ import {
   fileExistsAsync,
   existsSync,
 } from './fs-async';
+import { mkdirSync, rmSync } from 'fs';
+import { rm } from 'fs/promises';
 
 const debug = Debug('cypress-allure:reporting-server');
 const debugOps = Debug('cypress-allure:reporting-server:ops');
@@ -334,6 +336,10 @@ export class ReportingServer {
     }
   }
 
+  mkdirSync(path: string, options?: { recursive?: boolean }): void {
+    mkdirSync(path, options);
+  }
+
   async writeFile(path: string, content: string | Buffer): Promise<void> {
     const contentStr = Buffer.isBuffer(content) ? content.toString('base64') : content;
     const encoding: BufferEncoding | undefined = Buffer.isBuffer(content) ? 'base64' : undefined;
@@ -376,6 +382,10 @@ export class ReportingServer {
     if (!result.success) {
       throw new Error(result.error);
     }
+  }
+
+  removeFileSync(path: string): void {
+    rmSync(path, { recursive: true, force: true });
   }
 
   async exists(path: string): Promise<boolean> {
