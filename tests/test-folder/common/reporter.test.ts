@@ -3,6 +3,7 @@ import { parseAllure } from 'allure-js-parser';
 import { existsSync, rmSync } from 'fs';
 import { mapSteps } from '@test-utils';
 import type { ReporterOptions } from '@src/plugins/allure';
+import { AllureTaskClient } from '@src/plugins/allure-task-client';
 
 /**
  * Test for issue that some steps had unknown status
@@ -13,6 +14,19 @@ describe('reporter', () => {
   const allureTasks = require('../../../src/plugins/allure').allureTasks;
   const resultsPath = 'allure-results-jest';
   const resultsPathWatch = `${resultsPath}/watch`;
+  let client: AllureTaskClient;
+
+  beforeEach(async () => {
+    // Use local mode client for tests (no separate process)
+    client = new AllureTaskClient('remote');
+    await client.start();
+  });
+
+  afterEach(async () => {
+    // Use local mode client for tests (no separate process)
+    client = new AllureTaskClient('remote');
+    await client.stop();
+  });
 
   it('should correctly end all steps', async () => {
     if (existsSync(resultsPath)) {
@@ -29,7 +43,8 @@ describe('reporter', () => {
       showDuplicateWarn: false,
       isTest: false,
     };
-    const reporter = allureTasks(opts);
+
+    const reporter = allureTasks(opts, client);
 
     reporter.specStarted({
       spec: {

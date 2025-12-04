@@ -2,6 +2,7 @@ import { existsSync, rmSync } from 'fs';
 import { readWithRetry } from '@test-utils';
 import type { ReporterOptions } from '@src/plugins/allure';
 import { AllureTasks, Status } from '@src/plugins/allure-types';
+import { AllureTaskClient } from '@src/plugins/allure-task-client';
 
 describe('reporter - add env info', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -9,6 +10,7 @@ describe('reporter - add env info', () => {
   const resultsPath = 'allure-results-jest';
   const resultsPathWatch = `${resultsPath}/watch`;
   let reporter: AllureTasks;
+  let client: AllureTaskClient;
 
   const opts: ReporterOptions = {
     allureAddVideoOnPass: false,
@@ -21,8 +23,11 @@ describe('reporter - add env info', () => {
     isTest: false,
   };
 
-  beforeEach(() => {
-    reporter = allureTasks(opts);
+  beforeEach(async () => {
+    // Use local mode client for tests (no separate process)
+    client = new AllureTaskClient('remote');
+    await client.start();
+    reporter = allureTasks(opts, client);
 
     if (existsSync(resultsPath)) {
       rmSync(resultsPath, { recursive: true });
