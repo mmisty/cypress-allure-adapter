@@ -4,7 +4,7 @@
   "description": "cypress allure adapter to generate allure results during tests execution (Allure TestOps compatible)",
   "main": "index.js",
   "bin": {
-    "allure-fs-server": "./plugins/bin/allure-fs-server.js"
+    "allure-task-server": "./plugins/allure-task-server.js"
   },
   "repository": "git@github.com:mmisty/cypress-allure-adapter.git",
   "homepage": "https://github.com/mmisty/cypress-allure-adapter#readme",

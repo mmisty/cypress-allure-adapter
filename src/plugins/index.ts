@@ -3,43 +3,42 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import { stopReportingServer, ReportingServer, ReportingServerMode } from './reporting-server';
+import { AllureTaskClient, stopAllureTaskServer, TaskClientMode } from './allure-task-client';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:plugins');
 
 /**
- * Environment variable to control the reporting server mode
- * - 'remote': FS operations run in a separate process (recommended for production)
- * - 'local': FS operations run in the same process (legacy behavior)
+ * Environment variable to control the task server mode
+ * - 'remote': All operations run in a separate process (recommended for production)
+ * - 'local': All operations run in the same process (legacy behavior)
  */
-const ALLURE_FS_MODE_ENV = 'ALLURE_FS_MODE';
+const ALLURE_MODE_ENV = 'ALLURE_MODE';
 
 /**
- * Get the reporting server mode from environment or config
+ * Get the task client mode from environment or config
  */
-const getReportingServerMode = (config: PluginConfigOptions): ReportingServerMode => {
+const getTaskClientMode = (config: PluginConfigOptions): TaskClientMode => {
   // Check environment variable first
-  const envMode = process.env[ALLURE_FS_MODE_ENV];
+  const envMode = process.env[ALLURE_MODE_ENV];
 
   if (envMode === 'local' || envMode === 'remote') {
     return envMode;
   }
 
   // Check cypress config
-  const configMode = config.env['allureFsMode'];
+  const configMode = config.env['allureMode'];
 
   if (configMode === 'local' || configMode === 'remote') {
     return configMode;
   }
 
-  // Default to 'remote' for better performance (FS operations in separate process)
+  // Default to 'remote' for better performance
   return 'remote';
 };
 
 // this runs in node
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const configureAllureAdapterPlugins = (
   on: PluginEvents,
   config: PluginConfigOptions,
@@ -50,13 +49,11 @@ export const configureAllureAdapterPlugins = (
 
   if (config.env['GREP_PRE_FILTER'] === 'true' || config.env['GREP_PRE_FILTER'] === true) {
     debug('Not running allure in prefiltering mode');
-
     return undefined;
   }
 
   if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
     debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
-
     return undefined;
   }
 
@@ -78,7 +75,7 @@ export const configureAllureAdapterPlugins = (
     allureResults: results,
     techAllureResults: watchResultsPath ?? results,
     allureSkipSteps: config.env['allureSkipSteps'] ?? '',
-    screenshots: config.screenshotsFolder || 'no', // todo when false
+    screenshots: config.screenshotsFolder || 'no',
     videos: config.videosFolder,
     isTest: config.env['JEST_TEST'] === 'true' || config.env['JEST_TEST'] === true,
   };
@@ -86,59 +83,60 @@ export const configureAllureAdapterPlugins = (
   debug('OPTIONS:');
   debug(JSON.stringify(options, null, ' '));
 
-  // Determine FS server mode
-  const fsMode = getReportingServerMode(config);
-  debug(`FS server mode: ${fsMode}`);
+  // Determine mode
+  const mode = getTaskClientMode(config);
+  debug(`Task client mode: ${mode}`);
 
-  // Create the reporting server with the appropriate mode
-  // In 'remote' mode, FS operations will run in a separate process
-  const reportingServer = new ReportingServer({ mode: fsMode });
+  // Create the task client
+  const client = new AllureTaskClient(mode);
 
-  // Start the remote FS server if in remote mode
-  // The server will be started asynchronously, but operations will wait for it
-  if (fsMode === 'remote') {
-    reportingServer.startRemote().catch(err => {
-      logWithPackage('error', `Failed to start remote FS server: ${err.message}`);
-    });
-  }
+  // Start the task server (async - doesn't block)
+  client.start().catch(err => {
+    logWithPackage('error', `Failed to start task server: ${err.message}`);
+  });
 
-  if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
-    debug('Clean results');
-
-    const cleanDir = (dir: string) => {
-      const exists = reportingServer.existsSync(dir);
-
-      if (!exists) {
-        return;
-      }
-
-      debug(`Deleting ${dir}`);
-
-      try {
-        reportingServer.removeFileSync(dir);
-      } catch (err) {
-        debug(`Error deleting ${dir}: ${(err as Error).message}`);
-      }
-    };
-
-    cleanDir(options.allureResults);
-    cleanDir(options.techAllureResults);
-
-    try {
-      reportingServer.mkdirSync(options.allureResults, { recursive: true });
-      reportingServer.mkdirSync(options.techAllureResults, { recursive: true });
-    } catch (err) {
-      debug(`Error creating allure-results: ${(err as Error).message}`);
-    }
-  }
-
-  const reporter = allureTasks(options, reportingServer);
+  // Create reporter first so we can use task manager for cleanup
+  const reporter = allureTasks(options, client);
   debug('Registered with options:');
   debug(options);
 
+  // Clean results if requested - use async operations via task manager (doesn't block)
+  if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
+    debug('Clean results (async)');
+
+    // Queue cleanup operations - these will execute asynchronously
+    // and complete before the first spec starts
+    const { taskManager } = reporter;
+
+    // Remove and recreate allure results directory
+    taskManager.addOperation('__cleanup__', {
+      type: 'fs:removeFile',
+      path: options.allureResults,
+    });
+
+    taskManager.addOperation('__cleanup__', {
+      type: 'fs:mkdir',
+      path: options.allureResults,
+      options: { recursive: true },
+    });
+
+    // Remove and recreate watch directory if different
+    if (options.techAllureResults !== options.allureResults) {
+      taskManager.addOperation('__cleanup__', {
+        type: 'fs:removeFile',
+        path: options.techAllureResults,
+      });
+
+      taskManager.addOperation('__cleanup__', {
+        type: 'fs:mkdir',
+        path: options.techAllureResults,
+        options: { recursive: true },
+      });
+    }
+  }
+
   startReporterServer(config, reporter);
 
-  // todo cleanup
   config.reporterOptions = {
     ...config.reporterOptions,
     url: config.reporterUrl,
@@ -153,7 +151,7 @@ export const configureAllureAdapterPlugins = (
   on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {
     debug('after:run');
     await reporter.waitAllFinished({});
-    await stopReportingServer();
+    await stopAllureTaskServer();
     logWithPackage('log', 'Processing all files finished');
   });
 
