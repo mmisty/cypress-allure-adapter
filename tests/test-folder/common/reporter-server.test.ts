@@ -15,6 +15,17 @@ describe('startReporterServer', () => {
     const messages = require('../../../src/plugins/server').testMessages;
     messages.splice(0, messages.length);
   });
+  let client: AllureTaskClient;
+
+  beforeEach(async () => {
+    // Use local mode client for tests (no separate process)
+    client = new AllureTaskClient('remote');
+    await client.start();
+  });
+
+  afterEach(async () => {
+    await client.stop();
+  });
 
   const start = async (
     debug: boolean,
@@ -28,10 +39,6 @@ describe('startReporterServer', () => {
       require('../../../src/plugins/server').startReporterServer;
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const allureTasks = require('../../../src/plugins/allure').allureTasks;
-
-    // Use local mode client for tests (no separate process)
-    const client = new AllureTaskClient('remote');
-    await client.start();
 
     const reporter = allureTasks(
       {

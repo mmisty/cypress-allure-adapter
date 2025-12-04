@@ -17,14 +17,11 @@ describe('reporter', () => {
   let client: AllureTaskClient;
 
   beforeEach(async () => {
-    // Use local mode client for tests (no separate process)
     client = new AllureTaskClient('remote');
     await client.start();
   });
 
   afterEach(async () => {
-    // Use local mode client for tests (no separate process)
-    client = new AllureTaskClient('remote');
     await client.stop();
   });
 

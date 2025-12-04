@@ -24,9 +24,15 @@ describe('reporter - add env info', () => {
   };
 
   beforeEach(async () => {
-    // Use local mode client for tests (no separate process)
     client = new AllureTaskClient('remote');
     await client.start();
+  });
+
+  afterEach(async () => {
+    await client.stop();
+  });
+
+  beforeEach(async () => {
     reporter = allureTasks(opts, client);
 
     if (existsSync(resultsPath)) {
