@@ -11,6 +11,7 @@ import { startTestServer } from './test-server';
 import { Server } from 'http';
 import { addCucumberPreprocessorPlugin } from '@badeball/cypress-cucumber-preprocessor';
 import { EventForwarder } from './events-forwarder';
+import net from 'net';
 
 /**
  * Clear compiled js files from previous runs, otherwise coverage will be messed up
@@ -80,10 +81,37 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
     fileExists: (filePath: string) => {
       return existsSync(filePath);
     },
-    startTestServer(port?: number) {
-      const port2 = 40000 + Math.round(Math.random() * 25000);
+    async startTestServer(port?: number) {
+      const findAvailablePort = async (startPort = 45000): Promise<number> => {
+        return new Promise((resolve, reject) => {
+          const tryPort = (port: number, attempts = 0): void => {
+            if (attempts > 50) {
+              reject(new Error('Could not find available port for reporting server'));
 
-      for (let i = 0; i < 10; i++) {
+              return;
+            }
+
+            const server = net.createServer();
+
+            server.listen(port, () => {
+              server.close(() => {
+                resolve(port);
+              });
+            });
+
+            server.on('error', () => {
+              // Port in use, try next
+              tryPort(port + 1, attempts + 1);
+            });
+          };
+
+          tryPort(startPort);
+        });
+      };
+
+      const port2 = await findAvailablePort();
+
+      for (let i = 0; i < 30; i++) {
         try {
           server = startTestServer(port ?? port2);
 

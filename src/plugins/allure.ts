@@ -1,10 +1,9 @@
 import Debug from 'debug';
 import { AllureReporter } from './allure-reporter-plugin';
 import { AllureTaskArgs, AllureTasks, Status } from './allure-types';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { logWithPackage } from '../common';
-import { dirname } from 'path';
 import { TaskManager } from './task-manager';
+import { AllureTaskClient } from './allure-task-client';
 
 const debug = Debug('cypress-allure:proxy');
 
@@ -24,48 +23,20 @@ export type ReporterOptions = {
   isTest: boolean;
 };
 
-// const copyResultsToWatchFolder = async (allureResults: string, allureResultsWatch: string) => {
-//   if (allureResults === allureResultsWatch) {
-//     log(`copyResultsToWatchFolder: allureResultsWatch the same as allureResults ${allureResults}, will not copy`);
-//
-//     return;
-//   }
-//
-//   const results = glob.sync(`${allureResults}/*.*`);
-//
-//   mkdirSyncWithTry(allureResultsWatch);
-//
-//   log(`allureResults: ${allureResults}`);
-//   log(`allureResultsWatch: ${allureResultsWatch}`);
-//
-//   const resultCopyTasks = results.map(res => {
-//     const to = `${allureResultsWatch}/${basename(res)}`;
-//
-//     return copyFileCp(res, to, true);
-//   });
-//
-//   await Promise.all(resultCopyTasks)
-//     .then(() => {
-//       log('All results copied to watch folder');
-//     })
-//     .catch(err => {
-//       log('Some files failed to copy to watch folder:', err);
-//     });
-// };
-
-export const allureTasks = (opts: ReporterOptions): AllureTasks => {
-  // todo config
+export const allureTasks = (opts: ReporterOptions, client: AllureTaskClient): AllureTasks => {
   const taskManager = new TaskManager();
-  let allureReporter = new AllureReporter(opts, taskManager);
+  taskManager.setClient(client);
+
+  let allureReporter = new AllureReporter(opts, taskManager, client);
   const allureResults = opts.allureResults;
-  // const allureResultsWatch = opts.techAllureResults;
+  const allureResultsWatch = opts.techAllureResults;
 
   return {
     taskManager,
     specStarted: (arg: AllureTaskArgs<'specStarted'>) => {
       log(`specStarted: ${JSON.stringify(arg)}`);
       // reset state on spec start
-      allureReporter = new AllureReporter(opts, taskManager);
+      allureReporter = new AllureReporter(opts, taskManager, client);
       allureReporter.specStarted(arg);
       log('specStarted');
     },
@@ -110,7 +81,7 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         // Add child steps from the merged step
         if (allureReporter.currentStep) {
           last.steps.forEach((s: { name?: string }) => {
-            allureReporter.currentStep!.result.steps.push(s as any);
+            allureReporter.currentStep!.result.steps.push(s as never);
           });
         }
       } else {
@@ -138,12 +109,6 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log('suiteEnded');
     },
 
-    /* globalHook: (arg: AllureTaskArgs<'globalHook'>) => {
-      log(`globalHook ${JSON.stringify(arg)}`);
-      allureReporter.addGlobalHooks();
-      log('globalHook');
-    },*/
-
     testStarted(arg: AllureTaskArgs<'testStarted'>) {
       log(`testStarted ${JSON.stringify(arg)}`);
       allureReporter.startTest(arg);
@@ -151,101 +116,78 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     },
 
     writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
-      try {
-        if (!existsSync(allureResults)) {
-          mkdirSync(allureResults);
-        }
-
-        // Write in old format (key = value) for backwards compatibility
-        const content = Object.entries(arg.info)
-          .filter(([key, value]) => key && value !== undefined)
-          .map(([key, value]) => `${key} = ${value}`)
-          .join('\n');
-        writeFileSync(`${allureResults}/environment.properties`, content);
-      } catch (err) {
-        logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
-      }
+      log(`writeEnvironmentInfo ${JSON.stringify(arg)}`);
+      allureReporter.writeEnvironmentInfo(arg);
+      log('writeEnvironmentInfo');
     },
 
-    addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
-      const additionalInfo = arg.info;
-      const existing = allureReporter.getEnvInfo(allureResults);
-      // be careful with parallelization, todo
-
-      // do not override values when it is different from additional
-      for (const key in existing) {
-        if (additionalInfo[key] && additionalInfo[key] !== existing[key]) {
-          additionalInfo[key] += `,${existing[key]}`;
-        }
-      }
-      const newInfo = { ...existing, ...additionalInfo };
-
-      // Write in old format (key = value) for backwards compatibility
-      if (!existsSync(allureResults)) {
-        mkdirSync(allureResults);
-      }
-
-      const content = Object.entries(newInfo)
-        .filter(([key, value]) => key && value !== undefined)
-        .map(([key, value]) => `${key} = ${value}`)
-        .join('\n');
-      writeFileSync(`${allureResults}/environment.properties`, content);
+    async addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
+      log(`addEnvironmentInfo ${JSON.stringify(arg)}`);
+      allureReporter.addEnvironmentInfo(arg);
+      log('addEnvironmentInfo');
     },
 
-    writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
+    async writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {
       try {
-        writeFileSync(`${allureResults}/executor.json`, JSON.stringify(arg.info));
+        await client.writeFile(`${allureResults}/executor.json`, JSON.stringify(arg.info));
       } catch (err) {
         logWithPackage('error', `Could not write executor info ${(err as Error).message}`);
       }
     },
 
-    writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
+    async writeCategoriesDefinitions(arg: AllureTaskArgs<'writeCategoriesDefinitions'>) {
       try {
-        const getCategoriesContent = (): string | undefined => {
+        const getCategoriesContent = async (): Promise<string | undefined> => {
           if (typeof arg.categories !== 'string') {
             return JSON.stringify(arg.categories, null, '  ');
           }
 
           const file = arg.categories;
+          const exists = await client.exists(file);
 
-          if (!existsSync(file)) {
+          if (!exists) {
             logWithPackage('error', `Categories file doesn't exist '${file}'`);
 
             return undefined;
           }
 
-          return readFileSync(file).toString();
+          const content = await client.readFile(file);
+
+          return content.toString();
         };
 
-        const contents = getCategoriesContent();
+        const contents = await getCategoriesContent();
 
         if (!contents) {
           return;
         }
 
-        writeFileSync(`${allureResults}/categories.json`, contents);
+        await client.writeFile(`${allureResults}/categories.json`, contents);
       } catch (err) {
         logWithPackage('error', 'Could not write categories definitions info');
       }
     },
 
-    delete(arg: AllureTaskArgs<'delete'>) {
+    async delete(arg: AllureTaskArgs<'delete'>) {
       try {
-        if (existsSync(arg.path)) {
-          rmSync(arg.path, { recursive: true });
+        const exists = await client.exists(arg.path);
+
+        if (exists) {
+          await client.removeFile(arg.path);
         }
       } catch (err) {
         log(`Could not delete: ${(err as Error).message}`);
       }
     },
 
-    deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
-      allureReporter = new AllureReporter(opts, taskManager);
+    async deleteResults(_arg: AllureTaskArgs<'deleteResults'>) {
+      allureReporter = new AllureReporter(opts, taskManager, client);
 
       try {
-        if (existsSync(allureResults)) {
-          rmSync(allureResults, { recursive: true });
+        const exists = await client.exists(allureResults);
+
+        if (exists) {
+          await client.removeFile(allureResults);
         }
       } catch (err) {
         log(`Could not delete: ${(err as Error).message}`);
@@ -375,18 +317,18 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
       log(`message ${JSON.stringify(arg)}`);
     },
 
-    testMessage: (arg: AllureTaskArgs<'testMessage'>) => {
+    async testMessage(arg: AllureTaskArgs<'testMessage'>) {
       log(`testMessage ${JSON.stringify(arg)}`);
 
       if (!opts.isTest) {
         return;
       }
 
-      if (!existsSync(dirname(arg.path))) {
-        mkdirSync(dirname(arg.path), { recursive: true });
-        writeFileSync(arg.path, '');
+      try {
+        await client.writeTestMessage(arg.path, arg.message);
+      } catch (err) {
+        log(`Could not write test message: ${(err as Error).message}`);
       }
-      appendFileSync(arg.path, `${arg.message}\n`);
     },
 
     screenshotOne: (arg: AllureTaskArgs<'screenshotOne'>) => {
@@ -403,18 +345,33 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
     async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
 
-      if (arg.results && arg.results?.video) {
-        const { video } = arg.results ?? {};
+      // Attach video via server operation
+      if (arg.results?.video) {
+        const { video } = arg.results;
         log(`afterSpec video path: ${video}`);
 
-        allureReporter.attachVideoToContainers({ path: video ?? '' });
+        taskManager.addOperation(arg.results.spec.relative, {
+          type: 'allure:attachVideo',
+          allureResults,
+          videoPath: video,
+          allureAddVideoOnPass: opts.allureAddVideoOnPass,
+        });
       } else {
         logWithPackage('error', 'No video path in afterSpec result');
       }
 
-      // attach missing screenshots
+      // Attach screenshots via server operation
       try {
-        allureReporter.attachScreenshots(arg.results);
+        const screenshots = allureReporter.getScreenshotsForSpec(arg.results);
+
+        if (screenshots.length > 0) {
+          taskManager.addOperation(arg.results.spec.relative, {
+            type: 'allure:attachScreenshots',
+            allureResults,
+            screenshots,
+            allTests: allureReporter.getAllTests(),
+          });
+        }
       } catch (err) {
         logWithPackage(
           'error',
@@ -422,8 +379,16 @@ export const allureTasks = (opts: ReporterOptions): AllureTasks => {
         );
       }
 
-      // this should be done after video processed
-      allureReporter.afterSpecMoveToWatch();
+      // Move to watch folder via server operation
+      if (allureResults !== allureResultsWatch) {
+        taskManager.addOperation(arg.results.spec.relative, {
+          type: 'allure:moveToWatch',
+          allureResults,
+          allureResultsWatch,
+        });
+      }
+
+      // Wait for all operations to complete
       taskManager.flushAllTasksForQueue(arg.results.spec.relative).then(() => {
         logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
       });

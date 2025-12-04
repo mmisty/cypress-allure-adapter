@@ -110,7 +110,7 @@ export const prepareResults = async (
     `${env?.video === undefined ? false : env?.video}`,
   );
 
-  process.env.DEBUG = env?.DEBUG ? 'cypress-allure*' : '';
+  process.env.DEBUG = env?.DEBUG === 'true' ? 'cypress-allure*' : env?.DEBUG;
   process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
   // for not having type issues

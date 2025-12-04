@@ -8,7 +8,7 @@ module.exports = {
     commonjs: false,
     es2021: true,
   },
-  plugins: ['prettier', '@typescript-eslint', 'promise', 'import'],
+  plugins: ['prettier', '@typescript-eslint', 'promise', 'import', 'cypress'],
   ignorePatterns: ['*.yaml', '*.yml', '*.csv'],
 
   rules: {
@@ -62,4 +62,29 @@ module.exports = {
       },
     ],
   },
+  overrides: [
+    {
+      files: ['**/cypress/**/*.cy.ts'],
+      extends: ['plugin:cypress/recommended'],
+      rules: {
+        // Disable jest rules for Cypress test files
+        'jest/expect-expect': 'off',
+        'jest/valid-expect': 'off',
+        'jest/valid-expect-in-promise': 'off',
+        'jest/no-standalone-expect': 'off',
+        'jest/no-disabled-tests': 'off',
+        'jest/no-focused-tests': 'off',
+        'jest/no-identical-title': 'off',
+        'jest/no-commented-out-tests': 'off',
+        // Enable cypress rules
+        'cypress/no-unnecessary-waiting': 'error',
+        'cypress/no-assigning-return-values': 'error',
+        'cypress/assertion-before-screenshot': 'warn',
+        '@typescript-eslint/ban-ts-comment': 'error',
+      },
+      env: {
+        'cypress/globals': true,
+      },
+    },
+  ],
 };

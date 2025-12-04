@@ -2,6 +2,7 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { existsSync, rmSync } from 'fs';
 import { AllureTest, parseAllure } from 'allure-js-parser';
 import { consoleMock } from '../../mocks/console-mock';
+import { AllureTaskClient } from '@src/plugins/allure-task-client';
 
 jest.setTimeout(60000);
 const results = 'reports/allure-res';
@@ -14,8 +15,19 @@ describe('startReporterServer', () => {
     const messages = require('../../../src/plugins/server').testMessages;
     messages.splice(0, messages.length);
   });
+  let client: AllureTaskClient;
 
-  const start = (
+  beforeEach(async () => {
+    // Use local mode client for tests (no separate process)
+    client = new AllureTaskClient('remote');
+    await client.start();
+  });
+
+  afterEach(async () => {
+    await client.stop();
+  });
+
+  const start = async (
     debug: boolean,
     env: any,
   ): Promise<{ serv: undefined | WebSocketServer }> => {
@@ -28,16 +40,19 @@ describe('startReporterServer', () => {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const allureTasks = require('../../../src/plugins/allure').allureTasks;
 
-    const reporter = allureTasks({
-      allureAddVideoOnPass: true,
-      allureResults: results,
-      techAllureResults: resultsPathWatch,
-      videos: 'reports/screens',
-      screenshots: 'reports/screens',
-      showDuplicateWarn: true,
-      allureSkipSteps: '',
-      isTest: false,
-    });
+    const reporter = allureTasks(
+      {
+        allureAddVideoOnPass: true,
+        allureResults: results,
+        techAllureResults: resultsPathWatch,
+        videos: 'reports/screens',
+        screenshots: 'reports/screens',
+        showDuplicateWarn: true,
+        allureSkipSteps: '',
+        isTest: false,
+      },
+      client,
+    );
     const serv: { serv: undefined | WebSocketServer } = { serv: undefined };
     serv.serv = startReporterServer({ env } as any, reporter);
 

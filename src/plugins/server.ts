@@ -82,6 +82,212 @@ function retrieveRandomPortNumber(): number {
   return port;
 }
 
+const debugQueue = Debug('cypress-allure:server:queue');
+
+// Verbose logging that can be enabled via ALLURE_DEBUG_QUEUE env var
+const isVerboseQueue = () => process.env.ALLURE_DEBUG_QUEUE === 'true';
+
+const logQueue = (...args: unknown[]) => {
+  debugQueue(`${args}`);
+
+  if (isVerboseQueue()) {
+    logWithPackage('log', `[queue] ${args}`);
+  }
+};
+
+// Default timeout for queue completion after run ends (5 minutes)
+const DEFAULT_QUEUE_TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * Get queue timeout from env variable ALLURE_QUEUE_TIMEOUT_MS (in milliseconds)
+ * or ALLURE_QUEUE_TIMEOUT (in seconds) or use default (5 minutes)
+ */
+const getQueueTimeoutMs = (): number => {
+  // Check for milliseconds env var first
+  const timeoutMs = process.env.ALLURE_QUEUE_TIMEOUT_MS;
+
+  if (timeoutMs) {
+    const parsed = parseInt(timeoutMs, 10);
+
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  // Check for seconds env var
+  const timeoutSec = process.env.ALLURE_QUEUE_TIMEOUT;
+
+  if (timeoutSec) {
+    const parsed = parseInt(timeoutSec, 10);
+
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed * 1000;
+    }
+  }
+
+  return DEFAULT_QUEUE_TIMEOUT_MS;
+};
+
+/**
+ * Message queue to ensure messages are processed in order
+ */
+class MessageProcessingQueue {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private queue: Array<{ data: RawData; resolve: () => void }> = [];
+  private isProcessing = false;
+  private tasks: AllureTasks;
+  private sockserver: WebSocketServer;
+  private runEnded = false;
+  private timeoutId: NodeJS.Timeout | null = null;
+
+  constructor(tasks: AllureTasks, sockserver: WebSocketServer) {
+    this.tasks = tasks;
+    this.sockserver = sockserver;
+  }
+
+  enqueue(data: RawData): Promise<void> {
+    return new Promise(resolve => {
+      this.queue.push({ data, resolve });
+      logQueue(`Enqueued message, queue size: ${this.queue.length}`);
+      this.processNext();
+    });
+  }
+
+  /**
+   * Called when the run ends (client disconnects or run end event)
+   * Starts a timeout to force completion if tasks don't finish in time
+   */
+  onRunEnded(): void {
+    if (this.runEnded) {
+      return;
+    }
+
+    this.runEnded = true;
+    const timeoutMs = getQueueTimeoutMs();
+    logQueue(`Run ended, starting ${timeoutMs / 1000}s timeout for remaining tasks`);
+
+    if (this.queue.length === 0 && !this.isProcessing) {
+      logQueue('No pending tasks, queue completed');
+
+      return;
+    }
+
+    logQueue(`Pending tasks: ${this.queue.length}, processing: ${this.isProcessing}`);
+
+    this.timeoutId = setTimeout(() => {
+      if (this.queue.length > 0 || this.isProcessing) {
+        logWithPackage(
+          'warn',
+          `Queue timeout reached after ${timeoutMs / 1000}s. ` +
+            `Forcing completion with ${this.queue.length} pending tasks. ` +
+            'Some allure results may be incomplete.',
+        );
+        this.forceComplete();
+      }
+    }, timeoutMs);
+  }
+
+  /**
+   * Force complete all pending tasks without processing
+   */
+  private forceComplete(): void {
+    logQueue(`Force completing ${this.queue.length} pending tasks`);
+
+    // Resolve all pending promises
+    while (this.queue.length > 0) {
+      const item = this.queue.shift();
+
+      if (item) {
+        item.resolve();
+      }
+    }
+    this.isProcessing = false;
+    this.clearTimeout();
+  }
+
+  private clearTimeout(): void {
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+      this.timeoutId = null;
+    }
+  }
+
+  private async processNext(): Promise<void> {
+    if (this.isProcessing || this.queue.length === 0) {
+      return;
+    }
+
+    this.isProcessing = true;
+    const item = this.queue.shift();
+
+    if (!item) {
+      this.isProcessing = false;
+
+      return;
+    }
+
+    logQueue(`Processing message, remaining in queue: ${this.queue.length}`);
+
+    try {
+      await this.processMessage(item.data);
+      logQueue('Message processed successfully');
+    } finally {
+      item.resolve();
+      this.isProcessing = false;
+
+      // Check if we're done after run ended
+      if (this.runEnded && this.queue.length === 0) {
+        logQueue('All tasks completed after run ended');
+        this.clearTimeout();
+      }
+
+      // Process next item in queue using setImmediate to avoid stack overflow
+      // and ensure proper event loop behavior
+      if (this.queue.length > 0) {
+        logQueue('Scheduling next message processing');
+        setImmediate(() => this.processNext());
+      }
+    }
+  }
+
+  private async processMessage(data: RawData): Promise<void> {
+    messageGot('message received');
+    messageGot(data);
+
+    testMessages.push(`${data}`);
+
+    const parseData = (rawData: RawData) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return JSON.parse(rawData.toString()) as any;
+      } catch (e) {
+        return {};
+      }
+    };
+    const requestData = parseData(data);
+    const payload = requestData.data;
+
+    logQueue(
+      `Task: ${payload?.task}, arg: ${JSON.stringify(payload?.arg?.title || payload?.arg?.name || payload?.arg?.message || '')}`,
+    );
+
+    if (requestData.id) {
+      const result = await executeTask(this.tasks, payload);
+
+      this.sockserver.clients.forEach(client => {
+        log(`sending back: ${JSON.stringify(requestData)}`);
+        client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
+      });
+    } else {
+      await executeTask(this.tasks, payload);
+      this.sockserver.clients.forEach(client => {
+        log(`sending back: ${JSON.stringify(requestData)}`);
+        client.send(JSON.stringify({ payload, status: 'done' }));
+      });
+    }
+  }
+}
+
 const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks) => {
   if (!sockserver) {
     log('Could not start reporting server');
@@ -92,42 +298,18 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
   sockserver.on('connection', ws => {
     log('New client connected!');
     ws.send('connection established');
+
+    const messageQueue = new MessageProcessingQueue(tasks, sockserver);
+
     ws.on('close', () => {
       log('Client has disconnected!');
+      // Start timeout for remaining tasks when client disconnects
+      messageQueue.onRunEnded();
     });
 
     ws.on('message', data => {
-      messageGot('message received');
-      messageGot(data);
-
-      testMessages.push(`${data}`);
-
-      const parseData = (data: RawData) => {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          return JSON.parse(data.toString()) as any;
-        } catch (e) {
-          // console.log((e as Error).message);
-
-          return {};
-        }
-      };
-      const requestData = parseData(data);
-      const payload = requestData.data;
-
-      if (requestData.id) {
-        const result = executeTask(tasks, payload);
-
-        sockserver.clients.forEach(client => {
-          log(`sending back: ${JSON.stringify(requestData)}`);
-          client.send(JSON.stringify({ payload, status: result ? 'done' : 'failed' }));
-        });
-      } else {
-        sockserver.clients.forEach(client => {
-          log(`sending back: ${JSON.stringify(requestData)}`);
-          client.send(JSON.stringify({ payload, status: 'done' }));
-        });
-      }
+      // Enqueue message for sequential processing
+      messageQueue.enqueue(data);
     });
 
     ws.onerror = function () {
@@ -166,7 +348,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boolean => {
+const executeTask = async (tasks: AllureTasks, data: { task?: any; arg?: any }): Promise<boolean> => {
   if (!data || !data.task) {
     log(`Will not run task - not data or task field:${JSON.stringify(data)}`);
 
@@ -177,7 +359,7 @@ const executeTask = (tasks: AllureTasks, data: { task?: any; arg?: any }): boole
     if (Object.keys(tasks).indexOf(data.task) !== -1) {
       const task = data.task as RequestTask; // todo check
       log(task);
-      tasks[task](data.arg);
+      await tasks[task](data.arg);
 
       return true;
     } else {
