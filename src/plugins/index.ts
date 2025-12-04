@@ -3,12 +3,7 @@ import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
 import { startReporterServer } from './server';
-import {
-  startReportingServer,
-  stopReportingServer,
-  REPORTING_SERVER_PORT_ENV,
-  ReportingServer,
-} from './reporting-server';
+import { stopReportingServer, ReportingServer } from './reporting-server';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 

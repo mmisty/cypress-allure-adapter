@@ -13,7 +13,6 @@ import {
   existsSync,
 } from './fs-async';
 import { mkdirSync, rmSync } from 'fs';
-import { rm } from 'fs/promises';
 
 const debug = Debug('cypress-allure:reporting-server');
 const debugOps = Debug('cypress-allure:reporting-server:ops');
