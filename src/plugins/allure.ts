@@ -153,42 +153,16 @@ export const allureTasks = (opts: ReporterOptions, reportingServer?: ReportingSe
       log('testStarted');
     },
 
-    async writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
-      try {
-        await server.mkdir(allureResults, { recursive: true });
-
-        // Write in old format (key = value) for backwards compatibility
-        const content = Object.entries(arg.info)
-          .filter(([key, value]) => key && value !== undefined)
-          .map(([key, value]) => `${key} = ${value}`)
-          .join('\n');
-        await server.writeFile(`${allureResults}/environment.properties`, content);
-      } catch (err) {
-        logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
-      }
+    writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
+      log(`writeEnvironmentInfo ${JSON.stringify(arg)}`);
+      allureReporter.writeEnvironmentInfo(arg);
+      log('writeEnvironmentInfo');
     },
 
     async addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
-      const additionalInfo = arg.info;
-      const existing = await allureReporter.getEnvInfoAsync(allureResults);
-      // be careful with parallelization, todo
-
-      // do not override values when it is different from additional
-      for (const key in existing) {
-        if (additionalInfo[key] && additionalInfo[key] !== existing[key]) {
-          additionalInfo[key] += `,${existing[key]}`;
-        }
-      }
-      const newInfo = { ...existing, ...additionalInfo };
-
-      // Write in old format (key = value) for backwards compatibility
-      await server.mkdir(allureResults, { recursive: true });
-
-      const content = Object.entries(newInfo)
-        .filter(([key, value]) => key && value !== undefined)
-        .map(([key, value]) => `${key} = ${value}`)
-        .join('\n');
-      await server.writeFile(`${allureResults}/environment.properties`, content);
+      log(`addEnvironmentInfo ${JSON.stringify(arg)}`);
+      allureReporter.addEnvironmentInfo(arg);
+      log('addEnvironmentInfo');
     },
 
     async writeExecutorInfo(arg: AllureTaskArgs<'writeExecutorInfo'>) {

@@ -10,7 +10,7 @@ import {
 import { ReporterRuntime, FileSystemWriter } from 'allure-js-commons/sdk/reporter';
 import getUuid from 'uuid-by-string';
 import { parseAllure } from 'allure-js-parser';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import path, { basename, dirname } from 'path';
 import glob from 'fast-glob';
 import { ReporterOptions } from './allure';
@@ -146,7 +146,7 @@ export class AllureReporter {
   allHooks: HookInfo[] = [];
 
   currentSpec: Cypress.Spec | undefined;
-  taskQueueId: string | undefined;
+  taskQueueId: string | undefined = '__no_spec__';
   allureRuntime: ReporterRuntime;
   private writer: FileSystemWriter;
   descriptionHtml: string[] = [];
@@ -1052,6 +1052,52 @@ export class AllureReporter {
     }
   }
 
+  writeEnvironmentInfo(arg: AllureTaskArgs<'writeEnvironmentInfo'>) {
+    // this should be done synchronously
+    try {
+      if (!existsSync(this.allureResults)) {
+        mkdirSync(this.allureResults, { recursive: true });
+      }
+
+      // Write in old format (key = value) for backwards compatibility
+      const content = Object.entries(arg.info)
+        .filter(([key, value]) => key && value !== undefined)
+        .map(([key, value]) => `${key} = ${value}`)
+        .join('\n');
+      writeFileSync(`${this.allureResults}/environment.properties`, content);
+    } catch (err) {
+      logWithPackage('error', `Could not write environment info ${(err as Error).message}`);
+    }
+  }
+
+  addEnvironmentInfo(arg: AllureTaskArgs<'addEnvironmentInfo'>) {
+    // this should be done synchronously
+    try {
+      const additionalInfo = arg.info;
+      const existing = this.getEnvInfo(this.allureResults);
+      // be careful with parallelization, todo
+
+      // do not override values when it is different from additional
+      for (const key in existing) {
+        if (additionalInfo[key] && additionalInfo[key] !== existing[key]) {
+          additionalInfo[key] += `,${existing[key]}`;
+        }
+      }
+      const newInfo = { ...existing, ...additionalInfo };
+
+      // Write in old format (key = value) for backwards compatibility
+      mkdirSync(this.allureResults, { recursive: true });
+
+      const content = Object.entries(newInfo)
+        .filter(([key, value]) => key && value !== undefined)
+        .map(([key, value]) => `${key} = ${value}`)
+        .join('\n');
+      writeFileSync(`${this.allureResults}/environment.properties`, content);
+    } catch (err) {
+      logWithPackage('error', `Could not add environment info ${(err as Error).message}`);
+    }
+  }
+
   startTest(arg: AllureTaskArgs<'testStarted'>) {
     const { title, fullTitle, id, currentRetry } = arg;
 
@@ -1472,19 +1518,6 @@ export class AllureReporter {
     }
   }
 
-  getEnvInfo(resultsFolder: string): EnvironmentInfo {
-    const fileName = 'environment.properties';
-    const envPropsFile = `${resultsFolder}/${fileName}`;
-
-    // Use sync check for this as it's called during sync code path
-    // The actual reading will be async in the caller
-    if (!existsSync(envPropsFile)) {
-      return {};
-    }
-
-    return {};
-  }
-
   async getEnvInfoAsync(resultsFolder: string): Promise<EnvironmentInfo> {
     const fileName = 'environment.properties';
     const envPropsFile = `${resultsFolder}/${fileName}`;
@@ -1497,6 +1530,43 @@ export class AllureReporter {
 
     try {
       const envBuffer = await this.reportingServer.readFile(envPropsFile);
+      const env = envBuffer.toString();
+      const res: EnvironmentInfo = {};
+      env?.split('\n').forEach(line => {
+        // Handle both old format (key = value) and new format (key=value)
+        const separatorIndex = line.indexOf('=');
+
+        if (separatorIndex > 0) {
+          let key = line.substring(0, separatorIndex);
+          let value = line.substring(separatorIndex + 1);
+          // Trim spaces for old format compatibility
+          key = key.trim();
+          value = value.trim();
+
+          if (key) {
+            res[key] = value;
+          }
+        }
+      });
+
+      return res;
+    } catch (err) {
+      logWithPackage('error', 'could not get existing environment info');
+
+      return {};
+    }
+  }
+
+  getEnvInfo(resultsFolder: string): EnvironmentInfo {
+    const fileName = 'environment.properties';
+    const envPropsFile = `${resultsFolder}/${fileName}`;
+
+    if (!existsSync(envPropsFile)) {
+      return {};
+    }
+
+    try {
+      const envBuffer = readFileSync(envPropsFile);
       const env = envBuffer.toString();
       const res: EnvironmentInfo = {};
       env?.split('\n').forEach(line => {
