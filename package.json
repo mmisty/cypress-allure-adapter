@@ -145,11 +145,11 @@
     "allure-js-parser": "^0.1.0",
     "debug": "4.4.0",
     "events": "3.3.0",
-    "fast-glob": "3.3.2",
+    "fast-glob": "3.3.3",
     "net": "^1.0.2",
     "uuid": "10.0.0",
     "uuid-by-string": "4.0.0",
-    "ws": "8.18.2"
+    "ws": "8.18.3"
   },
   "cypress-cucumber-preprocessor": {
     "stepDefinitions": [
