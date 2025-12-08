@@ -146,7 +146,7 @@
     "net": "^1.0.2",
     "uuid": "10.0.0",
     "uuid-by-string": "4.0.0",
-    "ws": "8.18.2"
+    "ws": "8.18.3"
   },
   "cypress-cucumber-preprocessor": {
     "stepDefinitions": [
