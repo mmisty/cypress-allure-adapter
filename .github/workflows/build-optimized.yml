@@ -188,7 +188,7 @@ jobs:
   publish:
     needs: [build, test-cypress]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && success()
+    if: always()
     steps:
       - uses: actions/checkout@v4
 
