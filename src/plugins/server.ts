@@ -19,45 +19,48 @@ const messageGot = (...args: unknown[]) => {
   logMessage(`${args}`);
 };
 
-const checkPortSync = (port: number, timeoutMs = 2000): boolean => {
+/**
+ * Check if a port is available (sync version with timeout protection)
+ * Uses a simple try-catch approach instead of waiting for events
+ */
+const checkPortSync = (port: number, _timeoutMs = 2000): boolean => {
   let isAvailable = true;
   let server: net.Server | null = null;
-  let timeoutReached = false;
-  const startTime = Date.now();
 
   try {
     server = net.createServer();
-    server.listen(port);
 
-    server.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE') {
+    // Use synchronous-like behavior with immediate error handling
+    server.once('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE' || err.code === 'EACCES') {
         isAvailable = false;
       }
     });
 
-    const checkTimeout = () => {
-      if (Date.now() - startTime >= timeoutMs) {
-        timeoutReached = true;
-      }
-    };
+    // Try to listen - this will trigger error synchronously if port is in use
+    server.listen(port);
 
-    const waitForListening = () => {
-      if (!server?.listening && !timeoutReached) {
-        process.nextTick(waitForListening); // Yield to event loop
-        checkTimeout(); // Check if timeout has been reached
-      }
-    };
+    // Give a tiny window for error to propagate (works in most cases)
+    // This is a best-effort sync check - not 100% reliable but won't hang
+    const deadline = Date.now() + 100; // 100ms max wait
 
-    waitForListening();
+    while (!server.listening && isAvailable && Date.now() < deadline) {
+      // Busy wait with small iterations - not ideal but prevents hangs
+      // In practice, port conflicts error out immediately
+    }
 
-    if (timeoutReached) {
-      throw new Error(`Timeout waiting for port ${port} to become available.`);
+    if (!server.listening) {
+      isAvailable = false;
     }
   } catch (error) {
     isAvailable = false;
   } finally {
     if (server) {
-      server.close();
+      try {
+        server.close();
+      } catch {
+        // Ignore close errors
+      }
     }
   }
 
@@ -319,30 +322,57 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
 };
 
 export const startReporterServer = (configOptions: PluginConfigOptions, tasks: AllureTasks, attempt = 0) => {
+  // Guard against too many retries
+  const MAX_ATTEMPTS = 30;
+
+  if (attempt >= MAX_ATTEMPTS) {
+    logWithPackage('error', `Could not find free port after ${MAX_ATTEMPTS} attempts, allure reporting disabled`);
+
+    return undefined;
+  }
+
   const wsPort = retrieveRandomPortNumber();
 
-  let sockserver: WebSocketServer | undefined = new WebSocketServer({ port: wsPort, path: wsPath }, () => {
-    configOptions.env[ENV_WS] = wsPort;
-    const attemptMessage = attempt > 0 ? ` from ${attempt} attempt` : '';
-    logWithPackage('log', `running on ${wsPort} port${attemptMessage}`);
-    socketLogic(sockserver, tasks);
-  });
+  let sockserver: WebSocketServer | undefined;
+  let serverStarted = false;
 
-  sockserver.on('error', err => {
-    if (err.message.indexOf('address already in use') !== -1) {
-      if (attempt < 30) {
-        process.nextTick(() => {
-          sockserver = startReporterServer(configOptions, tasks, attempt + 1);
-        });
-      } else {
-        logWithPackage('error', `Could not find free port, will not report: ${err.message}`);
+  try {
+    sockserver = new WebSocketServer({ port: wsPort, path: wsPath }, () => {
+      serverStarted = true;
+      configOptions.env[ENV_WS] = wsPort;
+      const attemptMessage = attempt > 0 ? ` from ${attempt} attempt` : '';
+      logWithPackage('log', `running on ${wsPort} port${attemptMessage}`);
+      socketLogic(sockserver, tasks);
+    });
+
+    sockserver.on('error', err => {
+      if (err.message.indexOf('address already in use') !== -1) {
+        if (attempt < MAX_ATTEMPTS) {
+          // Use setImmediate instead of process.nextTick to prevent stack overflow
+          setImmediate(() => {
+            sockserver = startReporterServer(configOptions, tasks, attempt + 1);
+          });
+        } else {
+          logWithPackage('error', `Could not find free port after ${MAX_ATTEMPTS} attempts: ${err.message}`);
+        }
+
+        return;
       }
 
-      return;
-    }
+      logWithPackage('error', `Error on ws server: ${(err as Error).message}`);
+    });
 
-    logWithPackage('error', `Error on ws server: ${(err as Error).message}`);
-  });
+    // Set a startup timeout - if server doesn't start in 5s, continue without it
+    setTimeout(() => {
+      if (!serverStarted && sockserver) {
+        logWithPackage('warn', 'WebSocket server startup timed out, allure reporting may be incomplete');
+      }
+    }, 15000);
+  } catch (err) {
+    logWithPackage('error', `Failed to create WebSocket server: ${(err as Error).message}`);
+
+    return undefined;
+  }
 
   return sockserver;
 };

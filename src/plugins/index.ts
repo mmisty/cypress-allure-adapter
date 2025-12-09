@@ -92,10 +92,25 @@ export const configureAllureAdapterPlugins = (
   // Create the task client
   const client = new AllureTaskClient(mode);
 
-  // Start the task server (async - doesn't block)
-  client.start().catch(err => {
-    logWithPackage('error', `Failed to start task server: ${err.message}`);
-  });
+  // Start the task server with timeout guard (async - doesn't block Cypress startup)
+  const SERVER_START_TIMEOUT = 20000; // 20 seconds max wait
+  const startWithTimeout = async () => {
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Task server startup timed out after ${SERVER_START_TIMEOUT / 1000}s`));
+      }, SERVER_START_TIMEOUT);
+    });
+
+    try {
+      await Promise.race([client.start(), timeoutPromise]);
+    } catch (err) {
+      logWithPackage('error', `Failed to start task server: ${(err as Error).message}`);
+      logWithPackage('warn', 'Allure reporting may be incomplete - continuing without task server');
+    }
+  };
+
+  // Fire and forget - don't block Cypress startup
+  startWithTimeout();
 
   // Create reporter first so we can use task manager for cleanup
   const reporter = allureTasks(options, client);

@@ -14,19 +14,46 @@ interface EntityQueue {
 
 class Semaphore {
   private count: number;
-  private waiters: (() => void)[] = [];
+  private waiters: Array<{ resolve: () => void; timeoutId: NodeJS.Timeout }> = [];
+  private acquireTimeout: number;
 
-  constructor(private max: number) {
+  constructor(
+    private max: number,
+    acquireTimeoutMs = 30000,
+  ) {
     this.count = max;
+    this.acquireTimeout = acquireTimeoutMs;
   }
 
-  async acquire() {
+  async acquire(): Promise<boolean> {
     if (this.count > 0) {
       this.count--;
 
-      return;
+      return true;
     }
-    await new Promise<void>(resolve => this.waiters.push(resolve));
+
+    // Wait with timeout to prevent indefinite blocking
+    return new Promise<boolean>(resolve => {
+      const timeoutId = setTimeout(() => {
+        // Remove this waiter from the queue
+        const index = this.waiters.findIndex(w => w.timeoutId === timeoutId);
+
+        if (index !== -1) {
+          this.waiters.splice(index, 1);
+        }
+        debug('Semaphore acquire timed out, continuing without blocking');
+        logWithPackage('warn', 'Task semaphore acquire timed out - task may run concurrently');
+        resolve(false); // Return false to indicate timeout
+      }, this.acquireTimeout);
+
+      this.waiters.push({
+        resolve: () => {
+          clearTimeout(timeoutId);
+          resolve(true);
+        },
+        timeoutId,
+      });
+    });
   }
 
   release() {
@@ -35,7 +62,8 @@ class Semaphore {
 
     if (next) {
       this.count--;
-      next();
+      clearTimeout(next.timeoutId);
+      next.resolve();
     }
   }
 }
