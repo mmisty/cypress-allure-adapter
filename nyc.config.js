@@ -6,7 +6,7 @@ module.exports = {
   cache: false,
   reporter: ['json', 'lcov'], // text
   include: ['src/**/*.*'],
-  exclude: ['src/cypress', '*.types.ts', 'types.ts', 'src/**/types.ts'],
+  exclude: ['src/cypress', '*.types.ts', 'types.ts', 'src/**/types.ts', '*.d.ts', 'integration/**'],
   sourceMap: false,
   instrument: false,
   'report-dir': reportDir,
