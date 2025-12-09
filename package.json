@@ -45,6 +45,7 @@
     "test:jest:cy:interface:p1": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part1\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:interface:p2": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part2\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:interface:p3": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part3\" --reporters=default --reporters=jest-junit",
+    "test:jest:cy:interface:p4": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part4\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:only": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/only\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:other": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/other\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:passes1": "QUIET=true COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/passes/part1\" --reporters=default --reporters=jest-junit",
