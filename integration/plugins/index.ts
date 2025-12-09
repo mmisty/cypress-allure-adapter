@@ -101,7 +101,7 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
 
           return port ?? port2;
         } catch (err) {
-          // ignore
+          console.log(`Tests: starting tests server failed: ${(err as Error).message}`);
         }
       }
 
