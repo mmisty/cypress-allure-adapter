@@ -1,9 +1,18 @@
 import http from 'http';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'fs';
-import { AllureTaskServer, findAvailablePort } from '@src/plugins/allure-task-server';
+import {
+  AllureTaskServer,
+  findAvailablePort,
+} from '@src/plugins/allure-task-server';
 import { AllureTaskClient } from '@src/plugins/allure-task-client';
-import type { ServerOperation, OperationResult } from '@src/plugins/allure-operations';
-import { SERVER_PATH, SERVER_HEALTH_PATH } from '@src/plugins/allure-operations';
+import type {
+  ServerOperation,
+  OperationResult,
+} from '@src/plugins/allure-operations';
+import {
+  SERVER_PATH,
+  SERVER_HEALTH_PATH,
+} from '@src/plugins/allure-operations';
 
 jest.setTimeout(60000);
 
@@ -13,7 +22,10 @@ const TEST_RESULTS_DIR = `${TEST_DIR}/allure-results`;
 /**
  * Helper to make HTTP requests to the server
  */
-function makeRequest(port: number, operation: ServerOperation): Promise<OperationResult> {
+function makeRequest(
+  port: number,
+  operation: ServerOperation,
+): Promise<OperationResult> {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(operation);
 
@@ -58,7 +70,9 @@ function makeRequest(port: number, operation: ServerOperation): Promise<Operatio
 /**
  * Helper to check server health
  */
-function checkHealth(port: number): Promise<{ status: string; pending: number; running: number }> {
+function checkHealth(
+  port: number,
+): Promise<{ status: string; pending: number; running: number }> {
   return new Promise((resolve, reject) => {
     const req = http.request(
       {
@@ -180,6 +194,7 @@ describe('AllureTaskServer', () => {
 
     afterAll(async () => {
       await server.stop();
+
       if (existsSync(TEST_DIR)) {
         rmSync(TEST_DIR, { recursive: true });
       }
@@ -270,8 +285,11 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(true);
+
       if (result.success) {
-        expect(Buffer.from(result.data as string, 'base64').toString()).toBe(content);
+        expect(Buffer.from(result.data as string, 'base64').toString()).toBe(
+          content,
+        );
       }
     });
 
@@ -354,10 +372,12 @@ describe('AllureTaskServer', () => {
       });
 
       expect(resultExists.success).toBe(true);
+
       if (resultExists.success) {
         expect(resultExists.data).toBe(true);
       }
       expect(resultNotExists.success).toBe(true);
+
       if (resultNotExists.success) {
         expect(resultNotExists.data).toBe(false);
       }
@@ -373,6 +393,7 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(true);
+
       if (result.success) {
         expect(result.data).toBe(true);
       }
@@ -392,6 +413,7 @@ describe('AllureTaskServer', () => {
 
     afterAll(async () => {
       await server.stop();
+
       if (existsSync(TEST_DIR)) {
         rmSync(TEST_DIR, { recursive: true });
       }
@@ -448,6 +470,7 @@ describe('AllureTaskServer', () => {
 
     afterAll(async () => {
       await server.stop();
+
       if (existsSync(TEST_DIR)) {
         rmSync(TEST_DIR, { recursive: true });
       }
@@ -505,6 +528,7 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(false);
+
       if (!result.success) {
         expect(result.error).toContain('does not exist');
       }
@@ -531,6 +555,7 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(false);
+
       if (!result.success) {
         expect(result.error).toContain('Unknown operation');
       }
@@ -558,6 +583,7 @@ describe('AllureTaskServer', () => {
 
     afterAll(async () => {
       await server.stop();
+
       if (existsSync(TEST_DIR)) {
         rmSync(TEST_DIR, { recursive: true });
       }
@@ -585,6 +611,481 @@ describe('AllureTaskServer', () => {
       for (let i = 0; i < 10; i++) {
         expect(existsSync(`${TEST_DIR}/concurrent-${i}`)).toBe(true);
       }
+    });
+  });
+
+  describe('HTTP Protocol Handling', () => {
+    let server: AllureTaskServer;
+    let port: number;
+
+    beforeAll(async () => {
+      server = new AllureTaskServer();
+      port = await server.start();
+      await new Promise(r => setTimeout(r, 100));
+    });
+
+    afterAll(async () => {
+      await server.stop();
+    });
+
+    it('should handle OPTIONS request (CORS preflight)', async () => {
+      const response = await new Promise<{ statusCode: number }>(
+        (resolve, reject) => {
+          const req = http.request(
+            {
+              hostname: 'localhost',
+              port,
+              path: SERVER_PATH,
+              method: 'OPTIONS',
+              timeout: 5000,
+            },
+            res => {
+              resolve({ statusCode: res.statusCode || 0 });
+            },
+          );
+          req.on('error', reject);
+          req.end();
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('should return 404 for unknown paths', async () => {
+      const response = await new Promise<{ statusCode: number; body: string }>(
+        (resolve, reject) => {
+          const req = http.request(
+            {
+              hostname: 'localhost',
+              port,
+              path: '/unknown/path',
+              method: 'GET',
+              timeout: 5000,
+            },
+            res => {
+              let body = '';
+              res.on('data', chunk => {
+                body += chunk;
+              });
+              res.on('end', () => {
+                resolve({ statusCode: res.statusCode || 0, body });
+              });
+            },
+          );
+          req.on('error', reject);
+          req.end();
+        },
+      );
+
+      expect(response.statusCode).toBe(404);
+      expect(response.body).toBe('Not found');
+    });
+
+    it('should return 404 for GET on task path', async () => {
+      const response = await new Promise<{ statusCode: number }>(
+        (resolve, reject) => {
+          const req = http.request(
+            {
+              hostname: 'localhost',
+              port,
+              path: SERVER_PATH,
+              method: 'GET',
+              timeout: 5000,
+            },
+            res => {
+              resolve({ statusCode: res.statusCode || 0 });
+            },
+          );
+          req.on('error', reject);
+          req.end();
+        },
+      );
+
+      expect(response.statusCode).toBe(404);
+    });
+
+    it('should handle invalid JSON body', async () => {
+      const response = await new Promise<{ statusCode: number; body: string }>(
+        (resolve, reject) => {
+          const req = http.request(
+            {
+              hostname: 'localhost',
+              port,
+              path: SERVER_PATH,
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': 12,
+              },
+              timeout: 5000,
+            },
+            res => {
+              let body = '';
+              res.on('data', chunk => {
+                body += chunk;
+              });
+              res.on('end', () => {
+                resolve({ statusCode: res.statusCode || 0, body });
+              });
+            },
+          );
+          req.on('error', reject);
+          req.write('invalid json');
+          req.end();
+        },
+      );
+
+      expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('Complex Allure Operations', () => {
+    let server: AllureTaskServer;
+    let port: number;
+    const ALLURE_RESULTS = `${TEST_DIR}/allure-results`;
+    const ALLURE_WATCH = `${TEST_DIR}/allure-watch`;
+
+    beforeAll(async () => {
+      cleanTestDir();
+      server = new AllureTaskServer();
+      port = await server.start();
+      await new Promise(r => setTimeout(r, 100));
+    });
+
+    afterAll(async () => {
+      await server.stop();
+
+      if (existsSync(TEST_DIR)) {
+        rmSync(TEST_DIR, { recursive: true });
+      }
+    });
+
+    beforeEach(() => {
+      cleanTestDir();
+      mkdirSync(ALLURE_RESULTS, { recursive: true });
+    });
+
+    /**
+     * Helper to create a mock allure test result file
+     */
+    function createMockTestResult(
+      uuid: string,
+      name: string,
+      status: string,
+      specPath: string,
+    ) {
+      const result = {
+        uuid,
+        name,
+        fullName: name,
+        status,
+        stage: 'finished',
+        labels: [{ name: 'path', value: specPath }],
+        attachments: [],
+        start: Date.now(),
+        stop: Date.now(),
+      };
+      writeFileSync(
+        `${ALLURE_RESULTS}/${uuid}-result.json`,
+        JSON.stringify(result),
+      );
+
+      return result;
+    }
+
+    /**
+     * Helper to create a mock container file
+     */
+    function createMockContainer(uuid: string, children: string[]) {
+      const container = {
+        uuid,
+        name: 'Test Suite',
+        children,
+        befores: [],
+        afters: [],
+        start: Date.now(),
+        stop: Date.now(),
+      };
+      writeFileSync(
+        `${ALLURE_RESULTS}/${uuid}-container.json`,
+        JSON.stringify(container),
+      );
+
+      return container;
+    }
+
+    describe('allure:attachVideo', () => {
+      it('should fail if video does not exist', async () => {
+        const result = await makeRequest(port, {
+          type: 'allure:attachVideo',
+          allureResults: ALLURE_RESULTS,
+          videoPath: `${TEST_DIR}/non-existent.mp4`,
+          allureAddVideoOnPass: true,
+        });
+
+        expect(result.success).toBe(false);
+
+        if (!result.success) {
+          expect(result.error).toContain('does not exist');
+        }
+      });
+
+      it('should succeed with empty allure results', async () => {
+        const videoPath = `${TEST_DIR}/test-video.mp4`;
+        writeFileSync(videoPath, 'fake video content');
+
+        const result = await makeRequest(port, {
+          type: 'allure:attachVideo',
+          allureResults: ALLURE_RESULTS,
+          videoPath,
+          allureAddVideoOnPass: true,
+        });
+
+        expect(result.success).toBe(true);
+      });
+
+      it('should attach video to container with failed test', async () => {
+        const videoPath = `${TEST_DIR}/spec-name.mp4`;
+        writeFileSync(videoPath, 'fake video content');
+
+        // Create container and test result
+        const containerUuid = 'container-123';
+        const testUuid = 'test-456';
+
+        createMockContainer(containerUuid, [testUuid]);
+
+        // Create test result with parent reference (simulate parseAllure output)
+        const testResult = {
+          uuid: testUuid,
+          name: 'test name',
+          fullName: 'test name',
+          status: 'failed',
+          stage: 'finished',
+          labels: [{ name: 'path', value: 'spec-name.cy.ts' }],
+          attachments: [],
+          start: Date.now(),
+          stop: Date.now(),
+        };
+        writeFileSync(
+          `${ALLURE_RESULTS}/${testUuid}-result.json`,
+          JSON.stringify(testResult),
+        );
+
+        const result = await makeRequest(port, {
+          type: 'allure:attachVideo',
+          allureResults: ALLURE_RESULTS,
+          videoPath,
+          allureAddVideoOnPass: false,
+        });
+
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('allure:moveToWatch', () => {
+      it('should return success when source and target are same', async () => {
+        const result = await makeRequest(port, {
+          type: 'allure:moveToWatch',
+          allureResults: ALLURE_RESULTS,
+          allureResultsWatch: ALLURE_RESULTS,
+        });
+
+        expect(result.success).toBe(true);
+      });
+
+      it('should create watch directory if not exists', async () => {
+        const result = await makeRequest(port, {
+          type: 'allure:moveToWatch',
+          allureResults: ALLURE_RESULTS,
+          allureResultsWatch: ALLURE_WATCH,
+        });
+
+        expect(result.success).toBe(true);
+        expect(existsSync(ALLURE_WATCH)).toBe(true);
+      });
+
+      it('should move environment and executor files', async () => {
+        writeFileSync(`${ALLURE_RESULTS}/environment.properties`, 'key=value');
+        writeFileSync(`${ALLURE_RESULTS}/executor.json`, '{"name":"test"}');
+        writeFileSync(`${ALLURE_RESULTS}/categories.json`, '[]');
+
+        const result = await makeRequest(port, {
+          type: 'allure:moveToWatch',
+          allureResults: ALLURE_RESULTS,
+          allureResultsWatch: ALLURE_WATCH,
+        });
+
+        expect(result.success).toBe(true);
+        expect(existsSync(`${ALLURE_WATCH}/environment.properties`)).toBe(true);
+        expect(existsSync(`${ALLURE_WATCH}/executor.json`)).toBe(true);
+        expect(existsSync(`${ALLURE_WATCH}/categories.json`)).toBe(true);
+      });
+
+      it('should move test results with attachments', async () => {
+        // Create a test result
+        const uuid = 'test-uuid-789';
+        const attachmentName = `${uuid}-attachment.png`;
+
+        const testResult = {
+          uuid,
+          name: 'test',
+          fullName: 'test',
+          status: 'passed',
+          stage: 'finished',
+          labels: [],
+          attachments: [
+            {
+              name: 'screenshot.png',
+              source: attachmentName,
+              type: 'image/png',
+            },
+          ],
+          start: Date.now(),
+          stop: Date.now(),
+        };
+
+        writeFileSync(
+          `${ALLURE_RESULTS}/${uuid}-result.json`,
+          JSON.stringify(testResult),
+        );
+        writeFileSync(`${ALLURE_RESULTS}/${attachmentName}`, 'fake image');
+
+        const result = await makeRequest(port, {
+          type: 'allure:moveToWatch',
+          allureResults: ALLURE_RESULTS,
+          allureResultsWatch: ALLURE_WATCH,
+        });
+
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe('allure:attachScreenshots', () => {
+      it('should succeed with empty screenshots array', async () => {
+        const result = await makeRequest(port, {
+          type: 'allure:attachScreenshots',
+          allureResults: ALLURE_RESULTS,
+          screenshots: [],
+          allTests: [],
+        });
+
+        expect(result.success).toBe(true);
+      });
+
+      it('should skip if no matching tests found', async () => {
+        const screenshotPath = `${TEST_DIR}/screenshot.png`;
+        writeFileSync(screenshotPath, 'fake image');
+
+        const result = await makeRequest(port, {
+          type: 'allure:attachScreenshots',
+          allureResults: ALLURE_RESULTS,
+          screenshots: [
+            {
+              testId: 'non-existent',
+              path: screenshotPath,
+              testAttemptIndex: 0,
+              specName: 'spec.cy.ts',
+            },
+          ],
+          allTests: [],
+        });
+
+        expect(result.success).toBe(true);
+      });
+
+      it('should attach screenshot to failed test', async () => {
+        const uuid = 'test-screenshot-123';
+        const screenshotPath = `${TEST_DIR}/screenshot.png`;
+        writeFileSync(screenshotPath, 'fake image');
+
+        // Create test result file
+        const testResult = {
+          uuid,
+          name: 'failed test',
+          fullName: 'failed test',
+          status: 'failed',
+          stage: 'finished',
+          labels: [],
+          attachments: [],
+          start: Date.now(),
+          stop: Date.now(),
+        };
+        writeFileSync(
+          `${ALLURE_RESULTS}/${uuid}-result.json`,
+          JSON.stringify(testResult),
+        );
+
+        const result = await makeRequest(port, {
+          type: 'allure:attachScreenshots',
+          allureResults: ALLURE_RESULTS,
+          screenshots: [
+            {
+              testId: 'mocha-id-1',
+              path: screenshotPath,
+              testAttemptIndex: 0,
+              specName: 'spec.cy.ts',
+            },
+          ],
+          allTests: [
+            {
+              specRelative: 'cypress/e2e/spec.cy.ts',
+              fullTitle: 'failed test',
+              uuid,
+              mochaId: 'mocha-id-1',
+              retryIndex: 0,
+              status: 'failed',
+            },
+          ],
+        });
+
+        expect(result.success).toBe(true);
+
+        // Verify screenshot was attached
+        const updatedResult = JSON.parse(
+          readFileSync(`${ALLURE_RESULTS}/${uuid}-result.json`, 'utf8'),
+        );
+        expect(updatedResult.attachments.length).toBe(1);
+        expect(updatedResult.attachments[0].type).toBe('image/png');
+      });
+    });
+
+    describe('allure:copyScreenshot edge cases', () => {
+      it('should create allure results directory if not exists', async () => {
+        const newResultsDir = `${TEST_DIR}/new-allure-results`;
+        const screenshotPath = `${TEST_DIR}/edge-screenshot.png`;
+        writeFileSync(screenshotPath, 'fake image');
+
+        const result = await makeRequest(port, {
+          type: 'allure:copyScreenshot',
+          allureResults: newResultsDir,
+          screenshotPath,
+          targetName: 'target.png',
+        });
+
+        expect(result.success).toBe(true);
+        expect(existsSync(newResultsDir)).toBe(true);
+        expect(existsSync(`${newResultsDir}/target.png`)).toBe(true);
+      });
+
+      it('should not overwrite existing file', async () => {
+        const screenshotPath = `${TEST_DIR}/original.png`;
+        const targetName = 'existing.png';
+        writeFileSync(screenshotPath, 'new content');
+        writeFileSync(`${ALLURE_RESULTS}/${targetName}`, 'existing content');
+
+        const result = await makeRequest(port, {
+          type: 'allure:copyScreenshot',
+          allureResults: ALLURE_RESULTS,
+          screenshotPath,
+          targetName,
+        });
+
+        expect(result.success).toBe(true);
+        // Content should remain unchanged
+        expect(readFileSync(`${ALLURE_RESULTS}/${targetName}`, 'utf8')).toBe(
+          'existing content',
+        );
+      });
     });
   });
 });
@@ -730,7 +1231,9 @@ describe('AllureTaskClient', () => {
       expect(existsSync(`${TEST_DIR}/local-dir`)).toBe(true);
 
       await client.writeFile(`${TEST_DIR}/local-file.txt`, 'Local content');
-      expect(readFileSync(`${TEST_DIR}/local-file.txt`, 'utf8')).toBe('Local content');
+      expect(readFileSync(`${TEST_DIR}/local-file.txt`, 'utf8')).toBe(
+        'Local content',
+      );
     });
   });
 
