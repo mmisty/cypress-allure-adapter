@@ -7,10 +7,10 @@ on:
   pull_request:
     branches: ["main"]
 
-# Cancel in-progress runs for the same branch
+# Queue runs for the same branch (don't cancel, wait instead)
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # ═══════════════════════════════════════════════════════════════
@@ -77,8 +77,32 @@ jobs:
 
     name: Test ${{ matrix.test-group.name }}
     timeout-minutes: ${{ matrix.test-group.timeout }}
+    env:
+      # Increase Node.js memory limit (default is ~1.5GB, increase to 4GB)
+      NODE_OPTIONS: "--max-old-space-size=4096"
     steps:
       - uses: actions/checkout@v4
+
+      # Free up disk space and add swap to prevent OOM
+      - name: Free up runner resources
+        run: |
+          # Remove unnecessary tools to free memory/disk
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/lib/android
+          
+          # Add 4GB swap file to prevent OOM kills
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          
+          # Show available resources
+          echo "=== Memory ==="
+          free -h
+          echo "=== Disk ==="
+          df -h
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
