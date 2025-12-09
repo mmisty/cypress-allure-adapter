@@ -1,0 +1,187 @@
+name: CI (Optimized)
+permissions: write-all
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════
+  # STAGE 1: Build & Basic Tests (must pass before parallel tests)
+  # ═══════════════════════════════════════════════════════════════
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js with caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm" # Cache npm dependencies automatically
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build:all
+
+      - name: Test Jest (unit tests)
+        run: npm run test:jest
+
+      - name: Archive jest coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-jest
+          path: ./reports/coverage-jest/
+          retention-days: 7
+
+      # Cache the entire workspace for parallel jobs
+      - name: Upload workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace
+          path: |
+            lib/
+            integration/
+            tests/
+            node_modules/
+            package.json
+            tsconfig*.json
+            cypress*.ts
+            jest.config.js
+          retention-days: 1
+
+  # ═══════════════════════════════════════════════════════════════
+  # STAGE 2: Parallel Cypress Tests (run simultaneously!)
+  # ═══════════════════════════════════════════════════════════════
+  test-cypress:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Don't cancel other jobs if one fails
+      matrix:
+        test-group:
+          - { name: "passes", script: "test:jest:cy:passes", timeout: 3 }
+          - { name: "v2attachments", script: "test:jest:cy:v2attachments", timeout: 3 }
+          - { name: "v2suites", script: "test:jest:cy:v2suites", timeout: 3 }
+          - { name: "failures", script: "test:jest:cy:failures", timeout: 6 }
+          - { name: "requests", script: "test:jest:cy:requests", timeout: 6 }
+          - { name: "attachments", script: "test:jest:cy:attachments", timeout: 4 }
+          - { name: "hooks", script: "test:jest:cy:hooks", timeout: 6 }
+          - { name: "commands", script: "test:jest:cy:commands", timeout: 10 }
+          - { name: "events", script: "test:jest:cy:events", timeout: 10 }
+          - { name: "cucumber", script: "test:jest:cy:cucumber", timeout: 10 }
+          - { name: "duration", script: "test:jest:cy:duration", timeout: 10 }
+          - { name: "interface-p1", script: "test:jest:cy:interface:p1", timeout: 10 }
+          - { name: "interface-p2", script: "test:jest:cy:interface:p2", timeout: 10 }
+          - { name: "only", script: "test:jest:cy:only", timeout: 10 }
+          - { name: "other", script: "test:jest:cy:other", timeout: 10 }
+          - { name: "regression", script: "test:jest:cy:regression", timeout: 10 }
+          - { name: "settings", script: "test:jest:cy:settings", timeout: 10 }
+          - { name: "skips", script: "test:jest:cy:skips", timeout: 10 }
+
+    name: Test ${{ matrix.test-group.name }}
+    timeout-minutes: ${{ matrix.test-group.timeout }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Download workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: ${{ matrix.test-group.timeout }}
+          max_attempts: 2
+          command: npm run ${{ matrix.test-group.script }}
+
+  # ═══════════════════════════════════════════════════════════════
+  # STAGE 3: Finalize (runs after all tests complete)
+  # ═══════════════════════════════════════════════════════════════
+  finalize:
+    needs: [build, test-cypress]
+    runs-on: ubuntu-latest
+    if: always() # Run even if tests fail
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Download jest coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-jest
+          path: ./reports/coverage-jest/
+
+      - name: Merge Coverage
+        run: npm run cov:merge
+        continue-on-error: true
+
+      - name: Monitor coverage
+        continue-on-error: true
+        uses: danhunsaker/clover-reporter-action@v0.2.17-clover
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          clover-file: ./reports/coverage-full-total/clover.xml
+
+  # ═══════════════════════════════════════════════════════════════
+  # PUBLISH: Only on main branch with specific commit messages
+  # ═══════════════════════════════════════════════════════════════
+  publish:
+    needs: [build, test-cypress]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && success()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          gitmsg="${{ github.event.commits[0].message }}"
+          echo "Commit: $gitmsg"
+
+          if [[ "$gitmsg" =~ "[patch]" ]] || [[ "$gitmsg" =~ "[fix]" ]]; then
+            npm run publish:patch && git push --tags
+          elif [[ "$gitmsg" =~ "[minor]" ]]; then
+            npm run publish:minor && git push --tags
+          elif [[ "$gitmsg" =~ "[major]" ]]; then
+            npm run publish:major && git push --tags
+          else
+            echo "Publishing beta"
+            npm run publish:beta || true
+          fi
+
