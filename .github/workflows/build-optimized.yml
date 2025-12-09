@@ -18,6 +18,7 @@ jobs:
   # ═══════════════════════════════════════════════════════════════
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +42,7 @@ jobs:
         run: npm run build:all
 
       - name: Test Jest (unit tests)
+        timeout-minutes: 3
         run: npm run test:jest
 
       # Upload Jest report for build stage
@@ -206,6 +208,7 @@ jobs:
   finalize:
     needs: [build, test-cypress]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: always()
     steps:
       - uses: actions/checkout@v4
