@@ -300,20 +300,96 @@ export class AllureTaskClient {
   }
 
   /**
-   * Execute an operation
+   * Check if the server is healthy and restart if needed
    */
-  async execute(operation: ServerOperation): Promise<OperationResult> {
+  private async ensureServerHealthy(): Promise<boolean> {
+    if (this.mode === 'local') return true;
+
+    // If no server process or it has exited, try to restart
+    if (!this.serverProcess || this.serverProcess.exitCode !== null) {
+      debug('Server process not running, attempting restart');
+      logWithPackage('warn', 'Task server process not running, attempting restart...');
+      this.isConnected = false;
+      this.serverProcess = null;
+      this.startPromise = null;
+
+      try {
+        await this.start();
+        logWithPackage('log', 'Task server restarted successfully');
+
+        return true;
+      } catch (err) {
+        debug(`Failed to restart server: ${(err as Error).message}`);
+        logWithPackage('error', `Failed to restart task server: ${(err as Error).message}`);
+
+        return false;
+      }
+    }
+
+    return this.isConnected;
+  }
+
+  /**
+   * Execute an operation with retry logic
+   */
+  async execute(operation: ServerOperation, retries = 3): Promise<OperationResult> {
     if (this.mode === 'local') {
       return this.executeLocal(operation);
     }
 
-    await this.waitForReady();
+    for (let attempt = 0; attempt < retries; attempt++) {
+      await this.waitForReady();
 
-    if (!this.port) {
-      return { success: false, error: 'Not connected to task server' };
+      // Check server health and restart if needed
+      const healthy = await this.ensureServerHealthy();
+
+      if (!healthy || !this.port) {
+        if (attempt < retries - 1) {
+          debug(`Server not healthy, retrying (attempt ${attempt + 1}/${retries})`);
+          logWithPackage('warn', `Task server not healthy, retrying (attempt ${attempt + 1}/${retries})...`);
+          await new Promise(r => setTimeout(r, 100 * (attempt + 1)));
+          continue;
+        }
+
+        logWithPackage('error', 'Task server connection failed after all retries');
+
+        return { success: false, error: 'Not connected to task server' };
+      }
+
+      const result = await this.executeRemote(operation);
+
+      // If connection error, retry
+      if (!result.success && this.isConnectionError(result.error)) {
+        if (attempt < retries - 1) {
+          debug(`Connection error, retrying (attempt ${attempt + 1}/${retries}): ${result.error}`);
+          logWithPackage(
+            'warn',
+            `Task server connection error: ${result.error}, retrying (attempt ${attempt + 1}/${retries})...`,
+          );
+          this.isConnected = false;
+          await new Promise(r => setTimeout(r, 100 * (attempt + 1)));
+          continue;
+        }
+
+        logWithPackage('error', `Task server connection failed: ${result.error}`);
+      }
+
+      return result;
     }
 
-    return this.executeRemote(operation);
+    logWithPackage('error', 'Task server: max retries exceeded');
+
+    return { success: false, error: 'Max retries exceeded' };
+  }
+
+  /**
+   * Check if an error is a connection error that should trigger retry
+   */
+  private isConnectionError(error?: string): boolean {
+    if (!error) return false;
+    const connectionErrors = ['ECONNREFUSED', 'ECONNRESET', 'socket hang up', 'EPIPE', 'ETIMEDOUT'];
+
+    return connectionErrors.some(e => error.includes(e));
   }
 
   private async executeRemote(operation: ServerOperation): Promise<OperationResult> {
@@ -547,7 +623,7 @@ export class AllureTaskClient {
   /**
    * Execute sync operation (uses HTTP for remote, direct for local)
    */
-  executeSync(operation: FsOperation): OperationResult {
+  executeSync(operation: FsOperation, retries = 2): OperationResult {
     // Local mode - always execute locally
     if (this.mode === 'local') {
       return this.executeSyncLocal(operation);
@@ -558,20 +634,42 @@ export class AllureTaskClient {
       return this.executeSyncLocal(operation);
     }
 
-    // Try remote execution via curl
-    try {
-      const body = JSON.stringify(operation);
+    // Try remote execution via curl with retries
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const body = JSON.stringify(operation);
 
-      const result = execSync(
-        `curl -s -X POST -H "Content-Type: application/json" -d '${body.replace(/'/g, "\\'")}' http://localhost:${this.port}${SERVER_PATH}`,
-        { encoding: 'utf-8', timeout: 5000 },
-      );
+        const result = execSync(
+          `curl -s --connect-timeout 2 --max-time 5 -X POST -H "Content-Type: application/json" -d '${body.replace(/'/g, "\\'")}' http://localhost:${this.port}${SERVER_PATH}`,
+          { encoding: 'utf-8', timeout: 5000 },
+        );
 
-      return JSON.parse(result);
-    } catch {
-      // Fallback to local on error
-      return this.executeSyncLocal(operation);
+        const parsed = JSON.parse(result);
+
+        if (parsed.success !== undefined) {
+          return parsed;
+        }
+      } catch (err) {
+        debug(`Sync request failed (attempt ${attempt + 1}/${retries}): ${(err as Error).message}`);
+
+        if (attempt < retries - 1) {
+          logWithPackage('warn', `Task server sync request failed, retrying (attempt ${attempt + 1}/${retries})...`);
+
+          // Small delay before retry (sync sleep using execSync)
+          try {
+            execSync('sleep 0.1', { timeout: 200 });
+          } catch {
+            // Ignore
+          }
+        }
+      }
     }
+
+    // Fallback to local on all retries failed
+    debug('Sync retries exhausted, falling back to local execution');
+    logWithPackage('warn', 'Task server sync retries exhausted, using local fallback');
+
+    return this.executeSyncLocal(operation);
   }
 
   // ============================================================================
