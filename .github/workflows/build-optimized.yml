@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   # ═══════════════════════════════════════════════════════════════
-  # STAGE 1: Build & Basic Tests (must pass before parallel tests)
+  # STAGE 1: Build & Lint (must pass before parallel tests)
   # ═══════════════════════════════════════════════════════════════
   build:
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm" # Cache npm dependencies automatically
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -46,22 +46,6 @@ jobs:
           path: ./reports/coverage-jest/
           retention-days: 7
 
-      # Cache the entire workspace for parallel jobs
-      - name: Upload workspace
-        uses: actions/upload-artifact@v4
-        with:
-          name: workspace
-          path: |
-            lib/
-            integration/
-            tests/
-            node_modules/
-            package.json
-            tsconfig*.json
-            cypress*.ts
-            jest.config.js
-          retention-days: 1
-
   # ═══════════════════════════════════════════════════════════════
   # STAGE 2: Parallel Cypress Tests (run simultaneously!)
   # ═══════════════════════════════════════════════════════════════
@@ -72,24 +56,24 @@ jobs:
       fail-fast: false # Don't cancel other jobs if one fails
       matrix:
         test-group:
-          - { name: "passes", script: "test:jest:cy:passes", timeout: 3 }
-          - { name: "v2attachments", script: "test:jest:cy:v2attachments", timeout: 3 }
-          - { name: "v2suites", script: "test:jest:cy:v2suites", timeout: 3 }
-          - { name: "failures", script: "test:jest:cy:failures", timeout: 6 }
-          - { name: "requests", script: "test:jest:cy:requests", timeout: 6 }
-          - { name: "attachments", script: "test:jest:cy:attachments", timeout: 4 }
-          - { name: "hooks", script: "test:jest:cy:hooks", timeout: 6 }
-          - { name: "commands", script: "test:jest:cy:commands", timeout: 10 }
-          - { name: "events", script: "test:jest:cy:events", timeout: 10 }
-          - { name: "cucumber", script: "test:jest:cy:cucumber", timeout: 10 }
-          - { name: "duration", script: "test:jest:cy:duration", timeout: 10 }
-          - { name: "interface-p1", script: "test:jest:cy:interface:p1", timeout: 10 }
-          - { name: "interface-p2", script: "test:jest:cy:interface:p2", timeout: 10 }
-          - { name: "only", script: "test:jest:cy:only", timeout: 10 }
-          - { name: "other", script: "test:jest:cy:other", timeout: 10 }
-          - { name: "regression", script: "test:jest:cy:regression", timeout: 10 }
-          - { name: "settings", script: "test:jest:cy:settings", timeout: 10 }
-          - { name: "skips", script: "test:jest:cy:skips", timeout: 10 }
+          - { name: "passes", script: "test:jest:cy:passes", timeout: 5 }
+          - { name: "v2attachments", script: "test:jest:cy:v2attachments", timeout: 5 }
+          - { name: "v2suites", script: "test:jest:cy:v2suites", timeout: 5 }
+          - { name: "failures", script: "test:jest:cy:failures", timeout: 8 }
+          - { name: "requests", script: "test:jest:cy:requests", timeout: 8 }
+          - { name: "attachments", script: "test:jest:cy:attachments", timeout: 6 }
+          - { name: "hooks", script: "test:jest:cy:hooks", timeout: 8 }
+          - { name: "commands", script: "test:jest:cy:commands", timeout: 12 }
+          - { name: "events", script: "test:jest:cy:events", timeout: 12 }
+          - { name: "cucumber", script: "test:jest:cy:cucumber", timeout: 12 }
+          - { name: "duration", script: "test:jest:cy:duration", timeout: 12 }
+          - { name: "interface-p1", script: "test:jest:cy:interface:p1", timeout: 12 }
+          - { name: "interface-p2", script: "test:jest:cy:interface:p2", timeout: 12 }
+          - { name: "only", script: "test:jest:cy:only", timeout: 12 }
+          - { name: "other", script: "test:jest:cy:other", timeout: 12 }
+          - { name: "regression", script: "test:jest:cy:regression", timeout: 12 }
+          - { name: "settings", script: "test:jest:cy:settings", timeout: 12 }
+          - { name: "skips", script: "test:jest:cy:skips", timeout: 12 }
 
     name: Test ${{ matrix.test-group.name }}
     timeout-minutes: ${{ matrix.test-group.timeout }}
@@ -102,10 +86,12 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Download workspace
-        uses: actions/download-artifact@v4
-        with:
-          name: workspace
+      # npm ci with cache hit is very fast (~15-20s)
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build:all
 
       - name: Run tests
         uses: nick-fields/retry@v3
@@ -120,7 +106,7 @@ jobs:
   finalize:
     needs: [build, test-cypress]
     runs-on: ubuntu-latest
-    if: always() # Run even if tests fail
+    if: always()
     steps:
       - uses: actions/checkout@v4
 
@@ -184,4 +170,3 @@ jobs:
             echo "Publishing beta"
             npm run publish:beta || true
           fi
-
