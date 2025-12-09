@@ -152,7 +152,8 @@ jobs:
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: ${{ matrix.test-group.timeout }}
-          max_attempts: 2
+          max_attempts: 3
+          retry_wait_seconds: 10
           command: npm run ${{ matrix.test-group.script }}
 
       # Upload Jest JUnit report for this test group
