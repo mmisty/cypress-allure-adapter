@@ -166,7 +166,7 @@ function createReport(tempDir, reportDir, config){
     reportDir: reportDir,
     tempDir: tempDir,
     // Ensure reporter is set
-    reporter: config.reporter || ['json', 'lcov', 'text'],
+    reporter: [...config.reporter, 'text'] || ['json', 'lcov', 'text'],
   };
   
   const nyc = new NYC(nycReportOptions)
