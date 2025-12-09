@@ -100,6 +100,15 @@ jobs:
           max_attempts: 2
           command: npm run ${{ matrix.test-group.script }}
 
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cypress-${{ matrix.test-group.name }}
+          path: ./reports/coverage-cypress/
+          retention-days: 1
+          if-no-files-found: ignore
+
   # ═══════════════════════════════════════════════════════════════
   # STAGE 3: Finalize (runs after all tests complete)
   # ═══════════════════════════════════════════════════════════════
@@ -122,6 +131,45 @@ jobs:
         with:
           name: coverage-jest
           path: ./reports/coverage-jest/
+
+      # Download all cypress coverage artifacts into separate folders
+      - name: Download all cypress coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-cypress-*
+          path: ./reports/coverage-cypress-all/
+          merge-multiple: false
+
+      # Merge all cypress coverage JSON files using nyc
+      - name: Merge cypress coverage files
+        run: |
+          mkdir -p ./reports/coverage-cypress
+          mkdir -p ./reports/coverage-cypress-temp
+          
+          echo "=== Collecting coverage files from parallel jobs ==="
+          
+          # Copy all coverage-final.json files with unique names
+          counter=1
+          for dir in ./reports/coverage-cypress-all/coverage-cypress-*/; do
+            if [ -f "${dir}coverage-final.json" ]; then
+              echo "Found coverage in: $dir"
+              cp "${dir}coverage-final.json" "./reports/coverage-cypress-temp/coverage-${counter}.json"
+              counter=$((counter + 1))
+            fi
+          done
+          
+          echo "=== Coverage files to merge: ==="
+          ls -la ./reports/coverage-cypress-temp/ || echo "No files found"
+          
+          # Use nyc to merge all coverage files into one
+          if [ "$(ls -A ./reports/coverage-cypress-temp/)" ]; then
+            echo "=== Merging coverage files with nyc ==="
+            npx nyc merge ./reports/coverage-cypress-temp ./reports/coverage-cypress/coverage-final.json
+            echo "=== Merged coverage created ==="
+            ls -la ./reports/coverage-cypress/
+          else
+            echo "No cypress coverage files found to merge"
+          fi
 
       - name: Merge Coverage
         run: npm run cov:merge
