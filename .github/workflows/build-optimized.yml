@@ -28,7 +28,11 @@ jobs:
           cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
 
       - name: Lint
         run: npm run lint
@@ -135,7 +139,11 @@ jobs:
 
       # npm ci with cache hit is very fast (~15-20s)
       - name: Install dependencies
-        run: npm ci
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
 
       - name: Build
         run: npm run build:all
@@ -192,7 +200,12 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - run: npm ci
+      - name: Install dependencies
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
 
       - name: Download jest coverage
         uses: actions/download-artifact@v4
@@ -279,7 +292,7 @@ jobs:
           clover-file: ./reports/coverage-full/clover.xml
 
   # ═══════════════════════════════════════════════════════════════
-  # PUBLISH: Only on main branch with specific commit messages
+  # PUBLISH: With specific commit messages, beta versions published always
   # ═══════════════════════════════════════════════════════════════
   publish:
     needs: [build, test-cypress]
@@ -294,8 +307,15 @@ jobs:
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
 
-      - run: npm ci
-      - run: npm run build
+      - name: Install dependencies
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
+
+      - name: Build
+        run: npm run build
 
       - name: Publish
         env:
