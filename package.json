@@ -68,7 +68,7 @@
     "build:cy": "cd integration && tsc",
     "build:all": "npm run build && npm run build:cy && npm run build:tests",
     "cov:fin": "npx nyc report -t reports/coverage-full --report-dir reports/coverage-full-total",
-    "cov:merge": "node ./.scripts/merge.js --cypress reports/coverage-cypress --jest reports/coverage-jest --out reports/coverage-temp --report reports/coverage-full && npm run cov:fin",
+    "cov:merge": "node ./.scripts/merge.js --config nyc.config.js --cypress reports/coverage-cypress --jest reports/coverage-jest --out reports/coverage-temp --report reports/coverage-full && npm run cov:fin",
     "cov": "http-server reports/coverage-full/lcov-report",
     "cov:jest": "http-server reports/coverage-jest/lcov-report",
     "cov:cy": "http-server reports/coverage-cypress/lcov-report",
