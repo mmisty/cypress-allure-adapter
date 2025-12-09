@@ -152,7 +152,10 @@ export const configureAllureAdapterPlugins = (
     }
   }
 
-  startReporterServer(config, reporter);
+  // Start WebSocket server async - doesn't block Cypress startup
+  startReporterServer(config, reporter).catch(err => {
+    logWithPackage('error', `Failed to start reporter server: ${(err as Error).message}`);
+  });
 
   config.reporterOptions = {
     ...config.reporterOptions,

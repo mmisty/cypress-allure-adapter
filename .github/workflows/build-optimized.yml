@@ -109,6 +109,8 @@ jobs:
     env:
       # Increase Node.js memory limit (default is ~1.5GB, increase to 4GB)
       NODE_OPTIONS: "--max-old-space-size=4096"
+      # Cypress/Chrome settings for CI stability
+      CI: "true"
     steps:
       - uses: actions/checkout@v4
 
@@ -149,6 +151,16 @@ jobs:
 
       - name: Build
         run: npm run build:all
+
+      # Debug: Show environment and processes before running tests
+      - name: Pre-test diagnostics
+        run: |
+          echo "=== Memory before test ==="
+          free -h
+          echo "=== Node processes ==="
+          pgrep -a node || echo "No node processes"
+          echo "=== Chrome version ==="
+          google-chrome --version || chromium --version || echo "Chrome not found"
 
       - name: Run tests
         uses: nick-fields/retry@v3

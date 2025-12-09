@@ -20,59 +20,53 @@ const messageGot = (...args: unknown[]) => {
 };
 
 /**
- * Check if a port is available (sync version with timeout protection)
- * Uses a simple try-catch approach instead of waiting for events
+ * Check if a port is available asynchronously
  */
-const checkPortSync = (port: number, _timeoutMs = 2000): boolean => {
-  let isAvailable = true;
-  let server: net.Server | null = null;
+const checkPort = (port: number): Promise<boolean> => {
+  return new Promise(resolve => {
+    const server = net.createServer();
+    let resolved = false;
 
-  try {
-    server = net.createServer();
+    const cleanup = (result: boolean) => {
+      if (resolved) return;
+      resolved = true;
 
-    // Use synchronous-like behavior with immediate error handling
-    server.once('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'EADDRINUSE' || err.code === 'EACCES') {
-        isAvailable = false;
-      }
-    });
-
-    // Try to listen - this will trigger error synchronously if port is in use
-    server.listen(port);
-
-    // Give a tiny window for error to propagate (works in most cases)
-    // This is a best-effort sync check - not 100% reliable but won't hang
-    const deadline = Date.now() + 100; // 100ms max wait
-
-    while (!server.listening && isAvailable && Date.now() < deadline) {
-      // Busy wait with small iterations - not ideal but prevents hangs
-      // In practice, port conflicts error out immediately
-    }
-
-    if (!server.listening) {
-      isAvailable = false;
-    }
-  } catch (error) {
-    isAvailable = false;
-  } finally {
-    if (server) {
       try {
         server.close();
       } catch {
-        // Ignore close errors
+        // Ignore
       }
-    }
-  }
+      resolve(result);
+    };
 
-  return isAvailable;
+    // Set timeout to prevent hanging
+    const timeout = setTimeout(() => cleanup(false), 500);
+
+    server.once('error', () => {
+      clearTimeout(timeout);
+      cleanup(false);
+    });
+
+    server.once('listening', () => {
+      clearTimeout(timeout);
+      cleanup(true);
+    });
+
+    try {
+      server.listen(port, '127.0.0.1');
+    } catch {
+      clearTimeout(timeout);
+      cleanup(false);
+    }
+  });
 };
 
-function retrieveRandomPortNumber(): number {
+async function retrieveRandomPortNumber(): Promise<number> {
   const getRandomPort = () => 40000 + Math.round(Math.random() * 25000);
   let port = getRandomPort();
 
   for (let i = 0; i < 30; i++) {
-    const result = checkPortSync(port);
+    const result = await checkPort(port);
 
     if (result) {
       return port;
@@ -321,7 +315,11 @@ const socketLogic = (sockserver: WebSocketServer | undefined, tasks: AllureTasks
   });
 };
 
-export const startReporterServer = (configOptions: PluginConfigOptions, tasks: AllureTasks, attempt = 0) => {
+export const startReporterServer = async (
+  configOptions: PluginConfigOptions,
+  tasks: AllureTasks,
+  attempt = 0,
+): Promise<WebSocketServer | undefined> => {
   // Guard against too many retries
   const MAX_ATTEMPTS = 30;
 
@@ -331,7 +329,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
     return undefined;
   }
 
-  const wsPort = retrieveRandomPortNumber();
+  const wsPort = await retrieveRandomPortNumber();
 
   let sockserver: WebSocketServer | undefined;
   let serverStarted = false;
@@ -350,7 +348,7 @@ export const startReporterServer = (configOptions: PluginConfigOptions, tasks: A
         if (attempt < MAX_ATTEMPTS) {
           // Use setImmediate instead of process.nextTick to prevent stack overflow
           setImmediate(() => {
-            sockserver = startReporterServer(configOptions, tasks, attempt + 1);
+            startReporterServer(configOptions, tasks, attempt + 1);
           });
         } else {
           logWithPackage('error', `Could not find free port after ${MAX_ATTEMPTS} attempts: ${err.message}`);

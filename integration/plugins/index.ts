@@ -42,8 +42,20 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   }
 
   const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn', 'test:log']);
+  const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
   on('before:browser:launch', (browser, opts) => {
+    // Add Chrome args for CI stability
+    if (isCI && browser.family === 'chromium') {
+      opts.args.push('--disable-gpu');
+      opts.args.push('--no-sandbox');
+      opts.args.push('--disable-sync');
+      opts.args.push('--disable-translate');
+      opts.args.push('--mute-audio');
+      opts.args.push('--no-first-run');
+      opts.args.push('--safebrowsing-disable-auto-update');
+    }
+
     return browserHandler(browser, opts);
   });
 
