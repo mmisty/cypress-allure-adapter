@@ -285,12 +285,11 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(true);
-
-      if (result.success) {
-        expect(Buffer.from(result.data as string, 'base64').toString()).toBe(
-          content,
-        );
-      }
+      expect(
+        result.success
+          ? Buffer.from(result.data as string, 'base64').toString()
+          : null,
+      ).toBe(content);
     });
 
     it('should copy file with fs:copyFile', async () => {
@@ -372,15 +371,10 @@ describe('AllureTaskServer', () => {
       });
 
       expect(resultExists.success).toBe(true);
+      expect(resultExists.success ? resultExists.data : null).toBe(true);
 
-      if (resultExists.success) {
-        expect(resultExists.data).toBe(true);
-      }
       expect(resultNotExists.success).toBe(true);
-
-      if (resultNotExists.success) {
-        expect(resultNotExists.data).toBe(false);
-      }
+      expect(resultNotExists.success ? resultNotExists.data : null).toBe(false);
     });
 
     it('should handle sync operations fs:existsSync', async () => {
@@ -393,10 +387,7 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(true);
-
-      if (result.success) {
-        expect(result.data).toBe(true);
-      }
+      expect(result.success ? result.data : null).toBe(true);
     });
   });
 
@@ -528,10 +519,7 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(false);
-
-      if (!result.success) {
-        expect(result.error).toContain('does not exist');
-      }
+      expect(!result.success ? result.error : null).toContain('does not exist');
     });
   });
 
@@ -555,10 +543,9 @@ describe('AllureTaskServer', () => {
       });
 
       expect(result.success).toBe(false);
-
-      if (!result.success) {
-        expect(result.error).toContain('Unknown operation');
-      }
+      expect(!result.success ? result.error : null).toContain(
+        'Unknown operation',
+      );
     });
 
     it('should handle health operation', async () => {
@@ -796,10 +783,9 @@ describe('AllureTaskServer', () => {
         });
 
         expect(result.success).toBe(false);
-
-        if (!result.success) {
-          expect(result.error).toContain('does not exist');
-        }
+        expect(!result.success ? result.error : null).toContain(
+          'does not exist',
+        );
       });
 
       it('should succeed with empty allure results', async () => {
