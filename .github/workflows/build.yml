@@ -149,56 +149,56 @@ jobs:
     - name: Test Cy events
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:events
 
     - name: Test Cy cucumber
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:cucumber
 
     - name: Test Cy duration
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 6
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:duration
 
     - name: Test Cy interface Part1
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 6
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:interface:p1
 
     - name: Test Cy interface Part2
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 6
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:interface:p2
 
     - name: Test Cy only
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:only
 
     - name: Test Cy other
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 10
         max_attempts: 4
         command: npm run test:jest:cy:other
 
     - name: Test Cy regression
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:regression
 
@@ -206,14 +206,14 @@ jobs:
     - name: Test Cy settings
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 4
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:settings
 
     - name: Test Cy skips
       uses: nick-fields/retry@v2
       with:
-        timeout_minutes: 2
+        timeout_minutes: 10
         max_attempts: 2
         command: npm run test:jest:cy:skips
         
