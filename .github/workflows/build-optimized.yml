@@ -1,0 +1,351 @@
+name: CI (Optimized)
+permissions: write-all
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+# Queue runs for the same branch (don't cancel, wait instead)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ═══════════════════════════════════════════════════════════════
+  # STAGE 1: Build & Lint (must pass before parallel tests)
+  # ═══════════════════════════════════════════════════════════════
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js with caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build:all
+
+      - name: Test Jest (unit tests)
+        run: npm run test:jest
+
+      # Upload Jest report for build stage
+      - name: Upload Jest report (build)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report-build
+          path: ./reports/jest/
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Publish Jest Test Report (build)
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: './reports/jest/*.xml'
+          check_name: 'Jest Unit Tests'
+          fail_on_failure: false
+          include_passed: false
+          detailed_summary: true
+
+      - name: Archive jest coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-jest
+          path: ./reports/coverage-jest/
+          retention-days: 7
+
+  # ═══════════════════════════════════════════════════════════════
+  # STAGE 2: Parallel Cypress Tests (run simultaneously!)
+  # ═══════════════════════════════════════════════════════════════
+  test-cypress:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Don't cancel other jobs if one fails
+      matrix:
+        test-group:
+          - { name: "passes1", script: "test:jest:cy:passes1", timeout: 5 }
+          - { name: "passes2", script: "test:jest:cy:passes2", timeout: 5 }
+          - { name: "v2attachments", script: "test:jest:cy:v2attachments", timeout: 5 }
+          - { name: "v2suites", script: "test:jest:cy:v2suites", timeout: 5 }
+          - { name: "failures1", script: "test:jest:cy:failures1", timeout: 8 }
+          - { name: "failures2", script: "test:jest:cy:failures2", timeout: 8 }
+          - { name: "failures3", script: "test:jest:cy:failures3", timeout: 8 }
+          - { name: "requests", script: "test:jest:cy:requests", timeout: 8 }
+          - { name: "attachments", script: "test:jest:cy:attachments", timeout: 6 }
+          - { name: "hooks", script: "test:jest:cy:hooks", timeout: 8 }
+          - { name: "commands", script: "test:jest:cy:commands", timeout: 12 }
+          - { name: "events", script: "test:jest:cy:events", timeout: 12 }
+          - { name: "cucumber", script: "test:jest:cy:cucumber", timeout: 12 }
+          - { name: "duration", script: "test:jest:cy:duration", timeout: 12 }
+          - { name: "interface-p1", script: "test:jest:cy:interface:p1", timeout: 12 }
+          - { name: "interface-p2", script: "test:jest:cy:interface:p2", timeout: 12 }
+          - { name: "interface-p3", script: "test:jest:cy:interface:p3", timeout: 12 }
+          - { name: "interface-p4", script: "test:jest:cy:interface:p4", timeout: 12 }
+          - { name: "only", script: "test:jest:cy:only", timeout: 12 }
+          - { name: "other", script: "test:jest:cy:other", timeout: 12 }
+          - { name: "regression", script: "test:jest:cy:regression", timeout: 12 }
+          - { name: "settings", script: "test:jest:cy:settings", timeout: 12 }
+          - { name: "skips", script: "test:jest:cy:skips", timeout: 12 }
+
+    name: Test ${{ matrix.test-group.name }}
+    timeout-minutes: ${{ matrix.test-group.timeout }}
+    env:
+      # Increase Node.js memory limit (default is ~1.5GB, increase to 4GB)
+      NODE_OPTIONS: "--max-old-space-size=4096"
+      # Cypress/Chrome settings for CI stability
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      # Free up disk space and add swap to prevent OOM
+      - name: Free up runner resources
+        run: |
+          # Remove unnecessary tools to free memory/disk
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf /usr/local/lib/android
+          
+          # Add 4GB swap file to prevent OOM kills
+          sudo fallocate -l 4G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          
+          # Show available resources
+          echo "=== Memory ==="
+          free -h
+          echo "=== Disk ==="
+          df -h
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      # npm ci with cache hit is very fast (~15-20s)
+      - name: Install dependencies
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
+
+      - name: Build
+        run: npm run build:all
+
+      # Debug: Show environment and processes before running tests
+      - name: Pre-test diagnostics
+        run: |
+          echo "=== Memory before test ==="
+          free -h
+          echo "=== Node processes ==="
+          pgrep -a node || echo "No node processes"
+          echo "=== Chrome version ==="
+          google-chrome --version || chromium --version || echo "Chrome not found"
+
+      - name: Run tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: ${{ matrix.test-group.timeout }}
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: npm run ${{ matrix.test-group.script }}
+
+      # Upload Jest JUnit report for this test group
+      - name: Upload Jest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-report-${{ matrix.test-group.name }}
+          path: ./reports/jest/
+          retention-days: 3
+          if-no-files-found: ignore
+
+      # Publish Jest results to GitHub UI for this job
+      - name: Publish Jest Test Report
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: './reports/jest/*.xml'
+          check_name: 'Jest ${{ matrix.test-group.name }}'
+          fail_on_failure: false
+          include_passed: false
+          detailed_summary: true
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cypress-${{ matrix.test-group.name }}
+          path: ./reports/coverage-cypress/
+          retention-days: 1
+          if-no-files-found: ignore
+
+  # ═══════════════════════════════════════════════════════════════
+  # STAGE 3: Finalize (runs after all tests complete)
+  # ═══════════════════════════════════════════════════════════════
+  finalize:
+    needs: [build, test-cypress]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
+
+      - name: Download jest coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-jest
+          path: ./reports/coverage-jest/
+
+      # Download all Jest reports for summary
+      - name: Download all Jest reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: jest-report-*
+          path: ./reports/jest-all/
+          merge-multiple: false
+
+      # Create combined Jest summary report
+      - name: Publish Combined Jest Report
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: './reports/jest-all/**/junit.xml'
+          check_name: 'All Jest Tests Summary'
+          fail_on_failure: false
+          include_passed: false
+          detailed_summary: true
+          summary: true
+
+      # Download all cypress coverage artifacts into separate folders
+      - name: Download all cypress coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-cypress-*
+          path: ./reports/coverage-cypress-all/
+          merge-multiple: false
+
+      # Merge all cypress coverage JSON files using nyc
+      - name: Merge cypress coverage files
+        run: |
+          mkdir -p ./reports/coverage-cypress
+          mkdir -p ./reports/coverage-cypress-temp
+          
+          echo "=== Collecting coverage files from parallel jobs ==="
+          
+          # Copy all coverage-final.json files with unique names
+          counter=1
+          for dir in ./reports/coverage-cypress-all/coverage-cypress-*/; do
+            if [ -f "${dir}coverage-final.json" ]; then
+              echo "Found coverage in: $dir"
+              cp "${dir}coverage-final.json" "./reports/coverage-cypress-temp/coverage-${counter}.json"
+              counter=$((counter + 1))
+            fi
+          done
+          
+          echo "=== Coverage files to merge: ==="
+          ls -la ./reports/coverage-cypress-temp/ || echo "No files found"
+          
+          # Use nyc to merge all coverage files into one
+          if [ "$(ls -A ./reports/coverage-cypress-temp/)" ]; then
+            echo "=== Merging coverage files with nyc ==="
+            npx nyc merge ./reports/coverage-cypress-temp ./reports/coverage-cypress/coverage-final.json
+            echo "=== Merged coverage created ==="
+            ls -la ./reports/coverage-cypress/
+          else
+            echo "No cypress coverage files found to merge"
+          fi
+
+      - name: Merge Coverage
+        run: npm run cov:merge
+        continue-on-error: true
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-coverage-adapter
+          path: ./reports/coverage-full-total
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Monitor coverage
+        continue-on-error: true
+        uses: danhunsaker/clover-reporter-action@v0.2.17-clover
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          clover-file: ./reports/coverage-full/clover.xml
+
+  # ═══════════════════════════════════════════════════════════════
+  # PUBLISH: With specific commit messages, beta versions published always
+  # ═══════════════════════════════════════════════════════════════
+  publish:
+    needs: [build, test-cypress]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          gitmsg="${{ github.event.commits[0].message }}"
+          echo "Commit: $gitmsg"
+
+          if [[ "$gitmsg" =~ "[patch]" ]] || [[ "$gitmsg" =~ "[fix]" ]]; then
+            npm run publish:patch && git push --tags
+          elif [[ "$gitmsg" =~ "[minor]" ]]; then
+            npm run publish:minor && git push --tags
+          elif [[ "$gitmsg" =~ "[major]" ]]; then
+            npm run publish:major && git push --tags
+          else
+            echo "Publishing beta"
+            npm run publish:beta || true
+          fi
