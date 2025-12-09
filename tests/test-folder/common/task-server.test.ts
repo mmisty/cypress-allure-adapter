@@ -766,34 +766,6 @@ describe('AllureTaskServer', () => {
     });
 
     /**
-     * Helper to create a mock allure test result file
-     */
-    function createMockTestResult(
-      uuid: string,
-      name: string,
-      status: string,
-      specPath: string,
-    ) {
-      const result = {
-        uuid,
-        name,
-        fullName: name,
-        status,
-        stage: 'finished',
-        labels: [{ name: 'path', value: specPath }],
-        attachments: [],
-        start: Date.now(),
-        stop: Date.now(),
-      };
-      writeFileSync(
-        `${ALLURE_RESULTS}/${uuid}-result.json`,
-        JSON.stringify(result),
-      );
-
-      return result;
-    }
-
-    /**
      * Helper to create a mock container file
      */
     function createMockContainer(uuid: string, children: string[]) {

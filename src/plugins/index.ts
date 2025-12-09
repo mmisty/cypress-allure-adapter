@@ -94,6 +94,7 @@ export const configureAllureAdapterPlugins = (
 
   // Start the task server with timeout guard (async - doesn't block Cypress startup)
   const SERVER_START_TIMEOUT = 20000; // 20 seconds max wait
+
   const startWithTimeout = async () => {
     const timeoutPromise = new Promise<void>((_, reject) => {
       setTimeout(() => {

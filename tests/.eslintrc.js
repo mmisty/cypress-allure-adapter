@@ -13,6 +13,7 @@ module.exports = {
     'jest/no-standalone-expect': 'off',
     '@typescript-eslint/no-non-null-assertion': 'off',
     'jest/expect-expect': 'off',
+    'jest/no-conditional-expect': 'warn',
     'no-restricted-imports': [
       'error',
       {
