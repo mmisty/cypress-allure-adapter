@@ -167,12 +167,19 @@ jobs:
         max_attempts: 2
         command: npm run test:jest:cy:duration
 
-    - name: Test Cy interface
+    - name: Test Cy interface Part1
       uses: nick-fields/retry@v2
       with:
         timeout_minutes: 6
         max_attempts: 2
-        command: npm run test:jest:cy:interface
+        command: npm run test:jest:cy:interface:p1
+
+    - name: Test Cy interface Part2
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 6
+        max_attempts: 2
+        command: npm run test:jest:cy:interface:p2
 
     - name: Test Cy only
       uses: nick-fields/retry@v2
