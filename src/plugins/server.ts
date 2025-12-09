@@ -334,9 +334,17 @@ export const startReporterServer = async (
   let sockserver: WebSocketServer | undefined;
   let serverStarted = false;
 
+  let startupTimeout: NodeJS.Timeout | undefined;
+
   try {
     sockserver = new WebSocketServer({ port: wsPort, path: wsPath }, () => {
       serverStarted = true;
+
+      // Clear the startup timeout since server started successfully
+      if (startupTimeout) {
+        clearTimeout(startupTimeout);
+        startupTimeout = undefined;
+      }
       configOptions.env[ENV_WS] = wsPort;
       const attemptMessage = attempt > 0 ? ` from ${attempt} attempt` : '';
       logWithPackage('log', `running on ${wsPort} port${attemptMessage}`);
@@ -344,6 +352,12 @@ export const startReporterServer = async (
     });
 
     sockserver.on('error', err => {
+      // Clear the startup timeout on error
+      if (startupTimeout) {
+        clearTimeout(startupTimeout);
+        startupTimeout = undefined;
+      }
+
       if (err.message.indexOf('address already in use') !== -1) {
         if (attempt < MAX_ATTEMPTS) {
           // Use setImmediate instead of process.nextTick to prevent stack overflow
@@ -360,12 +374,15 @@ export const startReporterServer = async (
       logWithPackage('error', `Error on ws server: ${(err as Error).message}`);
     });
 
-    // Set a startup timeout - if server doesn't start in 5s, continue without it
-    setTimeout(() => {
+    // Set a startup timeout - if server doesn't start in 15s, log warning
+    startupTimeout = setTimeout(() => {
       if (!serverStarted && sockserver) {
         logWithPackage('warn', 'WebSocket server startup timed out, allure reporting may be incomplete');
       }
     }, 15000);
+
+    // Unref the timeout so it doesn't keep the process alive
+    startupTimeout.unref();
   } catch (err) {
     logWithPackage('error', `Failed to create WebSocket server: ${(err as Error).message}`);
 

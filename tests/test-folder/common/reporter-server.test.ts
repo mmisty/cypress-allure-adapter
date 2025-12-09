@@ -9,22 +9,50 @@ const results = 'reports/allure-res';
 const resultsPathWatch = `${results}/watch`;
 
 describe('startReporterServer', () => {
+  let client: AllureTaskClient;
+  let activeServers: WebSocketServer[] = [];
+
+  // Reset modules to prevent cached timers/resources between tests
   beforeEach(() => {
+    jest.resetModules();
     consoleMock();
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const messages = require('../../../src/plugins/server').testMessages;
     messages.splice(0, messages.length);
   });
-  let client: AllureTaskClient;
 
   beforeEach(async () => {
-    // Use local mode client for tests (no separate process)
+    // Use remote mode for full functionality
     client = new AllureTaskClient('remote');
     await client.start();
   });
 
   afterEach(async () => {
+    // Close any remaining servers first
+    for (const server of activeServers) {
+      // Close all clients
+      server.clients.forEach(wsClient => {
+        wsClient.terminate();
+      });
+
+      await new Promise<void>(resolve => {
+        server.close(() => resolve());
+        // Force close after timeout
+        setTimeout(resolve, 300);
+      });
+    }
+    activeServers = [];
+
+    // Stop task client (which stops the subprocess)
     await client.stop();
+
+    // Wait for subprocess to fully exit
+    await new Promise(r => setTimeout(r, 200));
+  });
+
+  // Clean up any remaining timers after all tests
+  afterAll(() => {
+    jest.useRealTimers();
   });
 
   const start = async (
@@ -54,19 +82,27 @@ describe('startReporterServer', () => {
       client,
     );
     const serv: { serv: undefined | WebSocketServer } = { serv: undefined };
-    serv.serv = startReporterServer({ env } as any, reporter);
+    // startReporterServer is now async
+    serv.serv = await startReporterServer({ env } as any, reporter);
 
-    // wait to start
+    // Track server for cleanup
+    if (serv.serv) {
+      activeServers.push(serv.serv);
+    }
+
+    // wait for port to be assigned
     return new Promise((res, rej) => {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
+        rej('Ws not started');
+      }, 2000);
+
+      const check = setInterval(() => {
         if (env['allureWsPort'] !== undefined) {
-          res(null);
-        } else {
-          rej('Ws not started');
+          clearInterval(check);
+          clearTimeout(timeout);
+          res(serv);
         }
-      }, 1000);
-    }).then(() => {
-      return serv;
+      }, 50);
     });
   };
 
@@ -74,7 +110,7 @@ describe('startReporterServer', () => {
     sendObjs: any[],
     callback: (back: string[]) => void,
   ) => {
-    const env = {};
+    const env: Record<string, any> = {};
 
     const back: any[] = [];
 
@@ -88,86 +124,119 @@ describe('startReporterServer', () => {
       rmSync(results, { recursive: true });
     }
 
-    return start(true, env).then(serv => {
-      const wsPathFixed =
-        `${env['allureWsPort']}/__cypress/allure_messages/`.replace(
-          /\/\//g,
-          '/',
-        );
-      const wsPath = `ws://localhost:${wsPathFixed}`;
-      const ws = new WebSocket(wsPath, { origin: 'localhost' });
+    let ws: WebSocket | null = null;
+    let interval: NodeJS.Timeout | null = null;
 
-      return new Promise(res => {
-        ws.on('error', err => {
-          console.error(err);
-          res(false);
-        });
-        ws.on('open', function open() {
-          ws.send('OPENED');
+    return start(true, env)
+      .then(serv => {
+        const wsPathFixed =
+          `${env['allureWsPort']}/__cypress/allure_messages/`.replace(
+            /\/\//g,
+            '/',
+          );
+        const wsPath = `ws://localhost:${wsPathFixed}`;
+        ws = new WebSocket(wsPath, { origin: 'localhost' });
 
-          sendObjs.forEach((obj, i) => {
-            ws.send(
-              JSON.stringify({
-                id: i + 1,
-                ...obj,
-              }),
-            );
+        return new Promise<boolean>(res => {
+          ws!.on('error', err => {
+            console.error(err);
+            res(false);
           });
-        });
+          ws!.on('open', function open() {
+            ws!.send('OPENED');
 
-        ws.on('message', function msg(m) {
-          if (`${m}` !== 'connection established') {
-            back.push(`${m}`);
-          }
+            sendObjs.forEach((obj, i) => {
+              ws!.send(
+                JSON.stringify({
+                  id: i + 1,
+                  ...obj,
+                }),
+              );
+            });
+          });
 
-          res(true);
-        });
-      })
-        .catch(err => {
-          console.log(err);
+          ws!.on('message', function msg(m) {
+            if (`${m}` !== 'connection established') {
+              back.push(`${m}`);
+            }
 
-          return false;
+            res(true);
+          });
         })
-        .then(() => {
-          return new Promise((resolveAllGot, rejectGotAll) => {
-            const started = Date.now();
+          .catch(err => {
+            console.log(err);
 
-            const interval = setInterval(() => {
-              if (messages.length < sendObjs.length + 1) {
-                // +1 - connection established message
-                if (Date.now() - started > 4000) {
-                  rejectGotAll('Not received all');
+            return false;
+          })
+          .then(() => {
+            return new Promise<boolean>((resolveAllGot, rejectGotAll) => {
+              const started = Date.now();
+
+              interval = setInterval(() => {
+                if (messages.length < sendObjs.length + 1) {
+                  // +1 - connection established message
+                  if (Date.now() - started > 4000) {
+                    clearInterval(interval!);
+                    interval = null;
+                    rejectGotAll('Not received all');
+                  }
+                } else {
+                  clearInterval(interval!);
+                  interval = null;
+                  resolveAllGot(true);
                 }
+              }, 50);
+            });
+          })
+          .then(() => {
+            return new Promise<void>((res, rej) => {
+              let closed = false;
+
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+              }
+
+              if (serv.serv) {
+                serv.serv.on('close', () => {
+                  closed = true;
+                });
+                serv.serv.close();
               } else {
-                clearInterval(interval);
-                resolveAllGot(true);
+                closed = true;
+              }
+
+              const timeout = setTimeout(() => {
+                if (closed) {
+                  console.log('SERVER CLOSED');
+                  res();
+                } else {
+                  rej('Ws server was not closed');
+                }
+              }, 1000);
+
+              // Also resolve if already closed
+              if (closed) {
+                clearTimeout(timeout);
+                res();
               }
             });
           })
-            .then(() => {
-              let closed = false;
-              ws.close();
-              serv.serv!.on('close', () => {
-                closed = true;
-              });
-              serv.serv!.close();
+          .then(async () => {
+            // Wait a bit for async file operations to complete
+            await new Promise(r => setTimeout(r, 500));
+            callback(back);
+          });
+      })
+      .finally(() => {
+        // Clean up any remaining resources
+        if (interval) {
+          clearInterval(interval);
+        }
 
-              return new Promise((res, rej) => {
-                setTimeout(() => {
-                  if (closed) {
-                    console.log('SERVER CLOSED');
-                    res(null);
-                  } else {
-                    rej('Ws server was not closed');
-                  }
-                }, 1000);
-              });
-            })
-            .then(() => {
-              callback(back);
-            });
-        });
-    });
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+          ws.terminate();
+        }
+      });
   };
 
   it('should do some tasks', () => {
