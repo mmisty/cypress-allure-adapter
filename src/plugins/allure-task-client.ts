@@ -116,6 +116,14 @@ export class AllureTaskClient {
       let portResolved = false;
       let outputBuffer = '';
 
+      // Timeout for server startup - cleared when server starts or fails
+      const startupTimeout = setTimeout(() => {
+        if (!portResolved) {
+          this.killServer();
+          reject(new Error('Timeout waiting for task server to start'));
+        }
+      }, 15000);
+
       this.serverProcess.stdout?.on('data', (data: Buffer) => {
         const output = data.toString();
         outputBuffer += output;
@@ -125,6 +133,7 @@ export class AllureTaskClient {
 
         if (portMatch && !portResolved) {
           portResolved = true;
+          clearTimeout(startupTimeout);
           this.port = parseInt(portMatch[1], 10);
           debug(`Server started on port ${this.port}`);
           this.isConnected = true;
@@ -150,6 +159,7 @@ export class AllureTaskClient {
         debug(`Server process error: ${err.message}`);
 
         if (!portResolved) {
+          clearTimeout(startupTimeout);
           reject(new Error(`Failed to start task server: ${err.message}`));
         }
       });
@@ -160,16 +170,10 @@ export class AllureTaskClient {
         this.serverProcess = null;
 
         if (!portResolved) {
+          clearTimeout(startupTimeout);
           reject(new Error(`Task server exited unexpectedly: code=${code}, signal=${signal}`));
         }
       });
-
-      setTimeout(() => {
-        if (!portResolved) {
-          this.killServer();
-          reject(new Error('Timeout waiting for task server to start'));
-        }
-      }, 15000);
     });
   }
 
@@ -199,14 +203,46 @@ export class AllureTaskClient {
   private killServer(): void {
     if (this.serverProcess) {
       debug('Killing server process');
+      const proc = this.serverProcess;
+      this.serverProcess = null;
+      this.isConnected = false;
 
+      // Remove all event listeners to prevent memory leaks and open handles
+      proc.stdout?.removeAllListeners();
+      proc.stderr?.removeAllListeners();
+      proc.stdin?.removeAllListeners();
+      proc.removeAllListeners();
+
+      // Destroy streams
+      proc.stdout?.destroy();
+      proc.stderr?.destroy();
+      proc.stdin?.destroy();
+
+      // Disconnect IPC channel if connected
+      if (proc.connected) {
+        try {
+          proc.disconnect();
+        } catch {
+          // Ignore - might already be disconnected
+        }
+      }
+
+      // Kill process - try SIGTERM first, then SIGKILL
       try {
-        this.serverProcess.kill('SIGTERM');
+        proc.kill('SIGTERM');
       } catch {
         // Ignore
       }
-      this.serverProcess = null;
-      this.isConnected = false;
+
+      // Force kill after a short delay if still running
+      const killTimer = setTimeout(() => {
+        try {
+          proc.kill('SIGKILL');
+        } catch {
+          // Ignore - process already dead
+        }
+      }, 100);
+      killTimer.unref(); // Don't keep Node alive for this timer
     }
   }
 
@@ -214,6 +250,9 @@ export class AllureTaskClient {
     if (this.mode === 'local') {
       return;
     }
+
+    debug('Stopping task client');
+    const proc = this.serverProcess;
 
     if (this.isConnected && this.port) {
       try {
@@ -223,9 +262,37 @@ export class AllureTaskClient {
       }
     }
 
-    await new Promise(r => setTimeout(r, 500));
-    this.killServer();
+    // Wait for server process to exit before killing
+    if (proc && !proc.killed) {
+      await new Promise<void>(resolve => {
+        const timeout = setTimeout(() => {
+          debug('Timeout waiting for server exit, force killing');
+          this.killServer();
+          resolve();
+        }, 500);
+
+        const onExit = () => {
+          clearTimeout(timeout);
+          this.killServer();
+          resolve();
+        };
+
+        // Check if process is still valid before adding listener
+        if (proc.exitCode !== null) {
+          // Process already exited
+          clearTimeout(timeout);
+          this.killServer();
+          resolve();
+        } else {
+          proc.once('exit', onExit);
+        }
+      });
+    } else {
+      this.killServer();
+    }
+
     this.startPromise = null;
+    this.port = null;
   }
 
   getPort(): number | null {

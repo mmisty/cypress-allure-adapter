@@ -741,7 +741,10 @@ export class AllureTaskServer {
             if (operation.type === 'shutdown') {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ success: true }));
-              setTimeout(() => this.stop(), 100);
+              setTimeout(async () => {
+                await this.stop();
+                process.exit(0);
+              }, 100);
 
               return;
             }
