@@ -56,10 +56,13 @@ jobs:
       fail-fast: false # Don't cancel other jobs if one fails
       matrix:
         test-group:
-          - { name: "passes", script: "test:jest:cy:passes", timeout: 5 }
+          - { name: "passes1", script: "test:jest:cy:passes1", timeout: 5 }
+          - { name: "passes2", script: "test:jest:cy:passes2", timeout: 5 }
           - { name: "v2attachments", script: "test:jest:cy:v2attachments", timeout: 5 }
           - { name: "v2suites", script: "test:jest:cy:v2suites", timeout: 5 }
-          - { name: "failures", script: "test:jest:cy:failures", timeout: 8 }
+          - { name: "failures1", script: "test:jest:cy:failures1", timeout: 8 }
+          - { name: "failures2", script: "test:jest:cy:failures2", timeout: 8 }
+          - { name: "failures3", script: "test:jest:cy:failures3", timeout: 8 }
           - { name: "requests", script: "test:jest:cy:requests", timeout: 8 }
           - { name: "attachments", script: "test:jest:cy:attachments", timeout: 6 }
           - { name: "hooks", script: "test:jest:cy:hooks", timeout: 8 }
