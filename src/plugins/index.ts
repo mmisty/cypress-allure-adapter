@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import fs from 'fs';
 import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
@@ -6,7 +7,6 @@ import { startReporterServer } from './server';
 import { AllureTaskClient, stopAllureTaskServer, TaskClientMode } from './allure-task-client';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
-import { CLEANUP_QUEUE_ID } from './task-manager';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -119,38 +119,36 @@ export const configureAllureAdapterPlugins = (
   debug('Registered with options:');
   debug(options);
 
-  // Clean results if requested - use async operations via task manager (doesn't block)
+  // Clean results if requested - done synchronously to ensure directories exist
+  // before any watchers or other code tries to use them
   if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
-    debug('Clean results (async)');
+    debug('Clean results (sync)');
 
-    // Queue cleanup operations - these will execute asynchronously
-    // and complete before the first spec starts
-    const { taskManager } = reporter;
+    try {
+      // Remove allure results directory
+      if (fs.existsSync(options.allureResults)) {
+        fs.rmSync(options.allureResults, { recursive: true, force: true });
+        debug(`Removed directory: ${options.allureResults}`);
+      }
 
-    // Remove and recreate allure results directory
-    taskManager.addOperation(CLEANUP_QUEUE_ID, {
-      type: 'fs:removeFile',
-      path: options.allureResults,
-    });
+      // Recreate allure results directory
+      fs.mkdirSync(options.allureResults, { recursive: true });
+      debug(`Created directory: ${options.allureResults}`);
 
-    taskManager.addOperation(CLEANUP_QUEUE_ID, {
-      type: 'fs:mkdir',
-      path: options.allureResults,
-      options: { recursive: true },
-    });
+      // Remove and recreate watch directory if different
+      if (options.techAllureResults !== options.allureResults) {
+        if (fs.existsSync(options.techAllureResults)) {
+          fs.rmSync(options.techAllureResults, { recursive: true, force: true });
+          debug(`Removed directory: ${options.techAllureResults}`);
+        }
 
-    // Remove and recreate watch directory if different
-    if (options.techAllureResults !== options.allureResults) {
-      taskManager.addOperation(CLEANUP_QUEUE_ID, {
-        type: 'fs:removeFile',
-        path: options.techAllureResults,
-      });
+        fs.mkdirSync(options.techAllureResults, { recursive: true });
+        debug(`Created directory: ${options.techAllureResults}`);
+      }
 
-      taskManager.addOperation(CLEANUP_QUEUE_ID, {
-        type: 'fs:mkdir',
-        path: options.techAllureResults,
-        options: { recursive: true },
-      });
+      logWithPackage('log', `Cleaned allure results: ${options.allureResults}`);
+    } catch (err) {
+      logWithPackage('error', `Failed to clean allure results: ${(err as Error).message}`);
     }
   }
 
