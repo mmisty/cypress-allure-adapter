@@ -28,8 +28,22 @@ export const outputDebugGenerate = dir => {
   execSync(`chmod +x ${dir}/debug-generate.sh`);
 };
 
-export const getTest = (watchResults: AllureTest[], name: string) => {
-  return watchResults.find(t => t.name?.indexOf(name) !== -1);
+export const getTest = (
+  watchResults: AllureTest[],
+  name: string,
+  attempt = 0,
+) => {
+  const res = watchResults
+    .filter(t => t.name?.indexOf(name) !== -1)
+    .sort((a, b) => {
+      // sort retries in order
+      return a?.start && b?.start && a.start < b.start ? -1 : 1;
+    });
+
+  if (attempt < res.length) {
+    return res[attempt];
+  }
+  throw new Error(`Not found test '${name}' attempt ${attempt}`);
 };
 
 export const readEvents = (dir: string): string[] => {
