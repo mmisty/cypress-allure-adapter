@@ -4,18 +4,15 @@ import {
   PreparedResults,
   prepareResults,
 } from '../../../../../cy-helper/utils-v2';
-import { AllureTest } from 'allure-js-parser';
 
 describe('synthetic tests creation - fails in test then in hook when retries', () => {
   let results: PreparedResults;
-  let rawResults: AllureTest[];
   outputDebugGenerate(__dirname);
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
       env: { allureAddVideoOnPass: 'true' },
     });
-    rawResults = results.rawResults;
   });
 
   it('should have 12 tests', () => {
@@ -23,8 +20,8 @@ describe('synthetic tests creation - fails in test then in hook when retries', (
   });
 
   it('should have correct cypress results', () => {
-    expect((results.result.res as any)?.totalFailed).toEqual(1);
-    expect((results.result.res as any)?.totalPassed).toEqual(4);
+    expect((results.cypressResults as any)?.totalFailed).toEqual(1);
+    expect((results.cypressResults as any)?.totalPassed).toEqual(4);
   });
 
   it('tests should have correct names', () => {
@@ -45,7 +42,7 @@ describe('synthetic tests creation - fails in test then in hook when retries', (
   });
 
   it('tests should have correct statuses and messages', () => {
-    const testDetails = rawResults
+    const testDetails = results.watchResults
       .map(t => ({
         fullName: t.fullName,
         name: t.name,

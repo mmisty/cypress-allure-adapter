@@ -13,6 +13,9 @@ jest.setTimeout(360000);
 export type PreparedResults = {
   watchResults: AllureTest[];
   results: AllureTest[];
+  cypressResults?:
+    | CypressCommandLine.CypressRunResult
+    | CypressCommandLine.CypressFailedRunResult;
   watchDir: string;
   events: string[];
 };
@@ -86,6 +89,7 @@ export const readResults = (dir: string): PreparedResults => {
     results,
     watchDir,
     events,
+    cypressResults: undefined,
   };
 };
 
@@ -189,6 +193,7 @@ export const prepareResults = async (
   }
 
   const results = readResults(dir);
+  results.cypressResults = res;
 
   if (results.watchResults.length === 0 && !allowCyFail) {
     throw new Error('No allure results found');
