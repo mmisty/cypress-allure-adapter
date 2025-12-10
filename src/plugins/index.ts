@@ -6,6 +6,7 @@ import { startReporterServer } from './server';
 import { AllureTaskClient, stopAllureTaskServer, TaskClientMode } from './allure-task-client';
 import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
+import { CLEANUP_QUEUE_ID } from './task-manager';
 
 const debug = Debug('cypress-allure:plugins');
 
@@ -127,12 +128,12 @@ export const configureAllureAdapterPlugins = (
     const { taskManager } = reporter;
 
     // Remove and recreate allure results directory
-    taskManager.addOperation('__cleanup__', {
+    taskManager.addOperation(CLEANUP_QUEUE_ID, {
       type: 'fs:removeFile',
       path: options.allureResults,
     });
 
-    taskManager.addOperation('__cleanup__', {
+    taskManager.addOperation(CLEANUP_QUEUE_ID, {
       type: 'fs:mkdir',
       path: options.allureResults,
       options: { recursive: true },
@@ -140,12 +141,12 @@ export const configureAllureAdapterPlugins = (
 
     // Remove and recreate watch directory if different
     if (options.techAllureResults !== options.allureResults) {
-      taskManager.addOperation('__cleanup__', {
+      taskManager.addOperation(CLEANUP_QUEUE_ID, {
         type: 'fs:removeFile',
         path: options.techAllureResults,
       });
 
-      taskManager.addOperation('__cleanup__', {
+      taskManager.addOperation(CLEANUP_QUEUE_ID, {
         type: 'fs:mkdir',
         path: options.techAllureResults,
         options: { recursive: true },

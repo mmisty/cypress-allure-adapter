@@ -12,6 +12,9 @@ interface EntityQueue {
   isFlushing: boolean;
 }
 
+// Special queue ID for cleanup operations that must complete before other queues
+export const CLEANUP_QUEUE_ID = '__cleanup__';
+
 class Semaphore {
   private count: number;
   private waiters: Array<{ resolve: () => void; timeoutId: NodeJS.Timeout }> = [];
@@ -80,6 +83,9 @@ export interface TaskManagerOptions {
  * Queues and executes tasks. Supports both:
  * - Legacy function-based tasks (executed locally)
  * - Serializable operations (sent to remote server via client)
+ *
+ * The cleanup queue (__cleanup__) is special: all other queues wait for it to complete
+ * before they start processing.
  */
 export class TaskManager {
   private entityQueues = new Map<string, EntityQueue>();
@@ -87,10 +93,56 @@ export class TaskManager {
   private client: AllureTaskClient | null = null;
   private options: TaskManagerOptions;
 
+  // Cleanup synchronization: other queues wait for cleanup to complete
+  private cleanupComplete = false;
+  private cleanupPromise: Promise<void> | null = null;
+  private cleanupResolve: (() => void) | null = null;
+
   constructor(options?: TaskManagerOptions) {
     this.options = options ?? {};
     const maxParallel = this.options.maxParallel ?? 5;
     this.semaphore = new Semaphore(maxParallel);
+  }
+
+  /**
+   * Check if cleanup queue exists and is not yet complete
+   */
+  private hasCleanupPending(): boolean {
+    return !this.cleanupComplete && this.entityQueues.has(CLEANUP_QUEUE_ID);
+  }
+
+  /**
+   * Wait for cleanup queue to complete (if it exists)
+   */
+  private async waitForCleanup(): Promise<void> {
+    if (this.cleanupComplete || !this.entityQueues.has(CLEANUP_QUEUE_ID)) {
+      return;
+    }
+
+    if (!this.cleanupPromise) {
+      // Create the promise that will resolve when cleanup completes
+      this.cleanupPromise = new Promise<void>(resolve => {
+        this.cleanupResolve = resolve;
+      });
+    }
+
+    debug('Waiting for cleanup queue to complete...');
+    await this.cleanupPromise;
+    debug('Cleanup queue completed, proceeding');
+  }
+
+  /**
+   * Mark cleanup as complete and notify waiting queues
+   */
+  private markCleanupComplete(): void {
+    this.cleanupComplete = true;
+
+    if (this.cleanupResolve) {
+      this.cleanupResolve();
+      this.cleanupResolve = null;
+    }
+
+    debug('Cleanup marked as complete');
   }
 
   /**
@@ -167,6 +219,11 @@ export class TaskManager {
     if (queue.isFlushing) return;
     queue.isFlushing = true;
 
+    // Non-cleanup queues must wait for cleanup to complete first
+    if (entityId !== CLEANUP_QUEUE_ID && this.hasCleanupPending()) {
+      await this.waitForCleanup();
+    }
+
     try {
       while (queue.tasks.length > 0) {
         const task = queue.tasks.shift();
@@ -184,6 +241,11 @@ export class TaskManager {
       logWithPackage('error', `Queue error for ${entityId}: ${(err as Error).message}`);
     } finally {
       queue.isFlushing = false;
+
+      // Mark cleanup as complete when the cleanup queue finishes
+      if (entityId === CLEANUP_QUEUE_ID) {
+        this.markCleanupComplete();
+      }
     }
   }
 
