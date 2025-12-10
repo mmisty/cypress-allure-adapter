@@ -1,6 +1,8 @@
+import '@src/cypress/types';
+
 describe('suite', () => {
   let port = 3000;
-  const url = () => 'http://localhost:' + port;
+  const url = () => `http://localhost:${port}`;
 
   before(() => {
     cy.task('shutDownTestServer');
@@ -20,18 +22,19 @@ describe('suite', () => {
   });
 
   it('02 simple POST with data', () => {
-    cy.request('POST', url() + '/hello', { data: 'should' }).then(r => {
-      cy.log('result:' + r.body.result);
+    cy.request('POST', `${url()}/hello`, { data: 'should' }).then(r => {
+      cy.log(`result:${r.body.result}`);
+      // @ts-ignore
       expect(r.body).deep.eq({ result: 'hello world' });
     });
   });
 
   it('02 POST without data', () => {
-    cy.request('POST', url() + '/mirror');
+    cy.request('POST', `${url()}/mirror`);
   });
 
   it('02 POST with long data', () => {
-    cy.request('POST', url() + '/mirror', {
+    cy.request('POST', `${url()}/mirror`, {
       data: [
         { chicken: 'Zina' },
         { chicken: 'Marta' },
@@ -41,10 +44,11 @@ describe('suite', () => {
     });
   });
 
-  it('02 simple GET - args as object', () => {
-    cy.request(
-      { url: url() + '/mirror', method: 'POST' },
-      {
+  it('02 simple POST - args as object', () => {
+    cy.request({
+      url: `${url()}/mirror`,
+      method: 'POST',
+      body: {
         data: [
           { chicken: 'Zina' },
           { chicken: 'Marta' },
@@ -52,7 +56,6 @@ describe('suite', () => {
           { chicken: 'Zoya' },
         ],
       },
-    );
+    });
   });
 });
-

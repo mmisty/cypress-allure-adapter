@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('suite', () => {
   beforeEach(() => {
     cy.intercept('mytest.com**', {
@@ -22,4 +24,3 @@ describe('suite', () => {
     cy.wrap({ status: 200 }).its('status').should('eq', 200);
   });
 });
-

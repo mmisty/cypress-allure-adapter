@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('request-events', () => {
   let port = 3000;
   const url = () => `http://localhost:${port}`;

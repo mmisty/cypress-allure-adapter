@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('requests-from-app', () => {
   let port = 3000;
   const url = () => `http://localhost:${port}`;
@@ -77,4 +79,3 @@ describe('requests-from-app', () => {
     cy.get('#result').should('not.be.empty');
   });
 });
-
