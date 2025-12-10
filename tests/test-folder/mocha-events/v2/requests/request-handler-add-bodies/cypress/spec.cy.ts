@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('request-handler-add-bodies', () => {
   let port = 3000;
   const url = () => `http://localhost:${port}`;
@@ -7,14 +9,14 @@ describe('request-handler-add-bodies', () => {
     cy.task<number>('startTestServer').then(p => (port = p));
   });
 
-  Cypress.Allure.on('request:started', (req, log) => {
+  Cypress.Allure.on('request:started', req => {
     Cypress.Allure.startStep(
       `started:${req.method} ${req.url.replace(String(port), '<port>')}`,
     );
     Cypress.Allure.endStep();
   });
 
-  Cypress.Allure.on('request:ended', (req, log) => {
+  Cypress.Allure.on('request:ended', req => {
     Cypress.Allure.startStep(
       `ended:${req.method} ${req.url.replace(String(port), '<port>')}`,
     );
@@ -34,9 +36,8 @@ describe('request-handler-add-bodies', () => {
 
   it(
     '01 should add request bodies - GET - fetch',
-    {
-      env: { allureAddBodiesToRequests: '*' },
-    },
+    // @ts-ignore
+    { env: { allureAddBodiesToRequests: '*' } },
     () => {
       visitHtml({
         body: `
@@ -69,9 +70,8 @@ describe('request-handler-add-bodies', () => {
 
   it(
     '02 should add request bodies - GET - xhr',
-    {
-      env: { allureAddBodiesToRequests: '*' },
-    },
+    // @ts-ignore
+    { env: { allureAddBodiesToRequests: '*' } },
     () => {
       visitHtml({
         body: `
@@ -105,9 +105,8 @@ describe('request-handler-add-bodies', () => {
 
   it(
     '03 should add request bodies - POST - fetch',
-    {
-      env: { allureAddBodiesToRequests: '*' },
-    },
+    // @ts-ignore
+    { env: { allureAddBodiesToRequests: '*' } },
     () => {
       visitHtml({
         body: `

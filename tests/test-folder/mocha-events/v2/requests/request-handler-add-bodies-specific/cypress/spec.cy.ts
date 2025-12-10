@@ -1,8 +1,10 @@
+import '@src/cypress/types';
+
 describe(
   'request-handler-add-bodies-specific',
-  {
-    env: { allureAddBodiesToRequests: '**/mirror**' },
-  },
+  { env: { allureAddBodiesToRequests: '**/mirror**' } },
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   () => {
     let port = 3000;
     const url = () => `http://localhost:${port}`;
@@ -12,17 +14,18 @@ describe(
       cy.task<number>('startTestServer').then(p => (port = p));
     });
 
-    Cypress.Allure.on('request:started', (req, log) => {
+    Cypress.Allure.on('request:started', req => {
       Cypress.Allure.startStep(
-        'started:' + req.method + ' ' + req.url.replace(String(port), '<port>'),
+        `started:${req.method} ${req.url.replace(String(port), '<port>')}`,
       );
       Cypress.Allure.endStep();
     });
 
-    Cypress.Allure.on('request:ended', (req, log) => {
+    Cypress.Allure.on('request:ended', req => {
       Cypress.Allure.startStep(
-        'ended:' + req.method + ' ' + req.url.replace(String(port), '<port>'),
+        `ended:${req.method} ${req.url.replace(String(port), '<port>')}`,
       );
+
       if (req.responseBody !== undefined) {
         Cypress.Allure.parameter('responseBody', req.responseBody);
       }
@@ -103,4 +106,3 @@ describe(
     });
   },
 );
-

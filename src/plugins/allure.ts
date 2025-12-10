@@ -342,7 +342,7 @@ export const allureTasks = (opts: ReporterOptions, client: AllureTaskClient): Al
       log('screenshotAttachment');
     },
 
-    async afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
+    afterSpec(arg: AllureTaskArgs<'afterSpec'>) {
       log(`afterSpec ${JSON.stringify(arg)}`);
 
       // Attach video via server operation

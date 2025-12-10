@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('video suite 2', () => {
   it('0060 test 1 should have video attached', () => {
     cy.log('1');

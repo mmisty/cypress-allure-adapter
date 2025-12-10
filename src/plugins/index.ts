@@ -165,7 +165,7 @@ export const configureAllureAdapterPlugins = (
   on('after:spec', async (spec, res: unknown) => {
     const results: CypressCommandLine.RunResult & AfterSpecScreenshots = res as CypressCommandLine.RunResult &
       AfterSpecScreenshots;
-    await reporter.afterSpec({ results });
+    reporter.afterSpec({ results });
   });
 
   on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {

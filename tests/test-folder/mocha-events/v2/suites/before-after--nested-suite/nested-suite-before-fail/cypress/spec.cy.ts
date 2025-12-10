@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('nested-suite-before-fail', () => {
   it('test 000', () => {
     cy.log('test 1');

@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('test screenshot', () => {
   it('screenshot test 01', () => {
     cy.task('log', 'message');
