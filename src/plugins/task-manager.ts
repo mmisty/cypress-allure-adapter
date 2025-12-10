@@ -19,7 +19,7 @@ class Semaphore {
 
   constructor(
     private max: number,
-    acquireTimeoutMs = 30000,
+    acquireTimeoutMs = 5000, // Reduced from 30s to 5s to prevent long waits
   ) {
     this.count = max;
     this.acquireTimeout = acquireTimeoutMs;
@@ -42,9 +42,14 @@ class Semaphore {
           this.waiters.splice(index, 1);
         }
         debug('Semaphore acquire timed out, continuing without blocking');
-        logWithPackage('warn', 'Task semaphore acquire timed out - task may run concurrently');
+        // Don't log warning - just proceed (reduced timeout makes this expected)
         resolve(false); // Return false to indicate timeout
       }, this.acquireTimeout);
+
+      // Unref the timeout so it doesn't keep Node alive
+      if (timeoutId.unref) {
+        timeoutId.unref();
+      }
 
       this.waiters.push({
         resolve: () => {
@@ -89,7 +94,8 @@ export class TaskManager {
 
   constructor(options?: TaskManagerOptions) {
     this.options = options ?? {};
-    const maxParallel = this.options.maxParallel ?? 5;
+    // Increased from 5 to 10 - tasks are I/O bound so more parallelism is beneficial
+    const maxParallel = this.options.maxParallel ?? 10;
     this.semaphore = new Semaphore(maxParallel);
   }
 
@@ -98,6 +104,23 @@ export class TaskManager {
    */
   setClient(client: AllureTaskClient): void {
     this.client = client;
+  }
+
+  /**
+   * Schedule queue processing on next tick (deferred to not block current execution)
+   */
+  private scheduleProcessQueue(entityId: string): void {
+    const queue = this.entityQueues.get(entityId);
+
+    if (queue && !queue.isFlushing) {
+      // Use setImmediate to defer processing to next event loop tick
+      // This allows other events (like browser connection) to be processed first
+      setImmediate(() => {
+        this.processQueue(entityId).catch(err => {
+          logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
+        });
+      });
+    }
   }
 
   /**
@@ -121,11 +144,7 @@ export class TaskManager {
     queue.tasks.push(task);
     debug(`Task added for entity "${entityId}", queue length: ${queue.tasks.length}`);
 
-    if (!queue.isFlushing) {
-      this.processQueue(entityId).catch(err => {
-        logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
-      });
-    }
+    this.scheduleProcessQueue(entityId);
   }
 
   /**
@@ -148,11 +167,7 @@ export class TaskManager {
     queue.tasks.push(operation);
     debug(`Operation added for entity "${entityId}", queue length: ${queue.tasks.length}`);
 
-    if (!queue.isFlushing) {
-      this.processQueue(entityId).catch(err => {
-        logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
-      });
-    }
+    this.scheduleProcessQueue(entityId);
   }
 
   public async processQueue(entityId: string) {
@@ -179,6 +194,10 @@ export class TaskManager {
         } finally {
           this.semaphore.release();
         }
+
+        // Yield to event loop after each task to allow other events to be processed
+        // This prevents blocking Cypress browser connection events
+        await new Promise(resolve => setImmediate(resolve));
       }
     } catch (err) {
       logWithPackage('error', `Queue error for ${entityId}: ${(err as Error).message}`);
