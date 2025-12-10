@@ -222,16 +222,40 @@ export class TaskManager {
     const start = Date.now();
     const timeout = this.options.overallTimeout ?? 120000;
 
-    const hasRunningTasks = () => [...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing);
+    const getRunningInfo = () => {
+      let totalTasks = 0;
+      let flushingQueues = 0;
 
-    while (hasRunningTasks()) {
-      await new Promise(r => setTimeout(r, 50));
+      for (const q of this.entityQueues.values()) {
+        totalTasks += q.tasks.length;
+
+        if (q.isFlushing) flushingQueues++;
+      }
+
+      return { totalTasks, flushingQueues, hasRunning: totalTasks > 0 || flushingQueues > 0 };
+    };
+
+    let info = getRunningInfo();
+
+    // Log initial state
+    if (info.hasRunning) {
+      debug(`Waiting for ${info.totalTasks} tasks in ${info.flushingQueues} queues`);
+    }
+
+    // Use longer polling interval to reduce event loop churn (was 50ms)
+    const POLL_INTERVAL = 200;
+
+    while (info.hasRunning) {
+      await new Promise(r => setTimeout(r, POLL_INTERVAL));
+      info = getRunningInfo();
 
       if (Date.now() - start > timeout) {
-        logWithPackage('error', `flushAllTasks exceeded ${timeout / 1000}s, exiting`);
+        logWithPackage('error', `flushAllTasks exceeded ${timeout / 1000}s, exiting (${info.totalTasks} tasks remaining)`);
         break;
       }
     }
+
+    debug(`All tasks flushed in ${Date.now() - start}ms`);
   }
 
   async flushAllTasksForQueue(entityId: string) {
@@ -241,18 +265,29 @@ export class TaskManager {
     const timeout = this.options.overallTimeout ?? 120000;
 
     if (!queue) {
-      logWithPackage('warn', `Tasks for ${entityId} not found`);
+      debug(`Tasks for ${entityId} not found (queue may not exist yet)`);
 
       return;
     }
 
+    const initialTasks = queue.tasks.length;
+
+    if (initialTasks > 0) {
+      debug(`Waiting for ${initialTasks} tasks in queue ${entityId}`);
+    }
+
+    // Use longer polling interval to reduce event loop churn (was 50ms)
+    const POLL_INTERVAL = 200;
+
     while (queue.tasks.length > 0 || queue.isFlushing) {
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, POLL_INTERVAL));
 
       if (Date.now() - start > timeout) {
-        logWithPackage('error', `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting`);
+        logWithPackage('error', `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting (${queue.tasks.length} tasks remaining)`);
         break;
       }
     }
+
+    debug(`Queue ${entityId} flushed in ${Date.now() - start}ms`);
   }
 }

@@ -388,12 +388,10 @@ export const allureTasks = (opts: ReporterOptions, client: AllureTaskClient): Al
         });
       }
 
-      // Wait for all operations to complete
-      taskManager.flushAllTasksForQueue(arg.results.spec.relative).then(() => {
-        logWithPackage('log', `Finished processing all files for spec ${arg.results?.spec?.relative}`);
-      });
-
-      log('afterSpec');
+      // Don't wait here - let tasks process in background
+      // This prevents blocking the event loop between specs
+      // All tasks will be awaited in after:run via waitAllFinished()
+      log('afterSpec - operations queued, processing in background');
     },
 
     async waitAllFinished(_arg: AllureTaskArgs<'waitAllFinished'>) {
