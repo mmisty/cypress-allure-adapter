@@ -2,10 +2,10 @@ import { globSync } from 'fast-glob';
 import process from 'node:process';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { StepResult } from 'allure-js-commons';
 import { execSync } from 'child_process';
-import path from 'path';
+import path, { basename } from 'path';
 import { Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(360000);
@@ -14,6 +14,7 @@ export type PreparedResults = {
   watchResults: AllureTest[];
   results: AllureTest[];
   watchDir: string;
+  events: string[];
 };
 
 export const outputDebugGenerate = dir => {
@@ -31,6 +32,26 @@ export const getTest = (watchResults: AllureTest[], name: string) => {
   return watchResults.find(t => t.name?.indexOf(name) !== -1);
 };
 
+export const readEvents = (dir: string): string[] => {
+  const specs = globSync(`${dir}/cypress/*.cy.ts`);
+
+  if (specs.length === 0) {
+    return [];
+  }
+
+  const specName = basename(specs[0]);
+  const eventsFile = `${process.cwd()}/reports/test-events/${specName}.log`;
+
+  if (!existsSync(eventsFile)) {
+    return [];
+  }
+
+  return readFileSync(eventsFile)
+    .toString()
+    .split('\n')
+    .filter(t => t !== '');
+};
+
 export const readResults = (dir: string): PreparedResults => {
   const watchDir = `${dir}/allure-results/watch`;
 
@@ -44,10 +65,13 @@ export const readResults = (dir: string): PreparedResults => {
     logError: false,
   }).map(x => ({ ...x, parent: excludeCoverage(x.parent) }));
 
+  const events = readEvents(dir);
+
   return {
     watchResults,
     results,
     watchDir,
+    events,
   };
 };
 

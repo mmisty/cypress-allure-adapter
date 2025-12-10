@@ -8,6 +8,8 @@ import {
 } from '../../../../../cy-helper/utils-v2';
 import { AllureTest } from 'allure-js-parser';
 
+const rootSuite = 'requests-from-app';
+
 describe('requests from app - should not add to allure', () => {
   let results: PreparedResults;
   outputDebugGenerate(__dirname);
@@ -126,6 +128,52 @@ describe('requests from app - should not add to allure', () => {
             },
           ],
         },
+      ]);
+    });
+  });
+
+  describe('mocha events order', () => {
+    it('should have correct events order for spec', () => {
+      const skipItems = [
+        'collectBackendCoverage',
+        'mergeUnitTestCoverage',
+        'generateReport',
+      ];
+
+      const filteredEvents = results.events.filter(x =>
+        skipItems.every(z => x.indexOf(z) === -1),
+      );
+      // todo when coverage
+      expect(filteredEvents).toEqual([
+        'mocha: start',
+        'mocha: suite: , ',
+        'mocha: hook: "before all" hook',
+        'cypress: test:before:run: 01 should not add requests made by app',
+        'mocha: hook end: "before all" hook',
+        `mocha: suite: ${rootSuite}, ${rootSuite}`,
+        'mocha: hook: "before all" hook',
+        'mocha: hook end: "before all" hook',
+        'mocha: test: 01 should not add requests made by app',
+        'plugin test:started',
+        'mocha: hook: "before each" hook: [cypress-allure-adapter]',
+        'mocha: hook end: "before each" hook: [cypress-allure-adapter]',
+        'mocha: hook: "before each" hook',
+        'mocha: hook end: "before each" hook',
+        'plugin request:started GET',
+        'plugin request:started GET',
+        'plugin request:ended GET',
+        'plugin request:ended GET',
+        'plugin request:started GET',
+        'plugin request:ended GET',
+        'mocha: pass: 01 should not add requests made by app',
+        'mocha: test end: 01 should not add requests made by app',
+        'mocha: hook: "after each" hook',
+        'mocha: hook end: "after each" hook',
+        `mocha: suite end: ${rootSuite}`,
+        'cypress: test:after:run: 01 should not add requests made by app',
+        'plugin test:ended',
+        'mocha: suite end: ',
+        'mocha: end',
       ]);
     });
   });
