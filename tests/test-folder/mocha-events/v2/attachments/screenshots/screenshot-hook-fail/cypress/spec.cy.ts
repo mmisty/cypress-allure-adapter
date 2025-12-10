@@ -9,4 +9,3 @@ describe('screenshot when before hook fails', () => {
     cy.log('hello');
   });
 });
-

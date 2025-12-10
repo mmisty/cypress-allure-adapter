@@ -71,4 +71,3 @@ describe('test screenshot with setting', () => {
     cy.allure().endStep();
   });
 });
-

@@ -9,4 +9,3 @@ describe('screenshot when global before hook fails', () => {
     cy.log('hello');
   });
 });
-
