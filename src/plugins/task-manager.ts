@@ -250,7 +250,10 @@ export class TaskManager {
       info = getRunningInfo();
 
       if (Date.now() - start > timeout) {
-        logWithPackage('error', `flushAllTasks exceeded ${timeout / 1000}s, exiting (${info.totalTasks} tasks remaining)`);
+        logWithPackage(
+          'error',
+          `flushAllTasks exceeded ${timeout / 1000}s, exiting (${info.totalTasks} tasks remaining)`,
+        );
         break;
       }
     }
@@ -283,7 +286,10 @@ export class TaskManager {
       await new Promise(r => setTimeout(r, POLL_INTERVAL));
 
       if (Date.now() - start > timeout) {
-        logWithPackage('error', `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting (${queue.tasks.length} tasks remaining)`);
+        logWithPackage(
+          'error',
+          `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting (${queue.tasks.length} tasks remaining)`,
+        );
         break;
       }
     }

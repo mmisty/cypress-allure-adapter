@@ -42,7 +42,7 @@
     "test:jest:cy:failures1": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/failures/part1\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:failures2": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/failures/part2\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:failures3": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/failures/part3\" --reporters=default --reporters=jest-junit",
-    "test:jest:cy:hooks": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/hooks\" --reporters=default --reporters=jest-junit",
+    "test:jest:cy:hooks": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/v2/hooks\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:interface:p1": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part1\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:interface:p2": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part2\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:interface:p3": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/interface/part3\" --reporters=default --reporters=jest-junit",
