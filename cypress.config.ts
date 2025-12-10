@@ -19,7 +19,7 @@ export const commonConfig: Cypress.ConfigOptions = {
       toConsole: false,
     },
     env: {
-      REDIRECT_BROWSER_LOG: true,
+      REDIRECT_BROWSER_LOG: false, // disable to isolate issues
       allure: 'true',
       allureCleanResults: 'true',
       allureAttachRequests: true,
