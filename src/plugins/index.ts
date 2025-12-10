@@ -121,7 +121,7 @@ export const configureAllureAdapterPlugins = (
 
   // Clean results if requested - done synchronously to ensure directories exist
   // before any watchers or other code tries to use them
-  if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
+  if (`${config.env['allureCleanResults']}` === 'true') {
     debug('Clean results (sync)');
 
     try {
