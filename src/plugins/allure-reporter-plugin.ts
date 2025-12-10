@@ -107,6 +107,7 @@ export class AllureReporter {
   descriptionHtml: string[] = [];
 
   private screenshotsTest: (AutoScreen & { attached?: boolean })[] = [];
+  private allureResultsDirEnsured = false;
 
   testStatusStored: AllureTaskArgs<'testStatus'> | undefined;
   testDetailsStored: AllureTaskArgs<'testDetails'> | undefined;
@@ -319,12 +320,13 @@ export class AllureReporter {
     this.currentSpec = args.spec;
     this.taskQueueId = `${this.currentSpec.relative}`;
 
-    // Ensure directory exists
+    // Ensure directory exists (only once per spec)
     this.taskManager.addOperation(this.taskQueueId, {
       type: 'fs:mkdir',
       path: this.allureResults,
       options: { recursive: true },
     });
+    this.allureResultsDirEnsured = true;
   }
 
   hookStarted(arg: AllureTaskArgs<'hookStarted'>) {
@@ -1092,11 +1094,15 @@ export class AllureReporter {
     const contentStr = Buffer.isBuffer(content) ? content.toString('base64') : content.toString();
     const encoding: BufferEncoding | undefined = Buffer.isBuffer(content) ? 'base64' : undefined;
 
-    this.taskManager.addOperation(this.taskQueueId, {
-      type: 'fs:mkdir',
-      path: this.allureResults,
-      options: { recursive: true },
-    });
+    // Only ensure directory exists once per spec (reduces redundant operations)
+    if (!this.allureResultsDirEnsured) {
+      this.taskManager.addOperation(this.taskQueueId, {
+        type: 'fs:mkdir',
+        path: this.allureResults,
+        options: { recursive: true },
+      });
+      this.allureResultsDirEnsured = true;
+    }
 
     this.taskManager.addOperation(this.taskQueueId, {
       type: 'fs:writeFile',

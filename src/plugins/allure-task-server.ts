@@ -430,29 +430,35 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
     // Parse and move tests
     const tests = parseAllure(allureResults);
 
+    // Scan attachments ONCE outside the loop (was inside loop - major perf bug)
+    const allAttachments = glob.sync(`${allureResults}/*-attachment.*`);
+    debug(`Found ${allAttachments.length} attachments to process`);
+
+    // Track moved attachments to avoid duplicate moves
+    const movedAttachments = new Set<string>();
+
+    // Get parent container UUIDs helper
+    const getAllParentUuids = (t: unknown) => {
+      const uuids: string[] = [];
+      let current = (t as { parent?: { uuid?: string; parent?: unknown } }).parent;
+
+      while (current) {
+        if (current.uuid) {
+          uuids.push(current.uuid);
+        }
+        current = current.parent as { uuid?: string; parent?: unknown } | undefined;
+      }
+
+      return uuids;
+    };
+
     for (const test of tests) {
       const testSource = `${allureResults}/${test.uuid}-result.json`;
       const testTarget = targetPath(testSource);
 
-      // Get parent container UUIDs
-      const getAllParentUuids = (t: unknown) => {
-        const uuids: string[] = [];
-        let current = (t as { parent?: { uuid?: string; parent?: unknown } }).parent;
-
-        while (current) {
-          if (current.uuid) {
-            uuids.push(current.uuid);
-          }
-          current = current.parent as { uuid?: string; parent?: unknown } | undefined;
-        }
-
-        return uuids;
-      };
-
       const containerSources = getAllParentUuids(test).map(uuid => `${allureResults}/${uuid}-container.json`);
 
       // Find attachments referenced in test or containers
-      const allAttachments = glob.sync(`${allureResults}/*-attachment.*`);
       let testContents = '';
 
       try {
@@ -479,8 +485,11 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
         );
       });
 
-      // Move attachments
+      // Move attachments (skip already moved)
       for (const attachFile of testAttachments) {
+        if (movedAttachments.has(attachFile)) continue;
+        movedAttachments.add(attachFile);
+
         const attachTarget = targetPath(attachFile);
         await copyIfNeeded(attachFile, attachTarget, true);
       }
