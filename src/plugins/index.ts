@@ -176,15 +176,10 @@ export const configureAllureAdapterPlugins = (
     url: config.reporterUrl,
   };
 
-  on('before:spec', async () => {
-    console.log('[Integration] Before spec');
-  });
-
   on('after:spec', async (spec, res: unknown) => {
     const results: CypressCommandLine.RunResult & AfterSpecScreenshots = res as CypressCommandLine.RunResult &
       AfterSpecScreenshots;
     reporter.afterSpec({ results });
-    console.log('[Integration] After spec end');
   });
 
   on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {

@@ -44,12 +44,20 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn', 'test:log']);
   const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
+  on('before:spec', async () => {
+    console.log('[Integration] Before spec');
+  });
+
+  on('after:spec', async () => {
+    console.log('[Integration] After spec end');
+  });
+
   on('after:browser:launch', () => {
-    console.log('after browser started');
+    console.log('[Integration] after browser started');
   });
 
   on('before:browser:launch', (browser, opts) => {
-    console.log('before starting browser..');
+    console.log('[Integration] before starting browser..');
 
     // Add Chrome args for CI stability
     if (isCI && browser.family === 'chromium') {
