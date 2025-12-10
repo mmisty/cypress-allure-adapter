@@ -13,12 +13,13 @@ const debug = Debug('cypress-allure:plugins');
 // Get plugin version from package.json
 const getPluginVersion = (): string => {
   try {
+    // In published package, code is at lib/plugins/index.js, package.json is at lib/package.json
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const pkg = require('../../package.json');
+    const pkg = require('../package.json');
 
-    return pkg.version || 'unknown';
+    return pkg.version ? `v${pkg.version}` : 'unknown version';
   } catch {
-    return 'unknown';
+    return 'unknown version';
   }
 };
 
@@ -73,7 +74,7 @@ export const configureAllureAdapterPlugins = (
   }
 
   debug('Register plugin');
-  logWithPackage('log', `v${getPluginVersion()}`);
+  logWithPackage('log', `${getPluginVersion()}`);
 
   const results = config.env['allureResults'] ?? 'allure-results';
   const watchResultsPath = config.env['allureResultsWatchPath'];
