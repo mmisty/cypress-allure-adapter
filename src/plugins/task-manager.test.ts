@@ -227,7 +227,7 @@ describe('task manager', () => {
     await tm.flushAllTasksForQueue('spec2');
 
     expect(cons?.error.mock.calls[0][0]).toEqual(
-      '[cypress-allure-adapter] flushAllTasksForQueue exceeded 0.01s, exiting',
+      '[cypress-allure-adapter] flushAllTasksForQueue exceeded 0.01s, exiting (0 tasks remaining)',
     );
   });
 
@@ -307,13 +307,13 @@ describe('task manager', () => {
       'spec4 ended task 2',
       'spec5 ended task 2',
       'spec6 ended task 2',
+      'spec7 ended task 2',
       'spec1 end',
       'spec2 end',
       'spec3 end',
       'spec4 end',
       'spec5 end',
       'spec6 end',
-      'spec7 ended task 2',
       'spec7 end',
     ]);
   });

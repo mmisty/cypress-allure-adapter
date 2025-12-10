@@ -57,6 +57,7 @@
     "test:jest:cy:skips": "QUIET=false COVERAGE=true jest --runInBand --testPathPattern=\"tests/test-folder/mocha-events/skips\" --reporters=default --reporters=jest-junit",
     "test:jest:cy:all": "npm run test:jest:cy:auth && npm run test:jest:cy:users && npm run test:jest:cy:payments",
     "test:jest": "QUIET=true COVERAGE=true jest --runInBand --coverage --testPathIgnorePatterns=\"tests/test-folder/(mocha-events)|(allure-plugin)\" --reporters=default --reporters=jest-junit",
+    "test": "npm run test:jest",
     "test:cov": "npm run test:jest && npm run test:jest:cy:all && npm run cov:merge",
     "cy": "cypress",
     "cy:open": "npm run cy -- open --e2e",
