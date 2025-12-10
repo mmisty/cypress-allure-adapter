@@ -10,6 +10,18 @@ import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:plugins');
 
+// Get plugin version from package.json
+const getPluginVersion = (): string => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pkg = require('../../package.json');
+
+    return pkg.version || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+};
+
 /**
  * Environment variable to control the task server mode
  * - 'remote': All operations run in a separate process (recommended for production)
@@ -61,6 +73,7 @@ export const configureAllureAdapterPlugins = (
   }
 
   debug('Register plugin');
+  logWithPackage('log', `v${getPluginVersion()}`);
 
   const results = config.env['allureResults'] ?? 'allure-results';
   const watchResultsPath = config.env['allureResultsWatchPath'];
