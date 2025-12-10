@@ -6,7 +6,7 @@ import {
   outputDebugGenerate,
   PreparedResults,
   prepareResults,
-} from '../../../../../cy-helper/utils-v2';
+} from '../../../../../../cy-helper/utils-v2';
 import { AllureTest } from 'allure-js-parser';
 import { existsSync, readFileSync } from 'fs';
 

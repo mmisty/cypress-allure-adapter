@@ -5,7 +5,7 @@ import {
   outputDebugGenerate,
   PreparedResults,
   prepareResults,
-} from '../../../../../cy-helper/utils-v2';
+} from '../../../../../../cy-helper/utils-v2';
 import { AllureTest } from 'allure-js-parser';
 import { existsSync } from 'fs';
 
@@ -59,6 +59,7 @@ describe('screenshot when before hook fails', () => {
 
     it('screenshot file should exist', () => {
       const suite = test?.parent;
+
       const failedHook = suite?.befores?.find(
         b => b.status === 'failed' && b.name?.includes('before all'),
       );
@@ -71,6 +72,7 @@ describe('screenshot when before hook fails', () => {
 
     it('failed hook should have wrap step', () => {
       const suite = test?.parent;
+
       const failedHook = suite?.befores?.find(
         b => b.status === 'failed' && b.name?.includes('before all'),
       );
@@ -85,4 +87,3 @@ describe('screenshot when before hook fails', () => {
     });
   });
 });
-

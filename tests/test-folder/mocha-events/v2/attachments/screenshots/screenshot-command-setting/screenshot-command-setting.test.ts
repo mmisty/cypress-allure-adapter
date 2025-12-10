@@ -6,7 +6,7 @@ import {
   outputDebugGenerate,
   PreparedResults,
   prepareResults,
-} from '../../../../../cy-helper/utils-v2';
+} from '../../../../../../cy-helper/utils-v2';
 import { AllureTest } from 'allure-js-parser';
 
 describe('screenshot command with allureAttachToStep setting', () => {
@@ -466,4 +466,3 @@ describe('screenshot command with allureAttachToStep setting', () => {
     });
   });
 });
-
