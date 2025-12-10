@@ -44,7 +44,13 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn', 'test:log']);
   const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
+  on('after:browser:launch', () => {
+    console.log('after browser started');
+  });
+
   on('before:browser:launch', (browser, opts) => {
+    console.log('before starting browser..');
+
     // Add Chrome args for CI stability
     if (isCI && browser.family === 'chromium') {
       opts.args.push('--disable-gpu');
