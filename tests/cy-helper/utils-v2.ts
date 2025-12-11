@@ -2,10 +2,10 @@ import { globSync } from 'fast-glob';
 import process from 'node:process';
 import { parseBoolean } from 'cypress-redirect-browser-log/utils/functions';
 import { AllureTest, parseAllure } from 'allure-js-parser';
-import { writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { StepResult } from 'allure-js-commons';
 import { execSync } from 'child_process';
-import path from 'path';
+import path, { basename } from 'path';
 import { Parent } from 'allure-js-parser/types';
 
 jest.setTimeout(360000);
@@ -13,7 +13,11 @@ jest.setTimeout(360000);
 export type PreparedResults = {
   watchResults: AllureTest[];
   results: AllureTest[];
+  cypressResults?:
+    | CypressCommandLine.CypressRunResult
+    | CypressCommandLine.CypressFailedRunResult;
   watchDir: string;
+  events: string[];
 };
 
 export const outputDebugGenerate = dir => {
@@ -27,8 +31,42 @@ export const outputDebugGenerate = dir => {
   execSync(`chmod +x ${dir}/debug-generate.sh`);
 };
 
-export const getTest = (watchResults: AllureTest[], name: string) => {
-  return watchResults.find(t => t.name?.indexOf(name) !== -1);
+export const getTest = (
+  watchResults: AllureTest[],
+  name: string,
+  attempt = 0,
+) => {
+  const res = watchResults
+    .filter(t => t.name?.indexOf(name) !== -1)
+    .sort((a, b) => {
+      // sort retries in order
+      return a?.start && b?.start && a.start < b.start ? -1 : 1;
+    });
+
+  if (attempt < res.length) {
+    return res[attempt];
+  }
+  throw new Error(`Not found test '${name}' attempt ${attempt}`);
+};
+
+export const readEvents = (dir: string): string[] => {
+  const specs = globSync(`${dir}/cypress/*.cy.ts`);
+
+  if (specs.length === 0) {
+    return [];
+  }
+
+  const specName = basename(specs[0]);
+  const eventsFile = `${process.cwd()}/reports/test-events/${specName}.log`;
+
+  if (!existsSync(eventsFile)) {
+    return [];
+  }
+
+  return readFileSync(eventsFile)
+    .toString()
+    .split('\n')
+    .filter(t => t !== '');
 };
 
 export const readResults = (dir: string): PreparedResults => {
@@ -44,10 +82,14 @@ export const readResults = (dir: string): PreparedResults => {
     logError: false,
   }).map(x => ({ ...x, parent: excludeCoverage(x.parent) }));
 
+  const events = readEvents(dir);
+
   return {
     watchResults,
     results,
     watchDir,
+    events,
+    cypressResults: undefined,
   };
 };
 
@@ -151,6 +193,7 @@ export const prepareResults = async (
   }
 
   const results = readResults(dir);
+  results.cypressResults = res;
 
   if (results.watchResults.length === 0 && !allowCyFail) {
     throw new Error('No allure results found');

@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('screenshot when before hook fails', () => {
   before(() => {
     cy.wrap(null).then(() => {

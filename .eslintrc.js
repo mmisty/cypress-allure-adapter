@@ -70,6 +70,8 @@ module.exports = {
         // Disable jest rules for Cypress test files
         'jest/expect-expect': 'off',
         'jest/valid-expect': 'off',
+        'jest/valid-describe-callback': 'off',
+        '@typescript-eslint/ban-ts-comment': 'off',
         'jest/valid-expect-in-promise': 'off',
         'jest/no-standalone-expect': 'off',
         'jest/no-disabled-tests': 'off',
@@ -80,7 +82,6 @@ module.exports = {
         'cypress/no-unnecessary-waiting': 'error',
         'cypress/no-assigning-return-values': 'error',
         'cypress/assertion-before-screenshot': 'warn',
-        '@typescript-eslint/ban-ts-comment': 'error',
       },
       env: {
         'cypress/globals': true,

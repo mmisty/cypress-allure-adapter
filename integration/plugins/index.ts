@@ -44,12 +44,20 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn', 'test:log']);
   const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
+  on('before:spec', async () => {
+    console.log('[Integration] Before spec');
+  });
+
+  on('after:spec', async () => {
+    console.log('[Integration] After spec end');
+  });
+
   on('after:browser:launch', () => {
-    console.log('after browser started');
+    console.log('[Integration] after browser started');
   });
 
   on('before:browser:launch', (browser, opts) => {
-    console.log('before starting browser..');
+    console.log('[Integration] before starting browser..');
 
     // Add Chrome args for CI stability
     if (isCI && browser.family === 'chromium') {
@@ -86,7 +94,7 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
   // register grep plugin
   pluginGrep(on, config);
 
-  let server: Server;
+  let server: Server | null = null;
 
   on('task', {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,26 +106,24 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
     fileExists: (filePath: string) => {
       return existsSync(filePath);
     },
-    startTestServer(port?: number) {
-      const port2 = 40000 + Math.round(Math.random() * 25000);
+    async startTestServer(port?: number) {
+      try {
+        const result = await startTestServer(port);
+        server = result.server;
 
-      for (let i = 0; i < 100; i++) {
-        try {
-          server = startTestServer(port ?? port2);
+        return result.port;
+      } catch (err) {
+        console.log(`Tests: starting test server failed: ${(err as Error).message}`);
 
-          return port ?? port2;
-        } catch (err) {
-          console.log(`Tests: starting tests server failed: ${(err as Error).message}`);
-        }
+        return null;
       }
-
-      return port ?? port2;
     },
     shutDownTestServer() {
       try {
         server?.close(() => {
           console.log('Shutdown');
         });
+        server = null;
       } catch (err) {
         // ignore
       }

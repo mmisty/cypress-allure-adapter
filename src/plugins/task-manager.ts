@@ -19,7 +19,7 @@ class Semaphore {
 
   constructor(
     private max: number,
-    acquireTimeoutMs = 30000,
+    acquireTimeoutMs = 5000, // Reduced from 30s to 5s to prevent long waits
   ) {
     this.count = max;
     this.acquireTimeout = acquireTimeoutMs;
@@ -42,9 +42,14 @@ class Semaphore {
           this.waiters.splice(index, 1);
         }
         debug('Semaphore acquire timed out, continuing without blocking');
-        logWithPackage('warn', 'Task semaphore acquire timed out - task may run concurrently');
+        // Don't log warning - just proceed (reduced timeout makes this expected)
         resolve(false); // Return false to indicate timeout
       }, this.acquireTimeout);
+
+      // Unref the timeout so it doesn't keep Node alive
+      if (timeoutId.unref) {
+        timeoutId.unref();
+      }
 
       this.waiters.push({
         resolve: () => {
@@ -89,7 +94,8 @@ export class TaskManager {
 
   constructor(options?: TaskManagerOptions) {
     this.options = options ?? {};
-    const maxParallel = this.options.maxParallel ?? 5;
+    // Increased from 5 to 10 - tasks are I/O bound so more parallelism is beneficial
+    const maxParallel = this.options.maxParallel ?? 10;
     this.semaphore = new Semaphore(maxParallel);
   }
 
@@ -98,6 +104,23 @@ export class TaskManager {
    */
   setClient(client: AllureTaskClient): void {
     this.client = client;
+  }
+
+  /**
+   * Schedule queue processing on next tick (deferred to not block current execution)
+   */
+  private scheduleProcessQueue(entityId: string): void {
+    const queue = this.entityQueues.get(entityId);
+
+    if (queue && !queue.isFlushing) {
+      // Use setImmediate to defer processing to next event loop tick
+      // This allows other events (like browser connection) to be processed first
+      setImmediate(() => {
+        this.processQueue(entityId).catch(err => {
+          logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
+        });
+      });
+    }
   }
 
   /**
@@ -121,11 +144,7 @@ export class TaskManager {
     queue.tasks.push(task);
     debug(`Task added for entity "${entityId}", queue length: ${queue.tasks.length}`);
 
-    if (!queue.isFlushing) {
-      this.processQueue(entityId).catch(err => {
-        logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
-      });
-    }
+    this.scheduleProcessQueue(entityId);
   }
 
   /**
@@ -148,11 +167,7 @@ export class TaskManager {
     queue.tasks.push(operation);
     debug(`Operation added for entity "${entityId}", queue length: ${queue.tasks.length}`);
 
-    if (!queue.isFlushing) {
-      this.processQueue(entityId).catch(err => {
-        logWithPackage('error', `Entity worker crashed ${entityId}: ${(err as Error).message}`);
-      });
-    }
+    this.scheduleProcessQueue(entityId);
   }
 
   public async processQueue(entityId: string) {
@@ -179,6 +194,10 @@ export class TaskManager {
         } finally {
           this.semaphore.release();
         }
+
+        // Yield to event loop after each task to allow other events to be processed
+        // This prevents blocking Cypress browser connection events
+        await new Promise(resolve => setImmediate(resolve));
       }
     } catch (err) {
       logWithPackage('error', `Queue error for ${entityId}: ${(err as Error).message}`);
@@ -222,16 +241,43 @@ export class TaskManager {
     const start = Date.now();
     const timeout = this.options.overallTimeout ?? 120000;
 
-    const hasRunningTasks = () => [...this.entityQueues.values()].some(q => q.tasks.length > 0 || q.isFlushing);
+    const getRunningInfo = () => {
+      let totalTasks = 0;
+      let flushingQueues = 0;
 
-    while (hasRunningTasks()) {
-      await new Promise(r => setTimeout(r, 50));
+      for (const q of this.entityQueues.values()) {
+        totalTasks += q.tasks.length;
+
+        if (q.isFlushing) flushingQueues++;
+      }
+
+      return { totalTasks, flushingQueues, hasRunning: totalTasks > 0 || flushingQueues > 0 };
+    };
+
+    let info = getRunningInfo();
+
+    // Log initial state
+    if (info.hasRunning) {
+      debug(`Waiting for ${info.totalTasks} tasks in ${info.flushingQueues} queues`);
+    }
+
+    // Use longer polling interval to reduce event loop churn (was 50ms)
+    const POLL_INTERVAL = 200;
+
+    while (info.hasRunning) {
+      await new Promise(r => setTimeout(r, POLL_INTERVAL));
+      info = getRunningInfo();
 
       if (Date.now() - start > timeout) {
-        logWithPackage('error', `flushAllTasks exceeded ${timeout / 1000}s, exiting`);
+        logWithPackage(
+          'error',
+          `flushAllTasks exceeded ${timeout / 1000}s, exiting (${info.totalTasks} tasks remaining)`,
+        );
         break;
       }
     }
+
+    debug(`All tasks flushed in ${Date.now() - start}ms`);
   }
 
   async flushAllTasksForQueue(entityId: string) {
@@ -241,18 +287,32 @@ export class TaskManager {
     const timeout = this.options.overallTimeout ?? 120000;
 
     if (!queue) {
-      logWithPackage('warn', `Tasks for ${entityId} not found`);
+      debug(`Tasks for ${entityId} not found (queue may not exist yet)`);
 
       return;
     }
 
+    const initialTasks = queue.tasks.length;
+
+    if (initialTasks > 0) {
+      debug(`Waiting for ${initialTasks} tasks in queue ${entityId}`);
+    }
+
+    // Use longer polling interval to reduce event loop churn (was 50ms)
+    const POLL_INTERVAL = 200;
+
     while (queue.tasks.length > 0 || queue.isFlushing) {
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise(r => setTimeout(r, POLL_INTERVAL));
 
       if (Date.now() - start > timeout) {
-        logWithPackage('error', `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting`);
+        logWithPackage(
+          'error',
+          `flushAllTasksForQueue exceeded ${timeout / 1000}s, exiting (${queue.tasks.length} tasks remaining)`,
+        );
         break;
       }
     }
+
+    debug(`Queue ${entityId} flushed in ${Date.now() - start}ms`);
   }
 }

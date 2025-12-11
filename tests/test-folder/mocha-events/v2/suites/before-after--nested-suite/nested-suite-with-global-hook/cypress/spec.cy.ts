@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 before('global before one', () => {
   cy.log('hook pass');
 });

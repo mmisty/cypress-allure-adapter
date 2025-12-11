@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 before(() => {
   cy.wrap(null).then(() => {
     throw new Error('On Purpose');

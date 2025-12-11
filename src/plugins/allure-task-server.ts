@@ -430,29 +430,35 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
     // Parse and move tests
     const tests = parseAllure(allureResults);
 
+    // Scan attachments ONCE outside the loop (was inside loop - major perf bug)
+    const allAttachments = glob.sync(`${allureResults}/*-attachment.*`);
+    debug(`Found ${allAttachments.length} attachments to process`);
+
+    // Track moved attachments to avoid duplicate moves
+    const movedAttachments = new Set<string>();
+
+    // Get parent container UUIDs helper
+    const getAllParentUuids = (t: unknown) => {
+      const uuids: string[] = [];
+      let current = (t as { parent?: { uuid?: string; parent?: unknown } }).parent;
+
+      while (current) {
+        if (current.uuid) {
+          uuids.push(current.uuid);
+        }
+        current = current.parent as { uuid?: string; parent?: unknown } | undefined;
+      }
+
+      return uuids;
+    };
+
     for (const test of tests) {
       const testSource = `${allureResults}/${test.uuid}-result.json`;
       const testTarget = targetPath(testSource);
 
-      // Get parent container UUIDs
-      const getAllParentUuids = (t: unknown) => {
-        const uuids: string[] = [];
-        let current = (t as { parent?: { uuid?: string; parent?: unknown } }).parent;
-
-        while (current) {
-          if (current.uuid) {
-            uuids.push(current.uuid);
-          }
-          current = current.parent as { uuid?: string; parent?: unknown } | undefined;
-        }
-
-        return uuids;
-      };
-
       const containerSources = getAllParentUuids(test).map(uuid => `${allureResults}/${uuid}-container.json`);
 
       // Find attachments referenced in test or containers
-      const allAttachments = glob.sync(`${allureResults}/*-attachment.*`);
       let testContents = '';
 
       try {
@@ -479,8 +485,11 @@ async function moveResultsToWatch(allureResults: string, allureResultsWatch: str
         );
       });
 
-      // Move attachments
+      // Move attachments (skip already moved)
       for (const attachFile of testAttachments) {
+        if (movedAttachments.has(attachFile)) continue;
+        movedAttachments.add(attachFile);
+
         const attachTarget = targetPath(attachFile);
         await copyIfNeeded(attachFile, attachTarget, true);
       }
@@ -684,9 +693,58 @@ export class AllureTaskServer {
   private server: http.Server | null = null;
   private operationQueue: OperationQueue;
   private port: number | null = null;
+  private lastActivityTime: number = Date.now();
+  private inactivityTimer: NodeJS.Timeout | null = null;
+  private isShuttingDown = false;
+
+  // Inactivity timeout - auto-shutdown if no requests for this duration
+  private static readonly INACTIVITY_TIMEOUT_MS = 120000; // 2 minutes
+  // Max wait time for pending operations during shutdown
+  private static readonly SHUTDOWN_TIMEOUT_MS = 10000; // 10 seconds
 
   constructor(maxConcurrentOps = 10) {
     this.operationQueue = new OperationQueue(maxConcurrentOps);
+  }
+
+  private resetInactivityTimer(): void {
+    this.lastActivityTime = Date.now();
+
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+    }
+
+    this.inactivityTimer = setTimeout(() => {
+      const idleTime = Date.now() - this.lastActivityTime;
+      debug(`Inactivity timeout reached (idle for ${idleTime}ms), shutting down`);
+      this.forceShutdown();
+    }, AllureTaskServer.INACTIVITY_TIMEOUT_MS);
+
+    // Don't keep Node alive just for this timer
+    this.inactivityTimer.unref();
+  }
+
+  private forceShutdown(): void {
+    if (this.isShuttingDown) return;
+    this.isShuttingDown = true;
+
+    debug('Force shutdown initiated');
+
+    // Give a short time for graceful stop, then force exit
+    this.stop()
+      .then(() => {
+        debug('Graceful shutdown completed');
+        process.exit(0);
+      })
+      .catch(() => {
+        debug('Graceful shutdown failed, forcing exit');
+        process.exit(0);
+      });
+
+    // Force exit after timeout regardless
+    setTimeout(() => {
+      debug('Shutdown timeout, forcing exit');
+      process.exit(0);
+    }, 2000).unref();
   }
 
   async start(requestedPort?: number): Promise<number> {
@@ -696,8 +754,14 @@ export class AllureTaskServer {
 
     this.port = requestedPort ?? (await findAvailablePort());
 
+    // Start inactivity timer
+    this.resetInactivityTimer();
+
     return new Promise((resolve, reject) => {
       this.server = http.createServer(async (req, res) => {
+        // Reset inactivity timer on each request
+        this.resetInactivityTimer();
+
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -741,9 +805,8 @@ export class AllureTaskServer {
             if (operation.type === 'shutdown') {
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ success: true }));
-              setTimeout(async () => {
-                await this.stop();
-                process.exit(0);
+              setTimeout(() => {
+                this.forceShutdown();
               }, 100);
 
               return;
@@ -774,6 +837,12 @@ export class AllureTaskServer {
   }
 
   async stop(): Promise<void> {
+    // Clear inactivity timer
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+
     return new Promise(resolve => {
       if (!this.server) {
         resolve();
@@ -781,8 +850,17 @@ export class AllureTaskServer {
         return;
       }
 
+      const startTime = Date.now();
+
       const waitForPending = async (): Promise<void> => {
         while (this.operationQueue.pendingCount > 0 || this.operationQueue.runningCount > 0) {
+          // Add timeout to prevent hanging forever
+          if (Date.now() - startTime > AllureTaskServer.SHUTDOWN_TIMEOUT_MS) {
+            debug(
+              `Shutdown timeout reached, ${this.operationQueue.pendingCount} pending, ${this.operationQueue.runningCount} running`,
+            );
+            break;
+          }
           await new Promise(r => setTimeout(r, 100));
         }
       };
@@ -794,6 +872,16 @@ export class AllureTaskServer {
           this.port = null;
           resolve();
         });
+
+        // Force close all connections after a short delay
+        setTimeout(() => {
+          if (this.server) {
+            debug('Force closing server');
+            this.server = null;
+            this.port = null;
+            resolve();
+          }
+        }, 1000);
       });
     });
   }
@@ -817,20 +905,53 @@ export const runServer = async (): Promise<void> => {
   }
 
   const server = new AllureTaskServer();
+  let isShuttingDown = false;
+
+  const shutdown = async (reason: string) => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+
+    debug(`Shutdown initiated: ${reason}`);
+
+    // Set a hard timeout to force exit
+    const forceExitTimer = setTimeout(() => {
+      debug('Force exit timeout reached');
+      process.exit(0);
+    }, 5000);
+    forceExitTimer.unref();
+
+    try {
+      await server.stop();
+      debug('Graceful shutdown completed');
+    } catch (err) {
+      debug(`Shutdown error: ${(err as Error).message}`);
+    }
+
+    process.exit(0);
+  };
 
   try {
     const actualPort = await server.start(port);
     process.stdout.write(`ALLURE_SERVER_PORT:${actualPort}\n`);
 
-    const shutdown = async () => {
-      debug('Received shutdown signal');
-      await server.stop();
-      process.exit(0);
-    };
+    // Handle various shutdown signals
+    process.on('SIGINT', () => shutdown('SIGINT'));
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('disconnect', () => shutdown('IPC disconnect'));
 
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-    process.on('disconnect', shutdown);
+    // Monitor parent process - if stdin closes, parent likely died
+    process.stdin.on('end', () => {
+      debug('Parent process stdin closed');
+      shutdown('stdin closed');
+    });
+
+    process.stdin.on('close', () => {
+      debug('Parent process stdin close event');
+      shutdown('stdin close');
+    });
+
+    // Resume stdin to receive events (required for 'end' event)
+    process.stdin.resume();
 
     debug('Task server running, waiting for requests...');
   } catch (err) {

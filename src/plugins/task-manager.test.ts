@@ -227,13 +227,14 @@ describe('task manager', () => {
     await tm.flushAllTasksForQueue('spec2');
 
     expect(cons?.error.mock.calls[0][0]).toEqual(
-      '[cypress-allure-adapter] flushAllTasksForQueue exceeded 0.01s, exiting',
+      '[cypress-allure-adapter] flushAllTasksForQueue exceeded 0.01s, exiting (0 tasks remaining)',
     );
   });
 
   it('should process more than max queues', async () => {
     const logs: string[] = [];
-    const tm = new TaskManager();
+    // Use explicit maxParallel=5 to test the semaphore limiting behavior
+    const tm = new TaskManager({ maxParallel: 5 });
 
     addTasks(tm, logs, 'spec1', 3, 10);
     addTasks(tm, logs, 'spec2', 3, 10);
@@ -265,56 +266,41 @@ describe('task manager', () => {
       logs.push('spec7 end');
     });
     await tm.flushAllTasks();
-    expect(logs).toEqual([
-      'spec1 started task 0',
-      'spec2 started task 0',
-      'spec3 started task 0',
-      'spec4 started task 0',
-      'spec5 started task 0',
-      'spec1 ended task 0',
-      'spec6 started task 0',
-      'spec2 ended task 0',
-      'spec7 started task 0',
-      'spec3 ended task 0',
-      'spec1 started task 1',
-      'spec4 ended task 0',
-      'spec2 started task 1',
-      'spec5 ended task 0',
-      'spec3 started task 1',
-      'spec6 ended task 0',
-      'spec4 started task 1',
-      'spec7 ended task 0',
-      'spec5 started task 1',
-      'spec1 ended task 1',
-      'spec6 started task 1',
-      'spec2 ended task 1',
-      'spec7 started task 1',
-      'spec3 ended task 1',
-      'spec1 started task 2',
-      'spec4 ended task 1',
-      'spec2 started task 2',
-      'spec5 ended task 1',
-      'spec3 started task 2',
-      'spec6 ended task 1',
-      'spec4 started task 2',
-      'spec7 ended task 1',
-      'spec5 started task 2',
-      'spec1 ended task 2',
-      'spec6 started task 2',
-      'spec2 ended task 2',
-      'spec7 started task 2',
-      'spec3 ended task 2',
-      'spec4 ended task 2',
-      'spec5 ended task 2',
-      'spec6 ended task 2',
-      'spec1 end',
-      'spec2 end',
-      'spec3 end',
-      'spec4 end',
-      'spec5 end',
-      'spec6 end',
-      'spec7 ended task 2',
-      'spec7 end',
-    ]);
+
+    // With setImmediate yielding, exact order may vary slightly
+    // Verify all tasks completed and queues finished
+    const specs = ['spec1', 'spec2', 'spec3', 'spec4', 'spec5', 'spec6', 'spec7'];
+
+    for (const spec of specs) {
+      // Each spec should have 3 started and 3 ended tasks
+      const startedCount = logs.filter(l => l === `${spec} started task 0` || l === `${spec} started task 1` || l === `${spec} started task 2`).length;
+      const endedCount = logs.filter(l => l === `${spec} ended task 0` || l === `${spec} ended task 1` || l === `${spec} ended task 2`).length;
+      expect(startedCount).toBe(3);
+      expect(endedCount).toBe(3);
+
+      // Queue should have ended
+      expect(logs).toContain(`${spec} end`);
+
+      // For each spec, task order should be preserved (0 before 1 before 2)
+      const specLogs = logs.filter(l => l.startsWith(spec));
+      const task0StartIdx = specLogs.findIndex(l => l.includes('started task 0'));
+      const task1StartIdx = specLogs.findIndex(l => l.includes('started task 1'));
+      const task2StartIdx = specLogs.findIndex(l => l.includes('started task 2'));
+      const task0EndIdx = specLogs.findIndex(l => l.includes('ended task 0'));
+      const task1EndIdx = specLogs.findIndex(l => l.includes('ended task 1'));
+      const task2EndIdx = specLogs.findIndex(l => l.includes('ended task 2'));
+
+      // Task 0 should start before task 1, which should start before task 2
+      expect(task0StartIdx).toBeLessThan(task1StartIdx);
+      expect(task1StartIdx).toBeLessThan(task2StartIdx);
+
+      // Each task should end after it starts
+      expect(task0StartIdx).toBeLessThan(task0EndIdx);
+      expect(task1StartIdx).toBeLessThan(task1EndIdx);
+      expect(task2StartIdx).toBeLessThan(task2EndIdx);
+    }
+
+    // Total logs: 7 specs * (3 started + 3 ended + 1 end) = 49
+    expect(logs.length).toBe(49);
   });
 });

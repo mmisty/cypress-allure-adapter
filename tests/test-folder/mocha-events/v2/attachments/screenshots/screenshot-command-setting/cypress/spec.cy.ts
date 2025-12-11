@@ -1,3 +1,5 @@
+import '@src/cypress/types';
+
 describe('test screenshot with setting', () => {
   it('01 screenshot test - to step without name', () => {
     cy.allure().startStep('my step');

@@ -1,4 +1,5 @@
 import Debug from 'debug';
+import fs from 'fs';
 import PluginEvents = Cypress.PluginEvents;
 import PluginConfigOptions = Cypress.PluginConfigOptions;
 import { allureTasks, ReporterOptions } from './allure';
@@ -8,6 +9,19 @@ import type { AfterSpecScreenshots, AllureTasks } from './allure-types';
 import { logWithPackage } from '../common';
 
 const debug = Debug('cypress-allure:plugins');
+
+// Get plugin version from package.json
+const getPluginVersion = (): string => {
+  try {
+    // In published package, code is at lib/plugins/index.js, package.json is at lib/package.json
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const pkg = require('../package.json');
+
+    return pkg.version ? `v${pkg.version}` : 'unknown version';
+  } catch {
+    return 'unknown version';
+  }
+};
 
 /**
  * Environment variable to control the task server mode
@@ -60,6 +74,7 @@ export const configureAllureAdapterPlugins = (
   }
 
   debug('Register plugin');
+  logWithPackage('log', `${getPluginVersion()}`);
 
   const results = config.env['allureResults'] ?? 'allure-results';
   const watchResultsPath = config.env['allureResultsWatchPath'];
@@ -118,38 +133,36 @@ export const configureAllureAdapterPlugins = (
   debug('Registered with options:');
   debug(options);
 
-  // Clean results if requested - use async operations via task manager (doesn't block)
-  if (config.env['allureCleanResults'] === 'true' || config.env['allureCleanResults'] === true) {
-    debug('Clean results (async)');
+  // Clean results if requested - done synchronously to ensure directories exist
+  // before any watchers or other code tries to use them
+  if (`${config.env['allureCleanResults']}` === 'true') {
+    debug('Clean results (sync)');
 
-    // Queue cleanup operations - these will execute asynchronously
-    // and complete before the first spec starts
-    const { taskManager } = reporter;
+    try {
+      // Remove allure results directory
+      if (fs.existsSync(options.allureResults)) {
+        fs.rmSync(options.allureResults, { recursive: true, force: true });
+        debug(`Removed directory: ${options.allureResults}`);
+      }
 
-    // Remove and recreate allure results directory
-    taskManager.addOperation('__cleanup__', {
-      type: 'fs:removeFile',
-      path: options.allureResults,
-    });
+      // Recreate allure results directory
+      fs.mkdirSync(options.allureResults, { recursive: true });
+      debug(`Created directory: ${options.allureResults}`);
 
-    taskManager.addOperation('__cleanup__', {
-      type: 'fs:mkdir',
-      path: options.allureResults,
-      options: { recursive: true },
-    });
+      // Remove and recreate watch directory if different
+      if (options.techAllureResults !== options.allureResults) {
+        if (fs.existsSync(options.techAllureResults)) {
+          fs.rmSync(options.techAllureResults, { recursive: true, force: true });
+          debug(`Removed directory: ${options.techAllureResults}`);
+        }
 
-    // Remove and recreate watch directory if different
-    if (options.techAllureResults !== options.allureResults) {
-      taskManager.addOperation('__cleanup__', {
-        type: 'fs:removeFile',
-        path: options.techAllureResults,
-      });
+        fs.mkdirSync(options.techAllureResults, { recursive: true });
+        debug(`Created directory: ${options.techAllureResults}`);
+      }
 
-      taskManager.addOperation('__cleanup__', {
-        type: 'fs:mkdir',
-        path: options.techAllureResults,
-        options: { recursive: true },
-      });
+      logWithPackage('log', `Cleaned allure results: ${options.allureResults}`);
+    } catch (err) {
+      logWithPackage('error', `Failed to clean allure results: ${(err as Error).message}`);
     }
   }
 
@@ -166,7 +179,7 @@ export const configureAllureAdapterPlugins = (
   on('after:spec', async (spec, res: unknown) => {
     const results: CypressCommandLine.RunResult & AfterSpecScreenshots = res as CypressCommandLine.RunResult &
       AfterSpecScreenshots;
-    await reporter.afterSpec({ results });
+    reporter.afterSpec({ results });
   });
 
   on('after:run', async (_results: CypressCommandLine.CypressRunResult | CypressCommandLine.CypressFailedRunResult) => {
