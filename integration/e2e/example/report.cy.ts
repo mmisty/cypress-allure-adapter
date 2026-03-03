@@ -11,11 +11,11 @@ describe(
   () => {
     Cypress.Allure.on('test:started', test => {
       Cypress.Allure.writeEnvironmentInfo({
-        allure: Cypress.env('allure'),
-        allureResults: Cypress.env('allureResults'),
-        allureSkipCommands: Cypress.env('allureSkipCommands'),
-        tmsPrefix: Cypress.env('tmsPrefix'),
-        issuePrefix: Cypress.env('issuePrefix'),
+        allure: Cypress.expose('allure'),
+        allureResults: Cypress.expose('allureResults'),
+        allureSkipCommands: Cypress.expose('allureSkipCommands'),
+        tmsPrefix: Cypress.expose('tmsPrefix'),
+        issuePrefix: Cypress.expose('issuePrefix'),
       });
 
       Cypress.Allure.writeExecutorInfo({

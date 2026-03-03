@@ -16,7 +16,7 @@ describe('screenshot command', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false' },
+      expose: { allureAddVideoOnPass: 'false' },
     });
   });
 

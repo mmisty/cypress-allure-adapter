@@ -253,7 +253,7 @@ export const allureInterface = (
 
 export const registerStubReporter = () => {
   Cypress.Allure = {
-    ...allureInterface(Cypress.env(), () => {
+    ...allureInterface(Cypress.expose(), () => {
       // do nothing when no allure reporting enabled
     }),
     ...eventsInterfaceInstance(true),
@@ -363,7 +363,7 @@ const sendMessageTestCreator = (messageManager: MessageManager, specPathLog: str
 };
 
 const isJestTest = () => {
-  return Cypress.env('JEST_TEST') === 'true' || Cypress.env('JEST_TEST') === true;
+  return Cypress.expose('JEST_TEST') === 'true' || Cypress.expose('JEST_TEST') === true;
 };
 
 const registerTestEvents = (messageManager: MessageManager, specPathLog: string) => {
@@ -397,7 +397,7 @@ export const registerMochaReporter = (ws: WebSocket) => {
   allureEventsEmitter.removeAllListeners();
   evListeners.clear();
 
-  const allureInterfaceInstance = allureInterface(Cypress.env(), message);
+  const allureInterfaceInstance = allureInterface(Cypress.expose(), message);
   const allureEvents = eventsInterfaceInstance(false);
   Cypress.Allure = { ...allureInterfaceInstance, ...allureEvents };
   const startedSuites: Mocha.Suite[] = [];
@@ -688,28 +688,31 @@ export const registerMochaReporter = (ws: WebSocket) => {
   });
 
   handleCyLogEvents(runner, allureEventsEmitter, {
-    ignoreCommands: () => (Cypress.env('allureSkipCommands') ?? '').split(','),
+    ignoreCommands: () => (Cypress.expose('allureSkipCommands') ?? '').split(','),
     allureLogCyCommands: () =>
-      Cypress.env('allureLogCyCommands') === undefined ||
-      Cypress.env('allureLogCyCommands') === 'true' ||
-      Cypress.env('allureLogCyCommands') === true,
+      Cypress.expose('allureLogCyCommands') === undefined ||
+      Cypress.expose('allureLogCyCommands') === 'true' ||
+      Cypress.expose('allureLogCyCommands') === true,
     wrapCustomCommands: () => {
       if (
-        Cypress.env('allureWrapCustomCommands') === undefined ||
-        Cypress.env('allureWrapCustomCommands') === 'true' ||
-        Cypress.env('allureWrapCustomCommands') === true
+        Cypress.expose('allureWrapCustomCommands') === undefined ||
+        Cypress.expose('allureWrapCustomCommands') === 'true' ||
+        Cypress.expose('allureWrapCustomCommands') === true
       ) {
         return true;
       }
 
-      if (Cypress.env('allureWrapCustomCommands') === 'false' || Cypress.env('allureWrapCustomCommands') === false) {
+      if (
+        Cypress.expose('allureWrapCustomCommands') === 'false' ||
+        Cypress.expose('allureWrapCustomCommands') === false
+      ) {
         return false;
       }
 
-      return Cypress.env('allureWrapCustomCommands').split(',');
+      return Cypress.expose('allureWrapCustomCommands').split(',');
     },
     spyOnRequests: () => {
-      return Cypress.env('allureAddBodiesToRequests')?.split(',') ?? [];
+      return Cypress.expose('allureAddBodiesToRequests')?.split(',') ?? [];
     },
   });
 };

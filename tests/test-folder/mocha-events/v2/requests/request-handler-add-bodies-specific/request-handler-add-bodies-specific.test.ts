@@ -13,7 +13,7 @@ describe('request handler - add bodies to specific requests only', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false' },
+      expose: { allureAddVideoOnPass: 'false' },
     });
   });
 

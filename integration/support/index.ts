@@ -8,7 +8,7 @@ import Chainable = Cypress.Chainable;
 console.log('====SUPPORT INDEX STARTED');
 
 const setupCoverage = () => {
-  if (`${Cypress.env(COVERAGE)}` === 'true') {
+  if (`${Cypress.expose(COVERAGE)}` === 'true') {
     console.log('ENABLE COV');
     require('@cypress/code-coverage/support');
   } else {
