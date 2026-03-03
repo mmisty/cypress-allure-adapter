@@ -37,7 +37,7 @@ describe('request-handler-add-bodies', () => {
   it(
     '01 should add request bodies - GET - fetch',
     // @ts-ignore
-    { env: { allureAddBodiesToRequests: '*' } },
+    { expose: { allureAddBodiesToRequests: '*' } },
     () => {
       visitHtml({
         body: `
@@ -71,7 +71,7 @@ describe('request-handler-add-bodies', () => {
   it(
     '02 should add request bodies - GET - xhr',
     // @ts-ignore
-    { env: { allureAddBodiesToRequests: '*' } },
+    { expose: { allureAddBodiesToRequests: '*' } },
     () => {
       visitHtml({
         body: `
@@ -106,7 +106,7 @@ describe('request-handler-add-bodies', () => {
   it(
     '03 should add request bodies - POST - fetch',
     // @ts-ignore
-    { env: { allureAddBodiesToRequests: '*' } },
+    { expose: { allureAddBodiesToRequests: '*' } },
     () => {
       visitHtml({
         body: `

@@ -2,7 +2,7 @@ import '@src/cypress/types';
 
 describe(
   'request-handler-add-bodies-specific',
-  { env: { allureAddBodiesToRequests: '**/mirror**' } },
+  { expose: { allureAddBodiesToRequests: '**/mirror**' } },
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   () => {

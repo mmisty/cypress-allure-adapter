@@ -1,6 +1,6 @@
 import { visitHtml } from '../../common/helper';
 
-Cypress.env('allureSkipCommands', 'screenshot');
+Cypress.expose('allureSkipCommands', 'screenshot');
 describe('screenshot', () => {
   describe('screenshot with name @screen', () => {
     beforeEach(() => {

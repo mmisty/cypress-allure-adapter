@@ -6,8 +6,8 @@ export default defineConfig({
   e2e: {
     ...commonConfig.e2e,
     specPattern: 'integration/cucumber/**/**/*.feature',
-    env: {
-      ...(commonConfig.e2e?.env || {}),
+    expose: {
+      ...(commonConfig.e2e?.expose || {}),
       cucumber: 'true',
       omitFiltered: true,
       filterSpecs: true,

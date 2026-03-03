@@ -10,7 +10,7 @@ export const addGherkin = () => {
     // this is tags support for @badeball/cypress-cucumber-preprocessor
     // for other plugins need to get tags separately
     const tagsStored: { name: string }[] =
-      test._testConfig?.env?.__cypress_cucumber_preprocessor_dont_use_this_spec?.pickle?.tags ?? [];
+      test._testConfig?.expose?.__cypress_cucumber_preprocessor_dont_use_this_spec?.pickle?.tags ?? [];
     const existingTags = test.tags ?? [];
     // __ replace to space for descriptions
     const cucumberTags = tagsStored.map(t => parseInlineTags(t.name.replace(/__/g, ' '))[0]);

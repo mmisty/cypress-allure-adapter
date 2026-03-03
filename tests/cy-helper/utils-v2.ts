@@ -97,7 +97,7 @@ export const getResults = (
   dir: string,
   options?: {
     allowCyFail?: boolean;
-    env?: Record<string, any>;
+    expose?: Record<string, any>;
   },
 ) => {
   const allowCyFail = options?.allowCyFail ?? false;
@@ -114,7 +114,7 @@ export const prepareResults = async (
   dir: string,
   options?: {
     allowCyFail?: boolean;
-    env?: Record<string, any>;
+    expose?: Record<string, any>;
     onlyGetResults?: boolean;
   },
 ): Promise<PreparedResults> => {
@@ -139,7 +139,7 @@ export const prepareResults = async (
     return results;
   }
 
-  const env = options?.env ?? {};
+  const expose = options?.expose ?? {};
   const specs = globSync(`${dir}/cypress/*.cy.ts`);
 
   const spec = specs.join(',');
@@ -149,10 +149,10 @@ export const prepareResults = async (
   const port = 40000 + Math.round(Math.random() * 25000);
 
   const video = parseBoolean(
-    `${env?.video === undefined ? false : env?.video}`,
+    `${expose?.video === undefined ? false : expose?.video}`,
   );
 
-  process.env.DEBUG = env?.DEBUG === 'true' ? 'cypress-allure*' : env?.DEBUG;
+  process.env.DEBUG = expose?.DEBUG === 'true' ? 'cypress-allure*' : expose?.DEBUG;
   process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
   // for not having type issues
@@ -166,7 +166,7 @@ export const prepareResults = async (
       port,
       browser: 'chrome',
       video,
-      env: {
+      expose: {
         allure: 'true',
         allureResults: `${dir}/allure-results`,
         allureResultsWatchPath: `${dir}/allure-results/watch`,
@@ -176,7 +176,7 @@ export const prepareResults = async (
         COVERAGE_REPORT_DIR: process.env.COVERAGE_REPORT_DIR,
         COVERAGE: `${process.env.COVERAGE}` === 'true',
         JEST_TEST: 'true',
-        ...env,
+        ...expose,
       },
       quiet: `${process.env.QUIET}` === 'true',
     } as any)

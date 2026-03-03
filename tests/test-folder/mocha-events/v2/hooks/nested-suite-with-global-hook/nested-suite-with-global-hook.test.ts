@@ -15,7 +15,7 @@ describe('nested suite with global hooks', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'true' },
+      expose: { allureAddVideoOnPass: 'true' },
     });
   });
 

@@ -42,7 +42,7 @@ const getTaskClientMode = (config: PluginConfigOptions): TaskClientMode => {
   }
 
   // Check cypress config
-  const configMode = config.env['allureMode'];
+  const configMode = config.expose['allureMode'];
 
   if (configMode === 'local' || configMode === 'remote') {
     return configMode;
@@ -58,16 +58,16 @@ export const configureAllureAdapterPlugins = (
   config: PluginConfigOptions,
 ): AllureTasks | undefined => {
   if (process.env.DEBUG) {
-    config.env['DEBUG'] = process.env.DEBUG;
+    config.expose['DEBUG'] = process.env.DEBUG;
   }
 
-  if (config.env['GREP_PRE_FILTER'] === 'true' || config.env['GREP_PRE_FILTER'] === true) {
+  if (config.expose['GREP_PRE_FILTER'] === 'true' || config.expose['GREP_PRE_FILTER'] === true) {
     debug('Not running allure in prefiltering mode');
 
     return undefined;
   }
 
-  if (config.env['allure'] !== 'true' && config.env['allure'] !== true) {
+  if (config.expose['allure'] !== 'true' && config.expose['allure'] !== true) {
     debug('Not running allure. Set "allure" env variable to "true" to generate allure-results');
 
     return undefined;
@@ -76,14 +76,14 @@ export const configureAllureAdapterPlugins = (
   debug('Register plugin');
   logWithPackage('log', `${getPluginVersion()}`);
 
-  const results = config.env['allureResults'] ?? 'allure-results';
-  const watchResultsPath = config.env['allureResultsWatchPath'];
+  const results = config.expose['allureResults'] ?? 'allure-results';
+  const watchResultsPath = config.expose['allureResultsWatchPath'];
 
   const allureAddVideoOnPass =
-    config.env['allureAddVideoOnPass'] === true || config.env['allureAddVideoOnPass'] === 'true';
+    config.expose['allureAddVideoOnPass'] === true || config.expose['allureAddVideoOnPass'] === 'true';
 
-  const showDuplicateWarn = config.env['allureShowDuplicateWarn']
-    ? config.env['allureShowDuplicateWarn'] === true || config.env['allureShowDuplicateWarn'] === 'true'
+  const showDuplicateWarn = config.expose['allureShowDuplicateWarn']
+    ? config.expose['allureShowDuplicateWarn'] === true || config.expose['allureShowDuplicateWarn'] === 'true'
     : false;
 
   const options: ReporterOptions = {
@@ -91,10 +91,10 @@ export const configureAllureAdapterPlugins = (
     allureAddVideoOnPass,
     allureResults: results,
     techAllureResults: watchResultsPath ?? results,
-    allureSkipSteps: config.env['allureSkipSteps'] ?? '',
+    allureSkipSteps: config.expose['allureSkipSteps'] ?? '',
     screenshots: config.screenshotsFolder || 'no',
     videos: config.videosFolder,
-    isTest: config.env['JEST_TEST'] === 'true' || config.env['JEST_TEST'] === true,
+    isTest: config.expose['JEST_TEST'] === 'true' || config.expose['JEST_TEST'] === true,
   };
 
   debug('OPTIONS:');
@@ -135,7 +135,7 @@ export const configureAllureAdapterPlugins = (
 
   // Clean results if requested - done synchronously to ensure directories exist
   // before any watchers or other code tries to use them
-  if (`${config.env['allureCleanResults']}` === 'true') {
+  if (`${config.expose['allureCleanResults']}` === 'true') {
     debug('Clean results (sync)');
 
     try {

@@ -15,7 +15,7 @@ describe('screenshot when before hook fails', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false', allureSkipCommands: 'screenshot' },
+      expose: { allureAddVideoOnPass: 'false', allureSkipCommands: 'screenshot' },
       allowCyFail: true,
     });
   });
