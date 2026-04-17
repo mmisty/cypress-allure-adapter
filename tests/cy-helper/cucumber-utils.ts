@@ -51,13 +51,12 @@ export const createCucumberTestRes = (
   const testname = `${name}.feature`;
   const storeResDir = `allure-results/${testname}`;
 
-  const env = {
+  const expose = {
     allure: 'true',
     allureResults: storeResDir,
     allureResultsWatchPath: `${storeResDir}/watch`,
     allureCleanResults: 'true',
     allureSkipCommands: 'intercept',
-    //   COVERAGE: false, // `${process.env.COVERAGE === 'true'}`,
     JEST_TEST: 'true',
     cucumber: 'true',
     COVERAGE: 'false',
@@ -76,7 +75,6 @@ export const createCucumberTestRes = (
       process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : undefined;
       process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
       process.env.COVERAGE = 'false';
-      env.cucumber = 'true';
 
       console.log(`SPEC: ${spec}`);
       result.res = await cy.run({
@@ -85,7 +83,8 @@ export const createCucumberTestRes = (
         port,
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
-        env,
+        env: expose,
+        expose,
         quiet: `${process.env.QUIET}` === 'true',
         video: parseBoolean(envConfig?.video ?? `${true}`),
       });
@@ -97,7 +96,7 @@ export const createCucumberTestRes = (
   });
 
   return {
-    watch: env.allureResultsWatchPath,
+    watch: expose.allureResultsWatchPath,
     specs: specPaths.map(
       t => `${process.cwd()}/reports/test-events/${basename(t)}.log`,
     ),
