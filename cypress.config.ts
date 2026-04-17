@@ -3,6 +3,7 @@ import { setupPlugins } from './integration/plugins';
 
 const cypressFolder = 'integration';
 export const commonConfig: Cypress.ConfigOptions = {
+  allowCypressEnv: true, // need to migrate dependants before
   e2e: {
     specPattern: `${cypressFolder}/e2e/**/*.(cy|test|spec).(j|t)s`,
     supportFile: `${cypressFolder}/support/index.ts`,
