@@ -170,7 +170,7 @@ export const createResTest = (
   const testname = `${name}.cy.ts`;
   const storeResDir = `allure-results/${testname}`;
 
-  const env = {
+  const expose = {
     allure: 'true',
     allureResults: storeResDir,
     allureCleanResults: 'true',
@@ -199,7 +199,7 @@ export const createResTest = (
         port,
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
-        env,
+        expose,
         video: true,
       });
     } catch (e) {
@@ -450,7 +450,7 @@ export const createResTest2 = (
     }
   }
 
-  const env = {
+  const expose = {
     allure: 'true',
     allureResults: storeResDir,
     allureResultsWatchPath: definedWatchPath,
@@ -527,7 +527,7 @@ export const createResTest2 = (
         specPattern: 'integration/e2e/**/*.(cy|test|spec).ts',
         port,
         browser: 'chrome',
-        env,
+        expose,
         quiet: `${process.env.QUIET}` === 'true',
         video,
         // config: {
@@ -551,7 +551,7 @@ export const createResTest2 = (
   });
 
   return {
-    watch: env.allureResultsWatchPath ?? storeResDir,
+    watch: expose.allureResultsWatchPath ?? storeResDir,
     specs: specs,
     result: result,
   };
