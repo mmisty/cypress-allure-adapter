@@ -30,14 +30,14 @@ describe('should have links by using cy.allure() interface', () => {
       cy.allure().issue('ABC-1');
     });
     
-    it('issue test with id asterisk', {env: {issuePrefix:  'http://my.jira.com/*/browse/'}}, () => {
+    it('issue test with id asterisk', {expose: {issuePrefix:  'http://my.jira.com/*/browse/'}}, () => {
       cy.allure().issue('ABC-1');
     });
     
-    it('issue test with no env', {env: {issuePrefix:  undefined}}, () => {
+    it('issue test with no env', {expose: {issuePrefix:  undefined}}, () => {
       cy.allure().issue('ABC-1');
     });
-    it('tms test with no env', {env: {tmsPrefix:  undefined}}, () => {
+    it('tms test with no env', {expose: {tmsPrefix:  undefined}}, () => {
       cy.allure().tms('ABC-1');
     });
     

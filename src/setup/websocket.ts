@@ -7,7 +7,7 @@ const PROCESS_INTERVAL_MS = 10;
 
 export const startWsClient = (): WebSocket | undefined => {
   const debug = logClient(dbg);
-  const port = Cypress.env(ENV_WS);
+  const port = Cypress.expose(ENV_WS);
 
   if (!port) {
     logWithPackage(

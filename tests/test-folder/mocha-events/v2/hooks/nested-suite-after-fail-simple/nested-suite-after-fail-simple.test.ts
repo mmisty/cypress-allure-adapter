@@ -16,7 +16,7 @@ describe('nested suite after hook fail simple', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'true' },
+      expose: { allureAddVideoOnPass: 'true' },
     });
   });
 

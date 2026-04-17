@@ -273,8 +273,13 @@ describe('task manager', () => {
 
     for (const spec of specs) {
       // Each spec should have 3 started and 3 ended tasks
-      const startedCount = logs.filter(l => l === `${spec} started task 0` || l === `${spec} started task 1` || l === `${spec} started task 2`).length;
-      const endedCount = logs.filter(l => l === `${spec} ended task 0` || l === `${spec} ended task 1` || l === `${spec} ended task 2`).length;
+      const startedCount = logs.filter(
+        l => l === `${spec} started task 0` || l === `${spec} started task 1` || l === `${spec} started task 2`,
+      ).length;
+
+      const endedCount = logs.filter(
+        l => l === `${spec} ended task 0` || l === `${spec} ended task 1` || l === `${spec} ended task 2`,
+      ).length;
       expect(startedCount).toBe(3);
       expect(endedCount).toBe(3);
 

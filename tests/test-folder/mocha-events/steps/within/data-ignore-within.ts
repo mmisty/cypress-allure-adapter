@@ -9,7 +9,7 @@ const data: TestData = {
   rootSuite,
   fileName: __filename,
   spec: `
-describe('${rootSuite}', { defaultCommandTimeout: 300, env: { 
+describe('${rootSuite}', { defaultCommandTimeout: 300, expose: { 
   allureSkipCommands: 'within'
 } },() => {
   ${visitHtmlCode}

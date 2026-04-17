@@ -6,8 +6,8 @@ export default defineConfig({
   e2e: {
     ...commonConfig.e2e,
     specPattern: '**/v2/**/*.cy.ts',
-    env: {
-      ...(commonConfig.e2e?.env || {}),
+    expose: {
+      ...(commonConfig.e2e?.expose || {}),
     },
   },
 });

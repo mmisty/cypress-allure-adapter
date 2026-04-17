@@ -16,7 +16,7 @@ describe('requests from app - should not add to allure', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: {
+      expose: {
         allureAddVideoOnPass: 'false',
         allureSkipSteps: '*\\[cypress-allure-adapter\\]*',
       },
