@@ -119,18 +119,34 @@ jobs:
       # Free up disk space and add swap to prevent OOM
       - name: Free up runner resources
         run: |
-          # Remove unnecessary tools to free memory/disk
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/local/lib/android
-          
-          # Add 4GB swap file to prevent OOM kills
-          sudo fallocate -l 4G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          
+          set -eux
+      
+          # Remove unnecessary tools to free disk space
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf /usr/local/lib/android || true
+      
+          # --- Swap setup (robust) ---
+      
+          SWAPFILE=/swapfile
+      
+          # Disable swap if already active
+          if sudo swapon --show | grep -q "$SWAPFILE"; then
+            sudo swapoff $SWAPFILE
+          fi
+      
+          # Remove existing swap file if present
+          if [ -f "$SWAPFILE" ]; then
+            sudo rm -f $SWAPFILE
+          fi
+      
+          # Create new swap file
+          sudo fallocate -l 4G $SWAPFILE
+          sudo chmod 600 $SWAPFILE
+          sudo mkswap $SWAPFILE
+          sudo swapon $SWAPFILE
+      
           # Show available resources
           echo "=== Memory ==="
           free -h
