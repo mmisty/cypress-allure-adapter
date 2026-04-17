@@ -14,7 +14,11 @@ describe('request handler - add bodies without additional interception', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      expose: { allureAddVideoOnPass: 'false' },
+      expose: {
+        allureAddVideoOnPass: 'false',
+        // Jest drives Cypress via cy.run({ expose }); mirror spec expose here so spyOnRequests() registers intercepts
+        allureAddBodiesToRequests: '*',
+      },
     });
   });
 
