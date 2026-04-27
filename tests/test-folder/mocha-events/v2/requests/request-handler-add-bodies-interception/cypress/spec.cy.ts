@@ -7,6 +7,9 @@ describe('request-handler-add-bodies-interception', () => {
   before(() => {
     cy.task('shutDownTestServer');
     cy.task<number>('startTestServer').then(p => (port = p));
+    cy.then(() => {
+      Cypress.expose('allureAddBodiesToRequests', '**');
+    });
   });
 
   Cypress.Allure.on('request:started', req => {
@@ -39,17 +42,16 @@ describe('request-handler-add-bodies-interception', () => {
     cy.intercept('*').as('min');
   });
 
-  it(
-    '01 should add request bodies - GET - fetch',
-    // @ts-ignore
-    { env: { allureAddBodiesToRequests: '*' } },
-    () => {
-      visitHtml({
-        body: `
+  it('01 should add request bodies - GET - fetch', () => {
+    cy.then(() => {
+      Cypress.expose('allureAddBodiesToRequests', '*');
+    });
+    visitHtml({
+      body: `
           <div id="element">click to fetch</div>
           <div id="result"></div>
         `,
-        script: `
+      script: `
         document.getElementById('element').addEventListener('click', () => {
               document.getElementById('result').innerText = '';
               fetch('${url()}',{
@@ -67,23 +69,21 @@ describe('request-handler-add-bodies-interception', () => {
                   });
           });
         `,
-      });
-      cy.get('#element').should('exist').click();
-      cy.get('#result').should('not.be.empty');
-    },
-  );
+    });
+    cy.get('#element').should('exist').click();
+    cy.get('#result').should('not.be.empty');
+  });
 
-  it(
-    '02 should add request bodies - GET - xhr',
-    // @ts-ignore
-    { env: { allureAddBodiesToRequests: '*' } },
-    () => {
-      visitHtml({
-        body: `
+  it('02 should add request bodies - GET - xhr', () => {
+    cy.then(() => {
+      Cypress.expose('allureAddBodiesToRequests', '*');
+    });
+    visitHtml({
+      body: `
             <div id="element">click to xhr</div>
             <div id="result"></div>
           `,
-        script: `
+      script: `
         
           document.getElementById('element').addEventListener('click', () => {
                 document.getElementById('result').innerText = '';
@@ -101,25 +101,23 @@ describe('request-handler-add-bodies-interception', () => {
                 xhr.send();
             });
           `,
-      });
+    });
 
-      cy.get('#element').should('exist').click();
-      cy.get('#result').should('not.be.empty');
-    },
-  );
+    cy.get('#element').should('exist').click();
+    cy.get('#result').should('not.be.empty');
+  });
 
-  it(
-    '03 should add request bodies - POST - fetch',
-    // @ts-ignore
-    { env: { allureAddBodiesToRequests: '*' } },
-    () => {
-      visitHtml({
-        body: `
+  it('03 should add request bodies - POST - fetch', () => {
+    cy.then(() => {
+      Cypress.expose('allureAddBodiesToRequests', '*');
+    });
+    visitHtml({
+      body: `
             <div id="element">click to xhr</div>
             <div id="result"></div>
           `,
 
-        script: `
+      script: `
         
           document.getElementById('element').addEventListener('click', () => {
             document.getElementById('result').innerText = '';
@@ -139,10 +137,9 @@ describe('request-handler-add-bodies-interception', () => {
                 });
            });
           `,
-      });
+    });
 
-      cy.get('#element').should('exist').click();
-      cy.get('#result').should('not.be.empty');
-    },
-  );
+    cy.get('#element').should('exist').click();
+    cy.get('#result').should('not.be.empty');
+  });
 });

@@ -299,7 +299,7 @@ cy.allure().link('http://bbb.com/1', 'issue-1', 'issue');
 
 Adds link to test of type 'tms' ('tms' will have specific icon )
 
-When `tmsPrefix` environment variable added no need to input the whole URL
+When `tmsPrefix` expose option added no need to input the whole URL
 
 Will be shown in Links field for test
 
@@ -315,7 +315,7 @@ Adds link to test of type 'tms' ('tms' will have specific icon )
 
 The same as `tms` but will add tms id into description
 
-When `tmsPrefix` environment variable added no need to input the whole URL
+When `tmsPrefix` expose option added no need to input the whole URL
 
 Will be shown in Links field for test
 
@@ -329,7 +329,7 @@ cy.allure().tmsWithId('ABC-1', 'desc'); // will have link 'ABC-1: desc' when tms
 
 Adds link to test of type 'issue' ('issue' will have specific icon - bug icon )
 
-When `issuePrefix` environment variable added no need to input the whole URL
+When `issuePrefix` expose option added no need to input the whole URL
 
 Will be shown in Links field for test
 
@@ -345,7 +345,7 @@ Adds link to test of type 'issue' ('issue' will have specific icon - bug icon )
 
 The same as `issue` but will add issue id into description
 
-When `issuePrefix` environment variable added no need to input the whole URL
+When `issuePrefix` expose option added no need to input the whole URL
 
 Will be shown in Links field for test
 

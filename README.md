@@ -9,11 +9,9 @@
 ![latest version](https://img.shields.io/npm/v/@mmisty/cypress-allure-adapter.svg)
 
 
-![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-14.5.4-blue)
-![supported cypress](https://img.shields.io/badge/cypress-13.x-blue)
-![supported cypress](https://img.shields.io/badge/cypress-12.x-blue)
-![supported cypress](https://img.shields.io/badge/cypress-11.x-blue)
-![supported cypress](https://img.shields.io/badge/cypress-10.x-blue)
+![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-15.14.1-blue)
+
+If you are in cypress v 10.0.0 - 15.9.0 - please use version <=4.0.1 of the plugin, it is the latest version compatible with these cypress versions.
 
 
 You can watch tests execution when using the plugin with Allure TestOps. It adds tests, steps, suites and screenshots during tests execution.
@@ -41,7 +39,7 @@ Example report is here - [Allure Report example](https://mmisty.github.io/cypres
 ## Table of Contents
 
 1. [Installation](#installation)
-1. [Environment variables](#environment-variables)
+1. [Expose options - Environment variables](#expose-options-prior-cypress-v15100-environment-variables-)
 2. [To see allure report](#to-see-report)
 3. [Allure Interface](#allure-interface)
 4. [Adding meta information](#adding-meta-information)
@@ -148,17 +146,19 @@ export default defineConfig({
 ```
 </details>
 
-### 3. Update environment variables
-In `cypress.config.ts` or `cypress.config.js` or in your environment files set `allure` env var to `true`.
+### 3. Update expose options (environment variables for earlier versions of cypress)
+Expose options are introduced as of cypress v15.10.0, if you are using earlier version of cypress and plugin use them as environment variables.
 
-See other [environment variables](#environment-variables)
+In `cypress.config.ts` or `cypress.config.js` set `allure` expose key to `true`. Alternatively, you can pass via cypress cli: `--expose allure=true`
+
+See other [expose options](#expose-options-prior-cypress-v15100-environment-variables-)
 
 ### 4. Types
 [Typescript]: No need to setup types - should be done automatically
 
 That's it! :tada:
 
-## Environment variables
+## Expose options (prior cypress v15.10.0 Environment variables )
 
 | Variable                                                                                                                                                                                                                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -364,7 +364,7 @@ Exmpale below:
 
 By default requests made by app do not store request/response bodies unless you intercept them. 
 
-So to access request bodies within custom events you need to add environemt variable `allureAddBodiesToRequests` with requests like you are interceptin them by cy.intercept: 
+So to access request bodies within custom events you need to add expose option `allureAddBodiesToRequests` with requests like you are intercepting them by cy.intercept: 
 
 ```javascript
 // cypress.config.ts
@@ -425,9 +425,9 @@ cypress events forwarder.
 
 ## Allure TestOps
 
-To have compatibility with Allure Testops set environment variables:
+To have compatibility with Allure Testops set expose options:
  - `allureResults`
- - `allureResultsWatchPath` - this is the directory where test files ready for TestOps will be moved. It is suggested to use allure-results/watch when the <allureResults> environment variable is either not set or is set to allure-results
+ - `allureResultsWatchPath` - this is the directory where test files ready for TestOps will be moved. It is suggested to use allure-results/watch when the <allureResults> expose option is either not set or is set to allure-results
 
 When starting tests in watch mode with [allurectl](https://docs.qameta.io/allure-testops/ecosystem/allurectl/) set allure-results path to `<allureResultsWatchPath>` like: 
 ```

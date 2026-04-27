@@ -16,7 +16,7 @@ describe('requests with redirects', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false', allureLogCyCommands: 'true' },
+      expose: { allureAddVideoOnPass: 'false', allureLogCyCommands: 'true' },
     });
   });
 

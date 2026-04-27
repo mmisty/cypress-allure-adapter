@@ -70,12 +70,12 @@ export const handleCyLogEvents = (
   swapDoSyncCommand();
   logRequestEvents(requests, events);
 
-  const allureAttachRequests = Cypress.env('allureAttachRequests')
-    ? `${Cypress.env('allureAttachRequests')}` === 'true'
+  const allureAttachRequests = Cypress.expose('allureAttachRequests')
+    ? `${Cypress.expose('allureAttachRequests')}` === 'true'
     : false;
 
-  const allureCompactAttachmentsRequests = Cypress.env('allureCompactAttachments')
-    ? `${Cypress.env('allureCompactAttachments')}` === 'true'
+  const allureCompactAttachmentsRequests = Cypress.expose('allureCompactAttachments')
+    ? `${Cypress.expose('allureCompactAttachments')}` === 'true'
     : true;
 
   const isLogCommand = (isLog: boolean, name: string) => {
@@ -88,6 +88,8 @@ export const handleCyLogEvents = (
   }
 
   // should be beforeEach (not before) to get env variable value from test config
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
   beforeEach(`${packageLog}`, () => {
     // this way can save bodies for intercepted requests
 
@@ -95,11 +97,11 @@ export const handleCyLogEvents = (
 
     cy.allure().parameter(
       'To access request bodies',
-      "add environment variable: `allureAddBodiesToRequests`\n(value is requests split by comma that you wish to save, to save all set '*')",
+      "add expose option: `allureAddBodiesToRequests`\n(value is requests split by comma that you wish to save, to save all set '*')",
     );
     cy.allure().parameter(
       'To skip this message',
-      "add environment variable `allureSkipSteps: '*\\[cypress-allure-adapter\\]*' `",
+      "add expose option `allureSkipSteps: '*\\[cypress-allure-adapter\\]*' `",
     );
 
     if (requestsToSpy.length > 0) {
@@ -222,7 +224,7 @@ export const handleCyLogEvents = (
       let details: { message?: string; trace?: string } | undefined = undefined;
 
       const isIgnoreException = () => {
-        const ignored = Cypress.env('allureIgnoreUncaughtExceptions');
+        const ignored = Cypress.expose('allureIgnoreUncaughtExceptions');
 
         if (!ignored) {
           return false;

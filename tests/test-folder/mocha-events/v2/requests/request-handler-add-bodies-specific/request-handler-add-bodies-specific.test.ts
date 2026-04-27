@@ -13,7 +13,11 @@ describe('request handler - add bodies to specific requests only', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false' },
+      expose: {
+        allureAddVideoOnPass: 'false',
+        // Jest uses cy.run({ expose }); pass mirror pattern here so adapter beforeEach registers cy.intercept
+        allureAddBodiesToRequests: '**/mirror**',
+      },
     });
   });
 

@@ -1,52 +1,50 @@
 import '@src/cypress/types';
 
-describe(
-  'request-handler-add-bodies-specific',
-  { env: { allureAddBodiesToRequests: '**/mirror**' } },
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  () => {
-    let port = 3000;
-    const url = () => `http://localhost:${port}`;
+describe('request-handler-add-bodies-specific', () => {
+  let port = 3000;
+  const url = () => `http://localhost:${port}`;
 
-    before(() => {
-      cy.task('shutDownTestServer');
-      cy.task<number>('startTestServer').then(p => (port = p));
+  before(() => {
+    cy.task('shutDownTestServer');
+    cy.task<number>('startTestServer').then(p => (port = p));
+    cy.then(() => {
+      Cypress.expose('allureAddBodiesToRequests', '**/mirror**');
     });
+  });
 
-    Cypress.Allure.on('request:started', req => {
-      Cypress.Allure.startStep(
-        `started:${req.method} ${req.url.replace(String(port), '<port>')}`,
-      );
-      Cypress.Allure.endStep();
+  Cypress.Allure.on('request:started', req => {
+    Cypress.Allure.startStep(
+      `started:${req.method} ${req.url.replace(String(port), '<port>')}`,
+    );
+    Cypress.Allure.endStep();
+  });
+
+  Cypress.Allure.on('request:ended', req => {
+    Cypress.Allure.startStep(
+      `ended:${req.method} ${req.url.replace(String(port), '<port>')}`,
+    );
+
+    if (req.responseBody !== undefined) {
+      Cypress.Allure.parameter('responseBody', req.responseBody);
+    }
+    Cypress.Allure.endStep();
+  });
+
+  const visitHtml = (opts: { body: string; script: string }) => {
+    cy.intercept('mytest.com**', {
+      body: `<html><body>${opts.body}</body</html><script>${opts.script}</script>`,
     });
+    cy.visit('mytest.com');
+  };
 
-    Cypress.Allure.on('request:ended', req => {
-      Cypress.Allure.startStep(
-        `ended:${req.method} ${req.url.replace(String(port), '<port>')}`,
-      );
-
-      if (req.responseBody !== undefined) {
-        Cypress.Allure.parameter('responseBody', req.responseBody);
-      }
-      Cypress.Allure.endStep();
-    });
-
-    const visitHtml = (opts: { body: string; script: string }) => {
-      cy.intercept('mytest.com**', {
-        body: `<html><body>${opts.body}</body</html><script>${opts.script}</script>`,
-      });
-      cy.visit('mytest.com');
-    };
-
-    it('02 should add request bodies - POST - fetch', () => {
-      visitHtml({
-        body: `
+  it('02 should add request bodies - POST - fetch', () => {
+    visitHtml({
+      body: `
             <div id="element">click to xhr</div>
             <div id="result"></div>
           `,
 
-        script: `
+      script: `
         
           document.getElementById('element').addEventListener('click', () => {
             document.getElementById('result').innerText = '';
@@ -66,20 +64,20 @@ describe(
                 });
            });
           `,
-      });
-
-      cy.get('#element').should('exist').click();
-      cy.get('#result').should('not.be.empty');
     });
 
-    it('03 should add request bodies - POST - fetch', () => {
-      visitHtml({
-        body: `
+    cy.get('#element').should('exist').click();
+    cy.get('#result').should('not.be.empty');
+  });
+
+  it('03 should add request bodies - POST - fetch', () => {
+    visitHtml({
+      body: `
             <div id="element">click to xhr</div>
             <div id="result"></div>
           `,
 
-        script: `
+      script: `
         
           document.getElementById('element').addEventListener('click', () => {
             document.getElementById('result').innerText = '';
@@ -99,10 +97,9 @@ describe(
                 });
            });
           `,
-      });
-
-      cy.get('#element').should('exist').click();
-      cy.get('#result').should('not.be.empty');
     });
-  },
-);
+
+    cy.get('#element').should('exist').click();
+    cy.get('#result').should('not.be.empty');
+  });
+});
