@@ -1,6 +1,6 @@
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { swapItems } from '../common';
+import { packageLog, swapItems } from '../common';
 import type { CommandT } from '../common/command-names';
 import { EventEmitter } from 'events';
 import {
@@ -88,7 +88,9 @@ export const handleCyLogEvents = (
   }
 
   // should be beforeEach (not before) to get env variable value from test config
-  beforeEach(() => {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  beforeEach(`${packageLog}`, () => {
     // this way can save bodies for intercepted requests
 
     const requestsToSpy = spyOnRequests?.() ?? [];
