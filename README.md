@@ -9,7 +9,7 @@
 ![latest version](https://img.shields.io/npm/v/@mmisty/cypress-allure-adapter.svg)
 
 
-![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-15.10.0-blue)
+![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-15.14.1-blue)
 
 If you are in cypress v 10.0.0 - 15.9.0 - please use version <=4.0.1 of the plugin, it is the latest version compatible with these cypress versions.
 

@@ -6,6 +6,13 @@ describe('should have links by using cy.allure() interface', () => {
     [
       `
   describe('set link from test', () => {
+    beforeEach(() => {
+      cy.then(() => {
+        Cypress.expose({issuePrefix: 'http://jira/*'});
+        Cypress.expose({tmsPrefix: 'http://jira'});
+      })
+    });
+  
     it('link issue test', () => {
       cy.allure().link('http://example.com', 'example', 'issue');
     });
@@ -30,14 +37,23 @@ describe('should have links by using cy.allure() interface', () => {
       cy.allure().issue('ABC-1');
     });
     
-    it('issue test with id asterisk', {expose: {issuePrefix:  'http://my.jira.com/*/browse/'}}, () => {
+    it('issue test with id asterisk', () => {
+      cy.then(() => {
+        Cypress.expose({issuePrefix:  'http://my.jira.com/*/browse/'});
+      })
       cy.allure().issue('ABC-1');
     });
     
-    it('issue test with no env', {expose: {issuePrefix:  undefined}}, () => {
+    it('issue test with no env', () => {
+      cy.then(() => {
+        Cypress.expose({issuePrefix:  undefined});
+      })
       cy.allure().issue('ABC-1');
     });
     it('tms test with no env', {expose: {tmsPrefix:  undefined}}, () => {
+      cy.then(() => {
+        Cypress.expose({tmsPrefix:  undefined});
+      })
       cy.allure().tms('ABC-1');
     });
     
