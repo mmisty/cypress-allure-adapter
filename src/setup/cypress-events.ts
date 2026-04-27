@@ -88,7 +88,7 @@ export const handleCyLogEvents = (
   }
 
   // should be beforeEach (not before) to get env variable value from test config
-  beforeEach(`${packageLog}`, () => {
+  beforeEach(() => {
     // this way can save bodies for intercepted requests
 
     const requestsToSpy = spyOnRequests?.() ?? [];
