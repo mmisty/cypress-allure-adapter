@@ -8,8 +8,8 @@ describe('should have links by using cy.allure() interface', () => {
   describe('set link from test', () => {
     beforeEach(() => {
       cy.then(() => {
-        Cypress.expose({issuePrefix: 'http://jira/*'});
-        Cypress.expose({tmsPrefix: 'http://jira'});
+        Cypress.expose({issuePrefix: 'http://my.jira.com/'});
+        Cypress.expose({tmsPrefix: undefined});
       })
     });
   
@@ -50,7 +50,7 @@ describe('should have links by using cy.allure() interface', () => {
       })
       cy.allure().issue('ABC-1');
     });
-    it('tms test with no env', {expose: {tmsPrefix:  undefined}}, () => {
+    it('tms test with no env', () => {
       cy.then(() => {
         Cypress.expose({tmsPrefix:  undefined});
       })
@@ -106,7 +106,7 @@ describe('should have links by using cy.allure() interface', () => {
 
       const labels = tests.map(t => t.links).sort();
       expect(labels).toEqual([
-        [{ name: 'example', type: 'tms', url: 'http://jira/ABC-1' }],
+        [{ name: 'example', type: 'tms', url: 'ABC-1' }],
       ]);
     });
 
@@ -117,9 +117,7 @@ describe('should have links by using cy.allure() interface', () => {
       expect(tests.length).toEqual(1);
 
       const labels = tests.map(t => t.links).sort();
-      expect(labels).toEqual([
-        [{ name: 'ABC-1', type: 'tms', url: 'http://jira/ABC-1' }],
-      ]);
+      expect(labels).toEqual([[{ name: 'ABC-1', type: 'tms', url: 'ABC-1' }]]);
     });
 
     it('should have issue with id', () => {
