@@ -1,6 +1,6 @@
 import { logClient } from './helper';
 import { Status } from '../plugins/allure-types';
-import { packageLog, swapItems } from '../common';
+import { swapItems } from '../common';
 import type { CommandT } from '../common/command-names';
 import { EventEmitter } from 'events';
 import {
