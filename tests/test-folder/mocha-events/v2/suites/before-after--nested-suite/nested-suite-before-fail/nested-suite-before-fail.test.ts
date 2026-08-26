@@ -6,7 +6,6 @@ import {
   PreparedResults,
   prepareResults,
 } from '../../../../../../cy-helper/utils-v2';
-import { existsSync } from 'fs';
 import { AllureTest, getParentsArray } from 'allure-js-parser';
 
 describe('nested suites with failed hook', () => {
@@ -165,17 +164,10 @@ describe('nested suites with failed hook', () => {
           !x.steps.some(s => s.name?.toLowerCase()?.indexOf('coverage') !== -1),
       );
       expect(excludeCovBefores).toEqual([]);
-      expect(excludeCovAfters?.[0].attachments[0].name).toEqual(
-        'spec.cy.ts.mp4',
-      );
-      expect(excludeCovAfters?.[0].attachments[0].type).toEqual('video/mp4');
-      expect(excludeCovAfters?.[0].name).toEqual('video');
-      const videoSource = `${results.watchDir}/${excludeCovAfters?.[0].attachments[0].source}`;
-
-      expect(existsSync(videoSource)).toEqual(true);
+      expect(excludeCovAfters?.filter(x => x.name !== 'video')).toEqual([]);
     });
 
-    it('should have video for child tests in suite in after hook', async () => {
+    it('should have screenshot for child tests in suite in after hook', async () => {
       const suite2 = test1?.parent;
       const suite3 = test2?.parent;
       expect(suite2?.uuid).toEqual(suite3?.uuid);
@@ -218,14 +210,7 @@ describe('nested suites with failed hook', () => {
           ],
         },
       ]);
-      expect(excludeCovAfters?.[0].attachments[0].name).toEqual(
-        'spec.cy.ts.mp4',
-      );
-      expect(excludeCovAfters?.[0].attachments[0].type).toEqual('video/mp4');
-      expect(excludeCovAfters?.[0].name).toEqual('video');
-      const videoSource = `${results.watchDir}/${excludeCovAfters?.[0].attachments[0].source}`;
-
-      expect(existsSync(videoSource)).toEqual(true);
+      expect(excludeCovAfters?.filter(x => x.name === 'video')).toEqual([]);
     });
   });
 });

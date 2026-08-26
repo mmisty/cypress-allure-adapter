@@ -12,7 +12,9 @@ describe('video when test fails', () => {
   outputDebugGenerate(__dirname);
 
   beforeAll(async () => {
-    results = await prepareResults(__dirname, { env: {} });
+    results = await prepareResults(__dirname, {
+      env: { video: 'true' },
+    });
   });
 
   it('should have video for all tests in suite in after hook', async () => {

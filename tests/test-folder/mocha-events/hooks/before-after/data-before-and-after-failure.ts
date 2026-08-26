@@ -138,17 +138,6 @@ const data: TestData = {
                   },
                 ],
               },
-              {
-                name: 'video',
-                steps: [],
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4', // video check
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
             ],
           },
         ],
@@ -185,17 +174,6 @@ const data: TestData = {
                     name: `${rootSuite} -- test 1 -- after all hook after in suite (failed).png`,
                     source: 'source.png',
                     type: 'image/png',
-                  },
-                ],
-              },
-              {
-                name: 'video',
-                steps: [],
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4', // change
-                    source: 'source.mp4',
-                    type: 'video/mp4',
                   },
                 ],
               },

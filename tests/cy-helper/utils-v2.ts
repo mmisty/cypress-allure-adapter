@@ -165,7 +165,7 @@ export const prepareResults = async (
       spec: spec,
       port,
       browser: 'chrome',
-      video,
+      config: { e2e: { video } },
       env: {
         allure: 'true',
         allureResults: `${dir}/allure-results`,

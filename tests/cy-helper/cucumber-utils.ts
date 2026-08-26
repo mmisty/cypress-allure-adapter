@@ -87,7 +87,7 @@ export const createCucumberTestRes = (
         trashAssetsBeforeRuns: true,
         env,
         quiet: `${process.env.QUIET}` === 'true',
-        video: parseBoolean(envConfig?.video ?? `${true}`),
+        config: { e2e: { video: parseBoolean(envConfig?.video ?? 'true') } },
       });
     } catch (e) {
       err = e as Error;

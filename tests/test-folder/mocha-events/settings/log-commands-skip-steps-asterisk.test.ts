@@ -100,10 +100,7 @@ describe('should skip hooks steps with asterisk', () => {
 
       expect({ befores, afters }).toEqual({
         afters: [
-          {
-            name: 'video',
-            steps: [],
-          },
+          
         ],
         befores: [],
       });

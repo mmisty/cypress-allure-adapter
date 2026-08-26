@@ -90,10 +90,7 @@ describe('hello suite', () => {
           parents: [
             {
               afters: [
-                {
-                  name: 'video',
-                  status: 'passed',
-                },
+                
               ],
               befores: [
                 {

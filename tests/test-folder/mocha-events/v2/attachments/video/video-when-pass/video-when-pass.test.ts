@@ -13,7 +13,7 @@ describe('video when test passes', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'true' },
+      env: { allureAddVideoOnPass: 'true', video: 'true' },
     });
   });
 

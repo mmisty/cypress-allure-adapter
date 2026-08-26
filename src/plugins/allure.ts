@@ -357,7 +357,7 @@ export const allureTasks = (opts: ReporterOptions, client: AllureTaskClient): Al
           allureAddVideoOnPass: opts.allureAddVideoOnPass,
         });
       } else {
-        logWithPackage('error', 'No video path in afterSpec result');
+        log('No video path in afterSpec result');
       }
 
       // Attach screenshots via server operation
