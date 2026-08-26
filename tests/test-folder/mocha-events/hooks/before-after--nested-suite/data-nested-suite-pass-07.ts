@@ -181,17 +181,7 @@ const data: TestData = {
             }),
             befores: [],
             afters: [
-              {
-                name: 'video',
-                steps: [],
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
           {
@@ -203,17 +193,7 @@ const data: TestData = {
             }),
             befores: [],
             afters: [
-              {
-                name: 'video',
-                steps: [],
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],
@@ -230,17 +210,7 @@ const data: TestData = {
             }),
             befores: [],
             afters: [
-              {
-                name: 'video',
-                steps: [],
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],

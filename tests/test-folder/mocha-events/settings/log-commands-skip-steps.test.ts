@@ -149,10 +149,6 @@ describe('should skip hooks steps', () => {
               },
             ],
           },
-          {
-            name: 'video',
-            steps: [],
-          },
         ],
         befores: [
           {

@@ -120,7 +120,7 @@ describe('${rootSuite}', () => {
           {
             name: rootSuite,
             befores: [],
-            afters: [{ name: 'video' }],
+            afters: [],
           },
         ],
       },

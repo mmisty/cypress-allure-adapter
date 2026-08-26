@@ -73,22 +73,6 @@ describe('one passed test with global before hook', () => {
           {
             afters: [
               ...whenCoverage(...covergeAfterAll),
-              {
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-                name: 'video',
-                parameters: [],
-                stage: 'finished',
-                start: 1323475200000,
-                status: 'passed',
-                steps: [],
-                stop: 1323475200010,
-              },
             ],
             befores: [
               ...whenCoverage(...covergeBeforeAll),

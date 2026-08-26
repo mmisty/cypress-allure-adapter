@@ -23,9 +23,15 @@ There are several types of tests:
 - jest tests for plugins (quick)
 - jest tests that start cypress and check results (long)
 
-To run jest test with cypress start locally:
+To run jest tests that start Cypress locally:
 ```shell
-npm run test:jest:cy
+npm run test:jest:cy:all
+```
+
+Or run one group: `hooks`, `failures`, `interface`, `passes`, `v2`, `commands`, `settings`, `misc`.
+
+```shell
+npm run test:jest:cy:hooks
 ```
 
 ### Project structure

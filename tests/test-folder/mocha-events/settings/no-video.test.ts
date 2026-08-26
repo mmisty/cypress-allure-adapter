@@ -8,7 +8,7 @@ describe('test video event', () => {
 describe('test video false', () => {
 
   it('test fails', () => {
-    cy.wait(3000);
+    cy.wait(1);
     cy.wrap(null).then(()=> {
        throw new Error('on purpose')
     })

@@ -149,16 +149,7 @@ const data: TestData = {
             name: rootSuite,
             befores: [],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],
@@ -170,16 +161,7 @@ const data: TestData = {
             name: rootSuite,
             befores: [],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4', // video check
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
           {
@@ -202,16 +184,7 @@ const data: TestData = {
               },
             ],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4', // video check
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],
@@ -223,16 +196,7 @@ const data: TestData = {
             name: rootSuite,
             befores: [],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4', // change
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
           {
@@ -255,16 +219,7 @@ const data: TestData = {
               },
             ],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4', // video check
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],

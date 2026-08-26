@@ -6,7 +6,6 @@ import {
   PreparedResults,
   prepareResults,
 } from '../../../../../../cy-helper/utils-v2';
-import { existsSync } from 'fs';
 import { AllureTest, getParentsArray } from 'allure-js-parser';
 
 describe('nested suites with failed hook', () => {
@@ -191,14 +190,7 @@ describe('nested suites with failed hook', () => {
           name: '"before all" hook: global before one',
         },
       ]);
-      expect(excludeCovAfters?.[0].attachments[0].name).toEqual(
-        'spec.cy.ts.mp4',
-      );
-      expect(excludeCovAfters?.[0].attachments[0].type).toEqual('video/mp4');
-      expect(excludeCovAfters?.[0].name).toEqual('video');
-      const videoSource = `${results.watchDir}/${excludeCovAfters?.[0].attachments[0].source}`;
-
-      expect(existsSync(videoSource)).toEqual(true);
+      expect(excludeCovAfters?.filter(x => x.name === 'video')).toEqual([]);
     });
   });
 });

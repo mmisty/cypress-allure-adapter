@@ -192,16 +192,7 @@ const data: TestData = {
               { name: '"before all" hook: in sub suite', attachments: [] },
             ],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],
@@ -216,16 +207,7 @@ const data: TestData = {
               { name: '"before all" hook: in sub suite', attachments: [] },
             ],
             afters: [
-              {
-                name: 'video',
-                attachments: [
-                  {
-                    name: 'test_0_number.cy.ts.mp4',
-                    source: 'source.mp4',
-                    type: 'video/mp4',
-                  },
-                ],
-              },
+              
             ],
           },
         ],

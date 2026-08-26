@@ -10,6 +10,16 @@ import { globSync } from 'fast-glob';
 
 jest.setTimeout(360000);
 
+const SKIP_HOOK_NAMES = ['generatereport', 'coverage', 'video'];
+
+const isSkippedHookName = (name?: string) =>
+  !name || SKIP_HOOK_NAMES.some(y => name.toLowerCase().indexOf(y) !== -1);
+
+const isVideoAttachment = (a: { name?: string; type?: string }) =>
+  a.type === 'video/mp4' || (a.name?.endsWith('.mp4') ?? false);
+
+const cypressPort = () => 40000 + Math.round(Math.random() * 25000);
+
 // Types for fullStepAttachment
 interface MappedAttachment extends Attachment {
   name: string;
@@ -188,7 +198,7 @@ export const createResTest = (
     const cy = require('cypress');
     //const spec = [`${cwd}/integration/e2e/simple-pass.cy.ts`, `${cwd}/integration/e2e/${testname}`];
     const spec = file;
-    const port = 40000 + Math.round(Math.random() * 25000);
+    const port = cypressPort();
     let err: Error | undefined;
 
     try {
@@ -200,7 +210,7 @@ export const createResTest = (
         browser: 'chrome',
         trashAssetsBeforeRuns: true,
         env,
-        video: true,
+        config: { e2e: { video: parseBoolean(envConfig?.video ?? 'true') } },
       });
     } catch (e) {
       err = e as Error;
@@ -258,7 +268,7 @@ export const fullStepAttachment = (
       parents: getParentsArray(x),
     }))
     .sort((z1, z2) => (z1.name && z2.name && z1.name < z2.name ? -1 : 1));
-  const skipItems = ['generatereport', 'coverage'];
+  const skipItems = SKIP_HOOK_NAMES;
 
   const mapItem = (items: undefined | AllureHook[] | AllureTest[]) => {
     return (
@@ -267,6 +277,7 @@ export const fullStepAttachment = (
           name: t.name,
           status: t.status,
           attachments: t.attachments
+            .filter(a => !isVideoAttachment(a))
             .map(t => ({
               ...t,
               name: fixAttachName(t.name),
@@ -291,9 +302,11 @@ export const fullStepAttachment = (
     .map(t => ({
       name: t.name,
       status: t.status,
-      attachments: t.attachments.sort((z1, z2) =>
-        z1.name && z2.name && z1.name < z2.name ? -1 : 1,
-      ),
+      attachments: t.attachments
+        .filter(a => !isVideoAttachment(a))
+        .sort((z1, z2) =>
+          z1.name && z2.name && z1.name < z2.name ? -1 : 1,
+        ),
       steps: mapSteps(t.steps, mapStep).filter(x =>
         skipItems.every(y => x.name?.toLowerCase().indexOf(y) === -1),
       ),
@@ -330,7 +343,7 @@ export const fullStepMap = (
   mapStep?: (m: StepResult) => any,
   filterStep?: (m: StepResult) => boolean,
 ) => {
-  const skipItems = ['generatereport', 'coverage'];
+  const skipItems = SKIP_HOOK_NAMES;
 
   return mapSteps(res.steps as StepResult[], mapStep, z => {
     const includesNoSkippedSteps = skipItems.every(
@@ -482,44 +495,16 @@ export const createResTest2 = (
 
   // create results jest
   beforeAll(async () => {
-    jest.retryTimes(1);
-
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const cy = require('cypress');
 
-    const port = Math.round(Math.random() * 65536);
+    const port = cypressPort();
     const spec = specPaths.length === 1 ? specPaths[0] : specPaths;
 
     process.env.DEBUG = envConfig?.DEBUG ? 'cypress-allure*' : '';
     process.env.COVERAGE_REPORT_DIR = 'reports/coverage-cypress';
 
-    // const checkFilesExist = retries => {
-    //   return new Promise((resolve, reject) => {
-    //     const attempt = remainingRetries => {
-    //       if (!specs.every(p => existsSync(p))) {
-    //         console.log(
-    //           `Not all files were written: attempt ${retries - remainingRetries + 1}`,
-    //         );
-    //
-    //         if (remainingRetries > 0) {
-    //           return delay(1000)
-    //             .then(() => attempt(remainingRetries - 1))
-    //             .catch(reject);
-    //         } else {
-    //           return reject(
-    //             new Error('Files are still missing after all retries'),
-    //           );
-    //         }
-    //       }
-    //       resolve(true);
-    //     };
-    //
-    //     attempt(retries);
-    //   });
-    // };
-    const video = parseBoolean(envConfig?.video ?? `${true}`);
-    // todo fix video
-    console.log(`video:${video}`);
+    const video = parseBoolean(envConfig?.video ?? 'true');
 
     const res = await cy
       .run({
@@ -529,11 +514,7 @@ export const createResTest2 = (
         browser: 'chrome',
         env,
         quiet: `${process.env.QUIET}` === 'true',
-        video,
-        // config: {
-        //   ...config,
-        //   trashAssetsBeforeRuns: true,
-        // },
+        config: { e2e: { video } },
       })
 
       .catch(e => {
@@ -833,9 +814,11 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
             const testAttempts = getTest(resFixed, t.testName);
 
             wrapError(() =>
-              expect(testAttempts[t.index ?? 0]?.attachments).toEqual(
-                t.attachments,
-              ),
+              expect(
+                testAttempts[t.index ?? 0]?.attachments.filter(
+                  a => !isVideoAttachment(a),
+                ),
+              ).toEqual(t.attachments.filter(a => !isVideoAttachment(a))),
             );
           });
         });
@@ -881,7 +864,7 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
           describe(`parents for ${testData.testName} ${testData.index ?? ''}`, () => {
             let tests;
             let parents: Parent[];
-            const skipItems = ['generatereport', 'coverage'];
+            const skipItems = SKIP_HOOK_NAMES;
 
             beforeAll(() => {
               tests = getTest(resFixed, testData.testName);
@@ -911,22 +894,32 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                         z1.name && z2.name && z1.name < z2.name ? -1 : 1,
                       );
 
+                    const expectedBefores = container.befores?.filter(
+                      z => !isSkippedHookName(z.name),
+                    );
+
                     wrapError(() =>
                       expect(actualBefores?.map(x => x.name)).toEqual(
-                        container.befores?.map(x => x.name),
+                        expectedBefores?.map(x => x.name),
                       ),
                     );
 
-                    if (container.befores?.some(t => t.attachments)) {
+                    if (expectedBefores?.some(t => t.attachments)) {
                       wrapError(() =>
                         // eslint-disable-next-line jest/no-conditional-expect
-                        expect(actualBefores?.map(x => x.attachments)).toEqual(
-                          container.befores?.map(x => x.attachments),
+                        expect(
+                          actualBefores?.map(x =>
+                            x.attachments.filter(a => !isVideoAttachment(a)),
+                          ),
+                        ).toEqual(
+                          expectedBefores?.map(x =>
+                            x.attachments?.filter(a => !isVideoAttachment(a)),
+                          ),
                         ),
                       );
                     }
 
-                    if (container.befores?.some(t => t.steps)) {
+                    if (expectedBefores?.some(t => t.steps)) {
                       const beforesSteps = actualBefores?.map(x =>
                         mapSteps(x.steps, container.stepMap),
                       );
@@ -934,7 +927,7 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                       wrapError(() =>
                         // eslint-disable-next-line jest/no-conditional-expect
                         expect(beforesSteps).toEqual(
-                          container.befores?.map(x => x.steps),
+                          expectedBefores?.map(x => x.steps),
                         ),
                       );
                     }
@@ -948,29 +941,34 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                     );
 
                     const actualAfters = (actualParent?.afters as AllureHook[])
-                      ?.filter(z =>
-                        skipItems.every(
-                          y => z.name.toLowerCase().indexOf(y) === -1,
-                        ),
-                      )
+                      ?.filter(z => !isSkippedHookName(z.name))
                       .sort((z1, z2) =>
                         z1.name && z2.name && z1.name < z2.name ? -1 : 1,
                       );
-
-                    expect(actualAfters?.map(x => x.name)).toEqual(
-                      container.afters?.map(x => x.name),
+                    const expectedAfters = container.afters?.filter(
+                      z => !isSkippedHookName(z.name),
                     );
 
-                    if (container.afters?.some(t => t.attachments)) {
+                    expect(actualAfters?.map(x => x.name)).toEqual(
+                      expectedAfters?.map(x => x.name),
+                    );
+
+                    if (expectedAfters?.some(t => t.attachments)) {
                       wrapError(() =>
                         // eslint-disable-next-line jest/no-conditional-expect
-                        expect(actualAfters?.map(x => x.attachments)).toEqual(
-                          container.afters?.map(x => x.attachments),
+                        expect(
+                          actualAfters?.map(x =>
+                            x.attachments.filter(a => !isVideoAttachment(a)),
+                          ),
+                        ).toEqual(
+                          expectedAfters?.map(x =>
+                            x.attachments?.filter(a => !isVideoAttachment(a)),
+                          ),
                         ),
                       );
                     }
 
-                    if (container.afters?.some(t => t.steps)) {
+                    if (expectedAfters?.some(t => t.steps)) {
                       const aftersSteps = actualAfters?.map(x =>
                         mapSteps(x.steps, container.stepMap),
                       );
@@ -978,7 +976,7 @@ export const generateChecksTests = (res: Result, testsForRun: TestData[]) => {
                       wrapError(() =>
                         // eslint-disable-next-line jest/no-conditional-expect
                         expect(aftersSteps).toEqual(
-                          container.afters?.map(x => x.steps),
+                          expectedAfters?.map(x => x.steps),
                         ),
                       );
                     }

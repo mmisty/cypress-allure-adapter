@@ -7,7 +7,7 @@ describe('test duration event', () => {
 describe('test duration', () => {
 
   it('hello test', () => {
-    cy.wait(3000);
+    cy.wait(200);
   });
   
   it('quick test', () => {});
@@ -30,8 +30,7 @@ describe('test duration', () => {
       const test = results.find(t => t.name === 'hello test');
       expect(test?.start).toBeDefined();
       expect(test?.stop).toBeDefined();
-      // there are before all hooks for coverage
-      expect(test!.stop! - test!.start!).toBeGreaterThanOrEqual(3000);
+      expect(test!.stop! - test!.start!).toBeGreaterThanOrEqual(200);
     });
 
     it('check test duration quick', async () => {
@@ -42,7 +41,7 @@ describe('test duration', () => {
       console.log(duration);
       // there are before all hooks for coverage
       expect(duration).toBeGreaterThanOrEqual(0);
-      expect(duration).toBeLessThanOrEqual(2900);
+      expect(duration).toBeLessThan(1000);
     });
   });
 });

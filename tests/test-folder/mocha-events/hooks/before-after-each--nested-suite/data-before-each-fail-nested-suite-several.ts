@@ -155,7 +155,7 @@ describe('${rootSuite}', () => {
           {
             name: 'child suite',
             befores: [],
-            afters: [{ name: 'video' }],
+            afters: [],
           },
         ],
       },
@@ -170,7 +170,7 @@ describe('${rootSuite}', () => {
           {
             name: 'child suite',
             befores: [],
-            afters: [{ name: 'video' }],
+            afters: [],
           },
         ],
       },

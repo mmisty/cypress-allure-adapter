@@ -82,29 +82,14 @@ jobs:
       fail-fast: false # Don't cancel other jobs if one fails
       matrix:
         test-group:
-          - { name: "passes1", script: "test:jest:cy:passes1", timeout: 5 }
-          - { name: "passes2", script: "test:jest:cy:passes2", timeout: 5 }
-          - { name: "v2attachments", script: "test:jest:cy:v2attachments", timeout: 5 }
-          - { name: "v2suites", script: "test:jest:cy:v2suites", timeout: 5 }
-          - { name: "failures1", script: "test:jest:cy:failures1", timeout: 8 }
-          - { name: "failures2", script: "test:jest:cy:failures2", timeout: 8 }
-          - { name: "failures3", script: "test:jest:cy:failures3", timeout: 8 }
-          - { name: "requests", script: "test:jest:cy:requests", timeout: 8 }
-          - { name: "attachments", script: "test:jest:cy:attachments", timeout: 6 }
-          - { name: "hooks", script: "test:jest:cy:hooks", timeout: 8 }
-          - { name: "commands", script: "test:jest:cy:commands", timeout: 12 }
-          - { name: "events", script: "test:jest:cy:events", timeout: 12 }
-          - { name: "cucumber", script: "test:jest:cy:cucumber", timeout: 12 }
-          - { name: "duration", script: "test:jest:cy:duration", timeout: 12 }
-          - { name: "interface-p1", script: "test:jest:cy:interface:p1", timeout: 12 }
-          - { name: "interface-p2", script: "test:jest:cy:interface:p2", timeout: 12 }
-          - { name: "interface-p3", script: "test:jest:cy:interface:p3", timeout: 12 }
-          - { name: "interface-p4", script: "test:jest:cy:interface:p4", timeout: 12 }
-          - { name: "only", script: "test:jest:cy:only", timeout: 12 }
-          - { name: "other", script: "test:jest:cy:other", timeout: 12 }
-          - { name: "regression", script: "test:jest:cy:regression", timeout: 12 }
-          - { name: "settings", script: "test:jest:cy:settings", timeout: 12 }
-          - { name: "skips", script: "test:jest:cy:skips", timeout: 12 }
+          - { name: "hooks", script: "test:jest:cy:hooks", timeout: 10 }
+          - { name: "failures", script: "test:jest:cy:failures", timeout: 10 }
+          - { name: "interface", script: "test:jest:cy:interface", timeout: 10 }
+          - { name: "passes", script: "test:jest:cy:passes", timeout: 8 }
+          - { name: "v2", script: "test:jest:cy:v2", timeout: 10 }
+          - { name: "commands", script: "test:jest:cy:commands", timeout: 8 }
+          - { name: "settings", script: "test:jest:cy:settings", timeout: 8 }
+          - { name: "misc", script: "test:jest:cy:misc", timeout: 10 }
 
     name: Test ${{ matrix.test-group.name }}
     timeout-minutes: ${{ matrix.test-group.timeout }}
@@ -116,34 +101,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Free up disk space and add swap to prevent OOM
-      - name: Free up runner resources
-        run: |
-          # Remove unnecessary tools to free memory/disk
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /usr/local/share/boost
-          sudo rm -rf /usr/local/lib/android
-          
-          # Add 4GB swap file to prevent OOM kills
-          sudo fallocate -l 4G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          
-          # Show available resources
-          echo "=== Memory ==="
-          free -h
-          echo "=== Disk ==="
-          df -h
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "npm"
 
-      # npm ci with cache hit is very fast (~15-20s)
       - name: Install dependencies
         uses: nick-fields/retry@v3
         with:
@@ -151,26 +114,8 @@ jobs:
           max_attempts: 3
           command: npm ci
 
-      - name: Build
-        run: npm run build:all
-
-      # Debug: Show environment and processes before running tests
-      - name: Pre-test diagnostics
-        run: |
-          echo "=== Memory before test ==="
-          free -h
-          echo "=== Node processes ==="
-          pgrep -a node || echo "No node processes"
-          echo "=== Chrome version ==="
-          google-chrome --version || chromium --version || echo "Chrome not found"
-
       - name: Run tests
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: ${{ matrix.test-group.timeout }}
-          max_attempts: 3
-          retry_wait_seconds: 10
-          command: npm run ${{ matrix.test-group.script }}
+        run: npm run ${{ matrix.test-group.script }}
 
       # Upload Jest JUnit report for this test group
       - name: Upload Jest report
