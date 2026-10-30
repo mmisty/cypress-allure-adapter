@@ -342,7 +342,7 @@ export const handleCyLogEvents = (
 
         // Prefer HTTP outcome over Cypress command state (e.g. failOnStatusCode: false)
         if (requestStatus) {
-          status = requestStatus;
+          status = requestStatus as Status;
         }
       });
     }
