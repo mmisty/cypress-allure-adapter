@@ -4,10 +4,10 @@ export const logClient = (namespace: string) => {
   const debug = Debug(namespace);
 
   debug.enabled =
-    Cypress.env('DEBUG') &&
-    (Cypress.env('DEBUG').indexOf('*') !== -1
-      ? namespace.startsWith(Cypress.env('DEBUG').replace('*', ''))
-      : namespace === Cypress.env('DEBUG'));
+    Cypress.expose('DEBUG') &&
+    (Cypress.expose('DEBUG').indexOf('*') !== -1
+      ? namespace.startsWith(Cypress.expose('DEBUG').replace('*', ''))
+      : namespace === Cypress.expose('DEBUG'));
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (...args: any[]) => {

@@ -11,7 +11,7 @@ describe('suite: request handler with specific requests - should add body only f
     fileName: __filename,
     spec: `
 describe('${rootSuite}',  {
-  env: {allureAddBodiesToRequests: '**/mirror**'}
+  expose: {allureAddBodiesToRequests: '**/mirror**'}
 },() => {
   let port = 3000;
   const url = () => \`http://localhost:$\{port\}\`;

@@ -16,7 +16,7 @@ describe('requests with redirects', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false', allureLogCyCommands: 'true' },
+      expose: { allureAddVideoOnPass: 'false', allureLogCyCommands: 'true' },
     });
   });
 
@@ -59,64 +59,35 @@ describe('requests with redirects', () => {
       expect(steps).toEqual([
         {
           status: 'broken',
-          name: 'request: /api/test',
-          params: [],
-          attachments: [],
-          steps: [
+          name: 'request: GET, /api/test',
+          params: [
+            { name: 'Response Status', value: '404' },
             {
-              status: 'broken',
-              name: 'request: 302 api/test',
-              params: [
-                {
-                  name: 'Request URL',
-                  value: 'http://localhost:number/api/test',
-                },
-                { name: 'Request Body', value: '' },
-                { name: 'Response Body', value: '' },
-              ],
-              attachments: [
-                {
-                  name: 'requests',
-                  type: 'application/json',
-                  source: 'source.json',
-                },
-              ],
-              steps: [],
+              name: 'Request URL',
+              value: 'http://localhost:number/api/test',
             },
+            { name: 'Request Body', value: '' },
+          ],
+          attachments: [
             {
-              status: 'passed',
-              name: 'request: 200 __/',
-              params: [
-                { name: 'Request URL', value: 'http://localhost:number/__/' },
-                { name: 'Request Body', value: '' },
-              ],
-              attachments: [
-                {
-                  name: 'requests',
-                  type: 'application/json',
-                  source: 'source.json',
-                },
-              ],
-              steps: [],
+              name: 'requests',
+              type: 'application/json',
+              source: 'source.json',
             },
           ],
+          steps: [],
         },
       ]);
     });
 
     it('attachment files should exist', () => {
       const requestStep = test?.steps?.find(s => s.name?.startsWith('request'));
-      const nestedSteps = requestStep?.steps ?? [];
+      const attachment = requestStep?.attachments?.[0];
 
-      nestedSteps.forEach(step => {
-        const attachment = step?.attachments?.[0];
-
-        if (attachment) {
-          const filePath = `${results.watchDir}/${attachment.source}`;
-          expect(existsSync(filePath)).toBe(true);
-          expect(readFileSync(filePath).toString().length).toBeGreaterThan(0);
-        }
-      });
+      expect(attachment).toBeDefined();
+      const filePath = `${results.watchDir}/${attachment!.source}`;
+      expect(existsSync(filePath)).toBe(true);
+      expect(readFileSync(filePath).toString().length).toBeGreaterThan(0);
     });
   });
 

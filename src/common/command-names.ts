@@ -244,8 +244,8 @@ export const commandParams = (command: CommandT) => {
       if (Array.isArray(commandArgs)) {
         return commandArgs
           .map(arg => {
-            if (name === COMMAND_REQUEST && typeof arg === 'object' && arg.method && arg.url) {
-              return requestName(arg.url, arg.method);
+            if (name === COMMAND_REQUEST && typeof arg === 'object' && arg.url) {
+              return requestName(arg.url, arg.method ?? 'GET');
             }
 
             return stringify(arg, false);

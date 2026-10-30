@@ -224,6 +224,9 @@ const data: TestData = {
       `cypress:screenshot:test:${rootSuite} -- test 1 -- after all hook after in suite (failed).png`,
       'mocha: fail: "after all" hook: after in suite for "test 1"',
       `mocha: suite end: ${rootSuite}`,
+      // Cypress 16 emits test:after:run after a failed after-all hook
+      'cypress: test:after:run: test 1',
+      'plugin test:ended',
       'mocha: suite end: ',
       'mocha: end',
     ],

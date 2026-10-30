@@ -2,7 +2,7 @@ import { Status } from 'allure-js-commons';
 
 describe('envinfo', () => {
   it('test', () => {
-    cy.allure().writeEnvironmentInfo(Cypress.env());
+    cy.allure().writeEnvironmentInfo(Cypress.expose());
 
     // todo categories to work
     cy.allure().writeCategoriesDefinitions([

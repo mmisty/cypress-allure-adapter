@@ -25,20 +25,21 @@ const clearJsFiles = () => {
 };
 
 const isCoverage = (config: PluginConfigOptions) => {
-  return process.env[COVERAGE] === 'true' || config.env[COVERAGE] === true;
+  return process.env[COVERAGE] === 'true' || config.expose?.[COVERAGE] === true;
 };
 const eventForwarder = new EventForwarder();
 
 export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptions) => {
   const { on } = eventForwarder;
   clearJsFiles();
+  config.expose = config.expose ?? {};
   const isCov = isCoverage(config);
 
   if (isCov) {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     require('@cypress/code-coverage/task')(on, config);
     console.log('SETTING UP COVERAGE');
-    config.env[COVERAGE] = true;
+    config.expose[COVERAGE] = true;
   }
 
   const browserHandler = redirectLogBrowser(config, ['error', 'exception', 'warn', 'test:log']);
@@ -88,10 +89,11 @@ export const setupPlugins = async (cyOn: PluginEvents, config: PluginConfigOptio
     });
   });
 
-  console.log('CYPRESS ENV:');
-  console.log(config.env);
+  console.log('CYPRESS Expose:');
+  console.log(config.expose);
 
   // register grep plugin
+  console.log('Registering grep plugin', JSON.stringify(config));
   pluginGrep(on, config);
 
   let server: Server | null = null;

@@ -345,7 +345,7 @@ export const startReporterServer = async (
         clearTimeout(startupTimeout);
         startupTimeout = undefined;
       }
-      configOptions.env[ENV_WS] = wsPort;
+      configOptions.expose[ENV_WS] = wsPort;
       const attemptMessage = attempt > 0 ? ` from ${attempt} attempt` : '';
       logWithPackage('log', `running on ${wsPort} port${attemptMessage}`);
       socketLogic(sockserver, tasks);

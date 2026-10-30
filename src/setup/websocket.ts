@@ -7,12 +7,12 @@ const PROCESS_INTERVAL_MS = 10;
 
 export const startWsClient = (): WebSocket | undefined => {
   const debug = logClient(dbg);
-  const port = Cypress.env(ENV_WS);
+  const port = Cypress.expose(ENV_WS);
 
   if (!port) {
     logWithPackage(
       'log',
-      'No existing ws server started. Will not report to allure. Set "allure" env variable to "true" to generate allure-results',
+      'No existing ws server started. Will not report to allure. Set expose option "allure" to "true" to generate allure-results',
     );
 
     return undefined;

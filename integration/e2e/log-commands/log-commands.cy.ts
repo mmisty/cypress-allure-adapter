@@ -23,22 +23,22 @@ describe('log-not log commands', () => {
   it('should switch env var and do not log commands betweenn', () => {
     visitHtml();
     cy.wrap(null, { log: false }).then(() => {
-      Cypress.env('allureLogCyCommands', false);
+      Cypress.expose('allureLogCyCommands', false);
     });
     cy.get('div');
     cy.wrap(null, { log: false }).then(() => {
-      Cypress.env('allureLogCyCommands', true);
+      Cypress.expose('allureLogCyCommands', true);
     });
   });
 
   it('should run', () => {
     visitHtml();
     cy.wrap(null, { log: false }).then(() => {
-      Cypress.env('allureLogCyCommands', false);
+      Cypress.expose('allureLogCyCommands', false);
     });
     cy.get('div');
     cy.wrap(null, { log: false }).then(() => {
-      Cypress.env('allureLogCyCommands', true);
+      Cypress.expose('allureLogCyCommands', true);
     });
   });
 });
