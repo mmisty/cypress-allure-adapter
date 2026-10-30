@@ -286,7 +286,8 @@ export const handleCyLogEvents = (
   Cypress.Allure.on('cmd:started', (command: CommandT) => {
     const { name, isLog, message: cmdMessage, args } = commandParams(command);
 
-    if (!isLogCommand(isLog, name) || !allureLogCyCommands()) {
+    // Always report requests; other commands respect allureLogCyCommands
+    if (!isLogCommand(isLog, name) || (!allureLogCyCommands() && name !== COMMAND_REQUEST)) {
       return;
     }
 
@@ -327,7 +328,7 @@ export const handleCyLogEvents = (
 
   Cypress.Allure.on('cmd:ended', (command: CommandT, isCustom) => {
     const { name, isLog, state, message: cmdMessage } = commandParams(command);
-    const status = state as Status;
+    let status = state as Status;
 
     if (!isLogCommand(isLog, name)) {
       return;
@@ -335,11 +336,19 @@ export const handleCyLogEvents = (
 
     if (name === COMMAND_REQUEST) {
       withTry('report attach:requests', () => {
-        attachRequests(dbg, allureAttachRequests, command, { compactAttachments: allureCompactAttachmentsRequests });
+        const requestStatus = attachRequests(dbg, allureAttachRequests, command, {
+          compactAttachments: allureCompactAttachmentsRequests,
+        });
+
+        // Prefer HTTP outcome over Cypress command state (e.g. failOnStatusCode: false)
+        if (requestStatus) {
+          status = requestStatus;
+        }
       });
     }
 
-    if (!allureLogCyCommands()) {
+    // Always end request steps; other commands respect allureLogCyCommands
+    if (!allureLogCyCommands() && name !== COMMAND_REQUEST) {
       return;
     }
 

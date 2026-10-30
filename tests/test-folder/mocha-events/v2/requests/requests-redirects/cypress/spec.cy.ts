@@ -17,7 +17,9 @@ describe('suite', () => {
   });
 
   it('01 redirects test', () => {
-    cy.request('/api/test');
+    // Cypress 16 no longer proxies unknown relative paths through a 302 -> __/ chain.
+    // Keep failOnStatusCode false so we still assert request reporting for non-2xx.
+    cy.request({ url: '/api/test', failOnStatusCode: false });
   });
 
   it('02 its status', () => {

@@ -16,7 +16,7 @@ export const attachRequests = (
   allureAttachRequests: boolean,
   command: CommandT,
   opts: { compactAttachments: boolean },
-) => {
+): 'passed' | 'broken' | undefined => {
   const debug = logClient(dbg);
   const maxParamLength = 70;
   const compact = opts.compactAttachments ?? true;
@@ -49,9 +49,10 @@ export const attachRequests = (
   const requests = getRequests();
 
   if (!requests) {
-    return;
+    return undefined;
   }
   const allRequests = requests.filter(r => !!r);
+  let worstStatus: 'passed' | 'broken' = 'passed';
   allRequests.forEach((req: OneRequestConsoleProp) => {
     const reqHeaders = { obj: req['Request Headers'], name: 'Request Headers' };
     const reqBody = { obj: req['Request Body'], name: 'Request Body' };
@@ -65,6 +66,9 @@ export const attachRequests = (
       '',
     );
     const stepStatus = resStatusParam.value !== '200' ? 'broken' : 'passed';
+    if (stepStatus === 'broken') {
+      worstStatus = 'broken';
+    }
 
     /*if (reqNumber === 0) {
       Cypress.Allure.parameters({ name: 'duration', value: req.duration });
@@ -102,4 +106,6 @@ export const attachRequests = (
       Cypress.Allure.endStep(stepStatus);
     }
   });
+
+  return worstStatus;
 };

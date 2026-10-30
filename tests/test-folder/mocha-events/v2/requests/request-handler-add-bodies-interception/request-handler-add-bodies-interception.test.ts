@@ -166,7 +166,7 @@ describe('request handler - add bodies with additional interception', () => {
               status: 'passed',
               name: 'ended:GET http://localhost:<port>/',
               attachments: [],
-              parameters: [{ name: 'responseBody', value: '' }],
+              parameters: [{ name: 'responseBody', value: 'Hello World!' }],
               steps: [],
             },
           ],

@@ -33,7 +33,7 @@ describe('should not log when allureLogCyCommands setting is false', () => {
   });
   
  it('attach requests', () => {
-    cy.request('/api/test');
+    cy.request({ url: '/api/test', failOnStatusCode: false });
   });
 });
 
@@ -144,8 +144,12 @@ describe('should not log when allureLogCyCommands setting is false', () => {
               type: 'application/json',
             },
           ],
-          name: 'request: 302 api/test',
+          name: 'request: GET, /api/test',
           params: [
+            {
+              name: 'Response Status',
+              value: '404',
+            },
             {
               name: 'Request URL',
               value: 'http://localhost:number/api/test',
@@ -154,35 +158,8 @@ describe('should not log when allureLogCyCommands setting is false', () => {
               name: 'Request Body',
               value: '',
             },
-            {
-              name: 'Response Body',
-              value: '',
-            },
           ],
           status: 'broken',
-          steps: [],
-        },
-        {
-          attach: [
-            {
-              name: 'requests',
-              source: 'source.json',
-              sourceContentMoreThanZero: true,
-              type: 'application/json',
-            },
-          ],
-          name: 'request: 200 __/',
-          params: [
-            {
-              name: 'Request URL',
-              value: 'http://localhost:number/__/',
-            },
-            {
-              name: 'Request Body',
-              value: '',
-            },
-          ],
-          status: 'passed',
           steps: [],
         },
       ]);

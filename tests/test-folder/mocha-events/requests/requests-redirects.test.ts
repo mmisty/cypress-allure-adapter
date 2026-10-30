@@ -23,7 +23,7 @@ describe('should have requests when redirects', () => {
     });
 
   it('01 redirects test', () => {
-    cy.request('/api/test');
+    cy.request({ url: '/api/test', failOnStatusCode: false });
   });
   
   it('02 its status', () => {
@@ -67,62 +67,31 @@ describe('should have requests when redirects', () => {
 
       expect(steps).toEqual([
         {
-          attach: [],
-          name: 'request: /api/test',
-          params: [],
-          status: 'broken',
-          steps: [
+          attach: [
             {
-              attach: [
-                {
-                  name: 'requests',
-                  source: 'source.json',
-                  sourceContentMoreThanZero: true,
-                  type: 'application/json',
-                },
-              ],
-              name: 'request: 302 api/test',
-              params: [
-                {
-                  name: 'Request URL',
-                  value: 'http://localhost:number/api/test',
-                },
-                {
-                  name: 'Request Body',
-                  value: '',
-                },
-                {
-                  name: 'Response Body',
-                  value: '',
-                },
-              ],
-              status: 'broken',
-              steps: [],
-            },
-            {
-              attach: [
-                {
-                  name: 'requests',
-                  source: 'source.json',
-                  sourceContentMoreThanZero: true,
-                  type: 'application/json',
-                },
-              ],
-              name: 'request: 200 __/',
-              params: [
-                {
-                  name: 'Request URL',
-                  value: 'http://localhost:number/__/',
-                },
-                {
-                  name: 'Request Body',
-                  value: '',
-                },
-              ],
-              status: 'passed',
-              steps: [],
+              name: 'requests',
+              source: 'source.json',
+              sourceContentMoreThanZero: true,
+              type: 'application/json',
             },
           ],
+          name: 'request: GET, /api/test',
+          params: [
+            {
+              name: 'Response Status',
+              value: '404',
+            },
+            {
+              name: 'Request URL',
+              value: 'http://localhost:number/api/test',
+            },
+            {
+              name: 'Request Body',
+              value: '',
+            },
+          ],
+          status: 'broken',
+          steps: [],
         },
       ]);
     });
