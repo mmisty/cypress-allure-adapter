@@ -15,7 +15,7 @@ describe('nested suites with failed hook', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'true' },
+      expose: { allureAddVideoOnPass: 'true' },
       // onlyGetResults: true,
     });
   });

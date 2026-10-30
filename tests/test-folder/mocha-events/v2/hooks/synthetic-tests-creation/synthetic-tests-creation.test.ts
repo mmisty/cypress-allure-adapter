@@ -11,7 +11,7 @@ describe('synthetic tests creation - fails in test then in hook when retries', (
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'true' },
+      expose: { allureAddVideoOnPass: 'true' },
     });
   });
 

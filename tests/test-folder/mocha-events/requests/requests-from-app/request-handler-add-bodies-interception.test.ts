@@ -50,7 +50,7 @@ describe('${rootSuite}', () => {
   });
 
   it('01 should add request bodies - GET - fetch', {
-      env: { allureAddBodiesToRequests: '*' },
+      expose: { allureAddBodiesToRequests: '*' },
     },
   () => {
   visitHtml({
@@ -82,7 +82,7 @@ describe('${rootSuite}', () => {
   });
 
   it('02 should add request bodies - GET - xhr', {
-      env: { allureAddBodiesToRequests: '*' },
+      expose: { allureAddBodiesToRequests: '*' },
     },
   () => {
       visitHtml({
@@ -115,7 +115,7 @@ describe('${rootSuite}', () => {
   });
 
   it('03 should add request bodies - POST - fetch', {
-      env: { allureAddBodiesToRequests: '*' },
+      expose: { allureAddBodiesToRequests: '*' },
     },
   () => {
       visitHtml({

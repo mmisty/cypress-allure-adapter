@@ -14,7 +14,7 @@ describe('request events - request:started and request:ended', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false' },
+      expose: { allureAddVideoOnPass: 'false' },
     });
   });
 

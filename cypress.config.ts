@@ -18,7 +18,7 @@ export const commonConfig: Cypress.ConfigOptions = {
       mochaFile: './reports/cypress/[hash].xml',
       toConsole: false,
     },
-    env: {
+    expose: {
       REDIRECT_BROWSER_LOG: false, // disable to isolate issues
       allure: 'true',
       allureCleanResults: 'true',

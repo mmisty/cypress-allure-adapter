@@ -16,7 +16,7 @@ describe('after each hook fail', () => {
 
   beforeAll(async () => {
     results = await prepareResults(__dirname, {
-      env: { allureAddVideoOnPass: 'false' },
+      expose: { allureAddVideoOnPass: 'false' },
     });
   });
 

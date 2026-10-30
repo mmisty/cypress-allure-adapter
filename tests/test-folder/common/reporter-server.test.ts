@@ -57,7 +57,7 @@ describe('startReporterServer', () => {
 
   const start = async (
     debug: boolean,
-    env: any,
+    expose: any,
   ): Promise<{ serv: undefined | WebSocketServer }> => {
     process.env.DEBUG = debug ? 'cypress-allure*' : '';
 
@@ -83,7 +83,7 @@ describe('startReporterServer', () => {
     );
     const serv: { serv: undefined | WebSocketServer } = { serv: undefined };
     // startReporterServer is now async
-    serv.serv = await startReporterServer({ env } as any, reporter);
+    serv.serv = await startReporterServer({ expose } as any, reporter);
 
     // Track server for cleanup
     if (serv.serv) {
@@ -97,7 +97,7 @@ describe('startReporterServer', () => {
       }, 2000);
 
       const check = setInterval(() => {
-        if (env['allureWsPort'] !== undefined) {
+        if (expose['allureWsPort'] !== undefined) {
           clearInterval(check);
           clearTimeout(timeout);
           res(serv);
@@ -110,7 +110,7 @@ describe('startReporterServer', () => {
     sendObjs: any[],
     callback: (back: string[]) => void,
   ) => {
-    const env: Record<string, any> = {};
+    const expose: Record<string, any> = {};
 
     const back: any[] = [];
 
@@ -127,10 +127,10 @@ describe('startReporterServer', () => {
     let ws: WebSocket | null = null;
     let interval: NodeJS.Timeout | null = null;
 
-    return start(true, env)
+    return start(true, expose)
       .then(serv => {
         const wsPathFixed =
-          `${env['allureWsPort']}/__cypress/allure_messages/`.replace(
+          `${expose['allureWsPort']}/__cypress/allure_messages/`.replace(
             /\/\//g,
             '/',
           );

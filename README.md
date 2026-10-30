@@ -9,11 +9,11 @@
 ![latest version](https://img.shields.io/npm/v/@mmisty/cypress-allure-adapter.svg)
 
 
-![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-14.5.4-blue)
-![supported cypress](https://img.shields.io/badge/cypress-13.x-blue)
-![supported cypress](https://img.shields.io/badge/cypress-12.x-blue)
-![supported cypress](https://img.shields.io/badge/cypress-11.x-blue)
-![supported cypress](https://img.shields.io/badge/cypress-10.x-blue)
+![cypress version](https://img.shields.io/badge/latest%20supported%20cypress-16.2.1-blue)
+
+If you are on Cypress `10.0.0` - `15.9.0`, use plugin version `<=4.0.1` (last version compatible with those Cypress releases).
+If you are on Cypress `15.10.0` - `15.x`, use a plugin release that supports `Cypress.expose()` on Cypress 15.
+This package targets Cypress `16.x` (`Cypress.env()` removed; configure via `expose`).
 
 
 You can watch tests execution when using the plugin with Allure TestOps. It adds tests, steps, suites and screenshots during tests execution.
@@ -41,7 +41,7 @@ Example report is here - [Allure Report example](https://mmisty.github.io/cypres
 ## Table of Contents
 
 1. [Installation](#installation)
-1. [Environment variables](#environment-variables)
+1. [Expose options](#expose-options)
 2. [To see allure report](#to-see-report)
 3. [Allure Interface](#allure-interface)
 4. [Adding meta information](#adding-meta-information)
@@ -148,17 +148,19 @@ export default defineConfig({
 ```
 </details>
 
-### 3. Update environment variables
-In `cypress.config.ts` or `cypress.config.js` or in your environment files set `allure` env var to `true`.
+### 3. Update expose options
+Starting with Cypress 16, plugin options must be set via `expose` (not `env` / `Cypress.env()`).
 
-See other [environment variables](#environment-variables)
+In `cypress.config.ts` or `cypress.config.js` set `allure` expose key to `true`. Alternatively, you can pass via cypress cli: `--expose allure=true`
+
+See other [expose options](#expose-options)
 
 ### 4. Types
 [Typescript]: No need to setup types - should be done automatically
 
 That's it! :tada:
 
-## Environment variables
+## Expose options
 
 | Variable                                                                                                                                                                                                                            | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -187,9 +189,9 @@ That's it! :tada:
   Also link can be specified with `*` - it will be replced with id.
   ```javascript
      // cypress.config.ts 
-     env: {
-       tmsPrefix: 'http://jira.com' 
-       issuePrefix: 'http://jira.com/PROJECT-1/*/browse' 
+     expose: {
+       tmsPrefix: 'http://jira.com',
+       issuePrefix: 'http://jira.com/PROJECT-1/*/browse',
      }  
  ```
  ```javascript
@@ -364,11 +366,11 @@ Exmpale below:
 
 By default requests made by app do not store request/response bodies unless you intercept them. 
 
-So to access request bodies within custom events you need to add environemt variable `allureAddBodiesToRequests` with requests like you are interceptin them by cy.intercept: 
+So to access request bodies within custom events you need to add expose option `allureAddBodiesToRequests` with requests like you are intercepting them by cy.intercept: 
 
 ```javascript
 // cypress.config.ts
-env: {
+expose: {
   // ...
   allureAddBodiesToRequests: '*', // will add bodies to all requests
 }  
@@ -379,7 +381,7 @@ or
 
 ```javascript
 // cypress.config.ts
-env: {
+expose: {
   // ...
   allureAddBodiesToRequests: '**/endpoint1,**/endpoint2**', // will add bodies only to requests with endpoint1 and endpoint2
 }  
@@ -425,9 +427,9 @@ cypress events forwarder.
 
 ## Allure TestOps
 
-To have compatibility with Allure Testops set environment variables:
+To have compatibility with Allure Testops set expose options:
  - `allureResults`
- - `allureResultsWatchPath` - this is the directory where test files ready for TestOps will be moved. It is suggested to use allure-results/watch when the <allureResults> environment variable is either not set or is set to allure-results
+ - `allureResultsWatchPath` - this is the directory where test files ready for TestOps will be moved. It is suggested to use allure-results/watch when the <allureResults> expose option is either not set or is set to allure-results
 
 When starting tests in watch mode with [allurectl](https://docs.qameta.io/allure-testops/ecosystem/allurectl/) set allure-results path to `<allureResultsWatchPath>` like: 
 ```
